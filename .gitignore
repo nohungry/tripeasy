@@ -1,0 +1,11 @@
+# 獨立 repo，由 refs.env 綁定版本
+backend/
+frontend/
+
+# 本機環境變數（範本是 .env.example）
+.env
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
