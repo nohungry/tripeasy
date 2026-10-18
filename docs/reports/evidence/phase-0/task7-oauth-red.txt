@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- /home/nohungry/project/tripeasy/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+collecting ... collected 2 items
+
+tests/test_oauth_spike.py::test_mock_oauth_issues_google_like_claims PASSED [ 50%]
+tests/test_oauth_spike.py::test_backend_google_login_via_mock FAILED     [100%]
+
+=================================== FAILURES ===================================
+______________________ test_backend_google_login_via_mock ______________________
+
+api = <conftest.Api object at 0x737d265c8980>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x737d265c8c20>
+clean_mock_user = None
+
+    def test_backend_google_login_via_mock(api, db, clean_mock_user):
+        code = _get_code()
+    
+        r = api.post("/api/v1/auth/userinfo/login/google", json={"code": code})
+    
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"failed","message":"Google 驗證失敗，請檢查您的授權碼或後端憑證設定。"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401]>.status_code
+
+tests/test_oauth_spike.py:73: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_oauth_spike.py::test_backend_google_login_via_mock - Assert...
+========================= 1 failed, 1 passed in 0.59s ==========================

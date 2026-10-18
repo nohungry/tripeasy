@@ -37,6 +37,18 @@ services:
       - '8025:8025'
       - '1025:1025'
 
+  mock-oauth:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    ports:
+      - '8090:8080'
+    environment:
+      JSON_CONFIG: >-
+        {"interactiveLogin": false,
+         "tokenCallbacks": [{"issuerId": "google", "tokenExpiry": 3600,
+           "requestMappings": [{"requestParam": "grant_type", "match": "*",
+             "claims": {"sub": "mock-google-001", "email": "mock.user@example.com",
+                        "name": "Mock 使用者", "picture": "https://example.com/mock.png"}}]}]}
+
   backend:
     build:
       context: ./backend
@@ -46,6 +58,8 @@ services:
       flyway:
         condition: service_completed_successfully
       mailpit:
+        condition: service_started
+      mock-oauth:
         condition: service_started
     ports:
       - '${PORT:-3000}:${PORT:-3000}'
