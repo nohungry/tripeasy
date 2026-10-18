@@ -8,11 +8,11 @@ from conftest import API_BASE, auth_header
 PNG = b"\x89PNG\r\n\x1a\n" + b"tripeasy-p0-avatar"
 
 
-def _upload_avatar(api, user, filename):
+def _upload_avatar(api, user, filename, content=PNG, mimetype="image/png"):
     return api.patch(
         "/api/v1/user/userinfo/avatar",
         headers=auth_header(user),
-        files={"image": (filename, PNG, "image/png")},
+        files={"image": (filename, content, mimetype)},
     )
 
 
@@ -44,3 +44,15 @@ def test_upload_filename_cannot_escape_upload_dir(api, make_user):
     assert path.startswith("/uploads/userProfile/")
     assert ".." not in path.split("/")
     assert requests.get(url, timeout=10).content == PNG
+
+
+def test_uploaded_file_cannot_run_as_page(api, make_user):
+    user = make_user()
+
+    r = _upload_avatar(api, user, "x.html", b"<script>alert(1)</script>", "image/png")
+
+    assert r.status_code == 200, r.text
+    got = requests.get(r.json()["data"]["avatar_url"], timeout=10)
+    assert got.headers["X-Content-Type-Options"] == "nosniff"
+    csp = got.headers["Content-Security-Policy"]
+    assert "sandbox" in csp and "default-src 'none'" in csp
