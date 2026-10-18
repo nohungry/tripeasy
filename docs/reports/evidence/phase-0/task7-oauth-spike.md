@@ -15,7 +15,7 @@
 ```
 
 原因：mock 的 access token 是 JWT，超過 `socialLogin.provider_token` 的 VARCHAR(255)。
-Google 真實的 access token 較短，所以線上沒問題。
+線上目前沒有觀察到這個錯誤，但 Google 不保證 access token 的長度（官方文件建議預留到 2048 bytes），所以 VARCHAR(255) 在線上也是潛在風險。P2 的 migration 要一併修正（改為 TEXT），兩個分支（新使用者與既有使用者）都會寫入這個欄位。
 
 ## 對 P2 的影響
 
