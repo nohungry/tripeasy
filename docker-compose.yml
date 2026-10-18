@@ -31,6 +31,12 @@ services:
     volumes:
       - ./backend/migrations:/flyway/sql:ro
 
+  mailpit:
+    image: axllent/mailpit:v1.20
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+
   backend:
     build:
       context: ./backend
@@ -39,6 +45,8 @@ services:
     depends_on:
       flyway:
         condition: service_completed_successfully
+      mailpit:
+        condition: service_started
     ports:
       - '${PORT:-3000}:${PORT:-3000}'
     volumes:
