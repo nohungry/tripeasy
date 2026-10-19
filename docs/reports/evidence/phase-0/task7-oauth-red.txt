@@ -1,7 +1,7 @@
 ============================= test session starts ==============================
-platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- /home/nohungry/project/tripeasy/.venv/bin/python
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
 cachedir: .pytest_cache
-rootdir: /home/nohungry/project/tripeasy
+rootdir: .
 configfile: pyproject.toml
 collecting ... collected 2 items
 
