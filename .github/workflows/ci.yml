@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 讀取 refs.env
+        run: cat refs.env >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: nohungry/tripeasy-backend
+          ref: ${{ env.BACKEND_REF }}
+          path: backend
+
+      - uses: actions/checkout@v4
+        with:
+          repository: nohungry/tripeasy-frontend
+          ref: ${{ env.FRONTEND_REF }}
+          path: frontend
+
+      - uses: astral-sh/setup-uv@v3
+
+      - name: 啟動服務並測試
+        run: scripts/ci.sh
+
+      - name: 收集 compose log
+        if: failure()
+        run: docker compose logs --no-color > compose-logs.txt
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: compose-logs
+          path: compose-logs.txt

@@ -1,0 +1,29 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 1 item
+
+tests/test_mail.py::test_forget_password_sends_reset_mail FAILED         [100%]
+
+=================================== FAILURES ===================================
+____________________ test_forget_password_sends_reset_mail _____________________
+
+api = <conftest.Api object at 0x786b143fc2f0>
+make_user = <function make_user.<locals>._make at 0x786b143cf6a0>
+
+    def test_forget_password_sends_reset_mail(api, make_user):
+        user = make_user()
+    
+        r = api.post("/api/v1/auth/userinfo/forgetpw", json={"email": user["email"]})
+    
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"error","message":"伺服器錯誤"}
+E       assert 500 == 200
+E        +  where 500 = <Response [500]>.status_code
+
+tests/test_mail.py:32: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_mail.py::test_forget_password_sends_reset_mail - AssertionE...
+============================== 1 failed in 0.63s ===============================

@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 3 items
+
+tests/test_storage.py::test_avatar_upload_stored_locally PASSED          [ 33%]
+tests/test_storage.py::test_upload_filename_cannot_escape_upload_dir PASSED [ 66%]
+tests/test_storage.py::test_uploaded_file_cannot_run_as_page FAILED      [100%]
+
+=================================== FAILURES ===================================
+____________________ test_uploaded_file_cannot_run_as_page _____________________
+
+api = <conftest.Api object at 0x724a619c0440>
+make_user = <function make_user.<locals>._make at 0x724a619b7740>
+
+    def test_uploaded_file_cannot_run_as_page(api, make_user):
+        user = make_user()
+    
+        r = _upload_avatar(api, user, "x.html", b"<script>alert(1)</script>", "image/png")
+    
+        assert r.status_code == 200, r.text
+        got = requests.get(r.json()["data"]["avatar_url"], timeout=10)
+>       assert got.headers["X-Content-Type-Options"] == "nosniff"
+
+tests/test_storage.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = {'X-Powered-By': 'Express', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'Accept-Ranges': 'bytes', 'C...'Content-Length': '25', 'Date': 'Sun, 18 Oct 2026 13:48:13 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+key = 'X-Content-Type-Options'
+
+    def __getitem__(self, key):
+>       return self._store[key.lower()][1]
+E       KeyError: 'x-content-type-options'
+
+.venv/lib/python3.13/site-packages/requests/structures.py:52: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_storage.py::test_uploaded_file_cannot_run_as_page - KeyErro...
+========================= 1 failed, 2 passed in 0.14s ==========================
