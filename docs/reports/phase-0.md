@@ -5,7 +5,7 @@
 
 ## 0. 摘要
 
-P0 的目標：一行 `docker compose up` 起得來整套服務（postgres、flyway、backend、frontend、mailpit、mock-oauth），外部服務（Firebase、SendGrid、Google OAuth）都有本機替身，pytest 與 `ci.sh` 是綠燈（GitHub Actions 待 push 後驗證）。
+P0 的目標：一行 `docker compose up` 起得來整套服務（postgres、flyway、backend、frontend、mailpit、mock-oauth），外部服務（Firebase、SendGrid、Google OAuth）都有本機替身，pytest 與 `ci.sh` 是綠燈，GitHub Actions 首次執行也是綠燈（[run 39364922246](https://github.com/nohungry/tripeasy/actions/runs/39364922246)：13 passed, 1 xfailed）。
 
 另外，Task 1–2 是前置工程：Task 1 建立總覽 repo 骨架與 `refs.env`；Task 2（backend `94240dd`）加入 lockfile、Dockerfile 拆成 dev / prod multi-stage、修正 compose healthcheck、移除固定 IP。
 
@@ -18,7 +18,7 @@ P0 的目標：一行 `docker compose up` 起得來整套服務（postgres、fly
 | frontend 變更 | 4 檔，+15 −7 |
 | 升級 Opus 實作 | 無 |
 
-Commit 範圍（皆已以 `--no-ff` 合併進 backend `main`、frontend `dev`、總覽 `main`，尚未 push）：
+Commit 範圍（皆已以 `--no-ff` 合併進 backend `main`、frontend `dev`、總覽 `main`，已 push 到 GitHub）：
 
 - 總覽 repo（`main..phase-0`）：`0f2fd6a` → `6edc729`，共 10 個 commit
   - `0f2fd6a` test 🔴 compose 骨架 + health（Task 3）
@@ -344,7 +344,7 @@ const authUrl = import.meta.env.VITE_GOOGLE_AUTH_URL || 'https://accounts.google
 
 - 乾淨狀態（`down -v`）：4 個服務 ✅，13 passed, 1 xfailed，exit 0
 - 保留 volume（`down`）：同上；Flyway 回報 `Schema "public" is up to date. No migration necessary.`（Review Focus #1）
-- 尚未驗證：GitHub Actions 上的實際執行（要等 Task 10 Step 5 push 後才跑得到）
+- GitHub Actions：push 後首次執行綠燈（[run 39364922246](https://github.com/nohungry/tripeasy/actions/runs/39364922246)，整個 job 1 分 10 秒，4 個服務 ✅，13 passed, 1 xfailed）。
 
 ## 4. 操作指南
 
@@ -515,7 +515,7 @@ docs/reports/evidence/phase-0/  task3-health-red.txt  task4-storage-red.txt  tas
 - **`xfail` 沒有失敗原因的特異性**：若 Task 7 退化成別種失敗（例如 outcome C）也同樣顯示 XFAIL；P2 修好欄位時改成明確斷言 varchar 錯誤。
 - **舊的 `backend/docker-compose.yml`** 需加 `--profile tools` 才能 `config`（`api` 依賴 profile 內的 `migrate`），P0 不改；根目錄的 compose 不使用它。
 - **`delete_user` 只清 3/11 張子表**（`socialLogin`、`point_record`、`user_level`）。P0 沒有測試寫到 cart / orders / payment / review / hidden_play / auto_setting / favorite / user_coupon，所以不會出錯，但 P2 寫第一個會碰這些表的測試之前必須先擴充（child-first）。
-- **GitHub Actions 尚未實際執行過**（等 push 後才能驗證）；frontend 在乾淨 runner 上冷啟動 `npm ci` 的 180 秒等待視窗未實測。
+- GitHub Actions 首次執行綠燈（[run 39364922246](https://github.com/nohungry/tripeasy/actions/runs/39364922246)）；乾淨 runner 上 frontend 冷啟動 `npm ci` 在 180 秒等待視窗內完成（整個 job 1 分 10 秒）。執行時的提醒：`actions/checkout@v4`、`setup-uv@v3` 屬 Node 20 版本，已被強制改用 Node 24 執行；`ubuntu-latest` 自 2026-10-19 起遷移到 Ubuntu 26。
 
 #### 延後項目（依目標階段分組）
 
