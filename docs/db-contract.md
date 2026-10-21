@@ -54,7 +54,7 @@
     select * from public.tour_base
     ${whereClause}   -- 固定有 通知狀態 = '促銷'；可再加 所屬國家 = $n、所屬地區 = $n、DATE(建立時間) = $n、旅遊名稱 ILIKE $n
     ORDER BY 更新時間 DESC
-    LIMIT $n OFFSET $n+1
+    LIMIT $${paramIndex++} OFFSET $${paramIndex}
     ```
   - `controllers/admin.js:168`（API：`GET /api/v1/admin/change-info`）
     ```sql
@@ -62,7 +62,8 @@
     FROM public."tour_base"
     ${whereSQL}   -- 可加 "上下架狀態" = $n、"所屬國家" = $n、"所屬地區" = $n、"建立時間" = $n、("旅遊名稱" ILIKE $n OR "旅遊描述" ILIKE $n)
     ORDER BY "建立時間" DESC
-    LIMIT $n OFFSET $n+1
+    LIMIT $${index++}
+    OFFSET $${index}
     ```
   - `controllers/product.js:1067`（API：`GET /api/v1/admin/product`）
     ```sql
@@ -70,7 +71,8 @@
     FROM public."tour_base"
     ${whereSQL}   -- 條件同上
     ORDER BY "建立時間" DESC
-    LIMIT $n OFFSET $n+1
+    LIMIT $${index++}
+    OFFSET $${index}
     ```
   - `controllers/cart.js:22`（API：`POST /api/v1/user/trade/cart/:tour_id`）
     ```sql
@@ -78,8 +80,18 @@
       case when 通知狀態 = '促銷' and now() between 促銷開始日期 and 促銷結束日期 then 促銷價錢
       else 價錢 end as price from tour_base tb  WHERE 旅遊編號 = $1
     ```
-  - `controllers/cart.js:105`（API：`DELETE /api/v1/user/trade/cart/:cart_item_id`）：SQL 與 `cart.js:22` 相同，參數是被刪除項目的 `tour_id`。
-  - `controllers/cart.js:159`（API：`PATCH /api/v1/user/trade/cart/:cart_item_id`）：SQL 與 `cart.js:22` 相同，參數是被更新項目的 `tour_id`。
+  - `controllers/cart.js:105`（API：`DELETE /api/v1/user/trade/cart/:cart_item_id`），參數是被刪除項目的 `tour_id`（`deleteRepo.rows[0].tour_id`）：
+    ```sql
+    select
+      case when 通知狀態 = '促銷' and now() between 促銷開始日期 and 促銷結束日期 then 促銷價錢
+      else 價錢 end as price from tour_base tb  WHERE 旅遊編號 = $1
+    ```
+  - `controllers/cart.js:159`（API：`PATCH /api/v1/user/trade/cart/:cart_item_id`），參數是被更新項目的 `tour_id`（`updateRepo.rows[0].tour_id`）：
+    ```sql
+    select
+      case when 通知狀態 = '促銷' and now() between 促銷開始日期 and 促銷結束日期 then 促銷價錢
+      else 價錢 end as price from tour_base tb  WHERE 旅遊編號 = $1
+    ```
   - `controllers/checkout.js:24`（API：`POST /api/v1/user/checkout/order/:cart_id`）
     ```sql
     SELECT * FROM public."tour_base" WHERE 旅遊編號 = $1
@@ -94,10 +106,10 @@
 
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
-  | 旅遊編號 | uuid | `tour.tour_id` | `home.js:16`、`cart.js:22`、`checkout.js:24`、`admin.js:168`、`product.js:1067` | JOIN 條件、WHERE、SELECT 清單 |
+  | 旅遊編號 | uuid | `tour.tour_id` | `home.js:17`、`cart.js:22`、`checkout.js:24`、`admin.js:168`、`product.js:1067` | JOIN 條件、WHERE、SELECT 清單 |
   | 上下架狀態 | smallint | `tour.status`（1 上架、2 下架） | `admin.js:168`、`product.js:1067` | SELECT 清單 + WHERE `"上下架狀態" = $n`（值來自 `req.query.status`） |
   | 通知狀態 | varchar | `notification.type`（'促銷' / '異動'），沒有通知時為 `NULL` | `home.js:34`、`promotion.js:42`、`admin.js:168`、`cart.js:22` | WHERE `通知狀態 = '促銷'`、CASE 條件 |
-  | 旅遊名稱 | varchar | `tour.title` | `promotion.js`、`admin.js:168`、`product.js:1067` | SELECT 清單、ILIKE |
+  | 旅遊名稱 | varchar | `tour.title` | `promotion.js:28`、`admin.js:168`、`product.js:1067` | SELECT 清單、ILIKE |
   | 旅遊描述 | text | `tour.description` | `admin.js:168`、`product.js:1067` | SELECT 清單、ILIKE |
   | 大分類 | varchar | `tour.type`（tourgroup / backpacker） | `home.js:34` | WHERE |
   | 小分類 | varchar | `tour.item`（travel / hotel / food / spot） | `home.js:34` | WHERE |
@@ -105,27 +117,28 @@
   | 所屬地區 | varchar | `tour.region` | 同上 | WHERE、SELECT 清單 |
   | 建立時間 | timestamptz | `tour.created_at` | `admin.js:168`、`product.js:1067`、`promotion.js` | ORDER BY、WHERE（`DATE(建立時間)`） |
   | 更新時間 | timestamptz | `tour.updated_at` | `promotion.js:42` | ORDER BY |
-  | 價錢 | integer | `tour.price` | `cart.js:22`、`checkout.js:24`（`tourRepo.rows[0].價錢`）、`admin.js:168` | CASE 的 else 分支、JS 讀取、SELECT 清單 |
+  | 價錢 | integer | `tour.price` | `cart.js:22`、`checkout.js:49`（`tourRepo.rows[0].價錢`）、`admin.js:168` | CASE 的 else 分支、JS 讀取、SELECT 清單 |
   | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'） | `cart.js:22`、`checkout.js:31` | CASE 的 then 分支 |
   | 促銷開始日期 | timestamp | `notification.start_date` | `cart.js:22` | `now() between` |
   | 促銷結束日期 | timestamp | `notification.end_date` | `cart.js:22` | `now() between` |
   | 旅遊開始日期 | timestamp | `tour.tour_start_date` | `home.js:35` | ORDER BY |
   | 旅遊代表圖 Url | text | `tour.cover_image` | `admin.js:168`、`product.js:1067` | SELECT 清單（欄位名含空格，需雙引號） |
-  | 偏好分類1 / 偏好分類2 / 偏好分類3 | smallint | `tour.preference1/2/3` | `home.js:90–96`、`promotion.js:52–67` | `SELECT *` 之後 JS 讀 `row['偏好分類1']` 並移除 |
+  | 偏好分類1 / 偏好分類2 / 偏好分類3 | smallint | `tour.preference1/2/3` | `home.js:90–96`、`promotion.js:52–59` | `SELECT *` 之後 JS 讀 `row['偏好分類1']` 並移除 |
 
   `SELECT *` 的呼叫端（`home.js`、`promotion.js`）會把每一個欄位原樣放進 response（只拿掉偏好分類 1/2/3、加上「偏好分類」），所以 view 的欄位集合就是 API 輸出欄位集合。本節只列出程式碼可證實需要的欄位。`旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖` 等是否也在 view，程式碼無法證實，見待確認 3。
 
-- **列的語意**：每個行程（`tour`）一列，欄位來自 `tour` 並帶入該行程的通知（`notification`）資料。管理者查詢 `上下架狀態` 有 1/2 兩種值，表示 view 含上架與下架的行程。沒有預設排序（每個呼叫端自己 ORDER BY）。
+- **列的語意**：每個行程（`tour`）一列，欄位來自 `tour` 並帶入該行程的通知（`notification`）資料。推測：管理者查詢 `上下架狀態` 有 1/2 兩種值，表示 view 含上架與下架的行程（是否成立見待確認 1）。沒有預設排序（每個呼叫端自己 ORDER BY）。
 - **邊界**：
   - 沒有通知的行程必須仍會出現，通知相關欄位為 `NULL`（依據：admin 商品清單要列出所有行程；`cart.js` 的 CASE 對 `通知狀態` 為 NULL 時走 `else 價錢`）。因此對 `notification` 必須是 LEFT JOIN。
   - 價錢計算 `now() between 促銷開始日期 and 促銷結束日期` 是 controller 自己判斷，所以 view 本身不需要處理促銷是否在期間內（但見待確認 2）。
+  - **首頁 API 的 controller 行為（影響 `tour_base`、`tour_travel`、`popular`、`most_favorited` 所有首頁查詢）**：`routes/home.js` 的 `/products` 使用的 middleware（`middlewares/home/index.js:7`）驗證時用 `home_Validator.reviewSchema`，只把 `page`、`limit`、`lang` 設為必填，且 `validate()` 回傳的 value（含 default）沒有寫回 `req.query`。`type` 沒帶時 `home.js:12–84` 一個分支都不進，`tourData` 維持 `''`，`home.js:86` 的 `''.rows.length` 丟 TypeError，API 回 500；`type=tourgroup` 沒帶 `item` 同理。契約只記錄，不處理。
   - `checkout.js:31` 在非促銷時回 `0`，而 `cart.js:22` 回 `價錢`，兩者語意不同，view 只要提供原始欄位即可。
 - **信心**：欄位名稱與來源對應：確定（名稱直接出現在 SQL，來源與 V1 欄位一一對應）。是否過濾下架、一行程對多通知的處理：推測，見待確認。
 - **待確認**：
   1. **view 是否只含上架（`status = 1`）的行程？**
      - 程式碼矛盾：`admin.js:168`／`product.js:1067` 用 `上下架狀態` 篩選，表示 view 要含下架；但 `home.js:15/33/49/68` 的公開首頁直接查 `tour_base`，沒有任何上架過濾。
      - 解讀 A：view 含全部行程。後果：首頁（未登入）會列出下架行程；`cart.js`／`checkout.js` 查價也能查到下架行程；admin 功能正常。
-     - 解讀 B：view 只含 `status = 1`。後果：首頁正常，但 `GET /admin/product?status=2` 永遠空、管理者看不到下架行程，也無法再上架（`PATCH /admin/product/status`）。
+     - 解讀 B：view 只含 `status = 1`。後果：首頁正常，但 `GET /admin/product?status=2` 永遠空、管理者清單看不到下架行程。上架 API 本身不受影響（`patch_tourStatus`，`product.js:1332–1341`，直接 `UPDATE public."tour"`，不經過 `tour_base`），只是前端清單裡沒有可選的 `tour_id`。
      - 解讀 C：view 含全部，公開端的過濾交給 `popular` 等 function。後果：`promotion`／`backpacker` 以外各路徑需要逐一確認，`home.js:33` 的 promotion 路徑仍會露出下架行程。
   2. **一個行程有多筆通知（例如同時有「促銷」和「異動」）時，一列要怎麼呈現？**
      - `notification` 無 unique 約束，一個 `tour_id` 可有多列。
@@ -139,7 +152,11 @@
   4. **促銷是否在 view 內就判斷是否在期間內？**
      - 解讀 A：view 不判斷，期間外仍顯示 `通知狀態='促銷'`（依 `cart.js` 自己再檢查 `now() between` 推測）。後果：首頁「促銷」分頁會列出已過期的促銷行程，價格欄位卻是原價。
      - 解讀 B：view 內只在期間內才回 '促銷'。後果：`cart.js` 的檢查變成多餘但無害；首頁促銷分頁不會有過期行程。
-  5. **`旅遊天數`、`旅遊結束日期` 等欄位名稱**：只在 `tour_travel` 的動態 WHERE 出現（見該物件），`tour_base` 無法直接證實，併入待確認 3。
+  5. **`建立時間`／`更新時間` 來自 `tour` 還是 `notification`？**
+     - `promotion.js:42/44` 對「促銷清單」用 `ORDER BY 更新時間 DESC`、`DATE(建立時間) = $n`；`admin.js:168`／`product.js:1067` 的商品清單用 `ORDER BY "建立時間" DESC`。
+     - 解讀 A：兩者都是 `tour.created_at`／`tour.updated_at`。後果：促銷清單依行程本身的更新時間排序；建立日期篩選是行程建立日。
+     - 解讀 B：兩者來自 `notification.created_at`／`updated_at`。後果：促銷清單依促銷（通知）最近修改排序，建立日期是促銷建立日；但商品清單（無通知的行程）的 `建立時間` 會是 `NULL`，排序與篩選失效。
+     - 解讀 C：`建立時間` 取 `tour.created_at`，`更新時間` 取 `GREATEST(tour.updated_at, notification.updated_at)`。後果：促銷清單排序反映促銷異動，商品清單不受影響；需另外確認是否合理。
 
 ### `tour_travel`
 
@@ -180,9 +197,9 @@
     ) AS sub
     ${whereSQL}
     ORDER BY ${sortBy} ${order}
-    LIMIT $n OFFSET $n+1
+    LIMIT $${params.length + 2} OFFSET $${params.length + 3}
     ```
-    `whereSQL` 由 `buildDynamicTourSQL`（`product.js:8–97`）動態組成，可能出現的條件：`"大分類" = $n`、`"小分類" = $n`、`$n = ANY (ARRAY["偏好分類1","偏好分類2","偏好分類3"])`、`"所屬國家" ILIKE $n`、`"所屬地區" ILIKE $n`、`"價錢" >= $n`、`"價錢" <= $n`、`"旅遊開始日期" >= $n`、`"旅遊結束日期" <= $n`、`"旅遊天數" = $n`、`("旅遊名稱" ILIKE $n OR "旅遊標語" ILIKE $n)`。`sortBy` 只會是 `"價錢"` 或 `"旅遊開始日期"`。
+    `whereSQL` 由 `buildDynamicTourSQL`（`product.js:8–95`）動態組成，可能出現的條件：`"大分類" = $n`、`"小分類" = $n`、`$n = ANY (ARRAY["偏好分類1","偏好分類2","偏好分類3"])`、`"所屬國家" ILIKE $n`、`"所屬地區" ILIKE $n`、`"價錢" >= $n`、`"價錢" <= $n`、`"旅遊開始日期" >= $n`、`"旅遊結束日期" <= $n`、`"旅遊天數" = $n`、`("旅遊名稱" ILIKE $n OR "旅遊標語" ILIKE $n)`。`sortBy` 只會是 `"價錢"` 或 `"旅遊開始日期"`。
 - **參數**（function 才有）：
 
   | 參數 | 型別 | 來源 | 語意 |
@@ -215,6 +232,7 @@
   - 傳入 `NULL`（未登入）時 `product.js:116` 仍會呼叫它，所以 function 必須接受 `NULL` 並回傳全部行程（`收藏狀態` 應為 `false` 或 `NULL`，見待確認 3）。
   - 沒有收藏紀錄的行程要保留（相當於 `LEFT JOIN favorite` 或 `EXISTS`），否則商品搜尋會漏行程。
   - 與 `popular`／`most_favorited` 是 `INNER JOIN`，沒出現在後者結果的行程不會出現在首頁。
+  - 首頁 API 沒帶 `type` 時整個回 500，見 `tour_base` 邊界（`middlewares/home/index.js:7` 用 `reviewSchema`，default 沒寫回 `req.query`）。
 - **信心**：參數與用於過濾／排序的欄位：確定。`收藏狀態` 與是否過濾上架：推測。
 - **待確認**：
   1. **function 名稱是 travel，但被用在所有種類（旅行團 travel、背包客 hotel/food/spot）。**
@@ -262,14 +280,17 @@
 
 - **列的語意**：符合 (大分類, 小分類) 的行程，各一列，附上購買排行名次。
 - **邊界**：
+  - 首頁 API 沒帶 `type` 時整個回 500，不會走到本 function，見 `tour_base` 邊界。
   - 欄位名 `tour_id` 是英文，與其他全部欄位的中文命名不同，但程式碼寫死 `tf.tour_id`，必須照做。
   - 因為是 `INNER JOIN`，沒有出現在此 function 結果裡的行程不會出現在首頁熱門分頁。
-- **信心**：參數順序與輸出欄位名：確定（值與欄位名稱直接出現在程式碼）。排名計算方式：推測（只由 `購買排行` 一詞推測）。
+- **信心**：參數順序與輸出欄位名：確定（值與欄位名稱直接出現在程式碼）。排名計算方式：推測（只由 `購買排行` 一詞推測）；`bigint` 型別是依 window function／COUNT 的回傳型別推測，程式碼不讀它的型別。
 - **待確認**：
   1. **「購買」怎麼算？**
      - 解讀 A：數 `order_item` 全部列。後果：未付款、已取消的訂單也計入，排行被灌水。
      - 解讀 B：只算 `payment_status = 1`（已付款）。後果：新 DB／seed 若沒有已付款訂單，熱門分頁整個為空；P1b 的 seed 需要包含已付款訂單。
-     - 解讀 C：付款與否都算，但排除已取消／已退款（2、3）。後果：介於 A、B 之間。
+     - `order_item.payment_status` 的值：-1 資料剛建立、0 資料填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時。`checkout.js:47` 建立 `order_item` 時一律寫入 -1，所以解讀 A 連尚未填寫就放棄的結帳也會計入。
+     - 解讀 C：只排除 2（已取消）、3（已退款）、4（付款逾時），保留 -1、0、1。後果：仍計入未付款的訂單。
+     - 解讀 D：只算 0 與 1（已填寫完成、已付款）。後果：排除剛建立與所有失敗狀態，介於 A、B 之間。
   2. **沒有任何購買的行程要不要出現？**
      - 解讀 A：出現，排在最後（`LEFT JOIN`，排行用計數 0 排序）。後果：新 DB 熱門分頁仍有資料。
      - 解讀 B：不出現（`INNER JOIN order_item`）。後果：沒有訂單時首頁熱門分頁回 200「查無資料」。
@@ -307,7 +328,7 @@
 
 - **列的語意**：符合 (大分類, 小分類) 的行程，各一列，附上被收藏次數的排行。只在 `type=tourgroup&item=most_favorited` 使用，因此程式碼只會用 `('tourgroup','travel')` 呼叫。
 - **邊界**：與 `tour_travel_popular` 相同——欄位 `tour_id` 為英文；`INNER JOIN` 決定首頁是否出現。
-- **信心**：參數與欄位名：確定。排名計算：推測。
+- **信心**：參數與欄位名：確定。排名計算：推測；`bigint` 型別為推測（依 window function／COUNT 的回傳型別）。
 - **待確認**：
   1. **沒有任何人收藏的行程要不要出現？**
      - 解讀 A：出現，排在最後。後果：新 DB 也有資料。
@@ -365,7 +386,9 @@
 - **邊界**：
   - 欄位命名不一致，必須照程式碼拼字：`偏好設定分類 1`（有空格，與 `tour_base` 的 `偏好分類1` 不同）、`特色圖1 url`（小寫）、`旅遊圖1 Url`（大寫）、`Google Map Url`。
   - `促銷價錢` 為 `NULL` 時 `is_promoted` 為 `false`（`product.js:359`），所以沒有促銷時必須是 `NULL`，不能是 `0`。
-  - 找不到列時，`product.js:209` 讀 `rows[0]["偏好設定分類 1"]` 會先丟 TypeError（controller 的 `rowCount > 0` 檢查在其後），API 會回 500 而不是「查無此旅遊項目」。這是 controller 行為，契約不處理，只記錄。
+  - **找不到行程時的 controller 行為**（`product.js:178–202`）：先查 `tour` 的 `status = 1`；查不到（tour_id 不存在、已下架）或 type/item 不在對照表（例如 tourgroup 但 item 不是 travel）時 `detailTable` 維持 `''`，SQL 變成 `SELECT * FROM ($2) WHERE 旅遊編號 = $1`（`product.js:202`），PostgreSQL 回語法錯誤，API 回 500，永遠回不到「查無此旅遊項目」。`tour_hotel`、`tour_restaurant` 共用這段，同樣適用。
+  - 行程存在、但 function 回 0 列時，`product.js:209` 讀 `rows[0]["偏好設定分類 1"]` 會先丟 TypeError（`rowCount > 0` 檢查在 `product.js:215`，在其後），API 一樣回 500。這只會在 `status = 1` 的行程被 function 濾掉（例如 `spot` 沒有 `tour_detail` 列而 `INNER JOIN`）時發生。
+  - 以上為 controller 行為，契約不處理，只記錄。
   - 對 `tour_detail` 必須是 `INNER JOIN` 或 `LEFT JOIN`：`spot` 也用此 function 並讀特色圖（`product.js:335`），若 `spot` 行程沒有 `tour_detail` 列，`INNER JOIN` 會使整列消失（500），`LEFT JOIN` 則特色圖為 `NULL`。
 - **信心**：欄位名稱與來源對應：確定。通知相關欄位的合併方式、`spot` 與 `tour_detail` 的關係：推測。
 - **待確認**：
@@ -376,7 +399,7 @@
   2. **`spot` 行程是否保證有 `tour_detail` 列？**
      - 解讀 A：保證（`INNER JOIN`）。後果：seed 與新增商品流程必須為每個 spot 建 `tour_detail`，否則詳情頁 500。
      - 解讀 B：不保證（`LEFT JOIN`）。後果：沒有 `tour_detail` 時特色圖、行程規劃為 `NULL`，頁面可顯示。
-  3. **只回傳上架行程？** 前面 `product.js:194` 已先以 `status = 1` 過濾，因此 function 內是否過濾不影響此 API，但影響其他未來呼叫端。解讀 A：過濾；解讀 B：不過濾。
+  3. **只回傳上架行程？** 前面 `product.js:178–183` 已先以 `status = 1` 過濾，因此 function 內是否過濾不影響此 API，但影響其他未來呼叫端。解讀 A：過濾；解讀 B：不過濾。
   4. **`收藏狀態` 在未登入時是 `false` 還是 `NULL`**：同 `tour_travel` 待確認 3。
 
 ### `tour_hotel`
@@ -470,7 +493,7 @@
 
 - **列的語意**：同一個 function 的一列同時要供 `menu[]` 和 `opening[]` 使用——`product.js:263` 與 `product.js:268` 都是 `tourDetailsRepo.rows.map(...)`，各自讀同一組列的不同欄位。餐廳層級欄位在每列重複。
 - **邊界**：
-  - 依賴 V1 的 `restaurant_business`／`restaurant_menu`；V1 另外有 `restaurant_business_parsed`（已列在 `docs/inventory.md`，屬 C 組或其他 task 的物件），本物件是否使用它無法由 A 組程式碼證實。
+  - 依賴 V1 的 `restaurant_business`／`restaurant_menu`；程式碼另外查詢 `restaurant_business_parsed`（V1／V2 沒有，是 B 組物件，使用於 `middlewares/cart/index.js`），本物件是否使用它無法由 A 組程式碼證實。
   - 欄位命名必須照拼字：`官網 url`（小寫）、`官網介紹`、`餐廳人員限制`。
 - **信心**：欄位名稱：確定；列的展開方式：推測（見待確認 1）。
 - **待確認**：
@@ -568,7 +591,7 @@
   | 評分 | integer | `review.rating` |
   | 評論內容 | text | `review.content` |
 
-- **列的語意**：「網站整體好評」——`review` 中 `type = 'web'` 的評論（V1 註解：`type` 可以是 web / travel / hotel / food / spot；路由註解 `[GET] 編號 27 : 使用者查看此網頁好評內容`）。每則評論一列，附上評論者的名稱與等級。預設排序由 controller 決定（`評論時間 DESC`）。
+- **列的語意**：（推測，見待確認 2）「網站整體好評」——`review` 中 `type = 'web'` 的評論（V1 註解：`type` 可以是 web / travel / hotel / food / spot；路由註解 `[GET] 編號 27 : 使用者查看此網頁好評內容`）。每則評論一列，附上評論者的名稱與等級。預設排序由 controller 決定（`評論時間 DESC`）。
 - **邊界**：
   - `review.tour_id` 在 V1 可為 `NULL`，網站評論（`type='web'`）通常沒有 `tour_id`，所以 view 不能要求 `tour_id` 存在。
   - 評論者需有 `user_level` 才會出現的規則，同 `user_user_level` 待確認 1。
