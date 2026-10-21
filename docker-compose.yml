@@ -25,11 +25,12 @@ services:
       - '-url=jdbc:postgresql://postgres:5432/${POSTGRES_DB_NAME}'
       - '-user=${POSTGRES_DB_USER}'
       - '-password=${POSTGRES_DB_PASSWORD}'
-      - '-locations=filesystem:/flyway/sql'
+      - '-locations=filesystem:/flyway/sql,filesystem:/flyway/seed'
       - '-connectRetries=10'
       - 'migrate'
     volumes:
       - ./backend/migrations:/flyway/sql:ro
+      - ./db/seed:/flyway/seed:ro
 
   mailpit:
     image: axllent/mailpit:v1.20
