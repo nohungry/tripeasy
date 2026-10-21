@@ -96,12 +96,19 @@ def test_seed_admin_passes_authorize_roles(api):
     assert r.status_code == 404, r.text  # 過了 authRole('admin')，走到「查無此項目」
 
 
-def test_seed_dates_are_relative_to_today(db):
+def test_seed_dates_are_relative_to_load_day(db):
+    # 日期在 seed 載入那天平移一次；之後 ON CONFLICT DO NOTHING 不會再更新，
+    # 所以基準是「載入那天」，不是「今天」。保留 volume 太久，資料自然會過期
+    (load_day,) = db.execute(
+        "SELECT min(installed_on)::date FROM flyway_schema_history"
+        " WHERE script = 'R__seed.sql' AND success"
+    ).fetchone()
+    assert load_day is not None, "Flyway 沒有載入過 seed"
     (past_tours,) = db.execute(
-        "SELECT count(*) FROM tour WHERE tour_start_date < CURRENT_DATE"
+        "SELECT count(*) FROM tour WHERE tour_start_date < %s", (load_day,)
     ).fetchone()
     (expired_coupons,) = db.execute(
-        "SELECT count(*) FROM coupon WHERE expire_date < CURRENT_DATE"
+        "SELECT count(*) FROM coupon WHERE expire_date < %s", (load_day,)
     ).fetchone()
     assert (past_tours, expired_coupons) == (0, 0)
 

@@ -3,6 +3,7 @@
 -- 只在本機與展示環境載入（compose 的 Flyway -locations 加上 db/seed），正式環境不載入。
 -- 每個 INSERT 都是 ON CONFLICT DO NOTHING：重跑時既有的資料不會被更新。
 -- 改了既有資料列的內容，要 docker compose down -v 重建 DB 才看得到。
+-- 日期以 seed 載入那天為基準（CURRENT_DATE 在載入時計算一次）；volume 保留太久，行程和優惠券會漸漸過期，要 down -v 重建。
 
 /* ------------------ 產生假資料 -----------------------  */
 
