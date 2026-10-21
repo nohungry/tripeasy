@@ -30,7 +30,7 @@
 2. **用 seed 帳號真的登入**：seed 的密碼 hash 必須是真的 bcrypt，用 `.env.example` 註解寫的明文密碼要能登入成功。→ Task 3 測試 `test_seed_user_can_login`
 3. **seed 的 admin 打 admin API**：角色要跟 `authRole('admin')` / `authRole('User')` 的大小寫一致，不能因為 fakedata 的 `'user'` 被擋成 403。→ Task 3 測試 `test_seed_admin_passes_authorize_roles`
 4. **拆開 router 之後的前綴交叉**：admin 的路由不能再出現在 `/user/product/search` 底下，公開的路由也不能出現在 `/admin/product` 底下。→ Task 1 測試 `test_admin_routes_not_exposed_under_user_prefix`、`test_public_routes_not_exposed_under_admin_prefix`
-5. **seed 載入的那一天就是「今天」**：行程日期和優惠券期限要以今天為基準，落在未來，不能一載入就是過期資料，否則訂購和折扣的流程根本走不到。→ Task 3 測試 `test_seed_dates_are_relative_to_today`
+5. **seed 載入的那一天就是「今天」**：行程日期和優惠券期限要以載入那天為基準，落在未來，不能一載入就是過期資料（保留 volume 久了自然過期，這時用 down -v 重建），否則訂購和折扣的流程根本走不到。→ Task 3 測試 `test_seed_dates_are_relative_to_load_day`
 
 ---
 
@@ -607,12 +607,19 @@ def test_seed_admin_passes_authorize_roles(api):
     assert r.status_code == 404, r.text  # 過了 authRole('admin')，走到「查無此項目」
 
 
-def test_seed_dates_are_relative_to_today(db):
+def test_seed_dates_are_relative_to_load_day(db):
+    # 日期在 seed 載入那天平移一次；之後 ON CONFLICT DO NOTHING 不會再更新，
+    # 所以基準是「載入那天」，不是「今天」。保留 volume 太久，資料自然會過期
+    (load_day,) = db.execute(
+        "SELECT min(installed_on)::date FROM flyway_schema_history"
+        " WHERE script = 'R__seed.sql' AND success"
+    ).fetchone()
+    assert load_day is not None, "Flyway 沒有載入過 seed"
     (past_tours,) = db.execute(
-        "SELECT count(*) FROM tour WHERE tour_start_date < CURRENT_DATE"
+        "SELECT count(*) FROM tour WHERE tour_start_date < %s", (load_day,)
     ).fetchone()
     (expired_coupons,) = db.execute(
-        "SELECT count(*) FROM coupon WHERE expire_date < CURRENT_DATE"
+        "SELECT count(*) FROM coupon WHERE expire_date < %s", (load_day,)
     ).fetchone()
     assert (past_tours, expired_coupons) == (0, 0)
 
@@ -635,7 +642,7 @@ uv run pytest tests/test_seed.py -v 2>&1 | sed "s#$PWD/##g; s#$PWD#.#g" | tee do
 - `test_seed_user_can_login`：假的 hash，登入失敗（不是 200）
 - `test_seed_roles_match_authorize_roles`：alice、carol 是 `'user'`
 - `test_seed_admin_passes_authorize_roles`：登入失敗
-- `test_seed_dates_are_relative_to_today`：日期都在 2025 年
+- `test_seed_dates_are_relative_to_load_day`：日期都在 2025 年
 - `test_seed_uses_local_placeholder_images`：seed 裡還是 `https://example.com/images/...`
 
 ```bash
@@ -719,6 +726,7 @@ HEADER = """\
 -- 只在本機與展示環境載入（compose 的 Flyway -locations 加上 db/seed），正式環境不載入。
 -- 每個 INSERT 都是 ON CONFLICT DO NOTHING：重跑時既有的資料不會被更新。
 -- 改了既有資料列的內容，要 docker compose down -v 重建 DB 才看得到。
+-- 日期以 seed 載入那天為基準（CURRENT_DATE 在載入時計算一次）；volume 保留太久，行程和優惠券會漸漸過期，要 down -v 重建。
 
 """
 
