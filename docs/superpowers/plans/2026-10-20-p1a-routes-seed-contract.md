@@ -403,6 +403,7 @@ git commit -m "test: 🔴 本機 DB 沒有任何 seed 資料"
 
 每個轉換都 assert 次數：來源檔一旦跟預期不同，就停下來，而不是默默產生錯的 seed。
 """
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -411,6 +412,12 @@ TARGET = HERE.parent / "seed" / "R__seed.sql"
 
 DATA_MARKER = "/* ------------------ 產生假資料"
 INSERT_COUNT = 24
+
+# review / hidden_play / region / favorite 的主鍵用 uuid_generate_v4() 產生，
+# 重跑時每次都是新的值，ON CONFLICT 撞不到 → 資料變兩倍。產生 seed 時換成固定的 uuid
+GENERATED_ID = "uuid_generate_v4()"
+GENERATED_ID_COUNT = 110
+SEED_ID_NAMESPACE = uuid.UUID("6f1c2b8e-0d4a-4c1e-9b7a-3e5f2a1d8c90")
 
 HEADER = """\
 -- 本檔由 db/seed-build/build_seed.py 產生，請勿手動修改；要改請改腳本後重新產生。
@@ -439,10 +446,23 @@ def add_on_conflict(text: str) -> str:
     return "\n".join(lines)
 
 
+def fix_generated_ids(text: str) -> str:
+    # 依出現順序給固定的 uuid5，來源檔不變，產生的 id 就不變
+    parts = text.split(GENERATED_ID)
+    n = len(parts) - 1
+    assert n == GENERATED_ID_COUNT, f"{GENERATED_ID} 有 {n} 個，預期 {GENERATED_ID_COUNT}"
+    out = [parts[0]]
+    for i, part in enumerate(parts[1:]):
+        out.append(f"'{uuid.uuid5(SEED_ID_NAMESPACE, f'seed-row-{i}')}'")
+        out.append(part)
+    return "".join(out)
+
+
 def build(text: str) -> str:
     text = text.replace("\r\n", "\n")
     text = drop_delete_block(text)
     text = add_on_conflict(text)
+    text = fix_generated_ids(text)
     assert "${" not in text, "Flyway 會把 ${...} 當成 placeholder"
     return HEADER + text
 
@@ -480,6 +500,7 @@ grep -c "ON CONFLICT DO NOTHING;" db/seed/R__seed.sql
 
 ```bash
 docker compose up -d flyway
+docker compose wait flyway   # flyway 是一次性的 service，等它跑完再測，不然會搶在 seed 載入前
 docker compose logs flyway --tail=5
 uv run pytest tests/test_seed.py -v
 uv run pytest -q
@@ -648,6 +669,7 @@ git commit -m "test: 🔴 seed 帳號無法登入、角色大小寫不符、日�
 每個轉換都 assert 次數：來源檔一旦跟預期不同，就停下來，而不是默默產生錯的 seed。
 """
 import re
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -656,6 +678,12 @@ TARGET = HERE.parent / "seed" / "R__seed.sql"
 
 DATA_MARKER = "/* ------------------ 產生假資料"
 INSERT_COUNT = 24
+
+# review / hidden_play / region / favorite 的主鍵用 uuid_generate_v4() 產生，
+# 重跑時每次都是新的值，ON CONFLICT 撞不到 → 資料變兩倍。產生 seed 時換成固定的 uuid
+GENERATED_ID = "uuid_generate_v4()"
+GENERATED_ID_COUNT = 110
+SEED_ID_NAMESPACE = uuid.UUID("6f1c2b8e-0d4a-4c1e-9b7a-3e5f2a1d8c90")
 
 # 明文 Tripeasy123（寫在 .env.example 的註解）。bcrypt cost 10，跟 backend 註冊時相同
 SEED_PASSWORD_HASH = "$2b$10$9Bd0v0X7eLfhzEL5BC8pROe7OWUfOq4rFDMi.8K/Gg7prMuyn8OKi"
@@ -703,6 +731,18 @@ def add_on_conflict(text: str) -> str:
     return "\n".join(lines)
 
 
+def fix_generated_ids(text: str) -> str:
+    # 依出現順序給固定的 uuid5，來源檔不變，產生的 id 就不變
+    parts = text.split(GENERATED_ID)
+    n = len(parts) - 1
+    assert n == GENERATED_ID_COUNT, f"{GENERATED_ID} 有 {n} 個，預期 {GENERATED_ID_COUNT}"
+    out = [parts[0]]
+    for i, part in enumerate(parts[1:]):
+        out.append(f"'{uuid.uuid5(SEED_ID_NAMESPACE, f'seed-row-{i}')}'")
+        out.append(part)
+    return "".join(out)
+
+
 def fix_roles(text: str) -> str:
     # 程式用 authRole('User') / authRole('admin')，fakedata 寫的是 'user'
     text, n = re.subn(r"^(\s*)'user',(\s*)$", r"\1'User',\2", text, flags=re.M)
@@ -736,6 +776,7 @@ def build(text: str) -> str:
     text = text.replace("\r\n", "\n")
     text = drop_delete_block(text)
     text = add_on_conflict(text)
+    text = fix_generated_ids(text)
     text = fix_roles(text)
     text = fix_password_hashes(text)
     text = shift_dates(text)
