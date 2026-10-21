@@ -40,18 +40,32 @@ def api():
     session.close()
 
 
-@pytest.fixture(scope="session")
-def db():
-    conn = psycopg.connect(
+def _db_params() -> dict:
+    return dict(
         host=os.getenv("TEST_DB_HOST", "localhost"),
         port=int(os.getenv("TEST_DB_PORT", "5432")),
         user=os.environ["POSTGRES_DB_USER"],
         password=os.environ["POSTGRES_DB_PASSWORD"],
         dbname=os.environ["POSTGRES_DB_NAME"],
-        autocommit=True,
     )
+
+
+@pytest.fixture(scope="session")
+def db():
+    conn = psycopg.connect(**_db_params(), autocommit=True)
     yield conn
     conn.close()
+
+
+@pytest.fixture
+def tx():
+    """不自動 commit 的連線。測試結束一律 rollback，不留下任何資料。"""
+    conn = psycopg.connect(**_db_params())
+    try:
+        yield conn
+    finally:
+        conn.rollback()
+        conn.close()
 
 
 def delete_user(db, user_id: str) -> None:
