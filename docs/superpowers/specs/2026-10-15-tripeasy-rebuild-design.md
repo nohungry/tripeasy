@@ -12,6 +12,7 @@
 
 ### 已定案的原則
 - **沿用既有程式碼**：不重寫，也不換技術棧（Express 4 + raw `pg`、Vue 3 + Vite）。
+- **重構規則**（2026-10-21 使用者確認）：P1 不改 controller（契約要從它反推）。P2 起允許重構，條件是：先有測試覆蓋相關行為、在計畫裡列成獨立的步驟或 Task（實作者不得自行決定重構）、用獨立的 commit 和修 bug 分開。動到 P1 建立的 view / 函式時，要同時更新 `db-contract.md` 和契約測試。
 - 測試技術棧：pytest + requests（API）、psycopg（DB）、Playwright Python（E2E）。**JS 元件測試不做。**
 - 刻意展示的測試能力：DB 層驗證、migration / DB 契約測試、金流簽章驗證、API 契約測試。
 
