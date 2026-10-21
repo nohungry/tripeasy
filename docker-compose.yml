@@ -68,6 +68,7 @@ services:
       - ./backend:/usr/backend
       - /usr/backend/node_modules
       - uploads:/usr/backend/uploads
+      - ./db/seed-images:/usr/backend/uploads/seed:ro
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost:${PORT:-3000}/api/v1/health']
       interval: 5s
