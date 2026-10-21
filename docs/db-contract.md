@@ -116,7 +116,7 @@
   | 所屬國家 | varchar | `tour.country` | `promotion.js`、`admin.js:168`、`product.js:1067` | WHERE、SELECT 清單 |
   | 所屬地區 | varchar | `tour.region` | 同上 | WHERE、SELECT 清單 |
   | 建立時間 | timestamptz | `tour.created_at` | `admin.js:168`、`product.js:1067`、`promotion.js` | ORDER BY、WHERE（`DATE(建立時間)`） |
-  | 更新時間 | timestamptz | `tour.updated_at` | `promotion.js:42` | ORDER BY |
+  | 更新時間 | timestamptz | `tour.updated_at` | `promotion.js:44` | ORDER BY |
   | 價錢 | integer | `tour.price` | `cart.js:22`、`checkout.js:49`（`tourRepo.rows[0].價錢`）、`admin.js:168` | CASE 的 else 分支、JS 讀取、SELECT 清單 |
   | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'） | `cart.js:22`、`checkout.js:31` | CASE 的 then 分支 |
   | 促銷開始日期 | timestamp | `notification.start_date` | `cart.js:22` | `now() between` |
@@ -153,7 +153,7 @@
      - 解讀 A：view 不判斷，期間外仍顯示 `通知狀態='促銷'`（依 `cart.js` 自己再檢查 `now() between` 推測）。後果：首頁「促銷」分頁會列出已過期的促銷行程，價格欄位卻是原價。
      - 解讀 B：view 內只在期間內才回 '促銷'。後果：`cart.js` 的檢查變成多餘但無害；首頁促銷分頁不會有過期行程。
   5. **`建立時間`／`更新時間` 來自 `tour` 還是 `notification`？**
-     - `promotion.js:42/44` 對「促銷清單」用 `ORDER BY 更新時間 DESC`、`DATE(建立時間) = $n`；`admin.js:168`／`product.js:1067` 的商品清單用 `ORDER BY "建立時間" DESC`。
+     - `promotion.js:44/23` 對「促銷清單」用 `ORDER BY 更新時間 DESC`、`DATE(建立時間) = $n`；`admin.js:168`／`product.js:1067` 的商品清單用 `ORDER BY "建立時間" DESC`。
      - 解讀 A：兩者都是 `tour.created_at`／`tour.updated_at`。後果：促銷清單依行程本身的更新時間排序；建立日期篩選是行程建立日。
      - 解讀 B：兩者來自 `notification.created_at`／`updated_at`。後果：促銷清單依促銷（通知）最近修改排序，建立日期是促銷建立日；但商品清單（無通知的行程）的 `建立時間` 會是 `NULL`，排序與篩選失效。
      - 解讀 C：`建立時間` 取 `tour.created_at`，`更新時間` 取 `GREATEST(tour.updated_at, notification.updated_at)`。後果：促銷清單排序反映促銷異動，商品清單不受影響；需另外確認是否合理。
@@ -288,7 +288,7 @@
   1. **「購買」怎麼算？**
      - 解讀 A：數 `order_item` 全部列。後果：未付款、已取消的訂單也計入，排行被灌水。
      - 解讀 B：只算 `payment_status = 1`（已付款）。後果：新 DB／seed 若沒有已付款訂單，熱門分頁整個為空；P1b 的 seed 需要包含已付款訂單。
-     - `order_item.payment_status` 的值：-1 資料剛建立、0 資料填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時。`checkout.js:47` 建立 `order_item` 時一律寫入 -1，所以解讀 A 連尚未填寫就放棄的結帳也會計入。
+     - `order_item.payment_status` 的值：-1 資料剛建立、0 資料填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時。`checkout.js:48` 建立 `order_item` 時一律寫入 -1，所以解讀 A 連尚未填寫就放棄的結帳也會計入。
      - 解讀 C：只排除 2（已取消）、3（已退款）、4（付款逾時），保留 -1、0、1。後果：仍計入未付款的訂單。
      - 解讀 D：只算 0 與 1（已填寫完成、已付款）。後果：排除剛建立與所有失敗狀態，介於 A、B 之間。
   2. **沒有任何購買的行程要不要出現？**
