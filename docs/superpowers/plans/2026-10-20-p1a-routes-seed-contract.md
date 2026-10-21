@@ -506,7 +506,7 @@ uv run pytest tests/test_seed.py -v
 uv run pytest -q
 ```
 預期：
-- Flyway log 有 `Migrating schema "public" with repeatable migration "seed"` 和 `Successfully applied 1 migration`。
+- Flyway log 有 `Migrating schema "public" with repeatable migration "seed"` 和 `Successfully applied 1 migration`（從空 DB 開始時是 3：V1、V2、seed）。
 - `test_seed.py` 3 個 PASS。
 - 完整測試 22 passed、1 xfailed。
 
@@ -549,6 +549,7 @@ git commit -m "feat: 🟢 fakedata 改寫成可重跑的 Flyway repeatable seed"
 檔案開頭的 import 區改成：
 ```python
 """spec 3.2：fakedata 改寫成 Flyway repeatable migration，可以重複執行。"""
+import importlib.util
 import re
 import uuid
 
@@ -562,6 +563,16 @@ from conftest import ROOT
 SEED_PASSWORD = "Tripeasy123"  # 跟 .env.example 的註解一致
 SEED_USERS = {"alice@example.com": "User", "bob@example.com": "admin", "carol@example.com": "User"}
 IMAGE_NAMES = ("tour", "feature", "hidden", "badge", "avatar")
+BUILD_SCRIPT = ROOT / "db" / "seed-build" / "build_seed.py"
+
+
+def test_seed_file_is_generated_from_source():
+    # R__seed.sql 不能手動改：內容必須跟 build_seed.py 從來源檔產生的結果完全相同
+    spec = importlib.util.spec_from_file_location("build_seed", BUILD_SCRIPT)
+    build_seed = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(build_seed)
+    expected = build_seed.build(build_seed.SOURCE.read_text(encoding="utf-8"))
+    assert SEED.read_text(encoding="utf-8") == expected
 
 
 def _login(api, email):
@@ -622,7 +633,7 @@ def test_seed_uses_local_placeholder_images(api):
 ```bash
 uv run pytest tests/test_seed.py -v 2>&1 | sed "s#$PWD/##g; s#$PWD#.#g" | tee docs/reports/evidence/phase-1/task3-seed-data-red.txt
 ```
-預期：Task 2 的 3 個 PASS，新的 5 個 FAIL：
+預期：Task 2 的 3 個和 `test_seed_file_is_generated_from_source` PASS（回歸釘：Step 4 改完腳本、重新產生之後也要維持），新的 5 個 FAIL：
 - `test_seed_user_can_login`：假的 hash，登入失敗（不是 200）
 - `test_seed_roles_match_authorize_roles`：alice、carol 是 `'user'`
 - `test_seed_admin_passes_authorize_roles`：登入失敗
@@ -810,25 +821,36 @@ uv run python db/seed-build/build_seed.py
 #   密碼都是 Tripeasy123
 ```
 
-- [ ] **Step 6: 重建 DB，確認測試通過**
+- [ ] **Step 6: Review Focus #1：保留 volume，讓 Flyway 重跑內容改過的 seed**
 
-seed 用 `ON CONFLICT DO NOTHING`，既有資料列不會被更新，所以這一步要清掉 volume：
+R__seed.sql 的 checksum 變了，Flyway 會在既有資料上重跑整份 seed。所有 INSERT 都要撞到既有資料而略過，migrate 必須成功：
 ```bash
-docker compose down -v
+docker compose up -d flyway
+docker compose wait flyway
+docker compose logs flyway --tail=5
+uv run pytest tests/test_seed.py::test_seed_is_rerunnable -v
+```
+預期：Flyway log 有 `Migrating schema "public" with repeatable migration "seed"` 和 `Successfully applied 1 migration`，wait 的結束碼是 0；`test_seed_is_rerunnable` PASS（筆數沒有變）。
+
+- [ ] **Step 7: 重建 DB，確認測試通過**
+
+seed 用 `ON CONFLICT DO NOTHING`，既有資料列不會被更新，所以這一步要清掉 volume。**`docker compose down -v` 會被權限機制擋下，由使用者自己執行**（`! docker compose down -v`）；實作者在這裡停下來回報，等使用者執行完再繼續：
+```bash
+docker compose down -v      # 使用者執行
 scripts/ci.sh 2>&1 | tail -5
 uv run pytest tests/test_seed.py -v
 ```
-預期：4 個服務都 ✅；`test_seed.py` 8 個 PASS；完整測試 27 passed、1 xfailed。
+預期：4 個服務都 ✅；`test_seed.py` 9 個 PASS；完整測試 28 passed、1 xfailed。
 
-- [ ] **Step 7: 保留 volume 再跑一次**
+- [ ] **Step 8: 保留 volume 再跑一次**
 
 ```bash
 docker compose down        # 不加 -v
 scripts/ci.sh 2>&1 | tail -5
 ```
-預期：27 passed、1 xfailed。
+預期：28 passed、1 xfailed。
 
-- [ ] **Step 8: Commit 綠燈（總覽 repo）**
+- [ ] **Step 9: Commit 綠燈（總覽 repo）**
 
 ```bash
 git add db/seed-build/build_seed.py db/seed/R__seed.sql db/seed-images/tour.svg db/seed-images/feature.svg db/seed-images/hidden.svg db/seed-images/badge.svg db/seed-images/avatar.svg docker-compose.yml .env.example
