@@ -1,0 +1,94 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 6 items
+
+tests/test_product_routes.py::test_guest_can_reach_public_tour_detail FAILED [ 16%]
+tests/test_product_routes.py::test_guest_tour_list_is_not_blocked_by_admin_auth FAILED [ 33%]
+tests/test_product_routes.py::test_admin_status_route_is_reachable FAILED [ 50%]
+tests/test_product_routes.py::test_admin_detail_still_requires_admin PASSED [ 66%]
+tests/test_product_routes.py::test_admin_routes_not_exposed_under_user_prefix FAILED [ 83%]
+tests/test_product_routes.py::test_public_routes_not_exposed_under_admin_prefix FAILED [100%]
+
+=================================== FAILURES ===================================
+___________________ test_guest_can_reach_public_tour_detail ____________________
+
+api = <conftest.Api object at 0x7cfd427d42f0>
+
+    def test_guest_can_reach_public_tour_detail(api):
+        # detailsSchema 規定 lang 必填
+        r = api.get(f"{PUBLIC}/{uuid.uuid4()}", params={"lang": "zh-TW"})
+        # 走到公開版的 middleware：查無此行程，而不是被 admin 的 auth 擋成 401
+>       assert r.status_code == 404, r.text
+E       AssertionError: {"status":"failed","message":"請先登入"}
+E       assert 401 == 404
+E        +  where 401 = <Response [401]>.status_code
+
+tests/test_product_routes.py:19: AssertionError
+______________ test_guest_tour_list_is_not_blocked_by_admin_auth _______________
+
+api = <conftest.Api object at 0x7cfd427d42f0>
+
+    def test_guest_tour_list_is_not_blocked_by_admin_auth(api):
+        r = api.get(PUBLIC)
+        # P1a 還沒有 tour_base view，所以這裡可能是 500；P1b 的冒煙測試會要求 200
+>       assert r.status_code not in (401, 403), r.text
+E       AssertionError: {"status":"failed","message":"請先登入"}
+E       assert 401 not in (401, 403)
+E        +  where 401 = <Response [401]>.status_code
+
+tests/test_product_routes.py:26: AssertionError
+_____________________ test_admin_status_route_is_reachable _____________________
+
+api = <conftest.Api object at 0x7cfd427d42f0>
+make_user = <function make_user.<locals>._make at 0x7cfd427f79c0>
+
+    def test_admin_status_route_is_reachable(api, make_user):
+        admin = make_user(role="admin")
+        r = api.patch(
+            f"{ADMIN}/status",
+            headers=auth_header(admin),
+            json={"tour_ids": [str(uuid.uuid4())], "tour_status": "1"},
+        )
+        # 走到 patch_tourStatus：tour_ids 都不存在 → 404，而不是被 /:tour_id 當成 tour_id='status'
+>       assert r.status_code == 404, r.text
+E       AssertionError: {"status":"error","message":"伺服器錯誤"}
+E       assert 500 == 404
+E        +  where 500 = <Response [500]>.status_code
+
+tests/test_product_routes.py:37: AssertionError
+_______________ test_admin_routes_not_exposed_under_user_prefix ________________
+
+api = <conftest.Api object at 0x7cfd427d42f0>
+make_user = <function make_user.<locals>._make at 0x7cfd427f7ce0>
+
+    def test_admin_routes_not_exposed_under_user_prefix(api, make_user):
+        admin = make_user(role="admin")
+        r = api.post(f"{PUBLIC}/add", headers=auth_header(admin))
+>       assert r.status_code == 404, r.text
+E       AssertionError: {"status":"failed","message":"請提供以下圖片: product_cover_image, product_img1, product_img2, product_img3, product_img4, product_img5, product_img6, feature_img1, feature_img2, feature_img3"}
+E       assert 400 == 404
+E        +  where 400 = <Response [400]>.status_code
+
+tests/test_product_routes.py:50: AssertionError
+______________ test_public_routes_not_exposed_under_admin_prefix _______________
+
+api = <conftest.Api object at 0x7cfd427d42f0>
+
+    def test_public_routes_not_exposed_under_admin_prefix(api):
+        r = api.get(f"{ADMIN}/{uuid.uuid4()}/reviews")
+>       assert r.status_code == 404, r.text
+E       AssertionError: {"status":"failed","message":"「page」為必填欄位"}
+E       assert 400 == 404
+E        +  where 400 = <Response [400]>.status_code
+
+tests/test_product_routes.py:56: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_product_routes.py::test_guest_can_reach_public_tour_detail
+FAILED tests/test_product_routes.py::test_guest_tour_list_is_not_blocked_by_admin_auth
+FAILED tests/test_product_routes.py::test_admin_status_route_is_reachable - A...
+FAILED tests/test_product_routes.py::test_admin_routes_not_exposed_under_user_prefix
+FAILED tests/test_product_routes.py::test_public_routes_not_exposed_under_admin_prefix
+========================= 5 failed, 1 passed in 0.28s ==========================
