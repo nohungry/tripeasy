@@ -499,9 +499,7 @@ grep -c "ON CONFLICT DO NOTHING;" db/seed/R__seed.sql
 - [ ] **Step 7: 重跑 Flyway，確認測試通過**
 
 ```bash
-docker compose up -d flyway
-docker compose wait flyway   # flyway 是一次性的 service，等它跑完再測，不然會搶在 seed 載入前
-docker compose logs flyway --tail=5
+docker compose run --rm flyway   # 前景執行一次性的 flyway，log 直接印出，結束碼就是 flyway 的（compose wait 在容器已結束時會失敗）
 uv run pytest tests/test_seed.py -v
 uv run pytest -q
 ```
@@ -825,12 +823,10 @@ uv run python db/seed-build/build_seed.py
 
 R__seed.sql 的 checksum 變了，Flyway 會在既有資料上重跑整份 seed。所有 INSERT 都要撞到既有資料而略過，migrate 必須成功：
 ```bash
-docker compose up -d flyway
-docker compose wait flyway
-docker compose logs flyway --tail=5
+docker compose run --rm flyway   # 前景執行一次性的 flyway，log 直接印出，結束碼就是 flyway 的（compose wait 在容器已結束時會失敗）
 uv run pytest tests/test_seed.py::test_seed_is_rerunnable -v
 ```
-預期：Flyway log 有 `Migrating schema "public" with repeatable migration "seed"` 和 `Successfully applied 1 migration`，wait 的結束碼是 0；`test_seed_is_rerunnable` PASS（筆數沒有變）。
+預期：Flyway log 有 `Migrating schema "public" with repeatable migration "seed"` 和 `Successfully applied 1 migration`，結束碼是 0；`test_seed_is_rerunnable` PASS（筆數沒有變）。
 
 - [ ] **Step 7: 重建 DB，確認測試通過**
 
