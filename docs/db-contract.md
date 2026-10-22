@@ -616,6 +616,7 @@
 > - **pg 型別對應 JS 的限制（影響欄位型別選擇）**：`pg` 會把 `smallint`／`integer`／`float8` 回成 JS number，但 `bigint`（`COUNT(...)` 的型別）與 `numeric` 回成字串。凡是 controller 用 `=== 1`、`+`、`<` 直接運算的欄位，下面都標了型別，不能隨意換。
 > - **識別字大小寫**：未加雙引號的名稱 PostgreSQL 會轉成小寫。程式碼用 `public."user_cartList"`（有引號）所以 view 要以**帶雙引號的混合大小寫**建立；`restaurant_isClosed(...)` 在程式碼沒有引號，所以 function 要以**小寫 `restaurant_isclosed`**（或不加引號的 `restaurant_isClosed`，兩者等價）建立，若用 `"restaurant_isClosed"`（有引號）建立則呼叫會失敗。
 > - 跨組：`tour_base` 見 §1 `tour_base`；`user_user_level`（同樣有 `使用者編號`、`旅遊等級`…）見 §1 `user_user_level`。
+> - **UUID 版本檢查（影響 seed 能否走通 API）**：下列驗證器只接受 `uuid({ version: 'uuidv4' })`（第三段開頭必須是 `4`、第四段開頭必須是 `8`／`9`／`a`／`b`）：`utils/Validator/cart_Validator.js:84`（`tour_id`）、`:92`（`cart_item_id`）、`utils/Validator/checkout_Vaildator.js:4`（`cart_id`）、`:12`（`order_id`）、`:71`（`discount.coupon_id`，`type='coupon'` 時）、`utils/Validator/discounts_Validatior.js:29`（`order_id`）、`utils/Validator/purchases_Validator.js:8`（`order_item_id`）。以 seed 逐項核對：`tour`（`db/seed/R__seed.sql:189` 起，10 筆）與 `coupon`（`db/seed/R__seed.sql:137` 起，5 筆）的主鍵全是手寫值，**一筆都不是 v4**；`cart`（6 筆）、`cart_item`（10 筆）、`orders`（5 筆）、`order_item`（10 筆）的主鍵都是 v4。後果：`POST /api/v1/user/trade/cart/:tour_id` 對任何 seed 行程都在驗證階段回 400，不論星期幾或時段；`PATCH /api/v1/user/checkout/preview/:order_id` 帶 seed 的 `coupon_id` 回 400。`PATCH /api/v1/user/trade/cart/:cart_item_id` 的 `tour_id` 取自 `cart_item`（不經驗證），所以對 seed 既有購物車項目仍可走到各 function。**這一點由使用者在 Task 7 決定**：改寫 seed 的 `tour`／`coupon` 主鍵為 v4（連同引用它們的外鍵），或放寬這些驗證器（`utils/Validator`，不是 controller，但仍是 P1a 以外的程式碼修改，需使用者同意）。
 > - `orders`／`order_item` 的 `payment_status` 值（V1 `backend/migrations/V1__tripeasy_sql.sql:277`、`:292` 註解）：-1 資料剛建立、0 資料填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時。`user_coupon.status`（V1 `:414` 註解）只定義 1 使用、0 未使用，但 `checkout.js:149` 另外寫入 -1（見 `user_couponList`）。
 
 ### `user_cartList`
@@ -655,7 +656,8 @@
   - 對 `cart`／`cart_item` 必須是 `INNER JOIN`（`cart_item` 有 `cart_id` NOT NULL，V1 `:254–255`）。對 `tour_base`：若 `tour_base` 不含下架行程（§1 `tour_base` 待確認 1 解讀 B），INNER JOIN 會讓購物車裡已下架的項目消失，LEFT JOIN 則該列的中文欄位為 `NULL`，`Number(NULL)`＝0。
   - 欄位名稱混用英文與中文（`user_id`、`cart_id`、`quantity`、`singleTotal_Price` 是英文；`大分類`、`價錢` 等是中文），必須照程式碼拼字，`singleTotal_Price` 有大寫 T 與 P。
   - **controller 行為 1（分頁不穩定）**：`controllers/cart.js:204` 只 `ORDER BY cart_id ASC`。`post_cartItem` 把同一位使用者的項目都放進同一個 `cart_id`（`controllers/cart.js:46–55`），所以同一使用者所有列的排序鍵相同，`LIMIT/OFFSET` 在這種情況下沒有確定順序，翻頁可能重複或漏列。契約只記錄，不處理。
-  - **controller 行為 2（多購物車）**：`controllers/cart.js:15` 取使用者的 `cart` 時用 `user_cartRepo.rows[0]`，`controllers/cart.js:47–50` 的 `Update public."cart" ... where user_id = $1` 沒有限定 `cart_id`，會更新該使用者的**所有**購物車。V1 的 `cart` 沒有 `user_id` unique 約束，而 seed（`db/seed/R__seed.sql:765–772`）每位使用者有 2 個 `cart`（`a1b2...`、`b2c3...`、`c3d4...` 各 2 筆），所以對 seed 使用者加入購物車會同時改兩個購物車的 `total_price`。這是 controller／seed 的衝突，不是 view 的問題，但 view 會把兩個購物車的項目都列出。
+  - **seed 對照（UUID 版本）**：`GET /list` 本身不經 uuid 驗證，但 seed 行程的 `tour_id` 不是 v4，所以無法再用 `POST /cart/:tour_id` 加入任何 seed 行程（見共通觀察的「UUID 版本檢查」）；seed 既有的 `cart_item` 可由 `GET /list` 讀到。
+  - **controller 行為 2（多購物車）**：`controllers/cart.js:15,46` 取使用者的 `cart`（`:15` 查詢，`:46` 讀 `user_cartRepo.rows[0]`），`controllers/cart.js:47–50` 的 `Update public."cart" ... where user_id = $1` 沒有限定 `cart_id`，會更新該使用者的**所有**購物車。V1 的 `cart` 沒有 `user_id` unique 約束，而 seed（`db/seed/R__seed.sql:765–772`）每位使用者有 2 個 `cart`（`a1b2...`、`b2c3...`、`c3d4...` 各 2 筆），所以對 seed 使用者加入購物車會同時改兩個購物車的 `total_price`。這是 controller／seed 的衝突，不是 view 的問題，但 view 會把兩個購物車的項目都列出。
   - **controller 行為 3（總額與小計各自計算）**：`cart.total_price`（`controllers/cart.js:31,49,110–111,164–170`）由 controller 在每次加入／刪除／修改時用「當下的」`price * 人數` 增減，`GET /list` 的 `summary.total_price` 則是各列 `singleTotal_Price` 的加總（`controllers/cart.js:230`），兩者不保證一致（促銷價改變後，刪除項目會用新價格扣舊價格加入的金額）。
   - **controller 行為 4（回傳不含 `cart_item_id`）**：`DELETE`／`PATCH /:cart_item_id` 需要 `cart_item_id`（`routes/cart.js:15,24`），但 `GET /list` 的 response（`controllers/cart.js:209–225`）沒有輸出 `cart_item_id`，即使 view 有這個欄位，前端也拿不到。view 是否提供 `cart_item_id` 無法由程式碼證實（見待確認 3）。
   - `end_date` 為 `NULL` 的項目（V1 允許，`cart_item.end_date` 為 `TIMESTAMP NULL`；seed 有這樣的列：`db/seed/R__seed.sql:776,785`）會直接輸出 `null`。
@@ -668,7 +670,7 @@
      - 型別：若是 `numeric` 或 `bigint`，pg 回字串，所以 `Number(...)`（`controllers/cart.js:224`）是必要的；若是 `double precision` 則 `Number` 無害。controller 用 `Number()` 暗示型別不一定是 number。
   2. **`促銷價錢` 在沒有促銷或促銷已過期時是什麼？**（`controllers/cart.js:217` 原樣輸出 `promo_price`）
      - 解讀 A：永遠是 `notification.promo_price` 原值（`tour_base` 的 `促銷價錢`）。後果：過期促銷的項目仍會回傳 `promo_price`，前端要自己判斷期間。
-     - 解讀 B：只有在促銷期間內才有值，否則 `NULL`。後果：前端以「有值」判斷是否促銷；與 §1 `tour_base` 待確認 4 的解讀一致。
+     - 解讀 B：只有在促銷期間內才有值，否則 `NULL`。後果：前端以「有值」判斷是否促銷；方向與 §1 `tour_base` 待確認 4 解讀 B 相同（期間外不視為促銷），但 §1 待確認 4 談的是 `通知狀態`，不是 `促銷價錢`。
   3. **view 是否多帶 `cart_item_id` 等未被讀取的欄位？** 程式碼不讀，不影響現有 API。解讀 A：帶（建議，未來讓前端能刪除項目）。解讀 B：不帶。後果：前端目前拿不到 `cart_item_id`（見邊界第 4 點）的狀況不變。
   4. **與 `tour_base` 的 JOIN 方式**：見邊界第 1 點。解讀 A：INNER JOIN（下架行程的購物車項目消失）。解讀 B：LEFT JOIN（項目保留，行程欄位為 `NULL`，小計 0）。
 
@@ -709,13 +711,14 @@
   - **0 列時略過檢查**：`middlewares/cart/index.js:59,194` 用 `booking_room.rowCount > 0` 才比較；找不到房型（例如 `room_type` 拼錯）時 function 回 0 列，controller 視為「有空房」，購物車項目仍會建立。function 的行為因此決定拼錯房型是否被擋：0 列＝放行，1 列且 `booking_count = 0, room_count = 0`＝擋下（`0 >= 0`）。見待確認 3。
   - `booking_count >= room_count` 時回「選擇的房間已無空房」（HTTP 400）。
   - 此 function 的 `start_date`／`end_date` 區間重疊的判定（含不含退房當日）程式碼沒有證據，見待確認 2。
+  - **seed 對照（UUID 版本）**：`POST /cart/:tour_id` 的 `paramsSchema`（`middlewares/cart/index.js:10`、`cart_Validator.js:84`）要求 `tour_id` 為 uuidv4，seed 的行程都不是 v4，所以 POST 路徑對 seed 行程永遠走不到本 function；只有 PATCH 既有的 seed `cart_item`（`tour_id` 取自 `cart_item`）能呼叫它。見共通觀察。
   - PATCH 時（`middlewares/cart/index.js:187`）呼叫端沒有排除「被修改的這個項目自己」，若 function 把購物車內項目也算進 `booking_count`，使用者修改自己已在購物車的項目時會與自己衝突。見待確認 1。
 - **信心**：參數順序與輸出欄位名：確定。`booking_count` 的計算方式、參數名稱與型別：推測。
 - **待確認**：
   1. **`booking_count` 數什麼？**（程式碼只讀結果）
      - 解讀 A：數 `order_item` 中同一 (行程, 房型) 且日期區間與參數重疊的列，不看 `payment_status`。後果：連剛建立（-1）、已取消（2）、已退款（3）、付款逾時（4）的訂單都占房間，房間會被放棄的結帳占住。
      - 解讀 B：只數 `payment_status = 1`（已付款）。後果：只有真正付款的才占房；有人下單未付款時，其他人仍可加入購物車（超賣風險）。
-     - 解讀 C：數 `payment_status IN (-1, 0, 1)`（排除 2、3、4）。後果：保留未付款的訂單占房，已取消、已退款、逾時的釋放。
+     - 解讀 C：數 `payment_status IN (-1, 0, 1)`（排除 2、3、4；各值意義見 B 組共通觀察）。後果：保留未付款的訂單占房，已取消、已退款、逾時的釋放。
      - 解讀 D：數 `payment_status IN (0, 1)`（已填寫完成、已付款）。後果：排除「剛建立、還沒填寫」的訂單。
      - 解讀 E：數 `cart_item`（購物車內項目）而非訂單。後果：占房的是還沒結帳的購物車項目；PATCH 時要自己排除自己，否則修改會與自己衝突。
      - 解讀 F：`order_item` 與 `cart_item` 都數。後果：同一間房可能被同一人重複計算（購物車與已生成訂單各一次）。
@@ -762,6 +765,7 @@
 - **邊界**：
   - **controller 行為 1（呼叫參數 key 錯誤，已證實）**：`middlewares/cart/index.js:73` 與 `:208` 傳 `options.start_time`，但 food 的驗證器 `foodSchema`（`utils/Validator/cart_Validator.js:22–27`）只有 `start_date`，且 Joi object 預設不允許未知 key，帶 `start_time` 會被 `baseSchema.validate`（`middlewares/cart/index.js:9`）擋下回 400。所以透過 API 呼叫此 function 時，第 1 個參數**恆為 `NULL`**。結果：function 若用第 1 個參數比對預約時間（例如 `WHERE start_date = 參數`），永遠比對不到任何預約，`booking_count` 恆為 0（若回 1 列），額滿檢查等於永遠不會觸發。契約只記錄，不處理（controller 不改）。
   - `middlewares/cart/index.js:77,212` 用 `booking_food.rowCount > 0` 才比較，0 列時略過檢查。
+  - **seed 對照（UUID 版本）**：`POST` 路徑對 seed 行程在驗證階段就回 400（`cart_Validator.js:84`），走不到本 function；只有 PATCH 既有 seed `cart_item` 能呼叫。見共通觀察。
   - 此 function 不檢查營業時間，營業時間由 `restaurant_business_parsed`（`middlewares/cart/index.js:91`）與 `restaurant_isClosed`（`middlewares/cart/index.js:105`）處理。
   - 加入購物車的 food 項目只存 `start_date`（`controllers/cart.js:40`），`quantity`（人數）也在 `cart_item`；`booking_count` 是否以人數加總見待確認 2。
 - **信心**：參數順序與輸出欄位名：確定。參數 1 的實際內容（恆 `NULL`）：確定（驗證器與 controller 的 key 對照）。計算方式、型別：推測。
@@ -807,6 +811,7 @@
 - **邊界**：
   - **controller 行為（0 列則 500）**：`middlewares/cart/index.js:110,245` 直接讀 `food_closed.rows[0].isclosed`，沒有 `rowCount` 檢查；function 若回 0 列，`rows[0]` 是 `undefined`，丟 TypeError，API 回 500。所以 function 在任何情況（包含找不到餐廳）都要回 1 列。
   - **欄位名稱大小寫**：pg 以欄位名的實際拼法當 key。程式碼讀 `isclosed`（小寫），function 的 `RETURNS TABLE` 欄位若寫成 `"isClosed"`（有引號）或 `isClosed`（無引號會折成小寫，OK），前者會讓 `rows[0].isclosed` 為 `undefined`，檢查永遠不成立。
+  - **seed 對照（UUID 版本）**：`POST` 路徑對 seed 行程在驗證階段就回 400（`cart_Validator.js:84`），走不到本 function；只有 PATCH 既有 seed `cart_item` 能呼叫。見共通觀察。
   - 呼叫順序：同一請求先過 `restaurant_business_parsed`（`middlewares/cart/index.js:90–102`，不在營業時段就回「餐廳已關閉」），通過後才呼叫本 function；所以在營業時段內才可能走到這裡。V1／V2 沒有任何「公休日」「特殊休息日」的表（grep `closed|holiday|休` 在 `backend/migrations/` 沒有結果），本 function 能依據的資料只有 `restaurant_business` 與 `restaurant`。
 - **信心**：參數順序、輸出欄位名與型別：確定。「休息」的判定方式：推測（見待確認）。
 - **待確認**：
@@ -840,14 +845,14 @@
   | 欄位 | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | tour_id（英文） | uuid | `restaurant.tour_id`（經由 `restaurant_business.restaurant_id` → `restaurant.restaurant_id`） | `middlewares/cart/index.js:92,227` | WHERE `tour_id = $1` |
-  | week（英文） | varchar | `restaurant_business.week` | `middlewares/cart/index.js:93,228` | WHERE `week = TRIM(TO_CHAR(..., 'FMDay'))`，右邊是英文全名（`Monday`…），seed 的 `week` 即 `Monday`…`Sunday`（`db/seed/R__seed.sql:477–490`） |
+  | week（英文） | varchar | `restaurant_business.week` | `middlewares/cart/index.js:93,228` | WHERE `week = TRIM(TO_CHAR(..., 'FMDay'))`，右邊是英文全名（`Monday`…），seed 的 `week` 即 `Monday`…`Sunday`（`db/seed/R__seed.sql:478–491`） |
   | start_time（英文） | time | 由 `restaurant_business.business_hours` 的一個時段拆出的開始時間 | `middlewares/cart/index.js:92,227` | WHERE `$2::timestamp::time BETWEEN start_time AND end_time`，左邊是 `time` |
   | end_time（英文） | time | 同上的結束時間 | `middlewares/cart/index.js:92,227` | 同上 |
 
-- **列的語意**：**每個 (餐廳, 星期, 營業時段) 一列**。`restaurant_business.business_hours` 是 TEXT，格式範例見 V1 `:145` 註解與 seed：`'11:00~14:00, 17:00~21:00'`（多時段）、`'17:00~23:00'`（單時段）（`db/seed/R__seed.sql:477–490`）。view 要把它拆成每個時段一列、轉成 `time`。controller 只用 `rowCount === 0` 判斷「餐廳已關閉」（`middlewares/cart/index.js:96,231`）。
+- **列的語意**：**每個 (餐廳, 星期, 營業時段) 一列**。`restaurant_business.business_hours` 是 TEXT，格式範例見 V1 `:145` 註解與 seed：`'11:00~14:00, 17:00~21:00'`（多時段）、`'17:00~23:00'`（單時段）（`db/seed/R__seed.sql:478–491`）。view 要把它拆成每個時段一列、轉成 `time`。controller 只用 `rowCount === 0` 判斷「餐廳已關閉」（`middlewares/cart/index.js:96,231`）。
 - **邊界**：
   - 時段分隔用 `, `（逗號加空白），起訖用 `~`，格式來自 seed 與 V1 註解；程式碼本身沒有解析 `business_hours` 的位置。
-  - `BETWEEN start_time AND end_time` 是閉區間，且不處理跨午夜。seed 有 `'17:00~00:00'`（`db/seed/R__seed.sql:489,490`，行程 `99999999-cccc-dddd-eeee-999999999999` 的星期五、星期六）。若 `end_time` 解析成 `00:00:00`，則 `start_time > end_time`，`BETWEEN` 永遠不成立，這兩天**所有**時間都會回「餐廳已關閉」。見待確認 2。
+  - `BETWEEN start_time AND end_time` 是閉區間，且不處理跨午夜。seed 有 `'17:00~00:00'`（`db/seed/R__seed.sql:489,490`，行程 `99999999-cccc-dddd-eeee-999999999999` 的星期五、星期六）。若 `end_time` 解析成 `00:00:00`，則 `start_time > end_time`，`BETWEEN` 永遠不成立，這兩天**所有**時間都會回「餐廳已關閉」。此判斷只在請求通過 uuid 驗證後才會執行；seed 行程用 POST 加入購物車在驗證階段就被擋下（見共通觀察），所以 seed 環境下實際走到本 view 的只有 PATCH 既有 `cart_item`。見待確認 2。
   - `week` 的比對是區分大小寫的字串比對：`TO_CHAR(..., 'FMDay')` 在 `lc_time` 為英文時回 `Monday` 這種首字大寫的英文名（`TRIM` 是因為沒有 `FM` 時會補空白）；若資料庫 `lc_time` 設成中文，會回中文而比對不到 seed 的英文 `week`。這是環境依賴，契約只記錄。
   - `options.start_date` 是帶時區的 ISO 字串時，`$2::timestamp` 會丟掉時區（以字串的牆上時間為準），所以時段以「使用者送出的牆上時間」判斷。
 - **信心**：欄位名稱與型別：確定（SQL 字串直接使用）。拆解 `business_hours` 的細節（分隔符、跨午夜）：推測，依據 seed 與 V1 註解。
@@ -857,7 +862,7 @@
      - 解讀 B：view 解析失敗時丟例外。後果：整個 view 查詢失敗，所有餐廳的加入購物車都回 500。
   2. **跨午夜時段（seed 的 `17:00~00:00`）**：
      - 解讀 A：`00:00` 視為 `24:00`，轉成 `end_time = 23:59:59`。後果：星期五、星期六 17:00 到 23:59:59 可預約，`00:00` 之後不可。
-     - 解讀 B：保持 `00:00:00`（原樣）。後果：這兩天任何預約都回「餐廳已關閉」（seed 的行程 `99999999-...` 在週五六無法加入購物車）。
+     - 解讀 B：保持 `00:00:00`（原樣）。後果：這兩天任何預約都回「餐廳已關閉」（seed 的行程 `99999999-...`：PATCH 既有的 seed `cart_item` `c5cefe38-ff77-497c-b3fb-2831bbfb898c` 時，週五六的預約會被擋下；用 POST 加入該行程則不論星期幾都先被 uuidv4 驗證擋下，與本題無關，見共通觀察）。
      - 解讀 C：拆成兩列（`17:00~23:59:59` 與隔日的 `00:00~00:00`）。後果：需要把隔日時段記在下一個 `week`，view 較複雜。
   3. **沒有 `restaurant` 列的行程**：這類行程在 view 內沒有列，`rowCount === 0`，回「餐廳已關閉」（HTTP 400）。INNER JOIN 與 LEFT JOIN（時段為 `NULL`）在這個查詢下結果相同，因為 `NULL` 比不到 `BETWEEN`。契約不要求特別處理，只記錄這個行為。
 
@@ -918,9 +923,10 @@
   - **controller 行為 1（`expired_date` 與 `expire_date` 兩種拼法）**：`middlewares/discounts/index.js:65` 與 `middlewares/checkout/index.js:136` 讀 `expire_date`，但 `controllers/discounts.js:34` 讀 `expired_date`。V1 `coupon` 欄位是 `expire_date`。view 只有 `expire_date` 時，`controllers/discounts.js:34` 取到 `undefined`，`date_period` 欄位在 JSON 裡不會出現（`JSON.stringify` 略過 `undefined`），不會報錯；view 只有 `expired_date` 時，`new Date(undefined)` 是 `Invalid Date`，`now > Invalid Date` 為 `false`，**過期檢查被靜默略過**（過期的優惠卷可以使用）。契約要求至少提供 `expire_date`；是否同時提供 `expired_date` 見待確認 2。
   - **controller 行為 2（-1 被當成「可再使用」）**：`controllers/checkout.js:148–151` 在 PATCH 預覽時把 `user_coupon.status` 設成 -1（V1 `:414` 註解只有 1／0），`middlewares/checkout/index.js:125` 與 `middlewares/discounts/index.js:54` 只擋 `status === 1`。**全 `backend/src` 沒有任何地方把 `status` 設成 1**（grep `user_coupon` 只有 `controllers/checkout.js:149`、`controllers/coupon.js:209`（新增綁定，`status` 寫 0）、`controllers/admin.js:271`（刪除綁定）、`middlewares/coupon/index.js:260,290`、`middlewares/admin/index.js:384`（只讀）），付款成功的 `newebpay.js` 也沒有。所以 seed 以外，status 永遠不會成為 1，-1 的優惠卷可以被重複套用到另一張訂單（`controllers/checkout.js:149` 會把 `order_id` 覆蓋成新訂單）。
   - **controller 行為 3（`code` 不是 unique）**：V1 `coupon.code` 沒有 unique 約束，`middlewares/discounts/index.js:41` 與 `controllers/discounts.js:14` 以 `code` + `user_id` 查詢並取 `rows[0]`；同一使用者綁定兩張 `code` 相同的優惠卷時，取到哪張不固定。
-  - **controller 行為 4（驗證器與 seed 的 `code` 不相容）**：`utils/Validator/discounts_Validatior.js:9–13` 要求 `discount.coupon` 符合 `^[A-Z0-9]{6}$`（剛好 6 碼大寫英數），而 seed 的 5 個優惠卷代碼（`db/seed/R__seed.sql:143,152,161,170,179`）只有 `VIP300`（6 碼）符合，`WELCOME100`（10）、`SUMMER50`（8）、`TRAVEL10P`（9）、`SPRING20`（8）都會被 `POST /api/v1/user/trade/discounts/:order_id` 以 400 擋下（`type='coupon'` 路徑）。`PATCH /preview/:order_id` 用 `coupon_id` 而非 `code`，不受影響。
+  - **controller 行為 4（驗證器與 seed 的 `code` 不相容）**：`utils/Validator/discounts_Validatior.js:9–13` 要求 `discount.coupon` 符合 `^[A-Z0-9]{6}$`（剛好 6 碼大寫英數），而 seed 的 5 個優惠卷代碼（`db/seed/R__seed.sql:143,152,161,170,179`）只有 `VIP300`（6 碼）符合，`WELCOME100`（10）、`SUMMER50`（8）、`TRAVEL10P`（9）、`SPRING20`（8）都會被 `POST /api/v1/user/trade/discounts/:order_id` 以 400 擋下（`type='coupon'` 路徑）。`PATCH /preview/:order_id` 雖然用 `coupon_id` 而非 `code`，但 `utils/Validator/checkout_Vaildator.js:71` 要求 `discount.coupon_id` 是 `uuid({ version: 'uuidv4' })`，seed 的 5 個 `coupon_id`（`db/seed/R__seed.sql` 的 coupon 區段，手寫值如 `11111111-aaaa-bbbb-cccc-111111111111`）第三段都不是 `4` 開頭，同樣會被 400 擋下（見共通觀察的「UUID 版本檢查」）。
   - **controller 行為 5（`discount` 的運算）**：`controllers/discounts.js:38` 與 `controllers/checkout.js:155` 都是 `orders.total_price * coupon.discount`，結果寫入／輸出為 `discount_price`（見待確認 1）。
   - 狀態以 JS 的 `=== 1` 比較，所以 `status` 必須是 `smallint`／`integer`，不能是 `bigint`／`numeric`／字串（pg 會回字串，嚴格比較失敗，已使用的優惠卷會被當成未使用）。
+  - **seed 對照（UUID 版本）**：`PATCH /preview/:order_id` 的 `coupon_id` 要求 uuidv4（`checkout_Vaildator.js:71`），seed 的 5 個 `coupon_id` 都不是 v4，所以 seed 優惠卷走不到 `controllers/checkout.js:144` 與 `middlewares/checkout/index.js:112` 這兩處查詢；`POST /discounts/:order_id` 以 `code` 查詢（`middlewares/discounts/index.js:41`），seed 訂單 `order_id` 是 v4 可通過，但 `code` 受 `^[A-Z0-9]{6}$` 限制（上一點）。
   - 與 `user_level_point_coupon` 的 `優惠卷折扣`（見該物件）是同一個 `coupon.discount`，兩邊語意要一致。
   - `status` 完整可能值（程式碼與 seed 實際出現）：`0` 未使用（`controllers/coupon.js:209`、seed `db/seed/R__seed.sql:918`）、`1` 已使用（seed `:917,919,920`；程式碼只讀不寫）、`-1` 預覽中占用（只由 `controllers/checkout.js:149` 寫入）。
 - **信心**：欄位名稱：確定（全部由程式碼讀取證實）；來源對應：確定（V1 `coupon`、`user_coupon` 欄位一一對應）；`expired_date` 是否存在：推測；`status` 篩選：確定（不篩選）。
@@ -931,6 +937,11 @@
        - `controllers/checkout.js:155`（`PATCH /user/checkout/preview/:order_id`，**寫入 `orders.discount_price`**）：`UPDATE public."orders" SET discount_price = $1 ...`，參數 `orderRepo.rows[0].total_price * couponRepo.rows[0].discount`。
        - `controllers/discounts.js:32`、`controllers/userProfile.js:156`：原樣輸出 `discount`（沒有運算）。
        - 沒有任何地方做 `total_price - discount`、`discount / 100` 或 `1 - discount`。
+     - **寫入位置（`coupon.discount` 怎麼進來）**：
+       - `controllers/coupon.js:6`（解構 `req.body.discount_amount`）、`:10–12`（`INSERT INTO public.coupon (code, discount, description, expire_date) VALUES ($1, $2, $3, $4)`，`$2` ＝ `discount_amount`）：`POST /api/v1/admin/coupons`。
+       - `controllers/coupon.js:103`（解構 `req.body.discount_amount`）、`:107–108`（`update coupon set code = $1,discount = $2,description = $3,expire_date = $4 where coupon_id = $5`，`$2` ＝ `discount_amount`）：`PATCH /api/v1/admin/coupons/update/:coupon_id`。
+       - 驗證器 `utils/Validator/coupon_Validator.js:45`：`discount_amount: Joi.number().greater(0)`，錯誤訊息是「優惠折扣數」，**沒有上限**（沒有 `.max(...)`）。
+       - 管理者端的請求欄位叫 `discount_amount`（字面是「折扣金額」），但訊息文字叫「優惠折扣數」；欄位名與訊息各自偏向不同解讀，不能由此決定。
        - `grep '\.discount'` 在這兩個 controller 的其他命中行都不是對 `coupon.discount` 的運算：`controllers/discounts.js:99`、`controllers/checkout.js:188,265` 只是輸出 `orders.discount_price`；`controllers/checkout.js:124` 是解構 `req.body.discount`；`controllers/checkout.js:240` 讀 `orders.discount_type`。
      - **seed 裡實際的值**（`db/seed/R__seed.sql:137–186`，`coupon.discount` 欄位）：
 
@@ -943,11 +954,11 @@
        | `SPRING20` | `20.0` | 春季限定，旅遊折抵新台幣 20 元 | `db/seed/R__seed.sql:179–181` |
 
        五個值都 > 1。以 `total_price * discount` 計算：`total_price` 3576.74、`discount` 100.0 → `discount_price` 357,674。沒有任何一個 seed 值落在 0 到 1 之間。
-     - **相關事實**：`orders.discount_price`（V1 `:279`，`FLOAT NULL`）在 `controllers/checkout.js:155`（優惠卷）與 `controllers/checkout.js:165`（點數：`total_price - used_point * 0.8`，見 `user_level_point_coupon` 待確認 1）寫入的都是同一欄；後者的運算形式（`total_price - ...`）算出來的是「折扣後應付金額」。seed 的 `orders.discount_price`（`db/seed/R__seed.sql:790–794`，例如 `total_price` 3576.74 對 `discount_price` 794.83）都小於 `total_price`，看起來像「折掉的金額」，與程式碼寫入的「應付金額」語意不同；`discount_type` 在 seed 是 `'none'`、`'earlybird'`（`:790–794`），程式碼只寫 `'coupon'`／`'point'`（`controllers/checkout.js:133–134`）。這些只是觀察，不能由此決定 `coupon.discount` 的語意。
-     - 解讀 A：**折扣倍率**（`discount` 在 0 到 1，例如 `0.9` 表示九折，`discount_price` 為折扣後應付金額）。後果：程式碼不用改，與 `controllers/checkout.js:165` 的「`discount_price` 是折扣後應付金額」一致；但 seed 的 5 個值（100.0、50.0、10.0、300.0、20.0）全部要改成倍率（例如 `0.9`），`description` 的「折抵新台幣 100 元」也要改；P1b 的 seed 要跟著動。
-     - 解讀 B：**折抵金額**（NT$，與 seed 的 `description` 文字一致：100、50、300、20）。後果：seed 不用改；但 `controllers/discounts.js:38` 與 `controllers/checkout.js:155` 的 `total_price * discount` 算出來是金額的幾百倍（上例 357,674），需要改 controller 為 `total_price - discount`，違反「controller 不改」；若不改，結帳會寫入錯誤的 `orders.discount_price`。`TRAVEL10P` 的 `10.0` 在此解讀下只折抵 10 元，與其 `description`「10% 折扣 (最高折抵 500 元)」矛盾。
-     - 解讀 C：**混合**（`TRAVEL10P` 是百分比 `10` ＝ 10%，其餘是金額）。後果：與 seed 的 `description` 全部吻合，但同一欄位兩種語意，程式碼的 `total_price * discount` 兩種都算錯；要靠 `description` 或新增欄位區分類型（V1 沒有類型欄位，需改 migration）。
-     - 解讀 D：**折扣百分比**（`discount` 是 0–100，`10` ＝ 打 9 折）。後果：seed 的 5 個值都需要改成 0–100 以內的百分比（100 以上沒有意義）；程式碼要改成 `total_price * (1 - discount / 100)`。
+     - **相關事實**：`orders.discount_price`（V1 `:279`，`FLOAT NULL`）在 `controllers/checkout.js:155`（優惠卷）與 `controllers/checkout.js:165`（點數：`total_price - used_point * 0.8`，見 `user_level_point_coupon` 待確認 1）寫入的都是同一欄；後者的運算形式（`total_price - ...`）算出來的是「折扣後應付金額」。seed 的 `orders.discount_price`（`db/seed/R__seed.sql:790–794`，例如 `total_price` 3576.74 對 `discount_price` 794.83）都小於 `total_price`，看起來像「折掉的金額」，與程式碼寫入的「應付金額」語意不同；`discount_type` 在 seed 是 `'none'`、`'earlybird'`（`:790–794`），程式碼只寫 `'coupon'`／`'point'`，或在 `type` 省略時寫 `NULL`（`checkout_Vaildator.js:64–67` 的 `discount` 與 `type` 都是 `.optional()`；`controllers/checkout.js:133–134`）。這些只是觀察，不能由此決定 `coupon.discount` 的語意。
+     - 解讀 A：**折扣倍率**（`discount` 在 0 到 1，例如 `0.9` 表示九折，`discount_price` 為折扣後應付金額）。後果：結帳計算（`discounts.js:38`、`checkout.js:155`）不用改，與 `controllers/checkout.js:165` 的「`discount_price` 是折扣後應付金額」一致；但 admin 寫入端的驗證器（`coupon_Validator.js:45`）只要求 `> 0`、沒有上限，管理者仍可建立 `discount = 100` 的優惠卷，結帳照樣算出數百倍金額，要擋住需另外給驗證器加 `.max(1)`；請求欄位名 `discount_amount` 也與倍率語意不符。另外 seed 的 5 個值（100.0、50.0、10.0、300.0、20.0）全部要改成倍率（例如 `0.9`），`description` 的「折抵新台幣 100 元」也要改；P1b 的 seed 要跟著動。
+     - 解讀 B：**折抵金額**（NT$，與 seed 的 `description` 文字一致：100、50、300、20）。後果：seed 不用改，admin 寫入端的 `discount_amount > 0` 且無上限（`coupon_Validator.js:45`）與金額語意相容、欄位名也一致；但 `controllers/discounts.js:38` 與 `controllers/checkout.js:155` 的 `total_price * discount` 算出來是金額的幾百倍（上例 357,674），需要改 controller 為 `total_price - discount`，違反「controller 不改」；若不改，結帳會寫入錯誤的 `orders.discount_price`。`TRAVEL10P` 的 `10.0` 在此解讀下只折抵 10 元，與其 `description`「10% 折扣 (最高折抵 500 元)」矛盾。
+     - 解讀 C：**混合**（`TRAVEL10P` 是百分比 `10` ＝ 10%，其餘是金額）。後果：與 seed 的 `description` 全部吻合，但同一欄位兩種語意，程式碼的 `total_price * discount` 兩種都算錯；要靠 `description` 或新增欄位區分類型（V1 沒有類型欄位，需改 migration）；admin 寫入端的驗證器（`coupon_Validator.js:45`）只檢查 `> 0`，無法區分百分比與金額。
+     - 解讀 D：**折扣百分比**（`discount` 是 0–100，`10` ＝ 打 9 折）。後果：seed 的 5 個值都需要改成 0–100 以內的百分比（100 以上沒有意義）；程式碼要改成 `total_price * (1 - discount / 100)`；admin 驗證器（`coupon_Validator.js:45`）無上限，需補 `.max(100)`。
   2. **`expired_date`（`controllers/discounts.js:34`）要不要提供？**
      - 解讀 A：只提供 `expire_date`。後果：`POST /user/trade/discounts/:order_id` 的 response 少了 `date_period`，前端若依賴它會顯示空白。
      - 解讀 B：`expire_date` 與 `expired_date` 兩個都提供（同值）。後果：response 有 `date_period`，admin API（`SELECT *`）會多一個重複欄位。
@@ -1017,14 +1028,14 @@
 - **待確認**：
   1. **（spec 3.1 已知問題 1）點數的累積和扣抵規則，以及 `point * 0.8` 的意義。**
 
-     **a. 點數存在哪個欄位？** V1 有兩個地方：`user_level.travel_point`（INT NULL，V1 `:45`）與 `point_record.point`（INT NOT NULL，V1 `:399`，每筆異動一列，`type` 為 VARCHAR(50) NOT NULL，V1 沒有註解 `type` 可有哪些值）。程式碼讀取點數餘額只經過這個 view 的 `使用者旅遊積分`，所以餘額到底取哪一個欄位由 view 決定：
-     - 解讀 A：`user_level.travel_point`。後果：餘額只與 `user_level` 有關，`point_record` 是流水帳但不影響餘額；而**全 `backend/src` 沒有任何 UPDATE `travel_point`**（下表），所以餘額在註冊後永遠是 0（`userinfo.js:30,185` 寫 0），除了 seed 手動設的 1500／3000／800（`db/seed/R__seed.sql:108,119,130`）。
-     - 解讀 B：`SUM(point_record.point)`（全部類型）。後果：`'減少_確認中'`（`controllers/checkout.js:160` 寫入）立即從餘額扣掉，使用者在預覽後馬上看到餘額減少；同一個預覽重複 PATCH 會重複扣（見下表第 3 項）。
-     - 解讀 C：`SUM(point_record.point)` 但排除 `'減少_確認中'`。後果：預覽階段不影響餘額；但付款確認後沒有任何程式把 `'減少_確認中'` 轉成 `'減少'`（見下表），所以餘額永遠不會因為使用點數而減少。
-     - 解讀 D：`user_level.travel_point` 加上 `SUM(point_record.point WHERE type = '減少_確認中')`（即餘額扣掉預扣）。後果：預扣即時生效，但付款完成前沒有人把 `travel_point` 真正扣掉。
-     - **seed 與兩個來源不一致的實例**：使用者 `c3d4e5f6-7890-abcd-ef12-34567890abcd` 的 `travel_point` 是 800（`db/seed/R__seed.sql:130`），但 `point_record` 有 `'新增' 1610` 與 `'減少' -436`（`db/seed/R__seed.sql:908,909`），加總 1174。解讀 A 回 800，B／C 回 1174。
+     **a. 點數存在哪個欄位？** V1 有兩個地方：`user_level.travel_point`（INT NULL，V1 `:45`）與 `point_record.point`（INT NOT NULL，V1 `:399`，每筆異動一列，`type` 為 VARCHAR(50) NOT NULL，V1 沒有註解 `type` 可有哪些值）。點數餘額有**兩條讀取路徑**：(1) 本 view 的 `使用者旅遊積分`（`GET /api/v1/user/userinfo/pointslevel`、折抵驗證、折抵 response）；(2) `controllers/userinfo.js:56`（註冊 response）、`:117`（email 登入）、`:228`（Google 登入）、`:356`（`GET /api/v1/auth/userinfo/login/status`）直接輸出 `user_level.travel_point` 為 `level.points`，不經過 view。所以 view 取哪一個欄位，會決定兩條路徑顯示的餘額是否一致：
+     - 解讀 A：`user_level.travel_point`。後果：餘額只與 `user_level` 有關，`point_record` 是流水帳但不影響餘額；而**全 `backend/src` 沒有任何 UPDATE `travel_point`**（下表），所以餘額在註冊後永遠是 0（`userinfo.js:30,185` 寫 0），除了 seed 手動設的 1500／3000／800（`db/seed/R__seed.sql:108,119,130`）。與 `userinfo.js` 四處的 `level.points` 一致（同一欄位）。
+     - 解讀 B：`SUM(point_record.point)`（全部類型）。後果：`'減少_確認中'`（`controllers/checkout.js:160` 寫入）立即從餘額扣掉，使用者在預覽後馬上看到餘額減少；同一個預覽重複 PATCH 會重複扣（見下表第 5 項）。與 `userinfo.js` 四處的 `level.points`（讀 `travel_point`）**不一致**：預覽後 `pointslevel` 與折抵檢查的餘額減少，登入／登入狀態 response 的 `points` 不變。
+     - 解讀 C：`SUM(point_record.point)` 但排除 `'減少_確認中'`。後果：預覽階段不影響餘額；但付款確認後沒有任何程式把 `'減少_確認中'` 轉成 `'減少'`（見下表），所以餘額永遠不會因為使用點數而減少。餘額與 `userinfo.js` 四處的 `level.points` 在 `point_record` 加總不等於 `travel_point` 時（seed 使用者 `c3d4...` 即是）**不一致**。
+     - 解讀 D：`user_level.travel_point` 加上 `SUM(point_record.point WHERE type = '減少_確認中')`（即餘額扣掉預扣）。後果：預扣即時生效，但付款完成前沒有人把 `travel_point` 真正扣掉；`pointslevel`／折抵檢查看到的餘額（扣掉預扣）與 `userinfo.js` 四處的 `level.points`（未扣預扣的 `travel_point`）**不一致**。
+     - **seed 與兩個來源不一致的實例**：使用者 `c3d4e5f6-7890-abcd-ef12-34567890abcd` 的 `travel_point` 是 800（`db/seed/R__seed.sql:130`），但 `point_record` 有 `'新增' 1610` 與 `'減少' -436`（`db/seed/R__seed.sql:908,909`），加總 1174。`pointslevel` 與折抵檢查：解讀 A 回 800，B／C 回 1174，D 為 800 加上預扣（seed 無 `減少_確認中` 列，所以也是 800）；`userinfo.js` 四處的 `level.points` 一律回 800。因此解讀 B／C 下，同一位使用者登入 response 顯示 800、`pointslevel` 顯示 1174。
 
-     **b. 什麼時候增加或扣除？程式碼中所有寫入點**（grep `point_record`、`travel_point` 於 `backend/src` 與 seed）：
+     **b. 什麼時候增加或扣除？程式碼中所有寫入點，以及相關的讀取**（grep `point_record`、`travel_point` 於 `backend/src` 與 seed；第 6 列是 SELECT，餘額讀取見上方 a，`userinfo.js:56,117,228,356` 為讀取 `travel_point`）：
 
      | # | 位置 | 對象 | 內容 | 時機 |
      |---|---|---|---|---|
@@ -1053,10 +1064,9 @@
        - 同一個請求在 `point_record` 記下的是 `0 - used_point`（`controllers/checkout.js:160`），也就是**扣的點數是 `used_point`，折掉的金額是 `used_point * 0.8`**。
        - 另一個比率：`controllers/checkout.js:225` 的 `total_price * 0.1`（累積比率，見上）。
        - seed 的觀察：訂單 `f4977608-...` 的 `減少 -436`（`db/seed/R__seed.sql:909`）對應該訂單的 `discount_price` 436.75（`:792`），約 1 點 ＝ 1 元；`新增 1610`（`:908`）對應該訂單的 `total_price` 1610.73，約 100%（與 `* 0.1` 不符）。
-     - 解讀 A：**1 點折抵 0.8 元**（兌換率）。後果：`discount_price = total_price - used_point * 0.8` 是折扣後應付金額，與程式碼一致，不用改；seed 的 `-436` 與 `436.75` 的關係（約 1:1）不是這個比率；`used_point` 乘 0.8 會產生非整數的金額（例如 7 點 ＝ 5.6 元），`orders.discount_price` 是 FLOAT 可存。
+     - 解讀 A：**1 點折抵 0.8 元**（兌換率；等同於「用掉 N 點後折 N 的八折」，兩種說法的計算相同）。後果：`discount_price = total_price - used_point * 0.8` 是折扣後應付金額，與程式碼一致，不用改；seed 的 `-436` 與 `436.75` 的關係（約 1:1）不是這個比率；`used_point` 乘 0.8 會產生非整數的金額（例如 7 點 ＝ 5.6 元），`orders.discount_price` 是 FLOAT 可存。
      - 解讀 B：**1 點折抵 1 元，上限（或手續費）是 0.8**，例如「點數最多折抵訂單的 80%」。後果：程式碼沒有任何上限檢查（`min(total * 0.8, used_point)` 之類），實作與這個解讀不符；使用者用大量點數仍可使 `discount_price` 變成負數（`total_price - used_point * 0.8` 沒有下限）。
      - 解讀 C：**原意是 1 點 ＝ 1 元，0.8 是舊值或誤植**（依 seed 的 436:436.75）。後果：兩處 `0.8` 要改成 `1`（違反「controller 不改」）；不改的話使用者每點只折 0.8 元。
-     - 解讀 D：**折抵 8 折**（`point` 是金額，`* 0.8` 是折扣率，即用掉 N 點後折 N 的八折）。與 A 在數學上相同；差別在於文件說法，後果相同。
      - 另一個獨立的不一致：累積 `0.1`（`controllers/checkout.js:225`，每消費 1 元得 0.1 點）與兌換 `0.8`（每點折 0.8 元）並存，若 A 成立，使用者消費 100 元得 10 點，10 點可折 8 元，等於 8% 回饋；seed 的 `1610`／`1610.73` 約 100% 回饋與此矛盾。是否為設計值需要使用者確認。
 
   2. **結帳預覽後 `使用者旅遊積分` 要不要即時反映預扣？**（與待確認 1.a 的 B／C／D 重疊）解讀 A：不反映（餘額不變，直到付款確認）。後果：同一批點數在多張訂單同時預覽時可重複使用。解讀 B：反映。後果：使用者取消預覽後點數被占住，而取消沒有回補程式（見 1.b）。
@@ -1099,7 +1109,8 @@
   - **controller 行為 1（訂單沒有項目時 500）**：`controllers/checkout.js:263` 讀 `orderItemRepo.rows[0].total_count`，沒有檢查 `rows.length`，`order_item` 沒有任何列時（`rows[0]` 為 `undefined`）丟 TypeError，API 回 500。
   - **controller 行為 2（非擁有者的訂單 500）**：`middlewares/checkout/index.js:190–199` 只確認訂單存在（`SELECT * FROM public."orders" WHERE order_id = $1`，不比對 `user_id`）；`controllers/checkout.js:206–209` 的 `orders` 查詢加了 `user_id`，非擁有者時 `orderRepo.rows[0]` 為 `undefined`，`controllers/checkout.js:225` 的 `orderRepo.rows[0].total_price` 丟 TypeError，API 回 500（而不是 403／404）。與本 view 無關，但本 view 不帶 `user_id`，所以無法在 view 內補這個檢查。
   - **controller 行為 3（只產生一個訂單項目）**：`controllers/checkout.js:20–33,42–56` 取 `cartItemRepo.rows[0]` 建立 `order_item`，購物車有多個項目時只有第一個進入 `order_item`，但 `orders.total_price` 用整個購物車的 `cart.total_price`（`controllers/checkout.js:38`）。因此一張訂單在本 view 只會有 1 列，`total_count` 恆為 1，與 `orders.total_price` 的加總不符。
-  - **controller 行為 4（與本 view 相關的 `order_item` 寫入）**：`controllers/newebpay.js:82,213` 更新 `order_item` 時寫 `SET payment = 0／1`（同檔 `:71,206` 對 `orders` 寫的是 `payment_status`），但 V1 `order_item`（V1 `:288–306`）沒有 `payment` 欄位，只有 `payment_status`，這兩段 SQL 在 PostgreSQL 會失敗（`column "payment" does not exist`）。此問題不屬於 B 組 8 個物件，只在此記錄，因為它會讓訂單項目的付款狀態不被更新。
+  - **controller 行為 4（與本 view 相關的 `order_item` 寫入）**：`controllers/newebpay.js:82,213` 更新 `order_item` 時寫 `SET payment = 0／1`（同檔 `:71,206` 對 `orders` 寫的是 `payment_status`），但 V1 `order_item`（V1 `:288–303`）沒有 `payment` 欄位，只有 `payment_status`，這兩段 SQL 在 PostgreSQL 會失敗（`column "payment" does not exist`）。此問題不屬於 B 組 8 個物件，只在此記錄，因為它會讓訂單項目的付款狀態不被更新。
+  - **seed 對照（UUID 版本）**：seed 的 `orders` 主鍵都是 v4，`GET /checkout/summary/:order_id` 可通過 `checkout_Vaildator.js:12`；但新訂單只能由 `POST /checkout/order/:cart_id` 產生，前提是購物車有 `cart_item`，而 seed 行程無法經 `POST /cart` 加入（見共通觀察）。
   - `價錢`、`促銷價錢` 在 `controllers/checkout.js:252–253` 被直接輸出，`discount_price: item.促銷價錢` 這個映射是 controller 的命名（response 的 `discount_price` 來自 view 的 `促銷價錢`，不是 `order_item.discount_price`）。
   - 欄位名稱必須照拼字：`item.大分類`（`.` 取法，所以不含空格）、`item['旅遊代表圖 Url']`、`singleTotal_Price`、`total_count`。
   - 對 `tour_base` 的 JOIN：同 `user_cartList` 邊界第 1 點（§1 `tour_base` 待確認 1 的下架行程問題）。
