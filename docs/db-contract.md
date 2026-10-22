@@ -1,6 +1,6 @@
 # TripEasy DB 契約（V3 views / functions）
 
-> 狀態：草稿 · 依據 spec 3.1 · 從 backend 程式碼反推（四份既有 SQL 都沒有這些物件）
+> 狀態：定案（2026-10-22 使用者確認） · 依據 spec 3.1 · 從 backend 程式碼反推（四份既有 SQL 都沒有這些物件）
 
 ## 0. 說明
 
@@ -108,51 +108,51 @@
   |---|---|---|---|---|
   | 旅遊編號 | uuid | `tour.tour_id` | `home.js:17`、`cart.js:22`、`checkout.js:24`、`admin.js:168`、`product.js:1067` | JOIN 條件、WHERE、SELECT 清單 |
   | 上下架狀態 | smallint | `tour.status`（1 上架、2 下架） | `admin.js:168`、`product.js:1067` | SELECT 清單 + WHERE `"上下架狀態" = $n`（值來自 `req.query.status`） |
-  | 通知狀態 | varchar | `notification.type`（'促銷' / '異動'），沒有通知時為 `NULL` | `home.js:34`、`promotion.js:42`、`admin.js:168`、`cart.js:22` | WHERE `通知狀態 = '促銷'`、CASE 條件 |
+  | 通知狀態 | varchar | `notification.type`（'促銷' / '異動'），沒有通知時為 `NULL`；【定案 #8、#9】多筆通知時優先序 促銷 高於 異動，view 不判斷促銷期間（期間外仍是 '促銷'） | `home.js:34`、`promotion.js:42`、`admin.js:168`、`cart.js:22` | WHERE `通知狀態 = '促銷'`、CASE 條件 |
   | 旅遊名稱 | varchar | `tour.title` | `promotion.js:28`、`admin.js:168`、`product.js:1067` | SELECT 清單、ILIKE |
   | 旅遊描述 | text | `tour.description` | `admin.js:168`、`product.js:1067` | SELECT 清單、ILIKE |
   | 大分類 | varchar | `tour.type`（tourgroup / backpacker） | `home.js:34` | WHERE |
   | 小分類 | varchar | `tour.item`（travel / hotel / food / spot） | `home.js:34` | WHERE |
   | 所屬國家 | varchar | `tour.country` | `promotion.js`、`admin.js:168`、`product.js:1067` | WHERE、SELECT 清單 |
   | 所屬地區 | varchar | `tour.region` | 同上 | WHERE、SELECT 清單 |
-  | 建立時間 | timestamptz | `tour.created_at` | `admin.js:168`、`product.js:1067`、`promotion.js` | ORDER BY、WHERE（`DATE(建立時間)`） |
-  | 更新時間 | timestamptz | `tour.updated_at` | `promotion.js:44` | ORDER BY |
+  | 建立時間 | timestamptz | `tour.created_at`（【定案 #29】來自 `tour`） | `admin.js:168`、`product.js:1067`、`promotion.js` | ORDER BY、WHERE（`DATE(建立時間)`） |
+  | 更新時間 | timestamptz | `tour.updated_at`（【定案 #29】來自 `tour`） | `promotion.js:44` | ORDER BY |
   | 價錢 | integer | `tour.price` | `cart.js:22`、`checkout.js:49`（`tourRepo.rows[0].價錢`）、`admin.js:168` | CASE 的 else 分支、JS 讀取、SELECT 清單 |
-  | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'） | `cart.js:22`、`checkout.js:31` | CASE 的 then 分支 |
+  | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'）；【定案 #10】僅促銷期間內有值，期間外為 `NULL` | `cart.js:22`、`checkout.js:31` | CASE 的 then 分支 |
   | 促銷開始日期 | timestamp | `notification.start_date` | `cart.js:22` | `now() between` |
   | 促銷結束日期 | timestamp | `notification.end_date` | `cart.js:22` | `now() between` |
   | 旅遊開始日期 | timestamp | `tour.tour_start_date` | `home.js:35` | ORDER BY |
   | 旅遊代表圖 Url | text | `tour.cover_image` | `admin.js:168`、`product.js:1067` | SELECT 清單（欄位名含空格，需雙引號） |
   | 偏好分類1 / 偏好分類2 / 偏好分類3 | smallint | `tour.preference1/2/3` | `home.js:90–96`、`promotion.js:52–59` | `SELECT *` 之後 JS 讀 `row['偏好分類1']` 並移除 |
 
-  `SELECT *` 的呼叫端（`home.js`、`promotion.js`）會把每一個欄位原樣放進 response（只拿掉偏好分類 1/2/3、加上「偏好分類」），所以 view 的欄位集合就是 API 輸出欄位集合。本節只列出程式碼可證實需要的欄位。`旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖` 等是否也在 view，程式碼無法證實，見待確認 3。
+  `SELECT *` 的呼叫端（`home.js`、`promotion.js`）會把每一個欄位原樣放進 response（只拿掉偏好分類 1/2/3、加上「偏好分類」），所以 view 的欄位集合就是 API 輸出欄位集合。本節只列出程式碼可證實需要的欄位。`旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖` 等是否也在 view，程式碼無法證實，見待確認 3。【定案 #26】`tour_base` 的欄位集合與 `tour_travel` 相同（只差 `收藏狀態`），`旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖 Url`、`異動通知內容` 也在 `tour_base`。
 
-- **列的語意**：每個行程（`tour`）一列，欄位來自 `tour` 並帶入該行程的通知（`notification`）資料。推測：管理者查詢 `上下架狀態` 有 1/2 兩種值，表示 view 含上架與下架的行程（是否成立見待確認 1）。沒有預設排序（每個呼叫端自己 ORDER BY）。
+- **列的語意**：每個行程（`tour`）一列，欄位來自 `tour` 並帶入該行程的通知（`notification`）資料。推測：管理者查詢 `上下架狀態` 有 1/2 兩種值，表示 view 含上架與下架的行程（是否成立見待確認 1；【定案 #7】`tour_base` 含全部行程，含下架）。沒有預設排序（每個呼叫端自己 ORDER BY）。
 - **邊界**：
   - 沒有通知的行程必須仍會出現，通知相關欄位為 `NULL`（依據：admin 商品清單要列出所有行程；`cart.js` 的 CASE 對 `通知狀態` 為 NULL 時走 `else 價錢`）。因此對 `notification` 必須是 LEFT JOIN。
-  - 價錢計算 `now() between 促銷開始日期 and 促銷結束日期` 是 controller 自己判斷，所以 view 本身不需要處理促銷是否在期間內（但見待確認 4）。
+  - 價錢計算 `now() between 促銷開始日期 and 促銷結束日期` 是 controller 自己判斷，所以 view 本身不需要處理促銷是否在期間內（但見待確認 4；【定案 #9】view 仍不判斷促銷期間，由 controller 判斷）。
   - **首頁 API 的 controller 行為（影響 `tour_base`、`tour_travel`、`popular`、`most_favorited` 所有首頁查詢）**：`routes/home.js` 的 `/products` 使用的 middleware（`middlewares/home/index.js:7`）驗證時用 `home_Validator.reviewSchema`，只把 `page`、`limit`、`lang` 設為必填，且 `validate()` 回傳的 value（含 default）沒有寫回 `req.query`。`type` 沒帶時 `home.js:12–84` 一個分支都不進，`tourData` 維持 `''`，`home.js:86` 的 `''.rows.length` 丟 TypeError，API 回 500；`type=tourgroup` 沒帶 `item` 同理。契約只記錄，不處理。
   - `checkout.js:31` 在非促銷時回 `0`，而 `cart.js:22` 回 `價錢`，兩者語意不同，view 只要提供原始欄位即可。
 - **信心**：欄位名稱與來源對應：確定（名稱直接出現在 SQL，來源與 V1 欄位一一對應）。是否過濾下架、一行程對多通知的處理：推測，見待確認。
 - **待確認**：
-  1. **view 是否只含上架（`status = 1`）的行程？** → §4.1 #7
+  1. **view 是否只含上架（`status = 1`）的行程？** → §4.1 #7（定案：`tour_base` 含全部行程（含下架）；`tour_travel`、`tour_travel_popular`、`tour_travel_most_favorited`、`tour_tour_detail` 只回 `status = 1`）
      - 程式碼矛盾：`admin.js:168`／`product.js:1067` 用 `上下架狀態` 篩選，表示 view 要含下架；但 `home.js:15/33/49/68` 的公開首頁直接查 `tour_base`，沒有任何上架過濾。
      - 解讀 A：view 含全部行程。後果：首頁（未登入）會列出下架行程；`cart.js`／`checkout.js` 查價也能查到下架行程；admin 功能正常。
      - 解讀 B：view 只含 `status = 1`。後果：首頁正常，但 `GET /admin/product?status=2` 永遠空、管理者清單看不到下架行程。上架 API 本身不受影響（`patch_tourStatus`，`product.js:1332–1341`，直接 `UPDATE public."tour"`，不經過 `tour_base`），只是前端清單裡沒有可選的 `tour_id`。
      - 解讀 C：view 含全部，公開端的過濾交給 `popular` 等 function。後果：`promotion`／`backpacker` 以外各路徑需要逐一確認，`home.js:33` 的 promotion 路徑仍會露出下架行程。
-  2. **一個行程有多筆通知（例如同時有「促銷」和「異動」）時，一列要怎麼呈現？** → §4.1 #8
+  2. **一個行程有多筆通知（例如同時有「促銷」和「異動」）時，一列要怎麼呈現？** → §4.1 #8（定案：每個行程一列；促銷與異動各自成欄（`促銷價錢` 等取自 type='促銷'、`異動通知內容` 取自 type='異動'），`通知狀態` 優先序 促銷 高於 異動，同類型多筆取 `updated_at` 最大者）
      - `notification` 無 unique 約束，一個 `tour_id` 可有多列。
      - 解讀 A：每個行程只取一筆通知（例如最新一筆）。後果：`通知狀態` 只會是其中一個；有「促銷」又有「異動」時，其中一種會看不到（`cart.js` 就會讀不到促銷價）。
      - 解讀 B：促銷與異動各自成欄（`促銷價錢`…來自 type='促銷' 的那筆、`異動通知內容` 來自 type='異動' 的那筆），`通知狀態` 取優先順序較高者。後果：需另定優先順序；`tour_tour_detail` 同時讀 `異動通知內容` 和 `通知狀態`，這個解讀較能同時提供兩者。
      - 解讀 C：不合併，每筆通知一列。後果：同一個行程在首頁、admin 清單重複出現，`cart.js` 的 `priceRepo.rows[0]` 取到哪一列不固定。
-  3. **view 是否包含 `旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖 Url`、`異動通知內容` 等欄位？** → §4.1 #26
+  3. **view 是否包含 `旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖 Url`、`異動通知內容` 等欄位？** → §4.1 #26（定案：`tour_base` 與 `tour_travel` 欄位集合相同（`tour_travel` ＝ `tour_base` ＋ `收藏狀態`））
      - `tour_travel(uuid)` 的 WHERE／排序使用這些欄位（見該物件），而 `tour_base` 與它在首頁共用同一個 JS 轉換，前端很可能以相同欄位集合讀取。
      - 解讀 A：`tour_base` 與 `tour_travel` 欄位一致（只差 `收藏狀態`）。後果：登入與未登入首頁 response 結構相同。
      - 解讀 B：`tour_base` 只含上面表格的欄位。後果：未登入與登入的首頁 response 欄位不同，前端要處理兩種形狀。
-  4. **促銷是否在 view 內就判斷是否在期間內？** → §4.1 #9
+  4. **促銷是否在 view 內就判斷是否在期間內？** → §4.1 #9（定案：view 不判斷促銷期間，期間外 `通知狀態` 仍是 '促銷'）
      - 解讀 A：view 不判斷，期間外仍顯示 `通知狀態='促銷'`（依 `cart.js` 自己再檢查 `now() between` 推測）。後果：首頁「促銷」分頁會列出已過期的促銷行程，價格欄位卻是原價。
      - 解讀 B：view 內只在期間內才回 '促銷'。後果：`cart.js` 的檢查變成多餘但無害；首頁促銷分頁不會有過期行程。
-  5. **`建立時間`／`更新時間` 來自 `tour` 還是 `notification`？** → §4.1 #29
+  5. **`建立時間`／`更新時間` 來自 `tour` 還是 `notification`？** → §4.1 #29（定案：`建立時間`、`更新時間` 都來自 `tour`（`tour.created_at`／`tour.updated_at`））
      - `promotion.js:44/23` 對「促銷清單」用 `ORDER BY 更新時間 DESC`、`DATE(建立時間) = $n`；`admin.js:168`／`product.js:1067` 的商品清單用 `ORDER BY "建立時間" DESC`。
      - 解讀 A：兩者都是 `tour.created_at`／`tour.updated_at`。後果：促銷清單依行程本身的更新時間排序；建立日期篩選是行程建立日。
      - 解讀 B：兩者來自 `notification.created_at`／`updated_at`。後果：促銷清單依促銷（通知）最近修改排序，建立日期是促銷建立日；但商品清單（無通知的行程）的 `建立時間` 會是 `NULL`，排序與篩選失效。
@@ -213,7 +213,7 @@
   | 旅遊編號 | uuid | `tour.tour_id` | `home.js:26,60,79` | JOIN `tb.旅遊編號 = tf.tour_id` |
   | 大分類 | varchar | `tour.type` | `home.js:42`、`product.js:30` | WHERE |
   | 小分類 | varchar | `tour.item` | `home.js:42`、`product.js:35` | WHERE |
-  | 通知狀態 | varchar | `notification.type`（見 `tour_base` 待確認 2） | `home.js:42` | WHERE |
+  | 通知狀態 | varchar | `notification.type`（見 `tour_base` 待確認 2；【定案 #8】同 `tour_base`） | `home.js:42` | WHERE |
   | 旅遊開始日期 | timestamp | `tour.tour_start_date` | `home.js:43`、`product.js:68`、`product.js:106–109`（排序） | ORDER BY、WHERE |
   | 旅遊結束日期 | timestamp | `tour.tour_end_date` | `product.js:73` | WHERE |
   | 旅遊天數 | integer | `tour.days` | `product.js:78` | WHERE |
@@ -223,34 +223,34 @@
   | 所屬國家 | varchar | `tour.country` | `product.js:48` | WHERE（ILIKE） |
   | 所屬地區 | varchar | `tour.region` | `product.js:53` | WHERE（ILIKE） |
   | 偏好分類1 / 2 / 3 | smallint | `tour.preference1/2/3` | `product.js:42,126–143`、`home.js:90–96` | WHERE（ANY ARRAY）、JS 讀 `row['偏好分類1']` |
-  | 收藏狀態 | boolean | `EXISTS (favorite WHERE user_id = 參數 AND tour_id = tour.tour_id)` | 無直接讀取（見推測） | 推測：函式要帶入使用者編號的唯一合理理由；`tour_tour_detail` 的同名欄位 `收藏狀態` 被讀為 `is_favorited` |
+  | 收藏狀態 | boolean | `EXISTS (favorite WHERE user_id = 參數 AND tour_id = tour.tour_id)`；【定案 #28】未登入（參數 `NULL`）時為 `false` | 無直接讀取（見推測） | 推測：函式要帶入使用者編號的唯一合理理由；`tour_tour_detail` 的同名欄位 `收藏狀態` 被讀為 `is_favorited` |
 
-  其餘欄位（`旅遊描述`、`旅遊代表圖 Url`、`促銷價錢`、`促銷開始日期`、`促銷結束日期`…）：呼叫端都是 `SELECT *` 且 controller 沒有讀取具體 key，但 response 會原樣輸出，欄位集合是否與 `tour_base` 相同見待確認 2。
+  其餘欄位（`旅遊描述`、`旅遊代表圖 Url`、`促銷價錢`、`促銷開始日期`、`促銷結束日期`…）：呼叫端都是 `SELECT *` 且 controller 沒有讀取具體 key，但 response 會原樣輸出，欄位集合是否與 `tour_base` 相同見待確認 2（【定案 #26】相同，只差 `收藏狀態`）。
 
-- **列的語意**：每個行程一列，欄位與 `tour_base` 類似，額外附上傳入使用者是否已收藏。排序由呼叫端決定。
+- **列的語意**：每個行程一列，欄位與 `tour_base` 類似，額外附上傳入使用者是否已收藏。排序由呼叫端決定。【定案 #7、#27】只回 `status = 1` 的行程，不限 `item`（旅行團與背包客的所有種類）。
 - **邊界**：
-  - 傳入 `NULL`（未登入）時 `product.js:116` 仍會呼叫它，所以 function 必須接受 `NULL` 並回傳全部行程（`收藏狀態` 應為 `false` 或 `NULL`，見待確認 3）。
+  - 傳入 `NULL`（未登入）時 `product.js:116` 仍會呼叫它，所以 function 必須接受 `NULL` 並回傳全部行程（`收藏狀態` 應為 `false` 或 `NULL`，見待確認 3；【定案 #28】`false`）。
   - 沒有收藏紀錄的行程要保留（相當於 `LEFT JOIN favorite` 或 `EXISTS`），否則商品搜尋會漏行程。
   - 與 `popular`／`most_favorited` 是 `INNER JOIN`，沒出現在後者結果的行程不會出現在首頁。
   - 首頁 API 沒帶 `type` 時整個回 500，見 `tour_base` 邊界（`middlewares/home/index.js:7` 用 `reviewSchema`，default 沒寫回 `req.query`）。
 - **信心**：參數與用於過濾／排序的欄位：確定。`收藏狀態` 與是否過濾上架：推測。
 - **待確認**：
-  1. **function 名稱是 travel，但被用在所有種類（旅行團 travel、背包客 hotel/food/spot）。** → §4.1 #27
+  1. **function 名稱是 travel，但被用在所有種類（旅行團 travel、背包客 hotel/food/spot）。** → §4.1 #27（定案：回傳所有種類，不限 `item = 'travel'`）
      - 證據：`product.js:116` 的 `whereSQL` 可帶任意 `大分類`／`小分類`（驗證器允許 backpacker 的 hotel/food/spot）；`home.js:77` 在 `type=backpacker` 時也呼叫它。
      - 解讀 A：回傳所有種類。後果：商品搜尋與首頁背包客分頁正常。
      - 解讀 B：只回傳 `item='travel'`。後果：`GET /user/product/search?type=backpacker` 與首頁背包客（已登入）永遠為空，但「未登入」路徑（用 `tour_base`）仍有資料，兩者行為不一致。
-  2. **欄位集合是否與 `tour_base` 相同再加 `收藏狀態`。** → §4.1 #26
+  2. **欄位集合是否與 `tour_base` 相同再加 `收藏狀態`。** → §4.1 #26（定案：欄位集合 ＝ `tour_base` 的欄位 ＋ `收藏狀態`）
      - 解讀 A：相同（再加 `收藏狀態`）。後果：登入／未登入首頁 response 欄位只差 `收藏狀態`。
      - 解讀 B：欄位較少或較多。後果：首頁登入與未登入兩個 response 形狀不一致；前端若依賴多出的欄位會在其中一種狀態讀到 `undefined`。
-  3. **未登入（`NULL` 參數）時 `收藏狀態` 該是 `false` 還是 `NULL`？** → §4.1 #28
+  3. **未登入（`NULL` 參數）時 `收藏狀態` 該是 `false` 還是 `NULL`？** → §4.1 #28（定案：`false`）
      - 解讀 A：`false`。後果：前端 `is_favorited` 一律是布林值。
      - 解讀 B：`NULL`。後果：JSON 內是 `null`，前端的布林判斷結果一樣，但嚴格比較（`=== false`）的測試會失敗。
-  4. **是否只回傳上架行程？**（同 `tour_base` 待確認 1） → §4.1 #7
+  4. **是否只回傳上架行程？**（同 `tour_base` 待確認 1） → §4.1 #7（定案：只回 `status = 1`）
      - 解讀 A：只回 `status = 1`。後果：商品搜尋看不到下架行程，符合 `get_tourDetails` 對 `status = 1` 的處理；解讀 B：回傳全部。後果：下架行程出現在公開搜尋。
 
 ### `tour_travel_popular`
 
-- **種類**：function（`tour_travel_popular(大分類 text, 小分類 text) RETURNS TABLE(tour_id uuid, 購買排行 bigint)`）
+- **種類**：function（`tour_travel_popular(大分類 text, 小分類 text) RETURNS TABLE(tour_id uuid, 購買排行 integer)`）
 - **使用位置**：
   - `controllers/home.js:16`（API：`GET /api/v1/user/home/search/products?type=tourgroup&item=popular`，未登入）：完整 SQL 見 `tour_base` 的 `home.js:15`；參數 `['tourgroup','travel']`。
   - `controllers/home.js:25`（API：同上，已登入）：完整 SQL 見 `tour_travel` 的 `home.js:24`；參數 `$2,$3 = 'tourgroup','travel'`。
@@ -274,35 +274,35 @@
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | tour_id（英文，不是中文） | uuid | `tour.tour_id` | `home.js:17,26,70,79`（`tf.tour_id`） | JOIN 條件 |
-  | 購買排行 | bigint | 依 `order_item`（購買數）由多到少的名次，1 為最熱門 | `home.js:18,27,71,80` | ORDER BY ASC，數字小的在前 |
+  | 購買排行 | integer（【定案 #25】） | 依 `order_item`（購買數）由多到少的名次，1 為最熱門；【定案 #4】購買數只算 `payment_status = 1`，【定案 #24】`ROW_NUMBER()` 並加次要排序 | `home.js:18,27,71,80` | ORDER BY ASC，數字小的在前 |
 
   `SELECT *` 讓 `tour_id` 與 `購買排行` 一起進入 response（`tour_id` 是額外的英文欄位）。
 
-- **列的語意**：符合 (大分類, 小分類) 的行程，各一列，附上購買排行名次。
+- **列的語意**：符合 (大分類, 小分類) 的行程，各一列，附上購買排行名次。【定案 #4、#7、#23、#24】只計 `payment_status = 1` 的購買；只回 `status = 1` 的行程；沒有購買的行程也出現並排在最後；並列時以 `ROW_NUMBER()` 加次要排序。
 - **邊界**：
   - 首頁 API 沒帶 `type` 時整個回 500，不會走到本 function，見 `tour_base` 邊界。
   - 欄位名 `tour_id` 是英文，與其他全部欄位的中文命名不同，但程式碼寫死 `tf.tour_id`，必須照做。
   - 因為是 `INNER JOIN`，沒有出現在此 function 結果裡的行程不會出現在首頁熱門分頁。
-- **信心**：參數順序與輸出欄位名：確定（值與欄位名稱直接出現在程式碼）。排名計算方式：推測（只由 `購買排行` 一詞推測）；`bigint` 型別是依 window function／COUNT 的回傳型別推測，程式碼不讀它的型別。
+- **信心**：參數順序與輸出欄位名：確定（值與欄位名稱直接出現在程式碼）。排名計算方式：推測（只由 `購買排行` 一詞推測）；`bigint` 型別是依 window function／COUNT 的回傳型別推測，程式碼不讀它的型別。【定案 #25】型別改為 `integer`（view／function 內 `::int`）。
 - **待確認**：
-  1. **「購買」怎麼算？** → §4.1 #4
+  1. **「購買」怎麼算？** → §4.1 #4（定案：只算 `order_item.payment_status = 1`（已付款））
      - 解讀 A：數 `order_item` 全部列。後果：未付款、已取消的訂單也計入，排行被灌水。
      - 解讀 B：只算 `payment_status = 1`（已付款）。後果：新 DB／seed 若沒有已付款訂單，熱門分頁整個為空；P1b 的 seed 需要包含已付款訂單。
      - `order_item.payment_status` 的值：-1 資料剛建立、0 資料填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時。`checkout.js:48` 建立 `order_item` 時一律寫入 -1，所以解讀 A 連尚未填寫就放棄的結帳也會計入。
      - 解讀 C：只排除 2（已取消）、3（已退款）、4（付款逾時），保留 -1、0、1。後果：仍計入未付款的訂單。
      - 解讀 D：只算 0 與 1（已填寫完成、已付款）。後果：排除剛建立與所有失敗狀態，介於 A、B 之間。
-  2. **沒有任何購買的行程要不要出現？** → §4.1 #23
+  2. **沒有任何購買的行程要不要出現？** → §4.1 #23（定案：沒有購買的行程也出現，排在最後（`LEFT JOIN`，計數 0））
      - 解讀 A：出現，排在最後（`LEFT JOIN`，排行用計數 0 排序）。後果：新 DB 熱門分頁仍有資料。
      - 解讀 B：不出現（`INNER JOIN order_item`）。後果：沒有訂單時首頁熱門分頁回 200「查無資料」。
-  3. **排名並列時怎麼處理？** → §4.1 #24
+  3. **排名並列時怎麼處理？** → §4.1 #24（定案：`ROW_NUMBER()` 並加次要排序（例如 `tour_id`），分頁穩定）
      - 解讀 A：`RANK()`（並列同名次）。後果：`ORDER BY 購買排行 ASC LIMIT/OFFSET` 在並列時沒有次要排序，分頁可能重複或漏列。
      - 解讀 B：`ROW_NUMBER()` 並加次要排序。後果：分頁穩定，並列者的先後取決於次要排序的選擇。
-  4. **是否只回傳上架行程？**（同 `tour_base` 待確認 1） → §4.1 #7
+  4. **是否只回傳上架行程？**（同 `tour_base` 待確認 1） → §4.1 #7（定案：只回 `status = 1`）
      - 解讀 A：過濾上架。後果：未登入路徑（`tour_base`）不會露出下架行程；解讀 B：不過濾。後果：下架行程可能進入熱門排行。
 
 ### `tour_travel_most_favorited`
 
-- **種類**：function（`tour_travel_most_favorited(大分類 text, 小分類 text) RETURNS TABLE(tour_id uuid, 收藏排行 bigint)`）
+- **種類**：function（`tour_travel_most_favorited(大分類 text, 小分類 text) RETURNS TABLE(tour_id uuid, 收藏排行 integer)`）
 - **使用位置**：
   - `controllers/home.js:50`（API：`GET /api/v1/user/home/search/products?type=tourgroup&item=most_favorited`，未登入）：完整 SQL 見 `tour_base` 的 `home.js:49`；參數 `['tourgroup','travel']`。
   - `controllers/home.js:59`（API：同上，已登入）：完整 SQL 見 `tour_travel` 的 `home.js:58`；參數 `$2,$3 = 'tourgroup','travel'`。
@@ -324,17 +324,17 @@
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | tour_id（英文） | uuid | `tour.tour_id` | `home.js:51,60` | JOIN 條件 |
-  | 收藏排行 | bigint | 依 `favorite` 筆數由多到少的名次，1 為最多人收藏 | `home.js:52,61` | ORDER BY ASC |
+  | 收藏排行 | integer（【定案 #25】） | 依 `favorite` 筆數由多到少的名次，1 為最多人收藏 | `home.js:52,61` | ORDER BY ASC |
 
-- **列的語意**：符合 (大分類, 小分類) 的行程，各一列，附上被收藏次數的排行。只在 `type=tourgroup&item=most_favorited` 使用，因此程式碼只會用 `('tourgroup','travel')` 呼叫。
+- **列的語意**：符合 (大分類, 小分類) 的行程，各一列，附上被收藏次數的排行。【定案 #7、#23、#24】只回 `status = 1` 的行程；沒有人收藏的行程也出現並排在最後；並列時以 `ROW_NUMBER()` 加次要排序。只在 `type=tourgroup&item=most_favorited` 使用，因此程式碼只會用 `('tourgroup','travel')` 呼叫。
 - **邊界**：與 `tour_travel_popular` 相同——欄位 `tour_id` 為英文；`INNER JOIN` 決定首頁是否出現。
-- **信心**：參數與欄位名：確定。排名計算：推測；`bigint` 型別為推測（依 window function／COUNT 的回傳型別）。
+- **信心**：參數與欄位名：確定。排名計算：推測；`bigint` 型別為推測（依 window function／COUNT 的回傳型別）。【定案 #25】型別改為 `integer`（view／function 內 `::int`）。
 - **待確認**：
-  1. **沒有任何人收藏的行程要不要出現？** → §4.1 #23
+  1. **沒有任何人收藏的行程要不要出現？** → §4.1 #23（定案：沒有人收藏的行程也出現，排在最後（`LEFT JOIN`，計數 0））
      - 解讀 A：出現，排在最後。後果：新 DB 也有資料。
      - 解讀 B：不出現。後果：沒有 `favorite` 資料時首頁「最多收藏」回「查無資料」，P1b 的 seed 需要包含收藏紀錄。
-  2. **並列名次與分頁穩定性**：同 `tour_travel_popular` 待確認 3（`RANK()` 與 `ROW_NUMBER()` 的後果相同）。 → §4.1 #24
-  3. **是否只回傳上架行程**：同 `tour_base` 待確認 1。 → §4.1 #7
+  2. **並列名次與分頁穩定性**：同 `tour_travel_popular` 待確認 3（`RANK()` 與 `ROW_NUMBER()` 的後果相同）。 → §4.1 #24（定案：`ROW_NUMBER()` 並加次要排序（例如 `tour_id`），分頁穩定）
+  3. **是否只回傳上架行程**：同 `tour_base` 待確認 1。 → §4.1 #7（定案：只回 `status = 1`）
 
 ### `tour_tour_detail`
 
@@ -375,32 +375,32 @@
   | Google Map Url | varchar | `tour.google_map_url` | `product.js:352` | response.location.google_map |
   | 旅遊描述 | text | `tour.description` | `product.js:354` | response.description |
   | 偏好設定分類 1 / 2 / 3（中間有空格） | smallint | `tour.preference1/2/3` | `product.js:209–211` | 反查中文標籤 → response.tags |
-  | 收藏狀態 | boolean | `EXISTS (favorite WHERE user_id = 參數 AND tour_id = tour.tour_id)` | `product.js:356` | response.is_favorited |
+  | 收藏狀態 | boolean | `EXISTS (favorite WHERE user_id = 參數 AND tour_id = tour.tour_id)`；【定案 #28】未登入時為 `false` | `product.js:356` | response.is_favorited |
   | 異動通知內容 | text | `notification.change_desc`（type='異動'） | `product.js:357` | response.emergency_notice |
-  | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'） | `product.js:359–360` | response.promotion.is_promoted（真偽）、promo_price |
-  | 通知狀態 | varchar | `notification.type` | `product.js:361` | response.promotion.tag |
+  | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'）；【定案 #10】僅促銷期間內有值，期間外為 `NULL` | `product.js:359–360` | response.promotion.is_promoted（真偽）、promo_price |
+  | 通知狀態 | varchar | `notification.type`（【定案 #8、#9】促銷優先；期間外仍是 '促銷'） | `product.js:361` | response.promotion.tag |
   | 促銷開始日期 | timestamp | `notification.start_date` | `product.js:362` | response.promotion.start_at |
   | 促銷結束日期 | timestamp | `notification.end_date` | `product.js:363` | response.promotion.end_at |
 
-- **列的語意**：每個行程一列（`travel`、`spot` 都只讀 `rows[0]`），行程資料加上 `tour_detail`、通知資料，以及傳入使用者的收藏狀態。
+- **列的語意**：每個行程一列（`travel`、`spot` 都只讀 `rows[0]`），行程資料加上 `tour_detail`、通知資料，以及傳入使用者的收藏狀態。【定案 #7、#8】只回 `status = 1` 的行程；一個行程一列（促銷與異動各自成欄）。
 - **邊界**：
   - 欄位命名不一致，必須照程式碼拼字：`偏好設定分類 1`（有空格，與 `tour_base` 的 `偏好分類1` 不同）、`特色圖1 url`（小寫）、`旅遊圖1 Url`（大寫）、`Google Map Url`。
-  - `促銷價錢` 為 `NULL` 時 `is_promoted` 為 `false`（`product.js:359`），所以沒有促銷時必須是 `NULL`，不能是 `0`。
+  - `促銷價錢` 為 `NULL` 時 `is_promoted` 為 `false`（`product.js:359`），所以沒有促銷時必須是 `NULL`，不能是 `0`。【定案 #10】促銷期間外也是 `NULL`，所以期間外 `is_promoted` 為 `false`。
   - **找不到行程時的 controller 行為**（`product.js:178–202`）：先查 `tour` 的 `status = 1`；查不到（tour_id 不存在、已下架）或 type/item 不在對照表（例如 tourgroup 但 item 不是 travel）時 `detailTable` 維持 `''`，SQL 變成 `SELECT * FROM ($2) WHERE 旅遊編號 = $1`（`product.js:202`），PostgreSQL 回語法錯誤，API 回 500，永遠回不到「查無此旅遊項目」。`tour_hotel`、`tour_restaurant` 共用這段，同樣適用。
   - 行程存在、但 function 回 0 列時，`product.js:209` 讀 `rows[0]["偏好設定分類 1"]` 會先丟 TypeError（`rowCount > 0` 檢查在 `product.js:215`，在其後），API 一樣回 500。這只會在 `status = 1` 的行程被 function 濾掉（例如 `spot` 沒有 `tour_detail` 列而 `INNER JOIN`）時發生。
   - 以上為 controller 行為，契約不處理，只記錄。
-  - 對 `tour_detail` 必須是 `INNER JOIN` 或 `LEFT JOIN`：`spot` 也用此 function 並讀特色圖（`product.js:335`），若 `spot` 行程沒有 `tour_detail` 列，`INNER JOIN` 會使整列消失（500），`LEFT JOIN` 則特色圖為 `NULL`。
+  - 對 `tour_detail` 必須是 `INNER JOIN` 或 `LEFT JOIN`：`spot` 也用此 function 並讀特色圖（`product.js:335`），若 `spot` 行程沒有 `tour_detail` 列，`INNER JOIN` 會使整列消失（500），`LEFT JOIN` 則特色圖為 `NULL`。【定案 #30】採 `LEFT JOIN`。
 - **信心**：欄位名稱與來源對應：確定。通知相關欄位的合併方式、`spot` 與 `tour_detail` 的關係：推測。
 - **待確認**：
-  1. **一個行程有多筆通知時**（同 `tour_base` 待確認 2）：本物件同時讀 `異動通知內容` 與 `促銷價錢`／`通知狀態`，因此兩者要在同一列。 → §4.1 #8
+  1. **一個行程有多筆通知時**（同 `tour_base` 待確認 2）：本物件同時讀 `異動通知內容` 與 `促銷價錢`／`通知狀態`，因此兩者要在同一列。 → §4.1 #8（定案：同 `tour_base` 待確認 2 的定案：促銷與異動各自成欄，一行程一列，`通知狀態` 促銷優先）
      - 解讀 A：只取一筆通知。後果：促銷與異動只會顯示其一。
      - 解讀 B：促銷與異動分欄合併成一列。後果：兩者都能顯示；`通知狀態` 需另定規則。
      - 解讀 C：每筆通知一列。後果：`rows[0]` 取哪筆不固定，且 `hotel`／`food` 的 `rows.map` 會重複。
-  2. **`spot` 行程是否保證有 `tour_detail` 列？** → §4.1 #30
+  2. **`spot` 行程是否保證有 `tour_detail` 列？** → §4.1 #30（定案：`LEFT JOIN tour_detail`，沒有 `tour_detail` 時特色圖、行程規劃為 `NULL`）
      - 解讀 A：保證（`INNER JOIN`）。後果：seed 與新增商品流程必須為每個 spot 建 `tour_detail`，否則詳情頁 500。
      - 解讀 B：不保證（`LEFT JOIN`）。後果：沒有 `tour_detail` 時特色圖、行程規劃為 `NULL`，頁面可顯示。
-  3. **只回傳上架行程？** 前面 `product.js:178–183` 已先以 `status = 1` 過濾，因此 function 內是否過濾不影響此 API，但影響其他未來呼叫端。解讀 A：過濾；解讀 B：不過濾。 → §4.1 #7
-  4. **`收藏狀態` 在未登入時是 `false` 還是 `NULL`**：同 `tour_travel` 待確認 3。 → §4.1 #28
+  3. **只回傳上架行程？** 前面 `product.js:178–183` 已先以 `status = 1` 過濾，因此 function 內是否過濾不影響此 API，但影響其他未來呼叫端。解讀 A：過濾；解讀 B：不過濾。 → §4.1 #7（定案：function 內只回 `status = 1`）
+  4. **`收藏狀態` 在未登入時是 `false` 還是 `NULL`**：同 `tour_travel` 待確認 3。 → §4.1 #28（定案：`false`）
 
 ### `tour_hotel`
 
@@ -426,7 +426,7 @@
   | 旅遊圖1–6 描述、旅遊圖1–6 Url | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:381–403` | response.image_spot[] |
   | 價錢、旅遊開始日期、旅遊結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:405–407` | response.price / date_start / date_end |
   | 房型名稱 | varchar | `hotel_room.title` | `product.js:410` | response.feature.room[].name（逐列） |
-  | 房型描述 | varchar | `hotel_room.image_desc`（推測） | `product.js:411` | response.feature.room[].description |
+  | 房型描述 | varchar | `hotel_room.image_desc`（推測；【定案 #31】採用 `image_desc`） | `product.js:411` | response.feature.room[].description |
   | 房型容納人數 | integer | `hotel_room.capacity` | `product.js:412` | response.feature.room[].capacity |
   | 房型數量 | integer | `hotel_room.room_count` | `product.js:413` | response.feature.room[].room_count |
   | 房型代表圖 url（小寫 url） | text | `hotel_room.image` | `product.js:414` | response.feature.room[].image_url |
@@ -434,27 +434,27 @@
   | 餐飲相關服務 | text | `hotel.food_desc` | `product.js:423` | response.feature.service[1].item |
   | 客房與設施 | text | `hotel.room_desc` | `product.js:427` | response.feature.service[2].item |
   | 交通與停車 | text | `hotel.traffic_desc` | `product.js:431` | response.feature.service[3].item |
-  | 其他便利服務 | text | `hotel.other_desc`（推測，見待確認 2） | `product.js:435` | response.feature.service[4].item |
+  | 其他便利服務 | text | `hotel.other_desc`（推測，見待確認 2；【定案 #32】採用 `other_desc`，`leisure_desc` 不輸出） | `product.js:435` | response.feature.service[4].item |
   | 所屬國家、所屬地區、地址、Google Map Url、旅遊描述 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:440–445` | response.location / description |
   | 偏好設定分類 1 / 2 / 3 | smallint | `tour.preference1/2/3` | `product.js:209–211` | response.tags |
   | 收藏狀態、異動通知內容、促銷價錢、通知狀態、促銷開始日期、促銷結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:447–454` | response.is_favorited / emergency_notice / promotion |
 
 - **列的語意**：**每個房型一列**（`hotel_room` 一列對應一列輸出），行程與飯店層級的欄位在每一列重複。依據：`product.js:409` 用 `tourDetailsRepo.rows.map(...)` 逐列產生 `room[]`；其他欄位只讀 `rows[0]`。
 - **邊界**：
-  - 沒有房型的飯店：`INNER JOIN hotel_room` 會使整間飯店消失；`LEFT JOIN` 會有一列、房型欄位為 `NULL`，response 的 `room` 會是一個全為 `null` 的物件。
+  - 沒有房型的飯店：`INNER JOIN hotel_room` 會使整間飯店消失；`LEFT JOIN` 會有一列、房型欄位為 `NULL`，response 的 `room` 會是一個全為 `null` 的物件。【定案 #33】採 `LEFT JOIN`。
   - 房型的先後順序沒有 `ORDER BY` 可供依據。
   - 欄位命名同樣不一致，必須照拼字：`房型代表圖 url`（小寫）。
 - **信心**：欄位名稱：確定；來源對應：大部分確定，`房型描述`、`其他便利服務` 為推測。
 - **待確認**：
-  1. **`房型描述` 沒有明確來源**：`hotel_room` 只有 `image_desc`（圖片描述）。 → §4.1 #31
+  1. **`房型描述` 沒有明確來源**：`hotel_room` 只有 `image_desc`（圖片描述）。 → §4.1 #31（定案：`房型描述 = hotel_room.image_desc`）
      - 解讀 A：`房型描述 = hotel_room.image_desc`。後果：前端房型描述就是圖片說明文字。
      - 解讀 B：需新增 `hotel_room.description`（要改 migration）。後果：超出「V3 只建 view/function」範圍，需要另外新增欄位。
-  2. **`hotel` 有 6 個描述欄位（`facility_desc`、`food_desc`、`room_desc`、`leisure_desc`、`traffic_desc`、`other_desc`），controller 只讀 5 個**： → §4.1 #32
+  2. **`hotel` 有 6 個描述欄位（`facility_desc`、`food_desc`、`room_desc`、`leisure_desc`、`traffic_desc`、`other_desc`），controller 只讀 5 個**： → §4.1 #32（定案：`其他便利服務 = hotel.other_desc`，`leisure_desc` 不輸出）
      - 解讀 A：`其他便利服務 = other_desc`，`leisure_desc` 被忽略。後果：`leisure_desc` 的資料不會在 API 顯示。
      - 解讀 B：`其他便利服務 = leisure_desc`，`other_desc` 被忽略。後果：同樣有一個欄位資料被忽略，但被忽略的是另一個。
      - 解讀 C：兩者串接。後果：兩者都能顯示，但需要定分隔格式。
-  3. **沒有房型的飯店是否出現**：解讀 A：`INNER JOIN`，飯店消失；解讀 B：`LEFT JOIN`，出現一列全為 `null` 的房型。 → §4.1 #33
-  4. **通知多筆時的處理**：同 `tour_tour_detail` 待確認 1；多筆通知與多房型相乘，若採解讀 C（每筆通知一列），`room[]` 會重複。 → §4.1 #8
+  3. **沒有房型的飯店是否出現**：解讀 A：`INNER JOIN`，飯店消失；解讀 B：`LEFT JOIN`，出現一列全為 `null` 的房型。 → §4.1 #33（定案：`LEFT JOIN`，沒有房型的飯店出現一列、房型欄位為 `NULL`）
+  4. **通知多筆時的處理**：同 `tour_tour_detail` 待確認 1；多筆通知與多房型相乘，若採解讀 C（每筆通知一列），`room[]` 會重複。 → §4.1 #8（定案：一行程一列（促銷與異動各自成欄），`room[]` 不會因通知而重複）
 
 ### `tour_restaurant`
 
@@ -491,18 +491,19 @@
   | 偏好設定分類 1 / 2 / 3 | smallint | `tour.preference1/2/3` | `product.js:209–211` | response.tags |
   | 收藏狀態、異動通知內容、促銷價錢、通知狀態、促銷開始日期、促銷結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:281–288` | response.is_favorited / emergency_notice / promotion |
 
-- **列的語意**：同一個 function 的一列同時要供 `menu[]` 和 `opening[]` 使用——`product.js:263` 與 `product.js:268` 都是 `tourDetailsRepo.rows.map(...)`，各自讀同一組列的不同欄位。餐廳層級欄位在每列重複。
+- **列的語意**：同一個 function 的一列同時要供 `menu[]` 和 `opening[]` 使用——`product.js:263` 與 `product.js:268` 都是 `tourDetailsRepo.rows.map(...)`，各自讀同一組列的不同欄位。餐廳層級欄位在每列重複。【定案 #34】採 `UNION ALL`／位置對齊：每列各帶一筆菜單或一筆營業時間，另一邊為 `NULL`（陣列內有 `name: null` 或 `week: null` 的空項），不重複。
 - **邊界**：
   - 依賴 V1 的 `restaurant_business`／`restaurant_menu`；程式碼另外查詢 `restaurant_business_parsed`（V1／V2 沒有，是 B 組物件，使用於 `middlewares/cart/index.js`），本物件是否使用它無法由 A 組程式碼證實。
   - 欄位命名必須照拼字：`官網 url`（小寫）、`官網介紹`、`餐廳人員限制`。
+  - 【定案 #33】沒有菜單或沒有營業時間的餐廳以 `LEFT JOIN` 保留，空項欄位為 `NULL`。
 - **信心**：欄位名稱：確定；列的展開方式：推測（見待確認 1）。
 - **待確認**：
-  1. **`menu[]` 與 `opening[]` 共用 `rows`，列要怎麼展開？** → §4.1 #34
+  1. **`menu[]` 與 `opening[]` 共用 `rows`，列要怎麼展開？** → §4.1 #34（定案：`UNION ALL`／位置對齊：每列各帶一筆菜單或一筆營業時間，另一邊為 `NULL`，沒有重複（3 ＋ 7 ＝ 10 列））
      - 解讀 A：`restaurant_menu` 與 `restaurant_business` 做 CROSS JOIN（菜單數 × 營業日數）。後果：兩個陣列各有大量重複項（例如 3 道菜 × 7 天 = 21 列，`menu[]` 與 `opening[]` 各 21 項）；程式碼不改的話前端會看到重複資料。
      - 解讀 B：用 `UNION ALL`／位置對齊，使每列各帶一筆菜單或一筆營業時間，不足的欄位為 `NULL`。後果：陣列內會有 `name: null` 或 `week: null` 的空項。
      - 解讀 C：每個餐廳一列，菜單與營業時間聚合進欄位（例如 JSON）。後果：`row.菜單名稱` 會是陣列／JSON，與 `rows.map` 的用法不符，controller 不改就無法使用。
-  2. **沒有菜單或沒有營業時間的餐廳是否出現**：解讀 A：`INNER JOIN`，餐廳消失（500）；解讀 B：`LEFT JOIN`，空項為 `null`。 → §4.1 #33
-  3. **通知多筆時的處理**：同 `tour_tour_detail` 待確認 1。 → §4.1 #8
+  2. **沒有菜單或沒有營業時間的餐廳是否出現**：解讀 A：`INNER JOIN`，餐廳消失（500）；解讀 B：`LEFT JOIN`，空項為 `null`。 → §4.1 #33（定案：`LEFT JOIN`，沒有菜單或營業時間的餐廳仍出現，空項為 `null`）
+  3. **通知多筆時的處理**：同 `tour_tour_detail` 待確認 1。 → §4.1 #8（定案：一行程一列（促銷與異動各自成欄，促銷優先））
 
 ### `user_user_level`
 
@@ -551,15 +552,16 @@
 
 - **列的語意**：每位使用者一列，包含使用者資料與其會員等級。
 - **邊界**：
+  - 【定案 #22】`LEFT JOIN`，沒有 `user_level` 列時等級欄位為 `NULL`；有多筆時取最新一筆（`updated_at` 最大），每位使用者最多一列。
   - 是 `INNER JOIN` 還是 `LEFT JOIN` 在 view 內決定：`user_level` 在 V1 有 `user_id`，沒有 unique 約束；`level`、`name`、`badge_url` 在 V1 都是 `NULL` 可以空（註解「正式需要 not null」）。
   - 沒有 `user_level` 列的使用者，如果 view 用 `INNER JOIN`，他的評論與隱藏玩法在上述兩個 API 會被 controller 的 `inner JOIN` 一起濾掉。
   - `旅遊等級`（V1 是 `VARCHAR`）在 `product.js:571` 直接放入 `level.level`，型別為字串。
 - **信心**：欄位名稱與來源：確定（V1 `user`／`user_level` 欄位一一對應）。JOIN 方式與重複列：推測。
 - **待確認**：
-  1. **使用者沒有 `user_level` 列時怎麼辦？** → §4.1 #22
+  1. **使用者沒有 `user_level` 列時怎麼辦？** → §4.1 #22（定案：`LEFT JOIN`，沒有 `user_level` 列時等級欄位為 `NULL`）
      - 解讀 A：view 用 `INNER JOIN`（沒有等級資料就不在 view 內）。後果：該使用者的評論、隱藏玩法在商品頁消失；seed 必須為每個使用者建 `user_level`。（註冊流程 `userinfo.js:30,185` 會建立 `user_level`，所以正常註冊的使用者都有。）
      - 解讀 B：view 用 `LEFT JOIN`，等級欄位為 `NULL`。後果：評論仍顯示，`level` 物件內欄位為 `null`。
-  2. **一個使用者有多筆 `user_level` 時？**（V1 沒有 unique） → §4.1 #22
+  2. **一個使用者有多筆 `user_level` 時？**（V1 沒有 unique） → §4.1 #22（定案：取最新一筆（`updated_at` 最大））
      - 解讀 A：view 直接 JOIN，不處理。後果：該使用者的每筆評論重複出現（筆數 = 等級列數）。
      - 解讀 B：view 取最新一筆（`updated_at` 最大）。後果：評論不重複，但需要定義「最新」。
 
@@ -578,7 +580,7 @@
   |---|---|---|---|---|
   | 評論時間 | timestamptz | `review.created_at` | `home.js:132` | ORDER BY（唯一在程式碼裡確定的欄位） |
 
-  controller 沒有讀取其他 key，`SELECT *` 的欄位原樣輸出到 response，因此程式碼本身**無法證實**還需要哪些欄位。以下為依名稱與 `user_user_level`（同一組作者）合理推測的欄位，需要使用者確認（見待確認 1）：
+  controller 沒有讀取其他 key，`SELECT *` 的欄位原樣輸出到 response，因此程式碼本身**無法證實**還需要哪些欄位。以下為依名稱與 `user_user_level`（同一組作者）合理推測的欄位，需要使用者確認（見待確認 1；【定案 #11】欄位集合待 §4.2 (d1) 核對 frontend 後回填（P1b），下表是推測，不是定案）：
 
   | 欄位（中文） | 型別 | 來源（推測） |
   |---|---|---|
@@ -591,20 +593,20 @@
   | 評分 | integer | `review.rating` |
   | 評論內容 | text | `review.content` |
 
-- **列的語意**：（推測，見待確認 2）「網站整體好評」——`review` 中 `type = 'web'` 的評論（V1 註解：`type` 可以是 web / travel / hotel / food / spot；路由註解 `[GET] 編號 27 : 使用者查看此網頁好評內容`）。每則評論一列，附上評論者的名稱與等級。預設排序由 controller 決定（`評論時間 DESC`）。
+- **列的語意**：（推測，見待確認 2；【定案 #48】只含 `review.type = 'web'`）「網站整體好評」——`review` 中 `type = 'web'` 的評論（V1 註解：`type` 可以是 web / travel / hotel / food / spot；路由註解 `[GET] 編號 27 : 使用者查看此網頁好評內容`）。每則評論一列，附上評論者的名稱與等級。預設排序由 controller 決定（`評論時間 DESC`）。
 - **邊界**：
   - `review.tour_id` 在 V1 可為 `NULL`，網站評論（`type='web'`）通常沒有 `tour_id`，所以 view 不能要求 `tour_id` 存在。
-  - 評論者需有 `user_level` 才會出現的規則，同 `user_user_level` 待確認 1。
+  - 評論者需有 `user_level` 才會出現的規則，同 `user_user_level` 待確認 1（【定案 #22】`LEFT JOIN`）。
 - **信心**：推測。controller 只證實 `評論時間`；其餘欄位與篩選條件都來自名稱與註解的推測。
 - **待確認**：
-  1. **欄位集合與欄位中文名稱**：程式碼沒有讀取任何 key，前端（P0 凍結的 `phase-0`）會依實際欄位名稱讀取。 → §4.1 #11
+  1. **欄位集合與欄位中文名稱**：程式碼沒有讀取任何 key，前端（P0 凍結的 `phase-0`）會依實際欄位名稱讀取。 → §4.1 #11（定案：欄位集合與命名未定，待 §4.2 (d1) 核對 frontend 後回填（P1b），上面的推測欄位不是定案）
      - 解讀 A：照上面的推測欄位建立。後果：若前端的欄位名稱不同，首頁好評區塊會缺資料，要在 V3 前核對 `frontend`（P1a 不動 frontend）。
      - 解讀 B：先查 frontend 實際讀取的 key 再定。後果：多花一道工，但欄位名稱正確。
-  2. **篩選條件**： → §4.1 #48
+  2. **篩選條件**： → §4.1 #48（定案：只含 `review.type = 'web'`）
      - 解讀 A：只含 `review.type = 'web'`。後果：首頁只顯示網站整體好評；若 seed 沒有 web 類評論，首頁好評區塊為空。
      - 解讀 B：含所有 `review`（不限 type）。後果：行程評論（travel／hotel／food／spot）也會顯示在首頁。
      - 解讀 C：只含評分達標（例如 `rating >= 4`）的評論，名稱中的「好評」。後果：需要另定門檻；低分評論不會出現。
-  3. **評論者沒有 `user_level` 列時是否出現**：同 `user_user_level` 待確認 1（INNER vs LEFT JOIN）。 → §4.1 #22
+  3. **評論者沒有 `user_level` 列時是否出現**：同 `user_user_level` 待確認 1（INNER vs LEFT JOIN）。 → §4.1 #22（定案：`LEFT JOIN`，評論者沒有 `user_level` 列時評論仍出現、等級欄位為 `NULL`；有多筆時取最新一筆）
 
 ## 2. B 組：購物車、訂位、折扣、結帳
 
@@ -642,37 +644,38 @@
   | 旅遊名稱 | varchar | `tour_base.旅遊名稱` | `controllers/cart.js:214` | JS 讀取 → response.title |
   | 旅遊代表圖 Url | text | `tour_base."旅遊代表圖 Url"` | `controllers/cart.js:215` | JS 讀取 → response.image_url |
   | 價錢 | integer | `tour_base.價錢`（`tour.price`） | `controllers/cart.js:216` | JS 讀取 → response.price |
-  | 促銷價錢 | double precision | `tour_base.促銷價錢`（`notification.promo_price`） | `controllers/cart.js:217` | JS 讀取 → response.promo_price（見待確認 2） |
+  | 促銷價錢 | double precision | `tour_base.促銷價錢`（`notification.promo_price`） | `controllers/cart.js:217` | JS 讀取 → response.promo_price（見待確認 2；【定案 #10】僅促銷期間內有值，期間外為 `NULL`） |
   | quantity（英文） | integer | `cart_item.quantity` | `controllers/cart.js:219` | JS 讀取 → response.options.people |
   | start_date（英文） | timestamp | `cart_item.start_date` | `controllers/cart.js:220` | JS 讀取 → response.options.start_date |
   | end_date（英文） | timestamp | `cart_item.end_date`（V1 可 NULL） | `controllers/cart.js:221` | JS 讀取 → response.options.end_date |
   | room_type（英文） | varchar | `cart_item.room_type`（V1 可 NULL） | `controllers/cart.js:222` | JS 讀取 `item.room_type \|\| ''`，`NULL` 會被轉成 `''` |
-  | singleTotal_Price（英文，混合大小寫，需雙引號） | numeric 或 double precision（推測） | 單一購物車項目的小計（見待確認 1） | `controllers/cart.js:224` | JS 讀取 `Number(item.singleTotal_Price)` → response.total_price，並加總成 summary.total_price（`controllers/cart.js:230`） |
+  | singleTotal_Price（英文，混合大小寫，需雙引號） | double precision（【定案 #12】） | 單一購物車項目的小計（見待確認 1；【定案 #12】有效單價 × `quantity`，促銷期間內用促銷價、否則原價，同 `controllers/cart.js:19–22` 的 CASE） | `controllers/cart.js:224` | JS 讀取 `Number(item.singleTotal_Price)` → response.total_price，並加總成 summary.total_price（`controllers/cart.js:230`） |
+  | cart_item_id（英文，【定案 #35】多帶） | uuid | `cart_item.cart_item_id`（V1 `:254`） | 無（controller 不讀） | 為 P4 交易保留；現有 API 的 response 不變 |
 
-  `cart_item_id` 不在 controller 讀取的 key 內（見邊界第 4 點）。
+  `cart_item_id` 不在 controller 讀取的 key 內（見邊界第 4 點）；【定案 #35】view 多帶 `cart_item_id`。
 
 - **列的語意**：每個購物車項目（`cart_item`）一列，帶入所屬購物車（`cart.user_id`）與行程資料（`tour_base`）。預設排序由 controller 決定（`cart_id ASC`，沒有第二排序鍵）。
 - **邊界**：
-  - 對 `cart`／`cart_item` 必須是 `INNER JOIN`（`cart_item` 有 `cart_id` NOT NULL，V1 `:254–255`）。對 `tour_base`：若 `tour_base` 不含下架行程（§1 `tour_base` 待確認 1 解讀 B），INNER JOIN 會讓購物車裡已下架的項目消失，LEFT JOIN 則該列的中文欄位為 `NULL`，`Number(NULL)`＝0。
+  - 對 `cart`／`cart_item` 必須是 `INNER JOIN`（`cart_item` 有 `cart_id` NOT NULL，V1 `:254–255`）。對 `tour_base`：若 `tour_base` 不含下架行程（§1 `tour_base` 待確認 1 解讀 B），INNER JOIN 會讓購物車裡已下架的項目消失，LEFT JOIN 則該列的中文欄位為 `NULL`，`Number(NULL)`＝0。【定案 #7】`tour_base` 含全部行程，INNER／LEFT JOIN 結果相同。
   - 欄位名稱混用英文與中文（`user_id`、`cart_id`、`quantity`、`singleTotal_Price` 是英文；`大分類`、`價錢` 等是中文），必須照程式碼拼字，`singleTotal_Price` 有大寫 T 與 P。
   - **controller 行為 1（分頁不穩定）**：`controllers/cart.js:204` 只 `ORDER BY cart_id ASC`。`post_cartItem` 把同一位使用者的項目都放進同一個 `cart_id`（`controllers/cart.js:46–55`），所以同一使用者所有列的排序鍵相同，`LIMIT/OFFSET` 在這種情況下沒有確定順序，翻頁可能重複或漏列。契約只記錄，不處理。
   - **seed 對照（UUID 版本）**：`GET /list` 本身不經 uuid 驗證，但 seed 行程的 `tour_id` 不是 v4，所以無法再用 `POST /cart/:tour_id` 加入任何 seed 行程（見共通觀察的「UUID 版本檢查」）；seed 既有的 `cart_item` 可由 `GET /list` 讀到。
   - **controller 行為 2（多購物車）**：`controllers/cart.js:15,46` 取使用者的 `cart`（`:15` 查詢，`:46` 讀 `user_cartRepo.rows[0]`），`controllers/cart.js:47–50` 的 `Update public."cart" ... where user_id = $1` 沒有限定 `cart_id`，會更新該使用者的**所有**購物車。V1 的 `cart` 沒有 `user_id` unique 約束，而 seed（`db/seed/R__seed.sql:765–772`）每位使用者有 2 個 `cart`（`a1b2...`、`b2c3...`、`c3d4...` 各 2 筆），所以對 seed 使用者加入購物車會同時改兩個購物車的 `total_price`。這是 controller／seed 的衝突，不是 view 的問題，但 view 會把兩個購物車的項目都列出。
   - **controller 行為 3（總額與小計各自計算）**：`cart.total_price`（`controllers/cart.js:31,49,110–111,164–170`）由 controller 在每次加入／刪除／修改時用「當下的」`price * 人數` 增減，`GET /list` 的 `summary.total_price` 則是各列 `singleTotal_Price` 的加總（`controllers/cart.js:230`），兩者不保證一致（促銷價改變後，刪除項目會用新價格扣舊價格加入的金額）。
-  - **controller 行為 4（回傳不含 `cart_item_id`）**：`DELETE`／`PATCH /:cart_item_id` 需要 `cart_item_id`（`routes/cart.js:15,24`），但 `GET /list` 的 response（`controllers/cart.js:209–225`）沒有輸出 `cart_item_id`，即使 view 有這個欄位，前端也拿不到。view 是否提供 `cart_item_id` 無法由程式碼證實（見待確認 3）。
+  - **controller 行為 4（回傳不含 `cart_item_id`）**：`DELETE`／`PATCH /:cart_item_id` 需要 `cart_item_id`（`routes/cart.js:15,24`），但 `GET /list` 的 response（`controllers/cart.js:209–225`）沒有輸出 `cart_item_id`，即使 view 有這個欄位，前端也拿不到。view 是否提供 `cart_item_id` 無法由程式碼證實（見待確認 3；【定案 #35】view 帶 `cart_item_id`）。
   - `end_date` 為 `NULL` 的項目（V1 允許，`cart_item.end_date` 為 `TIMESTAMP NULL`；seed 有這樣的列：`db/seed/R__seed.sql:776,785`）會直接輸出 `null`。
 - **信心**：欄位名稱：確定（全部由 `controllers/cart.js:208–226` 讀取證實）；來源對應：大部分確定（V1 `cart`、`cart_item` 欄位一一對應）；`singleTotal_Price` 的計算與型別：推測。
 - **待確認**：
-  1. **`singleTotal_Price` 怎麼算？**（程式碼只讀它，沒有計算） → §4.1 #12
+  1. **`singleTotal_Price` 怎麼算？**（程式碼只讀它，沒有計算） → §4.1 #12（定案：`user_cartList` 的 `singleTotal_Price` ＝ 有效單價 × `quantity`（促銷期間內用促銷價，否則原價，同 `cart.js:19–22` 的 CASE），型別 `double precision`）
      - 解讀 A：`有效單價 × quantity`，有效單價＝促銷期間內用 `促銷價錢`，否則 `價錢`（與 `controllers/cart.js:19–22` 同一個 CASE）。後果：與 `cart.total_price` 的累計邏輯一致；促銷期間外項目自動回到原價。
      - 解讀 B：`價錢 × quantity`（永遠用原價）。後果：有促銷的項目小計大於實際 `cart.total_price` 所加的金額，`summary.total_price` 與 `cart.total_price` 不一致。
      - 解讀 C：`促銷價錢 × quantity`（`NULL` 時退回 `價錢`），不檢查促銷期間。後果：過期促銷的行程仍用促銷價。
      - 型別：若是 `numeric` 或 `bigint`，pg 回字串，所以 `Number(...)`（`controllers/cart.js:224`）是必要的；若是 `double precision` 則 `Number` 無害。controller 用 `Number()` 暗示型別不一定是 number。
-  2. **`促銷價錢` 在沒有促銷或促銷已過期時是什麼？**（`controllers/cart.js:217` 原樣輸出 `promo_price`） → §4.1 #10
+  2. **`促銷價錢` 在沒有促銷或促銷已過期時是什麼？**（`controllers/cart.js:217` 原樣輸出 `promo_price`） → §4.1 #10（定案：只在促銷期間內才有值，否則 `NULL`（`通知狀態` 照 #9 不判斷期間））
      - 解讀 A：永遠是 `notification.promo_price` 原值（`tour_base` 的 `促銷價錢`）。後果：過期促銷的項目仍會回傳 `promo_price`，前端要自己判斷期間。
      - 解讀 B：只有在促銷期間內才有值，否則 `NULL`。後果：前端以「有值」判斷是否促銷；方向與 §1 `tour_base` 待確認 4 解讀 B 相同（期間外不視為促銷），但 §1 待確認 4 談的是 `通知狀態`，不是 `促銷價錢`。
-  3. **view 是否多帶 `cart_item_id` 等未被讀取的欄位？** 程式碼不讀，不影響現有 API。解讀 A：帶（建議，未來讓前端能刪除項目）。解讀 B：不帶。後果：前端目前拿不到 `cart_item_id`（見邊界第 4 點）的狀況不變。 → §4.1 #35
-  4. **與 `tour_base` 的 JOIN 方式**：見邊界第 1 點。解讀 A：INNER JOIN（下架行程的購物車項目消失）。解讀 B：LEFT JOIN（項目保留，行程欄位為 `NULL`，小計 0）。 → §4.1 #7
+  3. **view 是否多帶 `cart_item_id` 等未被讀取的欄位？** 程式碼不讀，不影響現有 API。解讀 A：帶（建議，未來讓前端能刪除項目）。解讀 B：不帶。後果：前端目前拿不到 `cart_item_id`（見邊界第 4 點）的狀況不變。 → §4.1 #35（定案：帶 `cart_item_id`）
+  4. **與 `tour_base` 的 JOIN 方式**：見邊界第 1 點。解讀 A：INNER JOIN（下架行程的購物車項目消失）。解讀 B：LEFT JOIN（項目保留，行程欄位為 `NULL`，小計 0）。 → §4.1 #7（定案：`tour_base` 含全部行程，INNER／LEFT JOIN 結果相同，不需選擇）
 
 ### `hotel_booking`
 
@@ -701,32 +704,32 @@
 
   | 欄位 | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
-  | booking_count（英文） | integer 或 bigint | 該房型在指定日期區間內已被預訂的間數（見待確認 1） | `middlewares/cart/index.js:60,195` | JS 讀取 `rows[0].booking_count`，與 `room_count` 比較 |
+  | booking_count（英文） | integer（【定案 #25】） | 該房型在指定日期區間內已被預訂的間數（見待確認 1；【定案 #5】數 `payment_status IN (-1, 0, 1)`；【定案 #17】日期區間為半開區間） | `middlewares/cart/index.js:60,195` | JS 讀取 `rows[0].booking_count`，與 `room_count` 比較 |
   | room_count（英文） | integer | `hotel_room.room_count`（該房型總間數） | `middlewares/cart/index.js:61,196` | JS 讀取 `rows[0].room_count` |
 
-  兩個欄位以 `>=` 比較（`middlewares/cart/index.js:62,197`）。若 `booking_count` 是 `bigint`（`COUNT(*)` 的型別），pg 回字串，JS 的 `>=` 會把字串轉成數字，比較結果仍正確。
+  兩個欄位以 `>=` 比較（`middlewares/cart/index.js:62,197`）。若 `booking_count` 是 `bigint`（`COUNT(*)` 的型別），pg 回字串，JS 的 `>=` 會把字串轉成數字，比較結果仍正確。【定案 #25】`booking_count` 採 `integer`（`::int`），pg 回數字。
 
 - **列的語意**：每次呼叫回 0 或 1 列（controller 只讀 `rows[0]`）。1 列表示找得到該 (行程, 房型)，帶出已預訂數與總房數。
 - **邊界**：
-  - **0 列時略過檢查**：`middlewares/cart/index.js:59,194` 用 `booking_room.rowCount > 0` 才比較；找不到房型（例如 `room_type` 拼錯）時 function 回 0 列，controller 視為「有空房」，購物車項目仍會建立。function 的行為因此決定拼錯房型是否被擋：0 列＝放行，1 列且 `booking_count = 0, room_count = 0`＝擋下（`0 >= 0`）。見待確認 3。
+  - **0 列時略過檢查**：`middlewares/cart/index.js:59,194` 用 `booking_room.rowCount > 0` 才比較；找不到房型（例如 `room_type` 拼錯）時 function 回 0 列，controller 視為「有空房」，購物車項目仍會建立。function 的行為因此決定拼錯房型是否被擋：0 列＝放行，1 列且 `booking_count = 0, room_count = 0`＝擋下（`0 >= 0`）。見待確認 3。【定案 #18】找不到 (行程, 房型) 時回 1 列 `booking_count = 0, room_count = 0`，擋下無效房型。
   - `booking_count >= room_count` 時回「選擇的房間已無空房」（HTTP 400）。
-  - 此 function 的 `start_date`／`end_date` 區間重疊的判定（含不含退房當日）程式碼沒有證據，見待確認 2。
+  - 此 function 的 `start_date`／`end_date` 區間重疊的判定（含不含退房當日）程式碼沒有證據，見待確認 2。【定案 #17】半開區間 `[start_date, end_date)`，退房日當天可被下一位入住。
   - **seed 對照（UUID 版本）**：`POST /cart/:tour_id` 的 `paramsSchema`（`middlewares/cart/index.js:10`、`cart_Validator.js:84`）要求 `tour_id` 為 uuidv4，seed 的行程都不是 v4，所以 POST 路徑對 seed 行程永遠走不到本 function；只有 PATCH 既有的 seed `cart_item`（`tour_id` 取自 `cart_item`）能呼叫它。見共通觀察。
   - PATCH 時（`middlewares/cart/index.js:187`）呼叫端沒有排除「被修改的這個項目自己」，若 function 把購物車內項目也算進 `booking_count`，使用者修改自己已在購物車的項目時會與自己衝突。見待確認 1。
 - **信心**：參數順序與輸出欄位名：確定。`booking_count` 的計算方式、參數名稱與型別：推測。
 - **待確認**：
-  1. **`booking_count` 數什麼？**（程式碼只讀結果） → §4.1 #5
+  1. **`booking_count` 數什麼？**（程式碼只讀結果） → §4.1 #5（定案：數 `order_item.payment_status IN (-1, 0, 1)`）
      - 解讀 A：數 `order_item` 中同一 (行程, 房型) 且日期區間與參數重疊的列，不看 `payment_status`。後果：連剛建立（-1）、已取消（2）、已退款（3）、付款逾時（4）的訂單都占房間，房間會被放棄的結帳占住。
      - 解讀 B：只數 `payment_status = 1`（已付款）。後果：只有真正付款的才占房；有人下單未付款時，其他人仍可加入購物車（超賣風險）。
      - 解讀 C：數 `payment_status IN (-1, 0, 1)`（排除 2、3、4；各值意義見 B 組共通觀察）。後果：保留未付款的訂單占房，已取消、已退款、逾時的釋放。
      - 解讀 D：數 `payment_status IN (0, 1)`（已填寫完成、已付款）。後果：排除「剛建立、還沒填寫」的訂單。
      - 解讀 E：數 `cart_item`（購物車內項目）而非訂單。後果：占房的是還沒結帳的購物車項目；PATCH 時要自己排除自己，否則修改會與自己衝突。
      - 解讀 F：`order_item` 與 `cart_item` 都數。後果：同一間房可能被同一人重複計算（購物車與已生成訂單各一次）。
-  2. **日期區間重疊的判定**： → §4.1 #17
+  2. **日期區間重疊的判定**： → §4.1 #17（定案：半開區間 `[start_date, end_date)`，退房日當天可被下一位入住）
      - 解讀 A：半開區間 `[start_date, end_date)`，退房日當天可被下一位入住（一般飯店）。後果：同日退房入住不衝突。
      - 解讀 B：閉區間 `[start_date, end_date]`。後果：退房日當天仍算占房，連續住宿無法接續。
      - `order_item.start_date`／`end_date`（V1 `:296–297`）是 `timestamp`，不是 `date`，是否取到日期精度也要定。
-  3. **找不到 (行程, 房型) 時回 0 列還是回 0／0？** → §4.1 #18
+  3. **找不到 (行程, 房型) 時回 0 列還是回 0／0？** → §4.1 #18（定案：回 1 列 `booking_count = 0, room_count = 0`（例如 `COALESCE`））
      - 解讀 A：回 0 列（`LEFT JOIN`／`WHERE` 沒有符合）。後果：`room_type` 拼錯時 `middlewares/cart/index.js:59` 的檢查被略過，項目被加入。
      - 解讀 B：回 1 列 `booking_count = 0, room_count = 0`（例如 `COALESCE`）。後果：拼錯房型會被「已無空房」擋下，錯誤訊息不準確但不會加入無效房型。
      - 解讀 C：丟例外。後果：API 回 500。
@@ -756,25 +759,25 @@
 
   | 欄位 | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
-  | booking_count（英文） | integer 或 bigint | 該餐廳在該預約時間已預約的人數（見待確認 2） | `middlewares/cart/index.js:78,213` | JS 讀取 `rows[0].booking_count` |
+  | booking_count（英文） | integer（【定案 #25】） | 該餐廳在該預約時間已預約的人數（見待確認 2；【定案 #15】`order_item.quantity` 加總；【定案 #5】數 `payment_status IN (-1, 0, 1)`） | `middlewares/cart/index.js:78,213` | JS 讀取 `rows[0].booking_count` |
   | reservation_limit（英文） | integer | `restaurant.reservation_limit` | `middlewares/cart/index.js:79,214` | JS 讀取 `rows[0].reservation_limit`（controller 內的變數名 `food_count`） |
 
   兩者以 `>=` 比較（`middlewares/cart/index.js:80,215`），成立時回「預約已額滿」（HTTP 400）。
 
 - **列的語意**：每次呼叫回 0 或 1 列（controller 只讀 `rows[0]`）；1 列表示找得到該行程的餐廳，帶出已預約數與上限。
 - **邊界**：
-  - **controller 行為 1（呼叫參數 key 錯誤，已證實）**：`middlewares/cart/index.js:73` 與 `:208` 傳 `options.start_time`，但 food 的驗證器 `foodSchema`（`utils/Validator/cart_Validator.js:22–27`）只有 `start_date`，且 Joi object 預設不允許未知 key，帶 `start_time` 會被 `baseSchema.validate`（`middlewares/cart/index.js:9`）擋下回 400。所以透過 API 呼叫此 function 時，第 1 個參數**恆為 `NULL`**。結果：function 若用第 1 個參數比對預約時間（例如 `WHERE start_date = 參數`），永遠比對不到任何預約，`booking_count` 恆為 0（若回 1 列），額滿檢查等於永遠不會觸發。契約只記錄，不處理（controller 不改）。
+  - **controller 行為 1（呼叫參數 key 錯誤，已證實）**：`middlewares/cart/index.js:73` 與 `:208` 傳 `options.start_time`，但 food 的驗證器 `foodSchema`（`utils/Validator/cart_Validator.js:22–27`）只有 `start_date`，且 Joi object 預設不允許未知 key，帶 `start_time` 會被 `baseSchema.validate`（`middlewares/cart/index.js:9`）擋下回 400。所以透過 API 呼叫此 function 時，第 1 個參數**恆為 `NULL`**。結果：function 若用第 1 個參數比對預約時間（例如 `WHERE start_date = 參數`），永遠比對不到任何預約，`booking_count` 恆為 0（若回 1 列），額滿檢查等於永遠不會觸發。契約只記錄，不處理（controller 不改）。【定案 #16】function 忽略參數 1，只以行程計算總預約數對 `reservation_limit`；簽章保留參數 1。
   - `middlewares/cart/index.js:77,212` 用 `booking_food.rowCount > 0` 才比較，0 列時略過檢查。
   - **seed 對照（UUID 版本）**：`POST` 路徑對 seed 行程在驗證階段就回 400（`cart_Validator.js:84`），走不到本 function；只有 PATCH 既有 seed `cart_item` 能呼叫。見共通觀察。
   - 此 function 不檢查營業時間，營業時間由 `restaurant_business_parsed`（`middlewares/cart/index.js:91`）與 `restaurant_isClosed`（`middlewares/cart/index.js:105`）處理。
-  - 加入購物車的 food 項目只存 `start_date`（`controllers/cart.js:40`），`quantity`（人數）也在 `cart_item`；`booking_count` 是否以人數加總見待確認 2。
+  - 加入購物車的 food 項目只存 `start_date`（`controllers/cart.js:40`），`quantity`（人數）也在 `cart_item`；`booking_count` 是否以人數加總見待確認 2（【定案 #15】以人數加總）。
 - **信心**：參數順序與輸出欄位名：確定。參數 1 的實際內容（恆 `NULL`）：確定（驗證器與 controller 的 key 對照）。計算方式、型別：推測。
 - **待確認**：
-  1. **參數 1 恆為 `NULL` 時，function 要怎麼處理？** → §4.1 #16
+  1. **參數 1 恆為 `NULL` 時，function 要怎麼處理？** → §4.1 #16（定案：忽略參數 1，只以行程計算總預約數對 `reservation_limit`；簽章保留參數 1，P4 修好 controller 後再改成時段比對）
      - 解讀 A：function 忽略參數 1，只以行程計算總預約數 vs. `reservation_limit`。後果：整個行程累計預約人數到上限就額滿，不分時段；與「預約時間」的語意不符，但有作用。
      - 解讀 B：function 以參數 1 比對時段（程式碼原意）。後果：參數恆為 `NULL`，永遠比對不到，額滿檢查形同虛設；要讓它有效必須改 controller 讀 `options.start_date`。
      - 解讀 C：function 在參數為 `NULL` 時回 0 列。後果：略過檢查（`rowCount > 0`），同 B 的結果。
-  2. **`booking_count` 數什麼？** → §4.1 #5、#15
+  2. **`booking_count` 數什麼？** → §4.1 #5、#15（定案：#5：數 `order_item.payment_status IN (-1, 0, 1)`；#15：`order_item.quantity` 加總（人數））
      - 解讀 A：`order_item` 中該行程（`tour.item='food'`）的筆數，不看 `payment_status`。後果：已取消、已退款、逾時的訂單也占名額。
      - 解讀 B：`order_item.quantity` 加總（以人數計），與 `reservation_limit`（`restaurant.reservation_limit`，V1 `:129`，seed 為 50、30）同單位。後果：符合「人數限制」的語意（§1 `tour_restaurant` 把 `reservation_limit` 輸出成 `餐廳人員限制`，`response.feature.about.people`）。
      - 解讀 C：解讀 A 或 B 加上 `payment_status` 篩選（-1、0、1、2、3、4 的選法同 `hotel_booking` 待確認 1 解讀 B、C、D）。後果同該處。
@@ -805,7 +808,7 @@
 
   | 欄位 | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
-  | isclosed（英文，**必須全小寫**） | boolean | 該時間點是否休息（見待確認 1） | `middlewares/cart/index.js:110,245` | JS 讀取 `food_closed.rows[0].isclosed === true`，嚴格比較 `true` |
+  | isclosed（英文，**必須全小寫**） | boolean | 該時間點是否休息（見待確認 1；【定案 #19】只看 `restaurant_business` 有無對應星期的列，預約時間為 `NULL` 或餐廳不存在時為 `false`） | `middlewares/cart/index.js:110,245` | JS 讀取 `food_closed.rows[0].isclosed === true`，嚴格比較 `true` |
 
 - **列的語意**：每次呼叫**必須回 1 列**。為 `true` 時回「此時段無營業」（HTTP 400，`middlewares/cart/index.js:111–115`）。
 - **邊界**：
@@ -815,12 +818,12 @@
   - 呼叫順序：同一請求先過 `restaurant_business_parsed`（`middlewares/cart/index.js:90–102`，不在營業時段就回「餐廳已關閉」），通過後才呼叫本 function；所以在營業時段內才可能走到這裡。V1／V2 沒有任何「公休日」「特殊休息日」的表（grep `closed|holiday|休` 在 `backend/migrations/` 沒有結果），本 function 能依據的資料只有 `restaurant_business` 與 `restaurant`。
 - **信心**：參數順序、輸出欄位名與型別：確定。「休息」的判定方式：推測（見待確認）。
 - **待確認**：
-  1. **`isclosed` 依什麼判斷？**（V1 沒有公休日表） → §4.1 #19
+  1. **`isclosed` 依什麼判斷？**（V1 沒有公休日表） → §4.1 #19（定案：判斷依據只看 `restaurant_business` 有沒有對應星期的列，沒有＝公休）
      - 解讀 A：只看 `restaurant_business` 是否有對應星期（`week`）的列；沒有該星期的營業列＝公休。後果：與 `restaurant_business_parsed` 有部分重複（`parsed` 已過濾時段，但 `week` 缺列在 `parsed` 也會得到 0 列而先被擋下），本 function 在實務上永遠回 `false`。
      - 解讀 B：看 `restaurant_business.business_hours` 時段，判斷預約時間是否落在任一時段之外。後果：與 `parsed` 的判斷幾乎重複，通過 `parsed` 的請求必然 `false`。
      - 解讀 C：另外依某個尚未存在的公休日／特殊日資料（需要新增表，超出「V3 只建 view／function」的範圍）。後果：需要另外的 migration；沒有該表之前 function 無法實作。
      - 解讀 D：永遠回 `false`（占位）。後果：「此時段無營業」永遠不會觸發；其餘功能不受影響。
-  2. **預約時間為 `NULL` 或餐廳不存在時**：解讀 A：回 1 列 `isclosed = false`（放行）。解讀 B：回 1 列 `isclosed = true`（擋下）。後果：A 讓不存在的 `tour_id` 也可加入購物車（`middlewares/cart/index.js:26` 已先確認 `tour` 存在，但不確認它有 `restaurant` 列）；B 擋下。丟例外則 API 回 500。 → §4.1 #19
+  2. **預約時間為 `NULL` 或餐廳不存在時**：解讀 A：回 1 列 `isclosed = false`（放行）。解讀 B：回 1 列 `isclosed = true`（擋下）。後果：A 讓不存在的 `tour_id` 也可加入購物車（`middlewares/cart/index.js:26` 已先確認 `tour` 存在，但不確認它有 `restaurant` 列）；B 擋下。丟例外則 API 回 500。 → §4.1 #19（定案：預約時間為 `NULL` 或餐廳不存在時回 1 列 `isclosed = false`）
 
 ### `restaurant_business_parsed`
 
@@ -852,19 +855,19 @@
 - **列的語意**：**每個 (餐廳, 星期, 營業時段) 一列**。`restaurant_business.business_hours` 是 TEXT，格式範例見 V1 `:145` 註解與 seed：`'11:00~14:00, 17:00~21:00'`（多時段）、`'17:00~23:00'`（單時段）（`db/seed/R__seed.sql:478–491`）。view 要把它拆成每個時段一列、轉成 `time`。controller 只用 `rowCount === 0` 判斷「餐廳已關閉」（`middlewares/cart/index.js:96,231`）。
 - **邊界**：
   - 時段分隔用 `, `（逗號加空白），起訖用 `~`，格式來自 seed 與 V1 註解；程式碼本身沒有解析 `business_hours` 的位置。
-  - `BETWEEN start_time AND end_time` 是閉區間，且不處理跨午夜。seed 有 `'17:00~00:00'`（`db/seed/R__seed.sql:489,490`，行程 `99999999-cccc-dddd-eeee-999999999999` 的星期五、星期六）。若 `end_time` 解析成 `00:00:00`，則 `start_time > end_time`，`BETWEEN` 永遠不成立，這兩天**所有**時間都會回「餐廳已關閉」。此判斷只在請求通過 uuid 驗證後才會執行；seed 行程用 POST 加入購物車在驗證階段就被擋下（見共通觀察），所以 seed 環境下實際走到本 view 的只有 PATCH 既有 `cart_item`。見待確認 2。
+  - `BETWEEN start_time AND end_time` 是閉區間，且不處理跨午夜。seed 有 `'17:00~00:00'`（`db/seed/R__seed.sql:489,490`，行程 `99999999-cccc-dddd-eeee-999999999999` 的星期五、星期六）。若 `end_time` 解析成 `00:00:00`，則 `start_time > end_time`，`BETWEEN` 永遠不成立，這兩天**所有**時間都會回「餐廳已關閉」。此判斷只在請求通過 uuid 驗證後才會執行；seed 行程用 POST 加入購物車在驗證階段就被擋下（見共通觀察），所以 seed 環境下實際走到本 view 的只有 PATCH 既有 `cart_item`。見待確認 2。【定案 #20】`00:00` 視為 `24:00`，`end_time = 23:59:59`，所以週五、週六 17:00 到 23:59:59 可預約。
   - `week` 的比對是區分大小寫的字串比對：`TO_CHAR(..., 'FMDay')` 在 `lc_time` 為英文時回 `Monday` 這種首字大寫的英文名（`TRIM` 是因為沒有 `FM` 時會補空白）；若資料庫 `lc_time` 設成中文，會回中文而比對不到 seed 的英文 `week`。這是環境依賴，契約只記錄。
   - `options.start_date` 是帶時區的 ISO 字串時，`$2::timestamp` 會丟掉時區（以字串的牆上時間為準），所以時段以「使用者送出的牆上時間」判斷。
 - **信心**：欄位名稱與型別：確定（SQL 字串直接使用）。拆解 `business_hours` 的細節（分隔符、跨午夜）：推測，依據 seed 與 V1 註解。
 - **待確認**：
-  1. **`business_hours` 無法解析（格式不符）的列怎麼辦？** → §4.1 #21
+  1. **`business_hours` 無法解析（格式不符）的列怎麼辦？** → §4.1 #21（定案：view 忽略無法解析的列）
      - 解讀 A：view 忽略該列（不輸出）。後果：該餐廳該星期視為「已關閉」。
      - 解讀 B：view 解析失敗時丟例外。後果：整個 view 查詢失敗，所有餐廳的加入購物車都回 500。
-  2. **跨午夜時段（seed 的 `17:00~00:00`）**： → §4.1 #20
+  2. **跨午夜時段（seed 的 `17:00~00:00`）**： → §4.1 #20（定案：`00:00` 視為 `24:00`，轉成 `end_time = 23:59:59`）
      - 解讀 A：`00:00` 視為 `24:00`，轉成 `end_time = 23:59:59`。後果：星期五、星期六 17:00 到 23:59:59 可預約，`00:00` 之後不可。
      - 解讀 B：保持 `00:00:00`（原樣）。後果：這兩天任何預約都回「餐廳已關閉」（seed 的行程 `99999999-...`：PATCH 既有的 seed `cart_item` `c5cefe38-ff77-497c-b3fb-2831bbfb898c` 時，週五六的預約會被擋下；用 POST 加入該行程則不論星期幾都先被 uuidv4 驗證擋下，與本題無關，見共通觀察）。
      - 解讀 C：拆成兩列（`17:00~23:59:59` 與隔日的 `00:00~00:00`）。後果：需要把隔日時段記在下一個 `week`，view 較複雜。
-  3. **沒有 `restaurant` 列的行程**：這類行程在 view 內沒有列，`rowCount === 0`，回「餐廳已關閉」（HTTP 400）。INNER JOIN 與 LEFT JOIN（時段為 `NULL`）在這個查詢下結果相同，因為 `NULL` 比不到 `BETWEEN`。契約不要求特別處理，只記錄這個行為。 → §4.1 #21
+  3. **沒有 `restaurant` 列的行程**：這類行程在 view 內沒有列，`rowCount === 0`，回「餐廳已關閉」（HTTP 400）。INNER JOIN 與 LEFT JOIN（時段為 `NULL`）在這個查詢下結果相同，因為 `NULL` 比不到 `BETWEEN`。契約不要求特別處理，只記錄這個行為。 → §4.1 #21（定案：沒有 `restaurant` 列的行程不需選擇，只記錄；無法解析的列由 view 忽略）
 
 ### `user_couponList`
 
@@ -907,10 +910,10 @@
   | user_id（英文） | uuid | `user_coupon.user_id` | `controllers/checkout.js:144,216`、`middlewares/discounts/index.js:41`、`middlewares/checkout/index.js:112`、`controllers/discounts.js:14`、`controllers/admin.js:239` | WHERE |
   | coupon_id（英文） | uuid | `user_coupon.coupon_id`（等於 `coupon.coupon_id`） | `controllers/checkout.js:144`、`middlewares/checkout/index.js:112`、`controllers/checkout.js:241`、`controllers/discounts.js:29` | WHERE；JS 讀取 → response.discount.coupon_id |
   | code（英文） | varchar | `coupon.code` | `middlewares/discounts/index.js:41`、`controllers/discounts.js:14,31`、`controllers/checkout.js:242` | WHERE；JS 讀取 → response.discount.name／response.discount.coupon |
-  | discount（英文） | double precision | `coupon.discount`（V1 `:58`，`FLOAT`） | `controllers/discounts.js:32,38`、`controllers/checkout.js:155` | JS 讀取，**乘上 `orders.total_price`**（見待確認 1） |
+  | discount（英文） | double precision | `coupon.discount`（V1 `:58`，`FLOAT`） | `controllers/discounts.js:32,38`、`controllers/checkout.js:155` | JS 讀取，**乘上 `orders.total_price`**（見待確認 1）；【定案 #1】`coupon.discount` ＝ 折抵金額（NT$），view 原值輸出；正確計算是 `total_price - discount`，現行乘法不符（見邊界 controller 行為 5） |
   | description（英文） | text | `coupon.description` | `controllers/discounts.js:33` | JS 讀取 → response.discount.description |
   | expire_date（英文） | timestamp | `coupon.expire_date`（V1 `:60`） | `middlewares/discounts/index.js:65`、`middlewares/checkout/index.js:136` | JS 讀取 `new Date(rows[0].expire_date)`，與現在時間比較 |
-  | expired_date（英文，**多了 d**） | timestamp | `coupon.expire_date`（同一個值） | `controllers/discounts.js:34` | JS 讀取 → response.discount.date_period（見邊界與待確認 2） |
+  | expired_date（英文，**多了 d**） | timestamp | `coupon.expire_date`（同一個值） | `controllers/discounts.js:34` | JS 讀取 → response.discount.date_period（見邊界與待確認 2；【定案 #36】view 同時提供 `expire_date` 與 `expired_date`，同值） |
   | status（英文） | smallint | `user_coupon.status` | `middlewares/discounts/index.js:54`、`middlewares/checkout/index.js:125`、`controllers/checkout.js:216` | JS 讀取 `status === 1`；WHERE `status = -1` |
   | order_id（英文） | uuid | `user_coupon.order_id`（V1 可 NULL） | `controllers/checkout.js:216` | WHERE `order_id = $2` |
 
@@ -918,20 +921,20 @@
 
 - **列的語意**：每個「使用者與優惠卷的綁定」（`user_coupon`）一列，帶入優惠卷內容（`coupon`）。**不過濾** `status`、也不過濾過期：
   - `middlewares/discounts/index.js:54`（回「優惠券已使用」409）與 `:65`（回「優惠券已過期」409）是在**取到列之後**才判斷；若 view 先濾掉已使用或已過期，這兩個分支永遠走不到，使用者只會看到「查無此優惠卷」404。
-  - `controllers/checkout.js:216` 要取到 `status = -1` 的列，所以 `status` 為 -1 的也要在 view 內。
+  - `controllers/checkout.js:216` 要取到 `status = -1` 的列，所以 `status` 為 -1 的也要在 view 內。【定案 #37】`status` 原樣輸出，包含 -1。
 - **邊界**：
-  - **controller 行為 1（`expired_date` 與 `expire_date` 兩種拼法）**：`middlewares/discounts/index.js:65` 與 `middlewares/checkout/index.js:136` 讀 `expire_date`，但 `controllers/discounts.js:34` 讀 `expired_date`。V1 `coupon` 欄位是 `expire_date`。view 只有 `expire_date` 時，`controllers/discounts.js:34` 取到 `undefined`，`date_period` 欄位在 JSON 裡不會出現（`JSON.stringify` 略過 `undefined`），不會報錯；view 只有 `expired_date` 時，`new Date(undefined)` 是 `Invalid Date`，`now > Invalid Date` 為 `false`，**過期檢查被靜默略過**（過期的優惠卷可以使用）。契約要求至少提供 `expire_date`；是否同時提供 `expired_date` 見待確認 2。
+  - **controller 行為 1（`expired_date` 與 `expire_date` 兩種拼法）**：`middlewares/discounts/index.js:65` 與 `middlewares/checkout/index.js:136` 讀 `expire_date`，但 `controllers/discounts.js:34` 讀 `expired_date`。V1 `coupon` 欄位是 `expire_date`。view 只有 `expire_date` 時，`controllers/discounts.js:34` 取到 `undefined`，`date_period` 欄位在 JSON 裡不會出現（`JSON.stringify` 略過 `undefined`），不會報錯；view 只有 `expired_date` 時，`new Date(undefined)` 是 `Invalid Date`，`now > Invalid Date` 為 `false`，**過期檢查被靜默略過**（過期的優惠卷可以使用）。契約要求至少提供 `expire_date`；是否同時提供 `expired_date` 見待確認 2。【定案 #36】同時提供，同值。
   - **controller 行為 2（-1 被當成「可再使用」）**：`controllers/checkout.js:148–151` 在 PATCH 預覽時把 `user_coupon.status` 設成 -1（V1 `:414` 註解只有 1／0），`middlewares/checkout/index.js:125` 與 `middlewares/discounts/index.js:54` 只擋 `status === 1`。**全 `backend/src` 沒有任何地方把 `status` 設成 1**（grep `user_coupon` 只有 `controllers/checkout.js:149`、`controllers/coupon.js:209`（新增綁定，`status` 寫 0）、`controllers/admin.js:271`（刪除綁定）、`middlewares/coupon/index.js:260,290`、`middlewares/admin/index.js:384`（只讀）），付款成功的 `newebpay.js` 也沒有。所以 seed 以外，status 永遠不會成為 1，-1 的優惠卷可以被重複套用到另一張訂單（`controllers/checkout.js:149` 會把 `order_id` 覆蓋成新訂單）。
-  - **controller 行為 3（`code` 不是 unique）**：V1 `coupon.code` 沒有 unique 約束，`middlewares/discounts/index.js:41` 與 `controllers/discounts.js:14` 以 `code` + `user_id` 查詢並取 `rows[0]`；同一使用者綁定兩張 `code` 相同的優惠卷時，取到哪張不固定。
+  - **controller 行為 3（`code` 不是 unique）**：V1 `coupon.code` 沒有 unique 約束，`middlewares/discounts/index.js:41` 與 `controllers/discounts.js:14` 以 `code` + `user_id` 查詢並取 `rows[0]`；同一使用者綁定兩張 `code` 相同的優惠卷時，取到哪張不固定。【定案 #38】view 不處理，維持每個 `user_coupon` 一列，根本修正見 §4.2 (d4)。
   - **controller 行為 4（驗證器與 seed 的 `code` 不相容）**：`utils/Validator/discounts_Validatior.js:9–13` 要求 `discount.coupon` 符合 `^[A-Z0-9]{6}$`（剛好 6 碼大寫英數），而 seed 的 5 個優惠卷代碼（`db/seed/R__seed.sql:143,152,161,170,179`）只有 `VIP300`（6 碼）符合，`WELCOME100`（10）、`SUMMER50`（8）、`TRAVEL10P`（9）、`SPRING20`（8）都會被 `POST /api/v1/user/trade/discounts/:order_id` 以 400 擋下（`type='coupon'` 路徑）。`PATCH /preview/:order_id` 雖然用 `coupon_id` 而非 `code`，但 `utils/Validator/checkout_Vaildator.js:71` 要求 `discount.coupon_id` 是 `uuid({ version: 'uuidv4' })`，seed 的 5 個 `coupon_id`（`db/seed/R__seed.sql` 的 coupon 區段，手寫值如 `11111111-aaaa-bbbb-cccc-111111111111`）第三段都不是 `4` 開頭，同樣會被 400 擋下（見共通觀察的「UUID 版本檢查」）。
-  - **controller 行為 5（`discount` 的運算）**：`controllers/discounts.js:38` 與 `controllers/checkout.js:155` 都是 `orders.total_price * coupon.discount`，結果寫入／輸出為 `discount_price`（見待確認 1）。
+  - **controller 行為 5（`discount` 的運算）**：`controllers/discounts.js:38` 與 `controllers/checkout.js:155` 都是 `orders.total_price * coupon.discount`，結果寫入／輸出為 `discount_price`（見待確認 1）。【定案 #1】`coupon.discount` ＝ 折抵金額（NT$），正確計算是 `total_price - discount`，`orders.discount_price` 為折後應付金額（與點數路徑 `checkout.js:165` 同語意）。**現行 controller 不符合定案**：兩處的 `total_price * discount` 在金額語意下會算出數百倍金額（例：`total_price` 3576.74 × `discount` 100.0 → 357,674），要改成 `total_price - discount`，屬 P4 結帳；P4 修好之前優惠卷結帳金額是錯的。V3 view 照金額語意輸出原值，不為了配合乘法而轉換數值。
   - 狀態以 JS 的 `=== 1` 比較，所以 `status` 必須是 `smallint`／`integer`，不能是 `bigint`／`numeric`／字串（pg 會回字串，嚴格比較失敗，已使用的優惠卷會被當成未使用）。
   - **seed 對照（UUID 版本）**：`PATCH /preview/:order_id` 的 `coupon_id` 要求 uuidv4（`checkout_Vaildator.js:71`），seed 的 5 個 `coupon_id` 都不是 v4，所以 seed 優惠卷走不到 `controllers/checkout.js:144` 與 `middlewares/checkout/index.js:112` 這兩處查詢；`POST /discounts/:order_id` 以 `code` 查詢（`middlewares/discounts/index.js:41`），seed 訂單 `order_id` 是 v4 可通過，但 `code` 受 `^[A-Z0-9]{6}$` 限制（上一點）。
-  - 與 `user_level_point_coupon` 的 `優惠卷折扣`（見該物件）是同一個 `coupon.discount`，兩邊語意要一致。
+  - 與 `user_level_point_coupon` 的 `優惠卷折扣`（見該物件）是同一個 `coupon.discount`，兩邊語意要一致。【定案 #1】兩邊都是折抵金額（NT$）。
   - `status` 完整可能值（程式碼與 seed 實際出現）：`0` 未使用（`controllers/coupon.js:209`、seed `db/seed/R__seed.sql:918`）、`1` 已使用（seed `:917,919,920`；程式碼只讀不寫）、`-1` 預覽中占用（只由 `controllers/checkout.js:149` 寫入）。
 - **信心**：欄位名稱：確定（全部由程式碼讀取證實）；來源對應：確定（V1 `coupon`、`user_coupon` 欄位一一對應）；`expired_date` 是否存在：推測；`status` 篩選：確定（不篩選）。
 - **待確認**：
-  1. **（spec 3.1 已知問題 2）`coupon.discount` 是折扣倍率還是折抵金額？** → §4.1 #1
+  1. **（spec 3.1 已知問題 2）`coupon.discount` 是折扣倍率還是折抵金額？** → §4.1 #1（定案：`coupon.discount` ＝ 折抵金額（NT$），`discount_price` ＝ `total_price - discount`（折後應付金額）；view 原值輸出；現行 `total_price * discount` 兩處要改，屬 P4）
      - **程式碼對它做的運算（所有位置）**：
        - `controllers/discounts.js:38`（`POST /user/trade/discounts/:order_id`，回傳 response）：`discount_price: orderRepo.rows[0].total_price * couponRepo.rows[0].discount`。
        - `controllers/checkout.js:155`（`PATCH /user/checkout/preview/:order_id`，**寫入 `orders.discount_price`**）：`UPDATE public."orders" SET discount_price = $1 ...`，參數 `orderRepo.rows[0].total_price * couponRepo.rows[0].discount`。
@@ -940,7 +943,7 @@
      - **寫入位置（`coupon.discount` 怎麼進來）**：
        - `controllers/coupon.js:6`（解構 `req.body.discount_amount`）、`:10–12`（`INSERT INTO public.coupon (code, discount, description, expire_date) VALUES ($1, $2, $3, $4)`，`$2` ＝ `discount_amount`）：`POST /api/v1/admin/coupons`。
        - `controllers/coupon.js:103`（解構 `req.body.discount_amount`）、`:107–108`（`update coupon set code = $1,discount = $2,description = $3,expire_date = $4 where coupon_id = $5`，`$2` ＝ `discount_amount`）：`PATCH /api/v1/admin/coupons/update/:coupon_id`。
-       - 驗證器 `utils/Validator/coupon_Validator.js:45`：`discount_amount: Joi.number().greater(0)`，錯誤訊息是「優惠折扣數」，**沒有上限**（沒有 `.max(...)`）。
+       - 驗證器 `utils/Validator/coupon_Validator.js:45`：`discount_amount: Joi.number().greater(0)`，錯誤訊息是「優惠折扣數」，**沒有上限**（沒有 `.max(...)`）。【定案 #1】折抵金額語意下 `> 0` 無上限與金額相容；是否加上限（例如不得超過訂單金額）只是 P4／P6 的觀察，不是決定。
        - 管理者端的請求欄位叫 `discount_amount`（字面是「折扣金額」），但訊息文字叫「優惠折扣數」；欄位名與訊息各自偏向不同解讀，不能由此決定。
        - `grep '\.discount'` 在這兩個 controller 的其他命中行都不是對 `coupon.discount` 的運算：`controllers/discounts.js:99`、`controllers/checkout.js:188,265` 只是輸出 `orders.discount_price`；`controllers/checkout.js:124` 是解構 `req.body.discount`；`controllers/checkout.js:240` 讀 `orders.discount_type`。
      - **seed 裡實際的值**（`db/seed/R__seed.sql:137–186`，`coupon.discount` 欄位）：
@@ -954,18 +957,19 @@
        | `SPRING20` | `20.0` | 春季限定，旅遊折抵新台幣 20 元 | `db/seed/R__seed.sql:179–181` |
 
        五個值都 > 1。以 `total_price * discount` 計算：`total_price` 3576.74、`discount` 100.0 → `discount_price` 357,674。沒有任何一個 seed 值落在 0 到 1 之間。
+     - **【定案 #1 對 seed 的影響】**：`coupon.discount` 的 5 個值（100、50、10、300、20）保留不改；但 `TRAVEL10P` 的 `description`「10% 折扣 (最高折抵 500 元)」與折抵金額語意矛盾（`10.0` 只折 10 元），P1b 要改它的 `description`（或數值）讓兩者一致。代碼本身依 §4.2 (d2) 本來就要改。
      - **相關事實**：`orders.discount_price`（V1 `:279`，`FLOAT NULL`）在 `controllers/checkout.js:155`（優惠卷）與 `controllers/checkout.js:165`（點數：`total_price - used_point * 0.8`，見 `user_level_point_coupon` 待確認 1）寫入的都是同一欄；後者的運算形式（`total_price - ...`）算出來的是「折扣後應付金額」。seed 的 `orders.discount_price`（`db/seed/R__seed.sql:790–794`，例如 `total_price` 3576.74 對 `discount_price` 794.83）都小於 `total_price`，看起來像「折掉的金額」，與程式碼寫入的「應付金額」語意不同；`discount_type` 在 seed 是 `'none'`、`'earlybird'`（`:790–794`），程式碼只寫 `'coupon'`／`'point'`，或在 `type` 省略時寫 `NULL`（`checkout_Vaildator.js:64–67` 的 `discount` 與 `type` 都是 `.optional()`；`controllers/checkout.js:133–134`）。這些只是觀察，不能由此決定 `coupon.discount` 的語意。
      - 解讀 A：**折扣倍率**（`discount` 在 0 到 1，例如 `0.9` 表示九折，`discount_price` 為折扣後應付金額）。後果：結帳計算（`discounts.js:38`、`checkout.js:155`）不用改，與 `controllers/checkout.js:165` 的「`discount_price` 是折扣後應付金額」一致；但 admin 寫入端的驗證器（`coupon_Validator.js:45`）只要求 `> 0`、沒有上限，管理者仍可建立 `discount = 100` 的優惠卷，結帳照樣算出數百倍金額，要擋住需另外給驗證器加 `.max(1)`；請求欄位名 `discount_amount` 也與倍率語意不符。另外 seed 的 5 個值（100.0、50.0、10.0、300.0、20.0）全部要改成倍率（例如 `0.9`），`description` 的「折抵新台幣 100 元」也要改；P1b 的 seed 要跟著動。
      - 解讀 B：**折抵金額**（NT$，與 seed 的 `description` 文字一致：100、50、300、20）。後果：seed 不用改，admin 寫入端的 `discount_amount > 0` 且無上限（`coupon_Validator.js:45`）與金額語意相容、欄位名也一致；但 `controllers/discounts.js:38` 與 `controllers/checkout.js:155` 的 `total_price * discount` 算出來是金額的幾百倍（上例 357,674），需要改 controller 為 `total_price - discount`，違反「controller 不改」；若不改，結帳會寫入錯誤的 `orders.discount_price`。`TRAVEL10P` 的 `10.0` 在此解讀下只折抵 10 元，與其 `description`「10% 折扣 (最高折抵 500 元)」矛盾。
      - 解讀 C：**混合**（`TRAVEL10P` 是百分比 `10` ＝ 10%，其餘是金額）。後果：與 seed 的 `description` 全部吻合，但同一欄位兩種語意，程式碼的 `total_price * discount` 兩種都算錯；要靠 `description` 或新增欄位區分類型（V1 沒有類型欄位，需改 migration）；admin 寫入端的驗證器（`coupon_Validator.js:45`）只檢查 `> 0`，無法區分百分比與金額。
      - 解讀 D：**折扣百分比**（`discount` 是 0–100，`10` ＝ 打 9 折）。後果：seed 的 5 個值都需要改成 0–100 以內的百分比（100 以上沒有意義）；程式碼要改成 `total_price * (1 - discount / 100)`；admin 驗證器（`coupon_Validator.js:45`）無上限，需補 `.max(100)`。
-  2. **`expired_date`（`controllers/discounts.js:34`）要不要提供？** → §4.1 #36
+  2. **`expired_date`（`controllers/discounts.js:34`）要不要提供？** → §4.1 #36（定案：兩個都提供（`expire_date` 與 `expired_date`，同值））
      - 解讀 A：只提供 `expire_date`。後果：`POST /user/trade/discounts/:order_id` 的 response 少了 `date_period`，前端若依賴它會顯示空白。
      - 解讀 B：`expire_date` 與 `expired_date` 兩個都提供（同值）。後果：response 有 `date_period`，admin API（`SELECT *`）會多一個重複欄位。
-  3. **`status = -1` 的列要不要出現在管理者 API 與其他查詢中？** → §4.1 #37
+  3. **`status = -1` 的列要不要出現在管理者 API 與其他查詢中？** → §4.1 #37（定案：原樣輸出 `status = -1`）
      - 解讀 A：全部出現（如目前所推）。後果：管理者看到 -1。
      - 解讀 B：view 把 -1 換算成別的顯示值。後果：`controllers/checkout.js:216` 的 `status = -1` 失效，結帳摘要看不到已套用的優惠卷。
-  4. **同一個 (使用者, `code`) 有多筆時**：V1 有 `UNIQUE (user_id, coupon_id)`（V1 `:420`）但 `code` 不 unique。解讀 A：不處理。後果：取 `rows[0]` 不固定。解讀 B：view 只取最新一筆。後果：需另定規則。 → §4.1 #38
+  4. **同一個 (使用者, `code`) 有多筆時**：V1 有 `UNIQUE (user_id, coupon_id)`（V1 `:420`）但 `code` 不 unique。解讀 A：不處理。後果：取 `rows[0]` 不固定。解讀 B：view 只取最新一筆。後果：需另定規則。 → §4.1 #38（定案：不處理，view 維持每個 `user_coupon` 一列；重複 `code` 的根源見 §4.2 (d4)）
 
 ### `user_level_point_coupon`
 
@@ -1006,27 +1010,27 @@
   | 旅遊等級 | varchar | `user_level.level` | `controllers/userProfile.js:145` | JS 讀取 → response.level（欄位名稱與 §1 `user_user_level` 一致） |
   | 旅遊等級名稱 | varchar | `user_level.name` | `controllers/userProfile.js:146` | JS 讀取 → response.level_name |
   | 旅遊徽章 Url | varchar | `user_level.badge_url` | `controllers/userProfile.js:147` | JS 讀取 → response.badge_url |
-  | 使用者旅遊積分 | integer | 見待確認 1（`user_level.travel_point` 或 `point_record` 加總） | `controllers/userProfile.js:148`、`controllers/discounts.js:60,62`、`middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` | JS 讀取，做 `<`、`-` 運算；response.travel_point／user_point |
+  | 使用者旅遊積分 | integer | 見待確認 1（`user_level.travel_point` 或 `point_record` 加總）；【定案 #2】`user_level.travel_point`，預扣不反映，型別 `integer` | `controllers/userProfile.js:148`、`controllers/discounts.js:60,62`、`middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` | JS 讀取，做 `<`、`-` 運算；response.travel_point／user_point |
   | 優惠卷編號 | uuid | `coupon.coupon_id` | `controllers/userProfile.js:154` | JS 讀取 → response.coupon[].coupon_id |
   | 優惠卷代碼 | varchar | `coupon.code` | `controllers/userProfile.js:155` | JS 讀取 → response.coupon[].code |
-  | 優惠卷折扣 | double precision | `coupon.discount` | `controllers/userProfile.js:156` | JS 讀取 → response.coupon[].discount（語意見 `user_couponList` 待確認 1） |
+  | 優惠卷折扣 | double precision | `coupon.discount` | `controllers/userProfile.js:156` | JS 讀取 → response.coupon[].discount（語意見 `user_couponList` 待確認 1；【定案 #1】折抵金額（NT$），view 原值輸出） |
   | 優惠卷描述 | text | `coupon.description` | `controllers/userProfile.js:157` | JS 讀取 → response.coupon[].description |
   | 優惠卷期限 | timestamp | `coupon.expire_date` | `controllers/userProfile.js:158` | JS 讀取 → response.coupon[].expire_date |
 
-  `使用者旅遊積分` 在 `middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` 以 `<` 與 `used_point`／`point` 比較，在 `controllers/discounts.js:62` 做減法；若是 `bigint`／`numeric`（例如 `SUM(...)` 的結果），pg 回字串，`<` 與 `-` 會自動轉成數字不會出錯，但輸出到 response 時（`controllers/discounts.js:60`、`controllers/userProfile.js:148`）會變成 JSON 字串，與 `integer` 時的數字不同。
+  `使用者旅遊積分` 在 `middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` 以 `<` 與 `used_point`／`point` 比較，在 `controllers/discounts.js:62` 做減法；若是 `bigint`／`numeric`（例如 `SUM(...)` 的結果），pg 回字串，`<` 與 `-` 會自動轉成數字不會出錯，但輸出到 response 時（`controllers/discounts.js:60`、`controllers/userProfile.js:148`）會變成 JSON 字串，與 `integer` 時的數字不同。【定案 #2、#25】`使用者旅遊積分` ＝ `user_level.travel_point`（`integer`），不經 `SUM`，response 是數字。
 
-- **列的語意**：**每位使用者的每張優惠卷一列**（使用者與會員等級的資料在每一列重複）。依據：`controllers/userProfile.js:133–160` 以 `使用者編號` 分組，第一次出現時建立使用者物件，每一列再 `push` 一張優惠卷。
+- **列的語意**：**每位使用者的每張優惠卷一列**（使用者與會員等級的資料在每一列重複）。依據：`controllers/userProfile.js:133–160` 以 `使用者編號` 分組，第一次出現時建立使用者物件，每一列再 `push` 一張優惠卷。【定案 #39、#40】只列 `status = 0` 且未過期的優惠卷；對優惠卷採 `LEFT JOIN`，沒有可用優惠卷的使用者仍保留 1 列、優惠卷欄位全為 `NULL`。
 - **邊界**：
-  - **沒有優惠卷的使用者（關鍵）**：
+  - **沒有優惠卷的使用者（關鍵；【定案 #40】採 `LEFT JOIN`）**：
     - 若 view 對優惠卷用 `LEFT JOIN`：使用者得到 1 列，優惠卷欄位全為 `NULL`；`controllers/userProfile.js:153–159` 沒有檢查，會 `push` 一個全為 `null` 的優惠卷物件，response 的 `coupon` 是 `[{coupon_id: null, code: null, ...}]`。
     - 若用 `INNER JOIN`：沒有優惠卷的使用者在 view 內完全沒有列，`GET /pointslevel` 回 `[]`（`controllers/userProfile.js:162`），而且 `middlewares/discounts/index.js:81–89` 與 `middlewares/checkout/index.js:152–160` 的 `pointRepo.rowCount === 0` 會回 409「查無可使用的點數」，**即使使用者有積分也無法使用點數折抵**。
-  - 沒有 `user_level` 列的使用者：INNER JOIN 時同樣消失（理由同 §1 `user_user_level` 待確認 1）。
-  - controller 在 `controllers/discounts.js:60,62` 與兩個 middleware 都只讀 `pointRepo.rows[0].使用者旅遊積分`，所以每一列的 `使用者旅遊積分` 必須相同（同一個使用者的值不隨優惠卷變動）。
+  - 沒有 `user_level` 列的使用者：INNER JOIN 時同樣消失（理由同 §1 `user_user_level` 待確認 1）。【定案 #22】對 `user_level` 採 `LEFT JOIN`，有多筆時取最新一筆。
+  - controller 在 `controllers/discounts.js:60,62` 與兩個 middleware 都只讀 `pointRepo.rows[0].使用者旅遊積分`，所以每一列的 `使用者旅遊積分` 必須相同（同一個使用者的值不隨優惠卷變動）。【定案 #2】值取自 `user_level.travel_point`，不隨優惠卷列變動。
   - 欄位名稱必須照程式碼拼字：`個人偏好 1`（有空格，與 §1 `tour_base` 的 `偏好分類1` 不同）、`個人照片 Url`、`旅遊徽章 Url`；`優惠卷` 用「卷」不是「券」（與 `優惠券已使用` 的訊息用字不同）。
-  - 是否包含已使用／已過期的優惠卷：見待確認 3。
+  - 是否包含已使用／已過期的優惠卷：見待確認 3（【定案 #39】不包含，只列 `status = 0` 且未過期）。
 - **信心**：欄位名稱：確定（全部由 `controllers/userProfile.js:137–158` 與其他三處的 `使用者編號`、`使用者旅遊積分` 證實）；來源對應：除 `使用者旅遊積分` 外為確定。`使用者旅遊積分` 的來源：推測（見待確認 1）。
 - **待確認**：
-  1. **（spec 3.1 已知問題 1）點數的累積和扣抵規則，以及 `point * 0.8` 的意義。** → §4.1 #2、#3
+  1. **（spec 3.1 已知問題 1）點數的累積和扣抵規則，以及 `point * 0.8` 的意義。** → §4.1 #2、#3（定案：#2：`使用者旅遊積分` ＝ `user_level.travel_point`，預扣不反映，型別 `integer`；#3：1 點折抵 0.8 元，累積 0.1 一併視為設計值）
 
      **a. 點數存在哪個欄位？** V1 有兩個地方：`user_level.travel_point`（INT NULL，V1 `:45`）與 `point_record.point`（INT NOT NULL，V1 `:399`，每筆異動一列，`type` 為 VARCHAR(50) NOT NULL，V1 沒有註解 `type` 可有哪些值）。點數餘額有**兩條讀取路徑**：(1) 本 view 的 `使用者旅遊積分`（`GET /api/v1/user/userinfo/pointslevel`、折抵驗證、折抵 response）；(2) `controllers/userinfo.js:56`（註冊 response）、`:117`（email 登入）、`:228`（Google 登入）、`:356`（`GET /api/v1/auth/userinfo/login/status`）直接輸出 `user_level.travel_point` 為 `level.points`，不經過 view。所以 view 取哪一個欄位，會決定兩條路徑顯示的餘額是否一致：
      - 解讀 A：`user_level.travel_point`。後果：餘額只與 `user_level` 有關，`point_record` 是流水帳但不影響餘額；而**全 `backend/src` 沒有任何 UPDATE `travel_point`**（下表），所以餘額在註冊後永遠是 0（`userinfo.js:30,185` 寫 0），除了 seed 手動設的 1500／3000／800（`db/seed/R__seed.sql:108,119,130`）。與 `userinfo.js` 四處的 `level.points` 一致（同一欄位）。
@@ -1069,12 +1073,12 @@
      - 解讀 C：**原意是 1 點 ＝ 1 元，0.8 是舊值或誤植**（依 seed 的 436:436.75）。後果：兩處 `0.8` 要改成 `1`（違反「controller 不改」）；不改的話使用者每點只折 0.8 元。
      - 另一個獨立的不一致：累積 `0.1`（`controllers/checkout.js:225`，每消費 1 元得 0.1 點）與兌換 `0.8`（每點折 0.8 元）並存，若 A 成立，使用者消費 100 元得 10 點，10 點可折 8 元，等於 8% 回饋；seed 的 `1610`／`1610.73` 約 100% 回饋與此矛盾。是否為設計值需要使用者確認。
 
-  2. **結帳預覽後 `使用者旅遊積分` 要不要即時反映預扣？**（與待確認 1.a 的 B／C／D 重疊）解讀 A：不反映（餘額不變，直到付款確認）。後果：同一批點數在多張訂單同時預覽時可重複使用。解讀 B：反映。後果：使用者取消預覽後點數被占住，而取消沒有回補程式（見 1.b）。 → §4.1 #2
-  3. **view 是否只列出可用的優惠卷（`status = 0` 且未過期）？**（`controllers/userProfile.js:153` 把所有列都放進 `coupon[]`，沒有 `status` 欄位可供判斷） → §4.1 #39
+  2. **結帳預覽後 `使用者旅遊積分` 要不要即時反映預扣？**（與待確認 1.a 的 B／C／D 重疊）解讀 A：不反映（餘額不變，直到付款確認）。後果：同一批點數在多張訂單同時預覽時可重複使用。解讀 B：反映。後果：使用者取消預覽後點數被占住，而取消沒有回補程式（見 1.b）。 → §4.1 #2（定案：不反映預扣（`使用者旅遊積分` ＝ `user_level.travel_point`））
+  3. **view 是否只列出可用的優惠卷（`status = 0` 且未過期）？**（`controllers/userProfile.js:153` 把所有列都放進 `coupon[]`，沒有 `status` 欄位可供判斷） → §4.1 #39（定案：只列 `status = 0` 且未過期的優惠卷）
      - 解讀 A：列出全部綁定（包含已使用 `status=1`、占用中 `-1`、已過期）。後果：`GET /pointslevel` 的 `coupon[]` 含已使用的優惠卷，前端無法區分（因為沒有 `status`／已使用的 key）；seed 使用者 `b2c3...`、`a1b2...` 的優惠卷都是 `status = 1`（`db/seed/R__seed.sql:917,919,920`），會全部顯示。
      - 解讀 B：只列出可用的（`status = 0` 且未過期）。後果：`coupon[]` 只含可用優惠卷，符合「使用者會員等級積分」頁面的語意；沒有可用優惠卷的使用者變成「沒有優惠卷」，需決定 JOIN 方式（見邊界）。
      - 解讀 C：排除 `status = 1` 但保留 `-1`（占用中）。後果：占用中的優惠卷仍顯示為可用。
-  4. **沒有優惠卷的使用者是否保留一列（LEFT JOIN）**：見邊界。解讀 A：LEFT JOIN。後果：`coupon[]` 含一個全 `null` 物件。解讀 B：INNER JOIN。後果：使用者完全不在 view 內，點數折抵被擋下（409）。 → §4.1 #40
+  4. **沒有優惠卷的使用者是否保留一列（LEFT JOIN）**：見邊界。解讀 A：LEFT JOIN。後果：`coupon[]` 含一個全 `null` 物件。解讀 B：INNER JOIN。後果：使用者完全不在 view 內，點數折抵被擋下（409）。 → §4.1 #40（定案：`LEFT JOIN`，沒有優惠卷的使用者保留 1 列、優惠卷欄位全為 `NULL`；須與 #39 的 B 一起採用）
 
 ### `user_orderList`
 
@@ -1095,14 +1099,14 @@
   | 小分類 | varchar | `tour_base.小分類` | `controllers/checkout.js:249` | JS 讀取 `item.小分類` → item |
   | 旅遊名稱 | varchar | `tour_base.旅遊名稱` | `controllers/checkout.js:250` | JS 讀取 → title |
   | 旅遊代表圖 Url | text | `tour_base."旅遊代表圖 Url"` | `controllers/checkout.js:251` | JS 讀取 → cover_image |
-  | 價錢 | integer（待確認 1 解讀 B 時為 double precision） | `tour_base.價錢`（或 `order_item` 換算，見待確認 1） | `controllers/checkout.js:252` | JS 讀取 → price |
-  | 促銷價錢 | double precision | 見待確認 2 | `controllers/checkout.js:253` | JS 讀取 `item.促銷價錢` → response.orders[].**discount_price** |
+  | 價錢 | double precision（【定案 #13】解讀 B） | `order_item.total_price / NULLIF(order_item.quantity, 0)`（【定案 #13】下單當時單價；原推測 `tour_base.價錢`，見待確認 1） | `controllers/checkout.js:252` | JS 讀取 → price |
+  | 促銷價錢 | double precision | 見待確認 2；【定案 #13】`order_item.discount_price / NULLIF(order_item.quantity, 0)`，非促銷（0）時輸出 `NULL` | `controllers/checkout.js:253` | JS 讀取 `item.促銷價錢` → response.orders[].**discount_price** |
   | quantity（英文） | integer | `order_item.quantity` | `controllers/checkout.js:255` | JS 讀取 → options.people |
   | start_date（英文） | timestamp | `order_item.start_date` | `controllers/checkout.js:256` | JS 讀取 → options.start_date |
   | end_date（英文） | timestamp | `order_item.end_date`（可 NULL） | `controllers/checkout.js:257` | JS 讀取 → options.end_date |
   | room_type（英文） | varchar | `order_item.room_type`（可 NULL） | `controllers/checkout.js:258` | JS 讀取 → options.room_type（這裡不像 `cart.js:222` 轉成 `''`，`NULL` 原樣輸出） |
-  | singleTotal_Price（英文，混合大小寫） | numeric 或 double precision（推測） | 單一訂單項目小計（見待確認 3） | `controllers/checkout.js:260` | JS 讀取，**沒有 `Number()`** → total_price |
-  | total_count（英文） | integer 或 bigint | 該訂單的項目數 | `controllers/checkout.js:263` | JS 讀取 `orderItemRepo.rows[0].total_count` → summary.total_items |
+  | singleTotal_Price（英文，混合大小寫） | double precision（【定案 #12】） | 單一訂單項目小計（見待確認 3；【定案 #12】`order_item.total_price`，下單當時固定，不含促銷） | `controllers/checkout.js:260` | JS 讀取，**沒有 `Number()`** → total_price |
+  | total_count（英文） | integer（【定案 #25】） | 該訂單的項目數 | `controllers/checkout.js:263` | JS 讀取 `orderItemRepo.rows[0].total_count` → summary.total_items |
 
 - **列的語意**：每個訂單項目（`order_item`）一列，帶入行程資料（`tour_base`）。`total_count` 是同一訂單所有列共有的項目總數（`rows[0]` 取第一列的值），推測以 `COUNT(*) OVER (PARTITION BY order_id)` 或子查詢計算。沒有排序。
 - **邊界**：
@@ -1116,20 +1120,20 @@
   - 對 `tour_base` 的 JOIN：同 `user_cartList` 邊界第 1 點（§1 `tour_base` 待確認 1 的下架行程問題）。
 - **信心**：欄位名稱：確定；來源對應：欄位名稱本身確定，`價錢`／`促銷價錢`／`singleTotal_Price` 的計算：推測；`total_count` 的計算與型別：推測。
 - **待確認**：
-  1. **`價錢` 是目前的行程單價，還是下單當時的單價？** → §4.1 #13
+  1. **`價錢` 是目前的行程單價，還是下單當時的單價？** → §4.1 #13（定案：`價錢` ＝ 下單當時單價（`order_item.total_price / NULLIF(quantity, 0)`），型別 `double precision`）
      - 解讀 A：`tour_base.價錢`（目前的價格）。後果：行程後來調價，歷史訂單的 `price` 跟著變；`singleTotal_Price` 若用 `order_item.total_price` 則兩者可能不一致。
      - 解讀 B：`order_item.total_price / order_item.quantity`（下單時的單價，`controllers/checkout.js:49` 寫入的是 `tour_base.價錢 * quantity`）。後果：歷史訂單固定；`quantity = 0` 時除以零（V1 沒有 `CHECK`，但 `cart_Validator` 要求 `people >= 1`）。
-  2. **`促銷價錢` 是什麼？**（controller 把它輸出為 `discount_price`） → §4.1 #13
+  2. **`促銷價錢` 是什麼？**（controller 把它輸出為 `discount_price`） → §4.1 #13（定案：`促銷價錢` ＝ 下單當時促銷單價（`order_item.discount_price / NULLIF(quantity, 0)`），非促銷（0）時輸出 `NULL`）
      - 解讀 A：`tour_base.促銷價錢`（目前行程的促銷價）。後果：促銷結束後，歷史訂單的 `discount_price` 變成 `NULL` 或舊促銷價，與下單時不同。
      - 解讀 B：`order_item.discount_price / quantity`（下單時的促銷單價；`controllers/checkout.js:50` 寫入的是 `促銷價 * quantity`，非促銷時是 `0 * quantity ＝ 0`）。後果：非促銷時會是 `0` 而不是 `NULL`，前端若用「有值＝促銷」判斷會把非促銷當成促銷。
      - 解讀 C：`order_item.discount_price`（小計，不除以數量）。後果：欄位名稱是「價錢」卻是小計，與 `價錢` 單價不對稱。
-  3. **`singleTotal_Price` 是什麼？** → §4.1 #12
+  3. **`singleTotal_Price` 是什麼？** → §4.1 #12（定案：`user_orderList` 的 `singleTotal_Price` ＝ `order_item.total_price`，型別 `double precision`）
      - 解讀 A：`order_item.total_price`（`controllers/checkout.js:49` 寫入的 `tour_base.價錢 * quantity`，即不含促銷）。後果：`GET /summary` 的 `orders[].total_price` 是原價小計，與 `orders.discount_price`（`discount_price` 是整張訂單折扣後應付金額）不相加。
      - 解讀 B：有效單價 × `quantity`（促銷期間用促銷價）。後果：與 `user_cartList` 待確認 1 解讀 A 一致。
      - 解讀 C：`order_item.discount_price`（非促銷是 0）。後果：非促銷項目小計為 0。
      - 型別：`controllers/checkout.js:260` 沒有 `Number()`（`controllers/cart.js:224` 有）。若是 `numeric`／`bigint`，response 是 JSON 字串；`double precision` 是數字。
-  4. **`total_count` 的型別**：解讀 A：`integer`（view 內 `::int`）。後果：`summary.total_items` 是數字。解讀 B：`bigint`（`COUNT(*)` 預設）。後果：`summary.total_items` 是字串（例如 `"1"`）。 → §4.1 #25
-  5. **是否依 `payment_status` 篩選？** 程式碼只用 `order_id` 取全部項目。解讀 A：不篩選（所有 `payment_status` 都出現）。解讀 B：只含部分狀態。後果：預覽階段（-1／0）看不到項目，`GET /summary` 的 `rows[0].total_count` 取不到而 500。 → §4.1 #14
+  4. **`total_count` 的型別**：解讀 A：`integer`（view 內 `::int`）。後果：`summary.total_items` 是數字。解讀 B：`bigint`（`COUNT(*)` 預設）。後果：`summary.total_items` 是字串（例如 `"1"`）。 → §4.1 #25（定案：`integer`（view 內 `::int`））
+  5. **是否依 `payment_status` 篩選？** 程式碼只用 `order_id` 取全部項目。解讀 A：不篩選（所有 `payment_status` 都出現）。解讀 B：只含部分狀態。後果：預覽階段（-1／0）看不到項目，`GET /summary` 的 `rows[0].total_count` 取不到而 500。 → §4.1 #14（定案：不篩選 `payment_status`）
 
 ## 3. C 組：會員與後台
 
@@ -1166,12 +1170,12 @@
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | 收藏人員編號 | uuid | `favorite.user_id` | `controllers/collection.js:15` | WHERE |
-  | 建立時間 | timestamptz | `favorite.created_at`（見待確認 2） | `controllers/collection.js:15` | ORDER BY |
-  | 偏好分類1 | smallint | `tour.preference1`（欄位名稱確定，來源見待確認 3） | `controllers/collection.js:23,32` | JS 讀取 `row.偏好分類1` → 轉成文字放入 response `偏好分類[0]`，原欄位設為 `undefined` |
-  | 偏好分類2 | smallint | `tour.preference2`（同上） | `controllers/collection.js:24,33` | 同上 → `偏好分類[1]` |
-  | 偏好分類3 | smallint | `tour.preference3`（同上） | `controllers/collection.js:25,34` | 同上 → `偏好分類[2]` |
+  | 建立時間 | timestamptz | `favorite.created_at`（見待確認 2；【定案 #43】收藏時間） | `controllers/collection.js:15` | ORDER BY |
+  | 偏好分類1 | smallint | `tour.preference1`（欄位名稱確定，來源見待確認 3；【定案 #42】行程的偏好） | `controllers/collection.js:23,32` | JS 讀取 `row.偏好分類1` → 轉成文字放入 response `偏好分類[0]`，原欄位設為 `undefined` |
+  | 偏好分類2 | smallint | `tour.preference2`（同上；【定案 #42】） | `controllers/collection.js:24,33` | 同上 → `偏好分類[1]` |
+  | 偏好分類3 | smallint | `tour.preference3`（同上；【定案 #42】） | `controllers/collection.js:25,34` | 同上 → `偏好分類[2]` |
 
-  controller 沒有讀取其他 key，`...row`（`collection.js:30`）會把其餘欄位原樣放進 response。以下為依 API 用途推測的欄位，**程式碼無法證實**，需要使用者確認（見待確認 1）：
+  controller 沒有讀取其他 key，`...row`（`collection.js:30`）會把其餘欄位原樣放進 response。以下為依 API 用途推測的欄位，**程式碼無法證實**，需要使用者確認（見待確認 1；【定案 #11】欄位集合與命名待 §4.2 (d1) 核對 frontend 後回填（P1b），下表是推測，不是定案）：
 
   | 欄位（中文） | 型別 | 來源（推測） | 推測理由 |
   |---|---|---|---|
@@ -1179,7 +1183,7 @@
   | 旅遊編號 | uuid | `favorite.tour_id`（= `tour.tour_id`） | 沿用 `tour_base` 的命名（§1） |
   | 旅遊名稱、旅遊代表圖 Url、價錢、大分類、小分類、所屬國家、所屬地區…… | 同 §1 `tour_base` | 同 §1 `tour_base` | 收藏清單要顯示行程；偏好分類 1/2/3 的命名與 `tour_base` 相同，表示 view 很可能由 `tour_base` 衍生 |
 
-- **列的語意**：推測為每筆 `favorite` 一列，帶入被收藏行程的資料（是否帶入行程資料見待確認 1）。`WHERE 收藏人員編號 = $1` 取出單一使用者的收藏，controller 以 `建立時間 DESC` 排序並分頁（`LIMIT`／`OFFSET`）。
+- **列的語意**：推測為每筆 `favorite` 一列，帶入被收藏行程的資料（是否帶入行程資料見待確認 1；【定案 #11】欄位集合待 §4.2 (d1) 核對 frontend 後回填（P1b））。【定案 #41、#43】下架行程的收藏也出現；`建立時間` ＝ `favorite.created_at`。`WHERE 收藏人員編號 = $1` 取出單一使用者的收藏，controller 以 `建立時間 DESC` 排序並分頁（`LIMIT`／`OFFSET`）。
 - **邊界**：
   - **controller 行為 1（`get_collection` 每次都送兩次回應）**：`controllers/collection.js:39–46`（有資料）或 `:49–53`（無資料）已經呼叫 `resStatus` → `res.status(200).json(...)`（`utils/resStatus.js:33`），`:57–64` 又無條件再呼叫一次。第二次 `res.json` 會丟 `ERR_HTTP_HEADERS_SENT`，被 `:65` 的 `catch` 接住並 `next(error)`，進入 `server.js:137` 的錯誤處理，那裡又呼叫 `res.status(500).json(...)` 再丟一次。**client 收到的是第一次的回應**（依序執行，第一次 `json()` 已結束回應）；伺服器 log 每次都有錯誤，錯誤處理之後 Express 對連線的處置（推測是 `finalhandler` 因 headers 已送出而關閉 socket）沒有實測。結果：每次呼叫此 API 至少會留下 `❌ 伺服器內部錯誤` 與 `❌ 系統錯誤` 兩筆錯誤 log（Express 的 `finalhandler` 對錯誤處理再丟出的錯誤可能另外輸出第三筆，推測，未實測），與 view 的內容無關。
   - **controller 行為 2（有資料時的 response 形狀）**：`collection.js:43–45` 的 `dbdata` 是 `{ data: transformedRows }`，`resStatus` 再包一層，所以 client 拿到的是 `body.data.data[]`（兩層 `data`）。
@@ -1188,20 +1192,20 @@
   - **controller 行為 5（角色檢查不一致）**：只有 `GET` 有 `authRole('User')`（`routes/collection.js:11`），`POST`／`DELETE`（`:14`、`:17`）只需登入。見共通觀察的 `role` 表。
   - **seed 對照**：`db/seed/R__seed.sql:896–902` 有 7 筆收藏（Alice 3 筆、Bob 2 筆、Carol 2 筆），其中 Bob 的 `role` 是 `admin`，`authRole('User')` 讓他無法呼叫 `GET /collection/info/all`，所以此 API 在 seed 上只有 Alice 與 Carol 能實際操作，`created_at` 都是 `CURRENT_TIMESTAMP`（同一個 INSERT 敘述內的值相同），因此 `ORDER BY 建立時間 DESC` 在同一位使用者的多筆收藏之間沒有區分度，`LIMIT`／`OFFSET` 分頁的順序不穩定（若 `建立時間` 取 `tour.created_at`，seed 行程的 `created_at` 是否相同需另查，見待確認 2）。
   - 其他讀取 `favorite` 的物件（不是本 view，列出避免漏看）：`tour_travel_most_favorited`（§1，推測依 `favorite` 筆數排名）、`tour_travel`／`tour_tour_detail` 的 `收藏狀態`（§1，推測）；`middlewares/collection/index.js:69,103` 直接查 `favorite`。
-  - `favorite.tour_id` 有外鍵指向 `tour`（`V1:389`），若 view 對 `tour` 做 `INNER JOIN`，收藏列不會因為行程不存在而消失；若改為對 `tour_base` JOIN，則受 §1 `tour_base` 待確認 1 的上下架問題影響（見待確認 4）。
+  - `favorite.tour_id` 有外鍵指向 `tour`（`V1:389`），若 view 對 `tour` 做 `INNER JOIN`，收藏列不會因為行程不存在而消失；若改為對 `tour_base` JOIN，則受 §1 `tour_base` 待確認 1 的上下架問題影響（見待確認 4）。【定案 #41、#7】`tour_base` 含全部行程，下架行程的收藏也出現。
 - **信心**：`收藏人員編號`、`建立時間`、`偏好分類1/2/3` 的欄位名稱：確定（直接出現在 SQL／JS）。來源對應：`收藏人員編號` 確定；`建立時間`、`偏好分類` 的來源與其餘欄位集合：推測。
 - **待確認**：
-  1. **欄位集合：view 是否帶入行程資料？** → §4.1 #11
+  1. **欄位集合：view 是否帶入行程資料？** → §4.1 #11（定案：欄位集合與命名未定，待 §4.2 (d1) 核對 frontend 後回填（P1b））
      - 解讀 A：`favorite` 加上 `tour_base` 的欄位（再加 `favorite_id`）。後果：前端一次拿到收藏清單所需的名稱、圖、價錢；欄位名稱要與 `tour_base` 一致。
      - 解讀 B：只有 `favorite` 自己的欄位（`favorite_id`、`旅遊編號`、`建立時間`）加偏好分類。後果：偏好分類 1/2/3 沒有來源行程以外的合理來源（見待確認 3），前端要另打商品 API 才能顯示收藏卡片。
      - 解讀 C：對齊 `tour_tour_detail`（§1）的欄位集合。後果：欄位過多，包含 `異動通知內容` 等收藏清單用不到的資料。
-  2. **`建立時間` 是收藏時間還是行程建立時間？** → §4.1 #43
+  2. **`建立時間` 是收藏時間還是行程建立時間？** → §4.1 #43（定案：`favorite.created_at`）
      - 解讀 A：`favorite.created_at`。後果：最近收藏的排在最前面（符合「使用者查看收藏項目」的語意）；seed 7 筆時間相同，同使用者內順序不穩定（見邊界 seed 對照）。
      - 解讀 B：`tour.created_at`。後果：排序跟收藏無關，最新上架的行程在最前；取消後重新收藏不會改變位置。
-  3. **`偏好分類 1/2/3` 是行程的偏好，還是使用者的偏好？** → §4.1 #42
+  3. **`偏好分類 1/2/3` 是行程的偏好，還是使用者的偏好？** → §4.1 #42（定案：`tour.preference1/2/3`（行程的偏好））
      - 解讀 A：`tour.preference1/2/3`（與 `tour_base` 的同名欄位一致；使用者的偏好在 §2 `user_level_point_coupon` 叫 `個人偏好 1/2/3`）。後果：每筆收藏顯示該行程自己的三個分類標籤。
      - 解讀 B：`user.preference1/2/3`。後果：同一位使用者所有收藏列的 `偏好分類` 完全相同，對收藏清單沒有意義。
-  4. **下架行程（`tour.status = 2`）的收藏要不要出現？** → §4.1 #41
+  4. **下架行程（`tour.status = 2`）的收藏要不要出現？** → §4.1 #41（定案：下架行程的收藏也出現（對 `tour` 或含全部的 `tour_base` JOIN））
      - 解讀 A：出現（view 對 `tour` JOIN，不看上下架）。後果：使用者看得到已下架的收藏，點進去的商品詳情行為由 `tour_tour_detail` 決定。
      - 解讀 B：不出現（view 對 `tour_base` JOIN 且 `tour_base` 只含上架，即 §1 `tour_base` 待確認 1 解讀 B）。後果：收藏列仍在 `favorite` 表，但清單看不到，也就無法由列表取消這筆收藏（`DELETE` 需要 `favorite_id`）。
 
@@ -1219,11 +1223,11 @@
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | 使用者編號 | uuid | `orders.user_id` | `controllers/purchases.js:9` | WHERE |
-  | 偏好分類1 | smallint | `tour.preference1`（名稱確定，來源見待確認 3） | `controllers/purchases.js:17,26` | JS 讀取 → 轉成文字放入 `偏好分類[0]`，原欄位設為 `undefined` |
-  | 偏好分類2 | smallint | `tour.preference2`（同上） | `controllers/purchases.js:18,27` | 同上 → `偏好分類[1]` |
-  | 偏好分類3 | smallint | `tour.preference3`（同上） | `controllers/purchases.js:19,28` | 同上 → `偏好分類[2]` |
+  | 偏好分類1 | smallint | `tour.preference1`（名稱確定，來源見待確認 3；【定案 #42】行程的偏好） | `controllers/purchases.js:17,26` | JS 讀取 → 轉成文字放入 `偏好分類[0]`，原欄位設為 `undefined` |
+  | 偏好分類2 | smallint | `tour.preference2`（同上；【定案 #42】） | `controllers/purchases.js:18,27` | 同上 → `偏好分類[1]` |
+  | 偏好分類3 | smallint | `tour.preference3`（同上；【定案 #42】） | `controllers/purchases.js:19,28` | 同上 → `偏好分類[2]` |
 
-  controller 沒有讀取其他 key，`...row`（`purchases.js:24`）把其餘欄位原樣放進 response。以下為推測的欄位，**程式碼無法證實**（見待確認 1、4）：
+  controller 沒有讀取其他 key，`...row`（`purchases.js:24`）把其餘欄位原樣放進 response。以下為推測的欄位，**程式碼無法證實**（見待確認 1、4；【定案 #11】欄位集合與中英文命名待 §4.2 (d1) 核對 frontend 後回填（P1b），下表是推測，不是定案）：
 
   | 欄位（中文） | 型別 | 來源（推測） | 推測理由 |
   |---|---|---|---|
@@ -1231,7 +1235,7 @@
   | 旅遊名稱、旅遊代表圖 Url、大分類、小分類、價錢…… | 同 §1 `tour_base` | 同 §1 `tour_base` | 「已購買項目清單」要顯示項目；`偏好分類` 命名與 `tour_base` 一致 |
   | 付款狀態、數量、出發日期、小計…… | 見 `order_item` | `order_item.payment_status`、`quantity`、`start_date`、`total_price`、`discount_price` | 同上，名稱無證據 |
 
-- **列的語意**：推測為「每個訂單項目（`order_item`）一列」（見待確認 1），列出該使用者（`orders.user_id`）名下的項目，並帶入行程資料。沒有預設排序。
+- **列的語意**：推測為「每個訂單項目（`order_item`）一列」（見待確認 1），列出該使用者（`orders.user_id`）名下的項目，並帶入行程資料。沒有預設排序。【定案 #44、#6、#45、#41】每個 `order_item` 一列（含 `order_item_id`）；只含 `order_item.payment_status = 1`；view 內含 `ORDER BY`（例如依下單時間由新到舊）；下架行程的購買紀錄也出現。
 - **邊界**：
   - **controller 行為 1（沒有分頁）**：`purchases.js:9` 沒有 `LIMIT`，使用者的所有項目一次回傳。
   - **controller 行為 2（回應形狀）**：有資料時 `dbdata: transformedRows`（陣列，`purchases.js:37`），client 拿到 `body.data[]`；沒有資料時 `message: '查無資料'` 且沒有 `data`（`purchases.js:41–45`，`resStatus` 對空陣列也不放 `data`）。
@@ -1239,22 +1243,22 @@
   - **controller 行為 4（每張訂單只會有一個 `order_item`）**：見 §2 `user_orderList` 邊界 controller 行為 3（`controllers/checkout.js:20–33,42–56` 只取購物車第一個項目）。
   - **seed 對照**：`db/seed/R__seed.sql:790–794`（`orders`，5 筆）與 `:800–809`（`order_item`，10 筆）。`orders.payment_status`：`0` 共 4 筆（`c62e3ad6…`、`f4977608…`、`8c1e4f18…`、`8426dbe1…`）、`1` 共 1 筆（`58fcd7d9…`）。`order_item.payment_status`：`1` 共 6 筆、`2` 共 1 筆（`f3d2d83e…`）、`3` 共 3 筆（`d19eaf9b…`、`36a2abc9…`、`5c8096e9…`）。**seed 內 `orders` 與 `order_item` 的付款狀態並不一致**（例如訂單 `c62e3ad6…` 為 `0`，其項目 `cac34fe5…` 為 `1`），因此「以哪個表的哪個狀態篩選」在 seed 上會得到不同結果（見待確認 2）。注意 Bob 的 `role` 是 `admin`（seed `:35`），`authRole('User')` 會讓他在 `GET /purchases/info` 與 `GET /collection/info/all` 回 403，所以這兩個 API 在 seed 上只有 Alice 與 Carol 能實際操作；Bob 的數字只在 view 內可見。依擁有者分：Alice（`a1b2c3d4…`）1 個項目（狀態 `3`）、Bob（`b2c3d4e5…`）5 個項目（狀態 `1`、`1`、`3`、`1`、`1`）、Carol（`c3d4e5f6…`）4 個項目（狀態 `2`、`1`、`3`、`1`）。
   - **UUID**：`order_item_id` 對 seed 都是 v4，明細 API 可以通過驗證（見共通觀察）。
-  - 對 `tour_base` 的 JOIN：若 view 對 `tour_base` JOIN，下架行程的購買紀錄會消失，見 §1 `tour_base` 待確認 1；`order_item.tour_id` 有外鍵指向 `tour`（`V1:302`），對 `tour` JOIN 不會消失。
+  - 對 `tour_base` 的 JOIN：若 view 對 `tour_base` JOIN，下架行程的購買紀錄會消失，見 §1 `tour_base` 待確認 1；`order_item.tour_id` 有外鍵指向 `tour`（`V1:302`），對 `tour` JOIN 不會消失。【定案 #41】下架行程的購買紀錄也出現（`tour_base` 含全部行程，#7）。
   - 其他讀取 `orders`／`order_item` 的位置（不是本 view）：`user_orderList`（§2）、`controllers/checkout.js:170,175,207`、`controllers/discounts.js:19,49,85`、`middlewares/checkout/index.js:52,98,190`、`middlewares/discounts/index.js:26,120`、`controllers/newebpay.js:168`、`middlewares/purchases/index.js:31`。
 - **信心**：`使用者編號`、`偏好分類1/2/3` 的欄位名稱：確定。列的粒度、篩選條件、其餘欄位：推測。
 - **待確認**：
-  1. **一列的粒度：每個 `order_item` 一列，還是每張 `orders` 一列？** → §4.1 #44
+  1. **一列的粒度：每個 `order_item` 一列，還是每張 `orders` 一列？** → §4.1 #44（定案：每個 `order_item` 一列（含 `order_item_id`））
      - 解讀 A：每個 `order_item` 一列（含 `order_item_id`）。後果：每列可以接到明細 API；一張訂單多個項目會是多列。
      - 解讀 B：每張訂單一列（彙總）。後果：沒有 `order_item_id`，前端無法呼叫明細 API（`routes/purchases.js:14–20` 需要 `:order_item_id`）。
-  2. **要列出哪些付款狀態？**（`payment_status`：`-1` 資料剛建立、`0` 資料填寫完成未付款、`1` 已付款、`2` 已取消、`3` 已退款、`4` 付款逾時，`V1:277,292`）。下列後果中的 seed 數字依「controller 行為 3」與「seed 對照」的計算。 → §4.1 #6
+  2. **要列出哪些付款狀態？**（`payment_status`：`-1` 資料剛建立、`0` 資料填寫完成未付款、`1` 已付款、`2` 已取消、`3` 已退款、`4` 付款逾時，`V1:277,292`）。下列後果中的 seed 數字依「controller 行為 3」與「seed 對照」的計算。 → §4.1 #6（定案：清單只含 `order_item.payment_status = 1`）
      - 解讀 A：不篩選（`order_item` 全部 `-1`～`4`）。後果：經 API 新建的訂單項目（只有 `-1`、`0`）也出現在「已購買」；seed 上 Alice 1 筆、Bob 5 筆、Carol 4 筆，含已取消（`2`）與已退款（`3`）。
      - 解讀 B：只含 `order_item.payment_status = 1`。後果：已取消、已退款、逾時都不顯示；因為 API 寫不到 `1`（controller 行為 3），**經 API 產生的訂單永遠不會出現**，只有 seed 資料；seed 上 Alice 0 筆（回「查無資料」）、Bob 4 筆、Carol 2 筆。
      - 解讀 C：含 `order_item.payment_status IN (1, 2, 3, 4)`（排除 `-1`、`0`，即尚未完成付款的）。後果：保留取消／退款／逾時的歷史；API 產生的訂單同樣不會出現；seed 上與解讀 A 相同（seed 沒有 `-1`、`0`、`4` 的項目）。
      - 解讀 D：依 `orders.payment_status = 1`（訂單層級）篩選。後果：seed 上只有訂單 `58fcd7d9…`（Carol）符合，項目 `f3d2d83e…`（項目狀態為 `2`，已取消）與 `5739fb80…`（`1`）都出現，Alice、Bob 都是「查無資料」；API 產生的訂單同樣不會出現。
-  3. **`偏好分類 1/2/3` 是行程的還是使用者的？** 同 `user_favorite` 待確認 3。解讀 A（行程）：每個項目顯示該行程的分類標籤。解讀 B（使用者）：同一位使用者所有列相同。 → §4.1 #42
-  4. **欄位名稱用中文還是英文？** 已知 `使用者編號` 是中文（WHERE）；`user_order_item` 的 `order_item_id`、`preference1/2/3` 是英文（`purchases.js:59,67–69`）；§2 `user_orderList` 是中英混合。解讀 A：中文為主（與 `tour_base`、`使用者編號` 一致，`order_item_id` 保持英文）。後果：前端讀 `旅遊名稱` 等。解讀 B：英文為主（與 `user_order_item` 一致）。後果：前端讀 `title` 一類；兩種解讀的 response key 不同，前端要對應。 → §4.1 #11
-  5. **排序**：`purchases.js:9` 沒有 `ORDER BY`。解讀 A：view 內含 `ORDER BY`（例如依下單時間由新到舊）。後果：順序穩定，但 `ORDER BY` 寫在 view 內在 PostgreSQL 不保證被外層保留（單純 `SELECT *` 加 `WHERE` 通常會保留，加了 JOIN 或排序就不一定）。解讀 B：不排序。後果：順序不穩定，重新整理可能不同。 → §4.1 #45
-  6. **下架行程的購買紀錄要不要出現？** 同 `user_favorite` 待確認 4 的兩個解讀：A（出現）；B（對 `tour_base` JOIN 而消失，受 §1 `tour_base` 待確認 1 影響）。 → §4.1 #41
+  3. **`偏好分類 1/2/3` 是行程的還是使用者的？** 同 `user_favorite` 待確認 3。解讀 A（行程）：每個項目顯示該行程的分類標籤。解讀 B（使用者）：同一位使用者所有列相同。 → §4.1 #42（定案：`tour.preference1/2/3`（行程的偏好））
+  4. **欄位名稱用中文還是英文？** 已知 `使用者編號` 是中文（WHERE）；`user_order_item` 的 `order_item_id`、`preference1/2/3` 是英文（`purchases.js:59,67–69`）；§2 `user_orderList` 是中英混合。解讀 A：中文為主（與 `tour_base`、`使用者編號` 一致，`order_item_id` 保持英文）。後果：前端讀 `旅遊名稱` 等。解讀 B：英文為主（與 `user_order_item` 一致）。後果：前端讀 `title` 一類；兩種解讀的 response key 不同，前端要對應。 → §4.1 #11（定案：欄位集合與命名未定，待 §4.2 (d1) 核對 frontend 後回填（P1b））
+  5. **排序**：`purchases.js:9` 沒有 `ORDER BY`。解讀 A：view 內含 `ORDER BY`（例如依下單時間由新到舊）。後果：順序穩定，但 `ORDER BY` 寫在 view 內在 PostgreSQL 不保證被外層保留（單純 `SELECT *` 加 `WHERE` 通常會保留，加了 JOIN 或排序就不一定）。解讀 B：不排序。後果：順序不穩定，重新整理可能不同。 → §4.1 #45（定案：view 內含 `ORDER BY`（例如依下單時間由新到舊））
+  6. **下架行程的購買紀錄要不要出現？** 同 `user_favorite` 待確認 4 的兩個解讀：A（出現）；B（對 `tour_base` JOIN 而消失，受 §1 `tour_base` 待確認 1 影響）。 → §4.1 #41（定案：下架行程的購買紀錄也出現（對 `tour` 或含全部的 `tour_base` JOIN））
 
 ### `user_order_item`
 
@@ -1271,37 +1275,37 @@
   | 欄位 | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | order_item_id（英文） | uuid | `order_item.order_item_id` | `controllers/purchases.js:59` | WHERE |
-  | preference1（英文） | smallint | `tour.preference1`（名稱確定，來源見待確認 3） | `controllers/purchases.js:67,76` | JS 讀取 → 轉成文字放入 `preference[0]`，原欄位設為 `undefined` |
-  | preference2（英文） | smallint | `tour.preference2`（同上） | `controllers/purchases.js:68,77` | 同上 → `preference[1]` |
-  | preference3（英文） | smallint | `tour.preference3`（同上） | `controllers/purchases.js:69,78` | 同上 → `preference[2]` |
+  | preference1（英文） | smallint | `tour.preference1`（名稱確定，來源見待確認 3；【定案 #42】行程的偏好） | `controllers/purchases.js:67,76` | JS 讀取 → 轉成文字放入 `preference[0]`，原欄位設為 `undefined` |
+  | preference2（英文） | smallint | `tour.preference2`（同上；【定案 #42】） | `controllers/purchases.js:68,77` | 同上 → `preference[1]` |
+  | preference3（英文） | smallint | `tour.preference3`（同上；【定案 #42】） | `controllers/purchases.js:69,78` | 同上 → `preference[2]` |
 
-  注意這裡讀的是英文 `preference1/2/3`，與 `user_orders`、`user_favorite` 讀的中文 `偏好分類1/2/3` 不同，response 的合併欄位也不同（`preference` 而不是 `偏好分類`）。`...row`（`purchases.js:74`）把其餘欄位原樣放進 response。以下為推測的欄位，**程式碼無法證實**（見待確認 1、4）：
+  注意這裡讀的是英文 `preference1/2/3`，與 `user_orders`、`user_favorite` 讀的中文 `偏好分類1/2/3` 不同，response 的合併欄位也不同（`preference` 而不是 `偏好分類`）。`...row`（`purchases.js:74`）把其餘欄位原樣放進 response。以下為推測的欄位，**程式碼無法證實**（見待確認 1、4；【定案 #11】其餘欄位的命名待 §4.2 (d1) 核對 frontend 後回填（P1b），下表是推測，不是定案）：
 
   | 欄位 | 型別 | 來源（推測） | 推測理由 |
   |---|---|---|---|
   | order_id、tour_id、payment_status、total_price、discount_price、quantity、start_date、end_date、room_type | 同 `order_item` | `order_item.*`（`V1:288–303`） | 「訂單明細」；`preference1` 與 `order_item_id` 都是 V1 風格的英文欄位名，可能整個 view 沿用英文欄位 |
   | 旅遊名稱／title、cover_image、type、item…… | 同 `tour` | `tour.*` | 明細頁要顯示行程 |
-  | address、phone、payment_type、discount_type | 同 `orders` | `orders.*`（`V1:270–283`） | 明細頁要顯示收件／付款資訊 |
+  | address、phone、payment_type、discount_type | 同 `orders` | `orders.*`（`V1:270–283`） | 明細頁要顯示收件／付款資訊。【定案 #47】**不帶入**這些欄位，只多帶 `使用者編號`（`orders.user_id`）；若 §4.2 (d1) 核對顯示明細頁需要地址與電話，改採 #47 的 B，且要先處理 §4.2 (c) |
 
-- **列的語意**：由 `WHERE order_item_id = $1`（`order_item` 的主鍵，`V1:289`）取單一訂單項目的明細。預期 0 或 1 列（見待確認 2）。controller 一律把結果 `rows.map(...)` 成**陣列**放進 response，所以即使只有一列，`body.data` 也是長度 1 的陣列。
+- **列的語意**：由 `WHERE order_item_id = $1`（`order_item` 的主鍵，`V1:289`）取單一訂單項目的明細。預期 0 或 1 列（見待確認 2）。controller 一律把結果 `rows.map(...)` 成**陣列**放進 response，所以即使只有一列，`body.data` 也是長度 1 的陣列。【定案 #46】恰好 1 列（只 JOIN 一對一的 `order_item`、`orders`、`tour`）。
 - **邊界**：
-  - **controller 行為 1（沒有擁有者檢查，任何登入的 `User` 都可以讀任何項目）**：`middlewares/purchases/index.js:31–33` 與 `controllers/purchases.js:59` 都只用 `order_item_id` 查，沒有 `user_id` 條件；view 也拿不到請求者是誰。因此使用者 A 帶使用者 B 的 `order_item_id`（例如從任何管道取得的 seed 項目 `cac34fe5-c619-49dc-8cdd-79509e02f20b`）可以讀到 B 的訂單明細，包括 `orders` 的地址與電話（若 view 帶入，見待確認 4）。契約只記錄；若 view 帶入 `orders.user_id`（`使用者編號`），日後可在 controller 補條件，目前不能。
+  - **controller 行為 1（沒有擁有者檢查，任何登入的 `User` 都可以讀任何項目）**：`middlewares/purchases/index.js:31–33` 與 `controllers/purchases.js:59` 都只用 `order_item_id` 查，沒有 `user_id` 條件；view 也拿不到請求者是誰。因此使用者 A 帶使用者 B 的 `order_item_id`（例如從任何管道取得的 seed 項目 `cac34fe5-c619-49dc-8cdd-79509e02f20b`）可以讀到 B 的訂單明細，包括 `orders` 的地址與電話（若 view 帶入，見待確認 4）。契約只記錄；若 view 帶入 `orders.user_id`（`使用者編號`），日後可在 controller 補條件，目前不能。【定案 #47】view 多帶 `使用者編號`（`orders.user_id`），明細不帶 `orders` 的地址與電話，擁有者檢查見 §4.2 (c)。
   - **controller 行為 2（404 永遠不會觸發）**：`middlewares/purchases/index.js:34` 的 `if (!dataRepo)`，`dataRepo` 是 `pool.query` 回傳的 result 物件，永遠為真，所以「無此訂單細項編號」的 404 不可能發生；不存在的 `order_item_id` 會一路走到 controller，由 `purchases.js:63` 的 `rowCount > 0` 回 `200`、`message: '查無資料'`、沒有 `data`（`purchases.js:89–95`）。
   - **controller 行為 3（命名不一致時的結果）**：如果 view 提供的是中文 `偏好分類1/2/3`（與另外兩個 view 一致）而不是英文 `preference1/2/3`，`purchases.js:67–69` 讀到 `undefined`，`reversePreferenceMap[undefined]` 也是 `undefined`，response 的 `preference` 會是 `[null, null, null]`，而 `偏好分類1/2/3` 三個數字欄位**不會被移除**（`purchases.js:76–78` 只清英文 key）。
   - **controller 行為 4（`payment_status` 實際值）**：同 `user_orders` 邊界 controller 行為 3：經 API 產生的項目只會是 `-1` 或 `0`；`1`～`4` 只出現在 seed（`db/seed/R__seed.sql:800–809`：`1` 6 筆、`2` 1 筆、`3` 3 筆）。
   - **UUID**：10 筆 seed `order_item_id` 全是 v4（版本位 `4`，第四段開頭 `8`／`9`／`b`），通過 `purchases_Validator.js:8`。
-  - 對 `tour_base` 的 JOIN：同 `user_orders` 邊界。
+  - 對 `tour_base` 的 JOIN：同 `user_orders` 邊界。【定案 #6、#41】只含 `order_item.payment_status = 1`（與 `user_orders` 同一個篩選）；下架行程的項目也出現。
   - 其他讀取 `order_item` 的位置（不是本 view）：見 `user_orders` 邊界。
 - **信心**：`order_item_id`、`preference1/2/3` 的欄位名稱：確定。其餘欄位集合、來源、列數：推測。
 - **待確認**：
-  1. **其餘欄位用中文還是英文？** 已知 `order_item_id`、`preference1/2/3` 是英文。解讀 A：全部英文（沿用 `order_item`／`tour`／`orders` 的欄位名）。後果：response key 是 `total_price`、`title` 之類，與 `user_orders`（中文為主）不同。解讀 B：中英混合（類似 §2 `user_orderList`）。後果：同一個頁面要同時讀兩種風格，前端易錯。 → §4.1 #11
-  2. **一個 `order_item_id` 會回幾列？** 解讀 A：恰好 1 列（只 JOIN 一對一的 `order_item`、`orders`、`tour`）。後果：`body.data` 是長度 1 的陣列。解讀 B：JOIN 一對多的表（例如 `tour_detail`、`restaurant_menu`、`hotel_room`），一個項目多列。後果：`body.data` 有多個元素，每個元素重複訂單資料。 → §4.1 #46
-  3. **`preference1/2/3` 是行程的還是使用者的？** 同 `user_favorite` 待確認 3（解讀 A：`tour.preference1/2/3`；解讀 B：`user.preference1/2/3`，後果是明細頁顯示的是購買者自己的偏好而不是商品分類）。 → §4.1 #42
-  4. **明細帶入哪些訂單資料？** → §4.1 #47
+  1. **其餘欄位用中文還是英文？** 已知 `order_item_id`、`preference1/2/3` 是英文。解讀 A：全部英文（沿用 `order_item`／`tour`／`orders` 的欄位名）。後果：response key 是 `total_price`、`title` 之類，與 `user_orders`（中文為主）不同。解讀 B：中英混合（類似 §2 `user_orderList`）。後果：同一個頁面要同時讀兩種風格，前端易錯。 → §4.1 #11（定案：欄位集合與命名未定，待 §4.2 (d1) 核對 frontend 後回填（P1b））
+  2. **一個 `order_item_id` 會回幾列？** 解讀 A：恰好 1 列（只 JOIN 一對一的 `order_item`、`orders`、`tour`）。後果：`body.data` 是長度 1 的陣列。解讀 B：JOIN 一對多的表（例如 `tour_detail`、`restaurant_menu`、`hotel_room`），一個項目多列。後果：`body.data` 有多個元素，每個元素重複訂單資料。 → §4.1 #46（定案：恰好 1 列（只 JOIN 一對一的 `order_item`、`orders`、`tour`））
+  3. **`preference1/2/3` 是行程的還是使用者的？** 同 `user_favorite` 待確認 3（解讀 A：`tour.preference1/2/3`；解讀 B：`user.preference1/2/3`，後果是明細頁顯示的是購買者自己的偏好而不是商品分類）。 → §4.1 #42（定案：`tour.preference1/2/3`（行程的偏好））
+  4. **明細帶入哪些訂單資料？** → §4.1 #47（定案：只有 `order_item` ＋ `tour`，並多帶 `使用者編號`（`orders.user_id`）；明細不帶 `orders` 的地址與電話）
      - 解讀 A：只有 `order_item` ＋ `tour` 的欄位。後果：明細頁沒有地址／電話，其他使用者即使讀到別人的 `order_item_id`（controller 行為 1），洩漏的資料較少。
      - 解讀 B：再帶入 `orders`（地址、電話、付款方式、折扣類型、訂單總額）。後果：明細完整，但 controller 行為 1 會把別人的地址與電話暴露。
      - 解讀 C：再帶入 `payment`（付款紀錄，`V1:308–325`）。後果：可顯示付款結果，但 `payment` 一張訂單可能有多列（失敗重試），可能造成待確認 2 解讀 B 的多列情形。
-  5. **是否依 `payment_status` 篩選？**（`-1`～`4`，定義見 `user_orders` 待確認 2）解讀 A：不篩選。後果：`user_orders` 無論採用哪個篩選，點進去的明細都有資料，即使是 `-1`、`0`（尚未付款）的項目，也可以從網址直接開啟。解讀 B：與 `user_orders` 使用相同的篩選條件。後果：兩個 view 一致；不在清單的項目回「查無資料」。解讀 C：與 `user_orders` 不同的篩選條件。後果：清單看得到但明細回「查無資料」，或相反。 → §4.1 #6
+  5. **是否依 `payment_status` 篩選？**（`-1`～`4`，定義見 `user_orders` 待確認 2）解讀 A：不篩選。後果：`user_orders` 無論採用哪個篩選，點進去的明細都有資料，即使是 `-1`、`0`（尚未付款）的項目，也可以從網址直接開啟。解讀 B：與 `user_orders` 使用相同的篩選條件。後果：兩個 view 一致；不在清單的項目回「查無資料」。解讀 C：與 `user_orders` 不同的篩選條件。後果：清單看得到但明細回「查無資料」，或相反。 → §4.1 #6（定案：明細與清單用同一個篩選：只含 `order_item.payment_status = 1`）
 
 ### `user_adminList`
 
@@ -1319,7 +1323,7 @@
   |---|---|---|---|---|
   | 使用者編號 | uuid | `user.user_id` | `controllers/admin.js:34` | WHERE（唯一能由程式碼證實的欄位；與 §1 `user_user_level`、§2 `user_level_point_coupon` 同名） |
 
-  controller 把整份 `userRepo.rows` 放進 `dbdata: { data: userRepo.rows }`（`controllers/admin.js:42–44`），完全沒有讀取或轉換任何欄位，所以程式碼**無法證實**還需要哪些欄位。以下為依「管理者查看註冊用戶詳細資料」（路由註解 `routes/admin.js:13`）與同組 view 推測的欄位，需要使用者確認（見待確認 1）：
+  controller 把整份 `userRepo.rows` 放進 `dbdata: { data: userRepo.rows }`（`controllers/admin.js:42–44`），完全沒有讀取或轉換任何欄位，所以程式碼**無法證實**還需要哪些欄位。以下為依「管理者查看註冊用戶詳細資料」（路由註解 `routes/admin.js:13`）與同組 view 推測的欄位，需要使用者確認（見待確認 1；【定案 #11】欄位集合待 §4.2 (d1) 核對 frontend 後回填（P1b），下表是推測，不是定案）：
 
   | 欄位（中文） | 型別 | 來源（推測） | 推測理由 |
   |---|---|---|---|
@@ -1327,10 +1331,10 @@
   | 信箱 | varchar | `user.email` | 同上（§2 `user_level_point_coupon` 的 `信箱`；`controllers/admin.js:11` 回 `email`） |
   | 角色 | varchar | `user.role` | 管理者頁面要看／改權限（`PATCH /admin/members/roles`，`controllers/admin.js:59`）；§2 `user_level_point_coupon` 有 `角色` |
   | 個人照片 Url | varchar | `user.avatar_url` | 同 §1 `user_user_level` |
-  | 個人偏好 1／2／3 | smallint | `user.preference1/2/3` | 同 §2 `user_level_point_coupon`（欄位名含空格）；但見待確認 2 |
-  | 旅遊等級、旅遊等級名稱、旅遊徽章 Url、使用者旅遊積分 | varchar／varchar／varchar／integer | `user_level.level`／`name`／`badge_url`／`travel_point` | 同 §1 `user_user_level`、§2 `user_level_point_coupon` |
+  | 個人偏好 1／2／3 | smallint | `user.preference1/2/3` | 同 §2 `user_level_point_coupon`（欄位名含空格）；但見待確認 2（【定案 #49】輸出 `smallint` 數字） |
+  | 旅遊等級、旅遊等級名稱、旅遊徽章 Url、使用者旅遊積分 | varchar／varchar／varchar／integer | `user_level.level`／`name`／`badge_url`／`travel_point` | 同 §1 `user_user_level`、§2 `user_level_point_coupon`（【定案 #2】若包含積分，`使用者旅遊積分` ＝ `user_level.travel_point`，`integer`） |
 
-- **列的語意**：推測為「每位使用者一列」，以 `使用者編號` 取出單一使用者（`WHERE` 只有一個等號條件）。實際列數取決於 `user_level` 的 JOIN 方式（見待確認 3、4）；controller 對 0 列也回 `200`（見邊界）。
+- **列的語意**：推測為「每位使用者一列」，以 `使用者編號` 取出單一使用者（`WHERE` 只有一個等號條件）。實際列數取決於 `user_level` 的 JOIN 方式（見待確認 3、4）；controller 對 0 列也回 `200`（見邊界）。【定案 #22】對 `user_level` 採 `LEFT JOIN`，有多筆時取最新一筆，所以存在的使用者恰好一列。
 - **邊界**：
   - **controller 行為 4（`PATCH /admin/members/roles` 沒有角色檢查，最嚴重，詳見 C 組共通觀察「安全問題」）**：`routes/admin.js:26` 註解掉 `authRole('admin')`，任何已登入的註冊使用者都能改 `role`，直接改到本 view 的 `角色` 欄位，並使所有 admin 路由對註冊使用者開放（目標限 v4／v5 的 `user_id`，即註冊流程建立的帳號，seed 帳號作為目標見行為 3；呼叫者不受此限，任何已登入帳號都可以）。另外 `role` 只接受 `admin`／`user`（小寫），降權寫入的 `user` 與其他地方使用的 `User` 大小寫不同，見共通觀察的 `role` 表。
   - **controller 行為 1（view 查不到時仍是 200）**：存在性檢查在 `middlewares/admin/index.js:48`（查 `user` 資料表，不是 view）。若使用者存在但 view 沒有他的列（例如 view 對 `user_level` 做 `INNER JOIN` 而該使用者沒有等級），`controllers/admin.js:38–45` 仍回 `200`、`message: '查詢成功'`、`data: { data: [] }`；`resStatus` 以 `dbdata.length !== 0` 判斷是否放 `data`（`utils/resStatus.js:9`），物件沒有 `length`，所以 `data` 一定存在。
@@ -1345,20 +1349,20 @@
     - `user.role` 讀取：`middlewares/authorizeRoles.js:5`（來自 JWT，不查 DB）、`controllers/userProfile.js:140`（經 `user_level_point_coupon`）。
 - **信心**：`使用者編號` 的欄位名稱：確定。其餘欄位、列數、JOIN 方式：推測（controller 完全沒有讀取其他 key）。
 - **待確認**：
-  1. **欄位集合**： → §4.1 #11
+  1. **欄位集合**： → §4.1 #11（定案：欄位集合與命名未定，待 §4.2 (d1) 核對 frontend 後回填（P1b））
      - 解讀 A：`user` ＋ `user_level` 的欄位（鏡射 §2 `user_level_point_coupon` 去掉優惠卷）。後果：管理者看到基本資料與等級；沒有優惠卷（優惠卷由 `GET /admin/members/:user_id/coupons` 另查，`controllers/admin.js:239`）。
      - 解讀 B：再加上優惠卷欄位（鏡射 `user_level_point_coupon`，一位使用者多列）。後果：`body.data.data[]` 的長度等於優惠卷數，使用者資料在每列重複；沒有優惠卷的使用者是否保留一列取決於 JOIN 方式（同 §2 `user_level_point_coupon` 待確認 4）。
      - 解讀 C：再加上訂單或積分統計。後果：View 需要聚合，欄位名稱完全沒有依據。
-  2. **偏好欄位是數字還是文字？** `admin.js` 沒有像 `collection.js`／`purchases.js` 那樣使用 `reversePreferenceMap`。解讀 A：view 輸出 `smallint` 數字（`個人偏好 1/2/3`）。後果：管理者頁面拿到 `1`～`10`，要自己對照文字。解讀 B：view 內已轉成文字。後果：`smallint` 對照表要放進 view（SQL `CASE`），而且與其他 view 的型別不一致。 → §4.1 #49
-  3. **使用者沒有 `user_level` 列時**：同 §1 `user_user_level` 待確認 1。解讀 A（`INNER JOIN`）：後果是上述邊界的 `200` 加 `data: []`，管理者頁面看到空資料而不是 404；註冊流程一律會建立 `user_level`（`userinfo.js:30,185`），所以只有手動建立或 seed 缺漏的使用者會遇到。解讀 B（`LEFT JOIN`）：後果是等級欄位為 `null`，其餘資料仍顯示。 → §4.1 #22
-  4. **使用者有多筆 `user_level` 時**（V1 `user_level`，`V1:39–50`，沒有 unique）：同 §1 `user_user_level` 待確認 2。解讀 A（直接 JOIN）：後果是 `body.data.data[]` 有多列，管理者頁面如果只取第一列會漏掉資料。解讀 B（取最新一筆）：後果是只有一列，需定義「最新」（`updated_at` 最大）。seed 每位使用者各 1 筆（`db/seed/R__seed.sql:102–134`）。 → §4.1 #22
-  5. **若包含積分，`使用者旅遊積分` 的來源**：同 §2 `user_level_point_coupon` 待確認 1.a（該處有 A–D 四個解讀，此處列兩個代表；C 是 `point_record` 加總但排除 `'減少_確認中'`，D 是 `travel_point` 再加上預扣，後果見該處）。解讀 A：`user_level.travel_point`。後果：管理者看到註冊時的初始值（沒有程式會更新它），seed 上 Carol 為 800（`db/seed/R__seed.sql:130` 的 `travel_point`，該列的 `user_id` 在 `:126`）。解讀 B：`point_record` 加總。後果：seed 上 Carol 為 `1610 + (-436) = 1174`（`db/seed/R__seed.sql:908–909`），與解讀 A 的 800 不同；沒有 `point_record` 的使用者要決定是 `0` 還是 `NULL`（註冊流程一律會插入一筆 `point_record`，`controllers/userinfo.js:36,189`，所以只有 seed 缺漏或手動建立的使用者會沒有列）。 → §4.1 #2
+  2. **偏好欄位是數字還是文字？** `admin.js` 沒有像 `collection.js`／`purchases.js` 那樣使用 `reversePreferenceMap`。解讀 A：view 輸出 `smallint` 數字（`個人偏好 1/2/3`）。後果：管理者頁面拿到 `1`～`10`，要自己對照文字。解讀 B：view 內已轉成文字。後果：`smallint` 對照表要放進 view（SQL `CASE`），而且與其他 view 的型別不一致。 → §4.1 #49（定案：`smallint` 數字（`個人偏好 1/2/3`））
+  3. **使用者沒有 `user_level` 列時**：同 §1 `user_user_level` 待確認 1。解讀 A（`INNER JOIN`）：後果是上述邊界的 `200` 加 `data: []`，管理者頁面看到空資料而不是 404；註冊流程一律會建立 `user_level`（`userinfo.js:30,185`），所以只有手動建立或 seed 缺漏的使用者會遇到。解讀 B（`LEFT JOIN`）：後果是等級欄位為 `null`，其餘資料仍顯示。 → §4.1 #22（定案：`LEFT JOIN`，沒有 `user_level` 列時等級欄位為 `null`）
+  4. **使用者有多筆 `user_level` 時**（V1 `user_level`，`V1:39–50`，沒有 unique）：同 §1 `user_user_level` 待確認 2。解讀 A（直接 JOIN）：後果是 `body.data.data[]` 有多列，管理者頁面如果只取第一列會漏掉資料。解讀 B（取最新一筆）：後果是只有一列，需定義「最新」（`updated_at` 最大）。seed 每位使用者各 1 筆（`db/seed/R__seed.sql:102–134`）。 → §4.1 #22（定案：取最新一筆（`updated_at` 最大））
+  5. **若包含積分，`使用者旅遊積分` 的來源**：同 §2 `user_level_point_coupon` 待確認 1.a（該處有 A–D 四個解讀，此處列兩個代表；C 是 `point_record` 加總但排除 `'減少_確認中'`，D 是 `travel_point` 再加上預扣，後果見該處）。解讀 A：`user_level.travel_point`。後果：管理者看到註冊時的初始值（沒有程式會更新它），seed 上 Carol 為 800（`db/seed/R__seed.sql:130` 的 `travel_point`，該列的 `user_id` 在 `:126`）。解讀 B：`point_record` 加總。後果：seed 上 Carol 為 `1610 + (-436) = 1174`（`db/seed/R__seed.sql:908–909`），與解讀 A 的 800 不同；沒有 `point_record` 的使用者要決定是 `0` 還是 `NULL`（註冊流程一律會插入一筆 `point_record`，`controllers/userinfo.js:36,189`，所以只有 seed 缺漏或手動建立的使用者會沒有列）。 → §4.1 #2（定案：`user_level.travel_point`（預扣不反映，型別 `integer`））
 
 ## 4. 待使用者確認
 
-> 本節彙整 §1–§3 每個物件的「待確認」（共 79 題），加上契約以外、需要使用者決定的事項。「使用者的決定」欄先留白，由使用者逐題填寫。
+> 本節彙整 §1–§3 每個物件的「待確認」（共 79 題），加上契約以外、需要使用者決定的事項。「使用者的決定」欄已於 2026-10-22 由使用者確認：全部採用建議，#1 改選 B（折抵金額）。
 >
-> - **§4.1 契約語意**：49 列。同一個底層問題被多個物件問到時合併成一列（例如 `payment_status` 的用法、點數餘額、下架行程），各物件的「待確認」結尾以「→ §4.1 #n」指向這裡；物件內的解讀原文保留，供查證。本表的選項字母是本表自己的編號，與物件內的「解讀 A／B」不一定相同。列依影響排序：先是會改變多支 API 或金額計算的（#1–#7），之後大致依影響遞減，最後是單一物件內的語意。
+> - **§4.1 契約語意**：49 列。同一個底層問題被多個物件問到時合併成一列（例如 `payment_status` 的用法、點數餘額、下架行程），各物件的「待確認」結尾以「→ §4.1 #n（定案：…）」指向這裡並附上定案；物件內的解讀原文保留，供查證。本表的選項字母是本表自己的編號，與物件內的「解讀 A／B」不一定相同。列依影響排序：先是會改變多支 API 或金額計算的（#1–#7），之後大致依影響遞減，最後是單一物件內的語意。
 > - **建議的原則**：選讓現有 controller 不用改就能正確運作的選項，並附程式碼依據。沒有任何選項能不改 controller 就完全正確時，建議欄會明說，並選改動最小的。
 > - **（低風險，可直接採用建議）** 共 26 列：#14、#17、#19、#20、#21、#22、#23、#24、#25、#26、#27、#28、#29、#30、#31、#33、#35、#36、#37、#41、#42、#43、#44、#45、#46、#49。這些列的建議是顯而易見的或影響很小，可以整批接受。
 > - **§4.2 契約以外**：seed 與驗證器的 UUID 版本、兩個權限問題，以及其他需要使用者決定的非語意事項。
@@ -1367,55 +1371,55 @@
 
 | # | 物件 | 問題 | 選項與後果 | 建議 | 使用者的決定 |
 |---|---|---|---|---|---|
-| 1 | `user_couponList`（待確認 1） | `coupon.discount` 是折扣倍率、折抵金額，還是折扣百分比？（spec 3.1 已知問題 2）程式碼只做 `total_price * discount`：`controllers/discounts.js:38`（回傳）、`controllers/checkout.js:155`（寫入 `orders.discount_price`）；沒有任何地方做減法或除以 100。 | **A 倍率**（0 到 1，`0.9` ＝ 九折，`discount_price` ＝ 折後應付金額）。後果：兩處運算不用改，且與 `checkout.js:165`（點數路徑 `total_price - ...`，同樣把折後應付金額寫進 `orders.discount_price`）一致；seed 的 5 個值（100、50、10、300、20，`db/seed/R__seed.sql:143–181`）與 `description` 都要改（P1b）；admin 驗證器 `coupon_Validator.js:45` 只要求 `> 0` 沒有上限，管理者仍可建立 `discount = 100`，要擋需補 `.max(1)`；請求欄位名 `discount_amount` 與倍率語意不符。<br>**B 折抵金額**（NT$）。後果：seed 不用改，admin 驗證器與欄位名相容；但兩處運算會算出金額的數百倍（`total_price` 3576.74、`discount` 100.0 → 357,674），要把 controller 改成 `total_price - discount`；`TRAVEL10P` 的 `10.0` 只折 10 元，與其 `description`「10% 折扣 (最高折抵 500 元)」矛盾。<br>**C 混合**（`TRAVEL10P` 是百分比，其餘是金額）。後果：同一欄位兩種語意，`total_price * discount` 兩種都算錯；要靠新增欄位區分（V1 沒有，需改 migration）；admin 驗證器無法區分。<br>**D 百分比**（0–100）。後果：seed 5 個值都要改成百分比；controller 要改成 `total_price * (1 - discount / 100)`；admin 驗證器要補 `.max(100)`。 | **A**。理由：只有 A 讓 `discounts.js:38`、`checkout.js:155` 不用改就正確，B／C／D 都要改 controller（違反 P1「controller 不改」）。代價：P1b 改 seed（值與 description）；admin 驗證器的 `.max(1)` 屬 validator 修改，留給 P6 後台（優惠卷 CRUD）。 |  |
-| 2 | `user_level_point_coupon`（待確認 1.a、2）、`user_adminList`（待確認 5） | `使用者旅遊積分`（點數餘額）取哪個來源？結帳預覽的預扣（`point_record` 的 `'減少_確認中'`，`controllers/checkout.js:158–161`）要不要即時反映？餘額有兩條讀取路徑：本 view（`GET /pointslevel`、折抵檢查 `middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160`），以及 `controllers/userinfo.js:56,117,228,356` 直接讀 `user_level.travel_point`（輸出為 `level.points`）。 | **A `user_level.travel_point`**（預扣不反映）。後果：與 `userinfo.js` 四處是同一個欄位，兩條路徑一致；`backend/src` 沒有任何 UPDATE `travel_point`，餘額永遠是註冊時的 0 或 seed 的 1500／3000／800，使用點數不會扣，同一批點數可重複折抵；多張訂單同時預覽也能重複使用同一批點數。<br>**B `SUM(point_record.point)`**（全部類型，預扣即時反映）。後果：`減少_確認中` 立刻從餘額扣掉；同一預覽重複 PATCH 會重複扣（每次新增一列）；取消預覽沒有回補程式（`discounts.js:78–115` 沒有任何寫入），點數被占住；與 `userinfo.js` 四處不一致（seed 使用者 `c3d4...`：登入 response 顯示 800，`pointslevel` 顯示 1174）。<br>**C `SUM(point_record.point)` 但排除 `減少_確認中`**。後果：預覽不影響餘額，但沒有任何程式把 `減少_確認中` 轉成 `減少`，使用點數永遠不減餘額；同樣與 `userinfo.js` 不一致（`c3d4...` 為 800 對 1174）。<br>**D `travel_point` 加上 `SUM(減少_確認中)`**。後果：預扣即時生效，但付款完成前沒有人真正扣 `travel_point`；`pointslevel` 與登入 response 的餘額不一致；seed 沒有 `減少_確認中` 列，所以 seed 上等於 A。<br>**附帶（`user_adminList` 原待確認 5）**：採 B／C 時，沒有 `point_record` 的使用者餘額是 `0` 還是 `NULL`？後果：`0` 讓管理者頁面一律是數字；`NULL` 表示無紀錄。註冊流程一律會插入一筆 `point_record`（`userinfo.js:36,189`），只有 seed 缺漏或手動建立的使用者會遇到。建議 `0`。 | **A**。理由：只有 A 讓本 view 與 `userinfo.js` 四處讀同一欄位，controller 不用改。「使用點數不會扣」是 controller 缺少寫入，屬點數功能（spec 4 節 P5「點數規則照 P1 契約中確認的語意」）。型別為 `integer`。 |  |
-| 3 | `user_level_point_coupon`（待確認 1.c） | `point * 0.8` 是什麼意思？`controllers/discounts.js:66`（回傳）與 `controllers/checkout.js:165`（寫入 `orders.discount_price`）都是 `total_price - used_point * 0.8`，同一請求在 `point_record` 記的是 `0 - used_point`（`checkout.js:160`）。另有 `checkout.js:225` 的 `total_price * 0.1`（累積，只顯示在 `summary.get_point`，沒有寫入任何表）。 | **A 1 點折抵 0.8 元**（兌換率）。後果：`discount_price` ＝ 折後應付金額，與程式碼一致，不用改；`total_price - used_point * 0.8` 沒有下限，點數夠多時 `discount_price` 會變負數（兩條路徑只檢查點數餘額，`middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160`），B、C 解讀同樣有此問題；7 點折 5.6 元（`orders.discount_price` 是 FLOAT 可存）；與累積 0.1 並存時，消費 100 元得 10 點、10 點折 8 元，等於 8% 回饋。seed 的 `-436` 對 `436.75`（約 1:1，`db/seed/R__seed.sql:909,792`）、`新增 1610` 對 `1610.73`（約 100% 回饋，`:908`）都不是這個比率。<br>**B 1 點折抵 1 元，0.8 是上限**（例如最多折訂單的 80%）。後果：程式碼沒有任何上限檢查，實作與此解讀不符；`total_price - used_point * 0.8` 沒有下限，大量點數可使 `discount_price` 變負數。<br>**C 原意是 1 點 ＝ 1 元，0.8 是舊值或誤植**（依 seed 約 1:1）。後果：兩處 `0.8` 要改成 `1`（違反「controller 不改」）；不改則每點只折 0.8 元。 | **A**（累積 0.1 一併視為設計值）。理由：A 讓 `discounts.js:66`、`checkout.js:165`、`checkout.js:225` 不用改；B 與實作矛盾，C 要改 controller。代價：P1b 的 `point_record`／`orders` seed 資料要調成與 0.8、0.1 相符，或接受 seed 與規則不符。 |  |
-| 4 | `tour_travel_popular`（待確認 1） | `tour_travel_popular` 的「購買」計入哪些 `order_item.payment_status`？（值：-1 剛建立、0 填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時；`checkout.js:48` 建立 `order_item` 一律寫 -1。） | **A 全部**。後果：未付款、已取消的訂單也灌水，連尚未填寫就放棄的結帳都計入。<br>**B 只算 1（已付款）**。後果：seed 有 6 筆 `payment_status = 1`（`db/seed/R__seed.sql:800–809`）所以有榜單；但經 API 產生的訂單寫不到 1（`newebpay.js:80–84,211–215` 對 `order_item` 寫不存在的 `payment` 欄位，交易 ROLLBACK，見 §3 `user_orders` 邊界 controller 行為 3），所以新訂單不會進榜，直到付款流程修好。<br>**C 排除 2、3、4（保留 -1、0、1）**。後果：仍計入未付款的訂單。<br>**D 只算 0 與 1**。後果：排除剛建立與所有失敗狀態，介於 A、B 之間。 | **B**。理由：controller 只 `ORDER BY 購買排行 ASC`（`home.js:18,27,71,80`），不讀購買數，任何選項都不用改 controller；「熱門」語意為已付款購買，搭配 #23 的 A（無購買的行程排最後）榜單不會因為沒有已付款訂單而變空。 |  |
-| 5 | `hotel_booking`（待確認 1）、`restaurant_booking`（待確認 2）；`restaurant_booking` 另見 #15 | `hotel_booking`、`restaurant_booking` 的 `booking_count`（占房／占名額）計入哪些 `payment_status`？（值的定義同 #4。） | **A 不看 `payment_status`**。後果：-1、2、3、4 都占房，被放棄、已取消、已退款的訂單仍占著。<br>**B 只數 1**。後果：只有付款的占房；有人下單未付款時，別人仍可加入購物車（超賣風險）；且經 API 產生的訂單寫不到 1（見 #4），檢查等於不作用。<br>**C 數 `IN (-1, 0, 1)`**。後果：未付款的訂單占房，取消／退款／逾時的釋放；沒有任何程式寫入 4（逾時），放棄的結帳會一直占房。<br>**D 數 `IN (0, 1)`**。後果：排除「剛建立、還沒填寫」的訂單，其餘同 C。<br>**E 數 `cart_item`**（購物車內項目）。後果：占房的是還沒結帳的項目；PATCH 時（`middlewares/cart/index.js:187,207`）呼叫端沒有排除自己，修改會與自己衝突。<br>**F `order_item` 與 `cart_item` 都數**（僅 `hotel_booking` 列出）。後果：同一人的購物車與訂單各算一次，重複計算。 | **C**。理由：controller 只比較 `booking_count >= room_count`（`middlewares/cart/index.js:62,197`）與 `>= reservation_limit`（`:80,215`），任何選項 controller 都不用改；C 讓經 API 產生的訂單（只會是 -1 或 0，`checkout.js:36–56,133–139`）仍然占房，檢查才有作用，同時釋放 2、3、4。代價：沒有逾時機制，放棄的結帳會占房，屬 P4 交易。 |  |
-| 6 | `user_orders`（待確認 2）、`user_order_item`（待確認 5） | 「已購買」清單與明細要列出哪些 `payment_status`？`user_orders`（清單）與 `user_order_item`（明細）要不要用同一個篩選？ | **A 不篩選（`-1`～`4`）**。後果：經 API 產生的新訂單項目（只有 -1、0）也出現在「已購買」；seed 上 Alice 1 筆、Bob 5 筆、Carol 4 筆，含已取消（2）與已退款（3）（Bob 是 `admin`，`authRole('User')` 讓他呼叫 `GET /purchases/info` 回 403，他的數字只在 view 內可見，下同）。<br>**B 只含 `order_item.payment_status = 1`**。後果：已取消、已退款、逾時都不顯示；經 API 產生的訂單不會出現（寫不到 1，見 #4），只有 seed 資料；seed 上 Alice 0 筆（回「查無資料」）、Bob 4 筆、Carol 2 筆。<br>**C 含 `IN (1, 2, 3, 4)`**。後果：保留取消／退款／逾時的歷史；經 API 產生的訂單同樣不會出現（寫不到 1，見 #4）；seed 上與 A 相同（seed 沒有 -1、0、4）。<br>**D 依 `orders.payment_status = 1`（訂單層級）**。後果：經 API 產生的訂單同樣不會出現；seed 上只有訂單 `58fcd7d9...`（Carol）符合，Alice、Bob 都是「查無資料」；seed 內 `orders` 與 `order_item` 的付款狀態不一致，結果與項目層級不同。<br>明細：**與清單相同篩選**，後果：兩個 view 一致，不在清單的項目回「查無資料」；**不篩選**，後果：任何狀態的項目都可從網址直接開啟；**不同篩選**，後果：清單看得到但明細回「查無資料」，或相反。 | 清單與明細都用 **B**。理由：兩個 controller 都不篩選也不讀付款狀態（`purchases.js:9–11`、`:58–61`），任何選項 controller 都不用改；「已購買」的語意是已付款，理由純粹是語意，不是 controller 的限制。代價：付款流程修好（P4）之前，API 產生的訂單不會出現在這兩支 API。 |  |
-| 7 | `tour_base`（待確認 1）、`tour_travel`（待確認 4）、`tour_travel_popular`（待確認 4）、`tour_travel_most_favorited`（待確認 3）、`tour_tour_detail`（待確認 3）、`user_cartList`（待確認 4） | `tour_base` 是否含下架（`status = 2`）行程？以及 `tour_travel`、`tour_travel_popular`、`tour_travel_most_favorited`、`tour_tour_detail` 要不要只回傳上架行程？（程式碼矛盾：`admin.js:168`、`product.js:1067` 用 `上下架狀態` 篩選，要含下架；`home.js:15/33/49/68` 的公開首頁直接查 `tour_base`，沒有上架過濾。） | **tour_base A 含全部**。後果：管理者清單與 `status=2` 篩選正常；未登入首頁促銷分頁（`home.js:33`，直接查 `tour_base`）會列出下架行程；`cart.js`／`checkout.js` 查價也能查到下架行程。<br>**tour_base B 只含上架**。後果：首頁正常，但 `GET /admin/product?status=2` 永遠是空的、管理者清單看不到下架行程；上架 API 本身不受影響（`patch_tourStatus`，`product.js:1332–1341`，直接 UPDATE `tour`），但前端清單裡沒有可選的 `tour_id`。<br>**其餘四個 function 只回 `status = 1`**。後果：未登入的熱門／最多收藏（`INNER JOIN` function）、已登入首頁與商品搜尋都不會露出下架行程。`tour_tour_detail` 在 `product.js:178–183` 已先過濾 `status = 1`，function 內是否過濾不影響該 API。<br>**其餘四個 function 不過濾**。後果：下架行程出現在公開搜尋與首頁熱門。<br>`user_cartList` 對 `tour_base` 的 JOIN：tour_base 採 A 時 INNER／LEFT 結果相同；採 B 時 INNER 會讓購物車裡已下架的項目消失，LEFT 則行程欄位為 `NULL`、小計 0。 | **tour_base 採 A，其餘四個 function 過濾 `status = 1`**。沒有任何一個選項能讓所有 controller 路徑都不改就正確：採 A 時，只剩未登入首頁促銷分頁（`home.js:33`）會露出下架行程，已登入版走 `tour_travel`（`home.js:41`）已濾掉；採 B 則直接讓 `admin.js:168`、`product.js:1067` 的下架篩選失效。A 是改動最小的選項。採 A 後剩下兩個 controller 缺口，留給 P3 商品／P4 交易：`home.js:33` 的未登入促銷分頁露出下架行程；下架行程仍可加入購物車並結帳（`middlewares/cart/index.js:26` 只確認 `tour` 列存在，`cart.js:19–22`、`checkout.js:24` 都從 `tour_base` 取價）。 |  |
-| 8 | `tour_base`（待確認 2）、`tour_tour_detail`（待確認 1）、`tour_hotel`（待確認 4）、`tour_restaurant`（待確認 3） | 一個行程有多筆通知（例如同時有「促銷」與「異動」）時，一列怎麼呈現？`notification` 沒有 unique 約束，同一個 `tour_id` 可有多列。 | **A 每個行程只取一筆**（例如最新）。後果：`通知狀態` 只會是其中一個，另一種看不到；有促銷又有異動時，`cart.js:22` 可能讀不到促銷價。<br>**B 促銷與異動各自成欄**（`促銷價錢`…取自 type='促銷'、`異動通知內容` 取自 type='異動'，`通知狀態` 依優先順序取一個）。後果：兩者都能顯示；需另定優先順序。<br>**C 每筆通知一列**。後果：同一行程在首頁、admin 清單重複出現；`rows[0]` 取哪筆不固定；`hotel`／`food` 的 `rows.map` 會與房型、菜單相乘而重複。 | **B，`通知狀態` 優先序為 促銷 高於 異動**（同類型有多筆時取 `updated_at` 最大者，此為建議的細節）。理由：`tour_tour_detail` 同時讀 `異動通知內容` 與促銷欄位且只讀 `rows[0]`（`product.js:357–363`），`hotel`／`restaurant` 用 `rows.map`（`product.js:409`、`:263`、`:268`），只有 B 一個行程一列且兩者都在；促銷優先是因為 `home.js:33`（`通知狀態 = '促銷'`）與 `cart.js:22`（CASE）只認 `'促銷'`。 |  |
-| 9 | `tour_base`（待確認 4） | 促銷期間外，`通知狀態` 要不要在 view 內就不回 `'促銷'`？（原 `tour_base` 待確認 4。）這個決定適用所有從 `notification` 輸出 `通知狀態`／`促銷價錢`／`促銷開始／結束日期` 的物件：`tour_base`、`tour_travel`（欄位集合見 #26）、`tour_tour_detail`、`tour_hotel`、`tour_restaurant`，以及取自 `tour_base` 的 `user_cartList`；`user_orderList` 僅在 #13 採 A（取目前行程價）時才適用，#13 採 B（建議）時它的價格取自 `order_item`，也沒有 `通知狀態` 欄位。與 #10 是兩個獨立的問題。controller 自己再檢查 `now() between`（`cart.js:22`、`checkout.js:31`）。 | **A view 不判斷**，期間外仍是 `通知狀態='促銷'`。後果：首頁促銷分頁（`home.js:33`、`home.js:41`）列出已過期或尚未開始的促銷行程；詳情的 `promotion.tag`（`product.js:361`）期間外仍是 '促銷'；管理者促銷清單（`promotion.js:8` 的 `通知狀態 = '促銷'`，`:42` 查 `tour_base`）仍列出所有促銷（含未開始與已過期），管理功能正常。<br>**B 只在期間內才回 `'促銷'`，否則 `NULL`**。後果：首頁促銷分頁正確；但管理者促銷清單（`promotion.js:8,42`）看不到尚未開始與已過期的促銷，無法管理；管理者商品清單（`admin.js:168` 選取 `通知狀態`）這些行程顯示 `NULL`。seed 的兩筆促銷日期是浮動的（起日 ＝ `2025-11-01`／`2025-10-01` 加上載入日與 `2025-05-20` 的天數差，`db/seed/R__seed.sql:590–591,601–602`），載入後 165 天與 134 天才開始，載入當天都不在期間內，所以 B 之下 seed 的管理者促銷清單與首頁促銷分頁從第一天起都是空的，P1b 要調整 seed 日期。 | **A**（不判斷）。沒有任何選項能讓所有 controller 路徑都不改就正確：A 讓 `home.js:33,41` 在期間外仍列出促銷（controller 缺期間條件，留給 P3 商品）；B 則讓管理者促銷清單（`promotion.js:8,42`）失去未開始與已過期的促銷，破壞管理功能。A 是改動最小的選項。`is_promoted` 的問題由 #10 處理，不依賴本題。 |  |
-| 10 | `user_cartList`（待確認 2） | 促銷期間外，`促銷價錢` 要不要在 view 內就是 `NULL`？（原 `user_cartList` 待確認 2；同樣適用 `tour_base`、`tour_tour_detail`、`tour_hotel`、`tour_restaurant` 的 `促銷價錢`；`user_orderList` 僅在 #13 採 A 時適用。）`is_promoted` 在三處以 `促銷價錢` 的真偽判斷：`product.js:284`（restaurant）、`:359`（travel／spot）、`:450`（hotel）。 | **A 永遠是 `notification.promo_price` 原值**。後果：期間外三處 `is_promoted` 仍為 true；`cart` 的 `promo_price`（`cart.js:217`）期間外仍有值，前端要自己判斷期間。<br>**B 只在期間內才有值，否則 `NULL`**（`促銷開始／結束日期` 照常輸出；可與 #9 的 A 或 B 獨立搭配）。後果：三處 `is_promoted` 與 `cart` 的 `promo_price` 都正確；`cart.js:22`、`checkout.js:31` 的 `now() between` 檢查變成多餘但無害；管理者促銷清單仍依 `通知狀態` 找得到所有促銷，但該 API `select * from tour_base` 並以 `...rest` 回傳（`promotion.js:42`、`:59–63`），`促銷價錢` 會在 response 裡：未開始與已過期的促銷顯示 `促銷價錢 = NULL`，以目前的 seed 而言，載入當天起每一筆促銷都是 NULL（管理者看得到促銷但看不到價格）。 | **B**（只 gate `促銷價錢`，`通知狀態` 照 #9 不 gate）。沒有任何選項完全不改 controller 就正確（`home.js:33,41` 的期間條件仍缺，見 #9）；但這個組合讓 `is_promoted`（`product.js:284,359,450`）與 cart 的 `promo_price` 不用改就正確，仍可管理所有促銷（只是期間外的促銷在管理者清單上 `促銷價錢` 為 NULL），回歸比 #9 的 B 小，是改動最小的選擇。代價：seed 的促銷在開始前（載入後 134、165 天內），詳情的 `is_promoted` 是 false。 |  |
-| 11 | `user_level_review_forHome`（待確認 1）、`user_favorite`（待確認 1）、`user_orders`（待確認 4）、`user_order_item`（待確認 1）、`user_adminList`（待確認 1） | 程式碼沒有讀取、只能推測欄位集合與命名的 view：`user_level_review_forHome`、`user_favorite`、`user_orders`、`user_order_item`、`user_adminList`。controller 都是 `SELECT *` 後整份放進 response，前端（`phase-0`）依實際 key 讀取；這一題決定五支 API 的 response 形狀，並牽動 §4.2 (d1)。 | **整體做法 A 照契約中的推測欄位建立**。後果：若 frontend 讀取的 key 不同，首頁好評、收藏清單、已購買清單、管理者會員詳情會缺資料。**整體做法 B 先核對 frontend 實際讀取的 key 再定**（唯讀，見 §4.2 (d1)）。後果：多花一道工，欄位與命名有證據。<br>**`user_level_review_forHome` 欄位集合**（原待確認 1）：A 照推測欄位（評論編號、名稱、個人照片 Url、旅遊等級、旅遊等級名稱、旅遊徽章 Url、評分、評論內容、評論時間）。後果：前端 key 不同時首頁好評缺資料。B 先查 frontend 再定。後果：多一道工。<br>**`user_favorite` 欄位集合**（原待確認 1）：A `favorite` 加 `tour_base` 的欄位（再加 `favorite_id`）。後果：一次拿到收藏卡片所需的名稱、圖、價錢，欄位要與 `tour_base` 一致。B 只有 `favorite` 自己的欄位（`favorite_id`、`旅遊編號`、`建立時間`）加偏好分類。後果：偏好分類沒有行程以外的合理來源，前端要另打商品 API。C 對齊 `tour_tour_detail` 的欄位集合。後果：欄位過多，含收藏清單用不到的 `異動通知內容` 等。<br>**`user_adminList` 欄位集合**（原待確認 1）：A `user` 加 `user_level` 的欄位（鏡射 `user_level_point_coupon` 去掉優惠卷）。後果：管理者看到基本資料與等級，優惠卷另查（`admin.js:239`）。B 再加優惠卷欄位（一位使用者多列）。後果：`body.data.data[]` 長度等於優惠卷數、使用者資料每列重複，沒有優惠卷的使用者是否保留一列看 #40。C 再加訂單或積分統計。後果：view 需要聚合，欄位名稱沒有依據。<br>**命名，每個 view 各自一題**（`user_orders` 原待確認 4、`user_order_item` 原待確認 1 是兩個獨立的待確認，可分別決定；兩者選不同風格時，已購買清單與明細頁的 key 風格不一致）：中文為主、`order_item_id` 保持英文。後果：前端讀 `旅遊名稱` 等。英文為主（沿用 `order_item`／`tour`／`orders` 欄位名）。後果：前端讀 `title`、`total_price` 一類，與中文風格的 `user_orders` 不同。中英混合（類似 `user_orderList`）。後果：同一頁面要讀兩種風格。 | 整體做法 **B**，作法與時程見 §4.2 (d1)；各欄位集合與命名在核對 frontend 之前不預選。理由：controller 對這些欄位幾乎一個都不讀（只讀 `使用者編號`、`order_item_id`、偏好分類），任何選項 controller 都不用改，唯一的依據是 frontend。 |  |
-| 12 | `user_cartList`（待確認 1）、`user_orderList`（待確認 3） | `singleTotal_Price` 怎麼算、什麼型別？（`user_cartList`：程式碼只讀；`user_orderList`：`checkout.js:260` 沒有 `Number()`，`cart.js:224` 有。） | **cartList A 有效單價 × `quantity`**（促銷期間內用促銷價，否則原價，同 `cart.js:19–22` 的 CASE）。後果：與 `cart.total_price` 的累計邏輯一致。<br>**cartList B 原價 × `quantity`**。後果：有促銷的項目小計大於 `cart.total_price` 實際加的金額，`summary.total_price` 與 `cart.total_price` 不一致。<br>**cartList C 促銷價 × `quantity`**（NULL 退回原價，不檢查期間）。後果：過期促銷仍用促銷價。<br>**orderList A `order_item.total_price`**（`checkout.js:49` 寫入的 `價錢 * quantity`，不含促銷）。後果：`orders[].total_price` 是原價小計，下單當時固定，與 `orders.discount_price`（整張訂單折後應付金額）不相加；促銷項目的 `orders[].total_price` 會大於 `summary.total_price`（後者是 `orders.total_price`，取自以促銷價計算的 `cart.total_price`，`checkout.js:38,264`）。<br>**orderList B 有效單價 × `quantity`**。後果：與 cartList A 一致，但隨行程目前的促銷變動。<br>**orderList C `order_item.discount_price`**（非促銷是 0）。後果：非促銷項目小計為 0。<br>型別：`numeric`／`bigint` 時 pg 回字串；`cart.js:224` 有 `Number()` 所以任何型別都可；`checkout.js:260` 沒有，只有 `double precision`（或 integer）才是 JSON 數字。 | cartList 採 **A**；orderList 採 **A**；兩者型別都用 **`double precision`**（`order_item.total_price` 在 V1 即 FLOAT，`V1:293`）。理由：cartList A 與 `cart.js:19–22`、`cart.total_price` 累計一致；orderList A 是訂單建立時寫入的值，歷史訂單不隨行程調價改變，與 #13 的建議同方向；`double precision` 讓沒有 `Number()` 的 `checkout.js:260` 不用改。程式碼沒有指定 cartList 與 orderList 的計算方式，這是依一致性的建議。 |  |
-| 13 | `user_orderList`（待確認 1、2） | `user_orderList` 的 `價錢` 與 `促銷價錢` 是行程目前的價格，還是下單當時的？（response 把 `促銷價錢` 輸出成 `orders[].discount_price`，`checkout.js:253`。） | **A 目前的行程價**（`tour_base.價錢`、`tour_base.促銷價錢`）。後果：行程後來調價或促銷結束，歷史訂單的 `price`、`discount_price` 跟著變（促銷結束後變 NULL）。<br>**B 下單當時的單價**（`價錢` ＝ `order_item.total_price / quantity`，`促銷價錢` ＝ `order_item.discount_price / quantity`，寫入處 `checkout.js:49–50`）。後果：歷史訂單固定；`價錢` 型別變成 `double precision`；`quantity = 0` 時除以零（V1 無 CHECK，但 `cart_Validator` 要求人數 ≥ 1）；非促銷時 `order_item.discount_price` 是 `0 * quantity ＝ 0`，輸出 `0` 而不是 `NULL`，前端若用「有值＝促銷」判斷會把非促銷當促銷。<br>**C `促銷價錢` ＝ `order_item.discount_price`（小計，不除數量）**。後果：欄位名是「價錢」卻是小計，與單價的 `價錢` 不對稱。 | **B**，非促銷（0）時 `促銷價錢` 輸出 `NULL`，且用 `NULLIF(quantity, 0)` 避免除以零。理由：訂單明細應固定下單當時的價格；`checkout.js:252–253` 原樣輸出，不用改。輸出 `NULL` 與 `user_cartList` 的 `促銷價錢`（非促銷為 NULL）一致。這個細節是建議，不是程式碼已證實的行為。 |  |
-| 14 | `user_orderList`（待確認 5） | `user_orderList` 要不要依 `payment_status` 篩選？（程式碼只用 `order_id` 取全部項目。） | **A 不篩選**。後果：預覽階段（-1／0）的項目也在，`GET /summary` 正常。<br>**B 只含部分狀態**。後果：預覽階段看不到項目，`orderItemRepo.rows[0].total_count`（`checkout.js:263`）取不到而 500。 | （低風險，可直接採用建議）**A**。理由：只有 A 讓 `GET /checkout/summary/:order_id` 在 -1／0 的訂單上不 500（`checkout.js:263`），controller 不用改。 |  |
-| 15 | `restaurant_booking`（待確認 2） | `restaurant_booking` 的 `booking_count` 數什麼？（狀態篩選見 #5。） | **A `order_item` 筆數**（該行程 `tour.item='food'`）。後果：已取消、已退款、逾時的訂單也占名額（若不加狀態篩選）；一筆訂單不論人數都算 1。<br>**B `order_item.quantity` 加總**（人數）。後果：與 `reservation_limit`（`restaurant.reservation_limit`，seed 為 50、30）同單位，符合「人數限制」的語意（`tour_restaurant` 輸出為 `餐廳人員限制`，`response.feature.about.people`）。<br>**C A 或 B 加上 `payment_status` 篩選**。後果：同 #5。<br>**D 數 `cart_item`**。後果：占名額的是尚未結帳的購物車項目。 | **B**（狀態篩選照 #5）。理由：controller 只比較數字（`middlewares/cart/index.js:80,215`），不用改；`reservation_limit` 是人數上限，單位要相同。 |  |
-| 16 | `restaurant_booking`（待確認 1） | `restaurant_booking` 的第 1 個參數經 API 恆為 `NULL`（`middlewares/cart/index.js:73,208` 傳 `options.start_time`，但 `foodSchema`，`cart_Validator.js:22–27`，只有 `start_date`，帶 `start_time` 會被驗證擋成 400），function 要怎麼處理？ | **A 忽略參數 1**，只以行程計算總預約數對 `reservation_limit`。後果：整個行程累計到上限就額滿，不分時段；與「預約時間」語意不符，但額滿檢查有作用。<br>**B 以參數 1 比對時段**（程式碼原意）。後果：參數恆為 `NULL`，永遠比對不到，額滿檢查形同虛設；要有效必須改 controller 讀 `options.start_date`。<br>**C 參數為 `NULL` 時回 0 列**。後果：`middlewares/cart/index.js:77,212` 的 `rowCount > 0` 不成立而略過檢查，結果同 B。 | **A**。理由：只有 A 在 controller 不改的前提下，額滿檢查仍有作用。保留參數 1（簽章不變），P4 修好 controller 傳 `start_date` 後再改成時段比對（依 spec 重構規則，要同時更新契約與契約測試）。 |  |
-| 17 | `hotel_booking`（待確認 2） | `hotel_booking` 日期區間重疊的判定，含不含退房當日？（`order_item.start_date`／`end_date` 是 `timestamp`，V1 `:296–297`，是否取到日期精度也要定。） | **A 半開區間 `[start_date, end_date)`**。後果：退房日當天可被下一位入住，連續住宿可接續。<br>**B 閉區間 `[start_date, end_date]`**。後果：退房日當天仍算占房，連續住宿無法接續。 | （低風險，可直接採用建議）**A**。理由：一般飯店退房日當天房間可再出租；controller 只比較結果，不用改。 |  |
-| 18 | `hotel_booking`（待確認 3） | `hotel_booking` 找不到 (行程, 房型)（例如 `room_type` 拼錯）時怎麼回？ | **A 回 0 列**。後果：`middlewares/cart/index.js:59,194` 的 `rowCount > 0` 不成立而略過檢查，無效房型的項目被加入購物車。<br>**B 回 1 列 `booking_count = 0, room_count = 0`**（例如 `COALESCE`）。後果：`0 >= 0` 成立，被「選擇的房間已無空房」擋下，訊息不準確但不會加入無效房型。<br>**C 丟例外**。後果：API 回 500。 | **B**。理由：controller 不改的前提下，只有 B 能擋下無效房型且不 500。 |  |
-| 19 | `restaurant_isClosed`（待確認 1、2） | `restaurant_isClosed` 依什麼判斷「休息」？預約時間為 `NULL` 或餐廳不存在時怎麼回？（function 必須永遠回 1 列：`middlewares/cart/index.js:110,245` 沒有 `rowCount` 檢查，0 列會 500。） | 判斷依據：**A** 只看 `restaurant_business` 有沒有對應星期的列，沒有＝公休。後果：與 `restaurant_business_parsed` 重複（先過 `parsed`，無該星期列已在前面被擋），實務上永遠回 `false`。**B** 看 `business_hours` 時段。後果：與 `parsed` 幾乎重複，通過 `parsed` 的請求必然 `false`。**C** 依尚未存在的公休日表。後果：要新增表（超出「V3 只建 view／function」），沒有該表之前無法實作。**D** 永遠回 `false`（占位）。後果：「此時段無營業」永遠不觸發，其餘功能不受影響。<br>NULL／不存在：**A 回 1 列 `isclosed = false`**（放行）。後果：不存在的餐廳不會在此被擋（但 `parsed` 已先回 0 列而擋下）。**B 回 `true`**（擋下）。後果：擋下。**丟例外**：API 回 500。 | （低風險，可直接採用建議）判斷依據 **A**，NULL／不存在回 **`false`**。理由：兩者在 `parsed` 先行把關後不會改變實際行為（`middlewares/cart/index.js:90–102`），A 不需要新表；controller 不用改，且保證回 1 列。 |  |
-| 20 | `restaurant_business_parsed`（待確認 2） | `restaurant_business_parsed` 遇到跨午夜時段（seed 的 `17:00~00:00`，`db/seed/R__seed.sql:489,490`）怎麼處理？`BETWEEN start_time AND end_time` 是閉區間且不處理跨午夜。 | **A `00:00` 視為 `24:00`，轉成 `end_time = 23:59:59`**。後果：週五、週六 17:00 到 23:59:59 可預約，`00:00` 之後不可。<br>**B 保持 `00:00:00`**。後果：`start_time > end_time`，`BETWEEN` 永遠不成立，這兩天任何預約都回「餐廳已關閉」。<br>**C 拆成兩列**（`17:00~23:59:59` 與隔日 `00:00~00:00`）。後果：隔日時段要記在下一個 `week`，view 較複雜。 | （低風險，可直接採用建議）**A**。理由：controller 不改，只有 A（與 C）能讓 seed 的週五、週六營業時段可預約；A 最簡單。 |  |
-| 21 | `restaurant_business_parsed`（待確認 1、3） | `restaurant_business_parsed` 的其他邊界：`business_hours` 無法解析（格式不符）的列怎麼辦？沒有 `restaurant` 列的行程呢？ | 無法解析：**A view 忽略該列**。後果：該餐廳該星期視為「已關閉」。**B 丟例外**。後果：整個 view 查詢失敗，所有餐廳加入購物車都回 500。<br>沒有 `restaurant` 列的行程：view 內沒有列，`rowCount === 0`，回「餐廳已關閉」（400）；INNER JOIN 與 LEFT JOIN 結果相同，不需要選擇，只記錄。 | （低風險，可直接採用建議）無法解析採 **A**。理由：B 會讓一筆壞資料拖垮所有餐廳；controller 不用改。 |  |
-| 22 | `user_user_level`（待確認 1、2）、`user_level_review_forHome`（待確認 3）、`user_adminList`（待確認 3、4） | 使用者沒有 `user_level` 列、或有多筆時，`user_user_level`、`user_level_review_forHome`、`user_adminList`（以及 `user_level_point_coupon` 的邊界）怎麼處理？V1 `user_level` 沒有 unique（`V1:39–50`）。 | 沒有列：**A INNER JOIN**。後果：該使用者的評論、隱藏玩法在商品頁消失（`product.js:495,553` 的 `inner JOIN`）、首頁好評消失；`GET /admin/members/:user_id` 回 200 但 `data: []`；`user_level_point_coupon` 中該使用者消失。**B LEFT JOIN**。後果：評論照常顯示，等級欄位為 `null`。<br>多筆：**A 直接 JOIN**。後果：該使用者每筆評論重複（筆數 ＝ 等級列數）；admin 回多列。**B 取最新一筆**（`updated_at` 最大）。後果：不重複，但要定義「最新」。 | （低風險，可直接採用建議）沒有列採 **LEFT JOIN**，多筆採 **B 取最新一筆**。理由：註冊流程一律會建立 `user_level`（`userinfo.js:30,185`），seed 每位使用者各 1 筆（`db/seed/R__seed.sql:102–134`），所以在正常資料上四個物件結果相同；LEFT JOIN＋取一筆能保證每位使用者最多一列，不讓缺漏或重複的資料影響評論與管理者頁面。controller 不用改。 |  |
-| 23 | `tour_travel_popular`（待確認 2）、`tour_travel_most_favorited`（待確認 1） | 沒有任何購買（`tour_travel_popular`）或沒有任何人收藏（`tour_travel_most_favorited`）的行程要不要出現？ | **A 出現，排在最後**（`LEFT JOIN`，排行用計數 0 排序）。後果：新 DB 熱門與最多收藏分頁仍有資料。<br>**B 不出現**（`INNER JOIN`）。後果：沒有訂單或收藏時，首頁對應分頁回 200「查無資料」；P1b 的 seed 需要有已付款訂單與收藏紀錄。 | （低風險，可直接採用建議）**A**。理由：controller 對兩個 function 做 `INNER JOIN` 後 `ORDER BY` 排行（`home.js:15,49`），A 不依賴 seed 資料量就有東西可看。 |  |
-| 24 | `tour_travel_popular`（待確認 3）、`tour_travel_most_favorited`（待確認 2） | 排名並列時怎麼處理？（`home.js` 的 `ORDER BY 購買排行 ASC LIMIT/OFFSET` 與 `ORDER BY 收藏排行 ASC LIMIT/OFFSET` 沒有次要排序。） | **A `RANK()`**（並列同名次）。後果：並列時分頁可能重複或漏列。<br>**B `ROW_NUMBER()` 並加次要排序**（例如 `tour_id`）。後果：分頁穩定，並列者的先後由次要排序決定。 | （低風險，可直接採用建議）**B**。理由：controller 沒有次要排序，只有 B 保證分頁穩定；不用改 controller。 |  |
-| 25 | `user_orderList`（待確認 4）；另涉及輸出欄位型別（無獨立待確認）：`hotel_booking`、`restaurant_booking`、`tour_travel_popular`、`tour_travel_most_favorited`、`user_level_point_coupon` | 計數類欄位的型別：`user_orderList.total_count`（原待確認 4）、`hotel_booking`／`restaurant_booking` 的 `booking_count`、`購買排行`／`收藏排行`、`使用者旅遊積分`（若用 `SUM`）。`COUNT`／`SUM` 預設是 `bigint`，pg 回字串（§2 共通觀察）。 | **A `integer`**（view／function 內 `::int`）。後果：JSON 是數字；`summary.total_items`（`checkout.js:263`，沒有 `Number()`）是數字。<br>**B `bigint`**。後果：`summary.total_items` 是字串（如 `"1"`）；`booking_count >= room_count` 的比較仍正確（JS 轉數字），但排行欄位在首頁 response 是字串。 | （低風險，可直接採用建議）**A**。理由：controller 對 `total_count`、`使用者旅遊積分` 沒有 `Number()`（`checkout.js:263`、`discounts.js:60`、`userProfile.js:148`），只有數字型別不用改。若採用，Step 4 要同步更新五處：§1 `tour_travel_popular`、`tour_travel_most_favorited` 簽章的 `bigint`（推測）、§2 `hotel_booking`、`restaurant_booking` 的 `booking_count` 型別格（「integer 或 bigint」）、§2 `user_orderList` 的 `total_count` 型別格（「integer 或 bigint」）。 |  |
-| 26 | `tour_base`（待確認 3）、`tour_travel`（待確認 2） | `tour_base` 與 `tour_travel` 的欄位集合是否相同（只差 `收藏狀態`）？`旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖 Url`、`異動通知內容` 是否也在 `tour_base`？ | **A 相同**（`tour_travel` ＝ `tour_base` ＋ `收藏狀態`）。後果：登入與未登入首頁 response 結構只差 `收藏狀態`。<br>**B `tour_base` 只含目前表格列的欄位**。後果：登入與未登入首頁 response 欄位不同，前端要處理兩種形狀。 | （低風險，可直接採用建議）**A**。理由：兩條路徑共用同一個 JS 轉換（`home.js:90–96`），A 讓 response 形狀一致，不用改 controller。 |  |
-| 27 | `tour_travel`（待確認 1） | `tour_travel` 名稱是 travel，但被用在所有種類（旅行團 travel、背包客 hotel／food／spot），要不要只回 `item='travel'`？ | **A 回傳所有種類**。後果：商品搜尋與首頁背包客（已登入）正常。<br>**B 只回 `item='travel'`**。後果：`GET /user/product/search?type=backpacker` 與已登入首頁背包客永遠為空，但未登入路徑（`tour_base`）仍有資料，兩者不一致。 | （低風險，可直接採用建議）**A**。理由：`product.js:116` 沒有小分類限制，`home.js:77` 在 `type=backpacker` 也呼叫它。 |  |
-| 28 | `tour_travel`（待確認 3）、`tour_tour_detail`（待確認 4） | 未登入（`NULL` 參數）時 `收藏狀態` 是 `false` 還是 `NULL`？（`tour_travel`、`tour_tour_detail`、`tour_hotel`、`tour_restaurant` 同。） | **A `false`**。後果：前端 `is_favorited` 一律布林。<br>**B `NULL`**。後果：JSON 內是 `null`，布林判斷結果相同，但嚴格比較（`=== false`）的測試會失敗。 | （低風險，可直接採用建議）**A**。理由：`EXISTS (...)` 自然得到 `false`；`product.js:356` 直接輸出為 `is_favorited`，不用改。 |  |
-| 29 | `tour_base`（待確認 5） | `tour_base` 的 `建立時間`、`更新時間` 來自 `tour` 還是 `notification`？（`promotion.js:44` 用 `ORDER BY 更新時間`、`:23` 用 `DATE(建立時間)`；`admin.js:168`、`product.js:1067` 用 `建立時間`。） | **A 兩者都來自 `tour`**。後果：促銷清單依行程本身的更新時間排序，建立日期篩選是行程建立日。<br>**B 兩者都來自 `notification`**。後果：促銷清單依促銷最近修改排序；但無通知的行程 `建立時間` 為 `NULL`，管理者商品清單的排序與篩選失效。<br>**C `建立時間` 取 `tour.created_at`，`更新時間` 取 `GREATEST(tour.updated_at, notification.updated_at)`**。後果：促銷清單排序反映促銷異動，商品清單不受影響；需確認這是否合理。 | （低風險，可直接採用建議）**A**。理由：B 會破壞管理者清單，A 最單純，controller 不用改；若希望促銷清單依促銷異動排序，再改採 C。 |  |
-| 30 | `tour_tour_detail`（待確認 2） | `tour_tour_detail` 對 `tour_detail` 用 INNER 還是 LEFT JOIN？（`spot` 也用此 function 並讀特色圖，`product.js:335`；`spot` 行程不保證有 `tour_detail` 列。） | **A INNER JOIN**。後果：每個 spot 都必須有 `tour_detail`，否則整列消失，`product.js:209` 讀 `rows[0]` 時 TypeError，詳情頁 500；seed 與新增商品流程要補。<br>**B LEFT JOIN**。後果：沒有 `tour_detail` 時特色圖、行程規劃為 `NULL`，頁面可顯示。 | （低風險，可直接採用建議）**B**。理由：controller 不改的前提下，B 不會 500。 |  |
-| 31 | `tour_hotel`（待確認 1） | `tour_hotel` 的 `房型描述` 沒有明確來源（`hotel_room` 只有 `image_desc`）。 | **A `房型描述 = hotel_room.image_desc`**。後果：房型描述就是圖片說明文字。<br>**B 新增 `hotel_room.description`**。後果：超出「V3 只建 view／function」，要改 migration。 | （低風險，可直接採用建議）**A**。理由：`product.js:411` 讀 `房型描述`，A 不需要 migration，controller 不用改。 |  |
-| 32 | `tour_hotel`（待確認 2） | `hotel` 有 6 個描述欄位（`facility_desc`、`food_desc`、`room_desc`、`leisure_desc`、`traffic_desc`、`other_desc`，`V1:172–177`），controller 只讀 5 個（`product.js:416–436`，最後一個是 `其他便利服務`）。`其他便利服務` 取哪個？ | **A `other_desc`**。後果：`leisure_desc` 的資料不會在 API 顯示。<br>**B `leisure_desc`**。後果：`other_desc` 的資料不會顯示。<br>**C 兩者串接**。後果：兩者都能顯示，但要定分隔格式。 | **A**。理由：controller 的標籤是「其他便利服務」，與 `other_desc` 對應，沒有任何標籤對應「休閒」；controller 不用改。這是依名稱的推測。 |  |
-| 33 | `tour_hotel`（待確認 3）、`tour_restaurant`（待確認 2） | `tour_hotel` 沒有房型、`tour_restaurant` 沒有菜單或沒有營業時間時，行程要不要出現？ | **A INNER JOIN**。後果：飯店或餐廳整個消失，`product.js:209` 讀 `rows[0]` 時 TypeError，詳情頁 500。<br>**B LEFT JOIN**。後果：出現一列，房型／菜單／營業時間欄位為 `NULL`，response 的 `room[]`、`menu[]`、`opening[]` 內是欄位全為 `null` 的物件，頁面不會 500。 | （低風險，可直接採用建議）**B**。理由：controller 不改的前提下，B 不會 500。 |  |
-| 34 | `tour_restaurant`（待確認 1） | `tour_restaurant` 的 `menu[]` 與 `opening[]` 共用 `rows`（`product.js:263`、`:268`），列要怎麼展開？ | **A 菜單與營業時間 CROSS JOIN**。後果：兩個陣列各有大量重複項（3 道菜 × 7 天 ＝ 21 列，`menu[]` 與 `opening[]` 各 21 項）。<br>**B `UNION ALL`／位置對齊**。後果：每列各帶一筆菜單或一筆營業時間，另一邊為 `NULL`，陣列內有 `name: null` 或 `week: null` 的空項，但沒有重複（3 ＋ 7 ＝ 10 列）。<br>**C 每個餐廳一列，菜單與營業時間聚合成 JSON**。後果：`row.菜單名稱` 會是陣列，與 `rows.map` 的用法不符，controller 不改就無法使用。 | **B**。沒有任何選項能不改 controller 就完全正確：A 資料齊全但大量重複，B 沒有重複但有空項，C 需要改 controller。B 的瑕疵最小（空項是欄位為 `null` 的物件，不會丟例外）；完整修正需改 controller（P3 商品）。 |  |
-| 35 | `user_cartList`（待確認 3） | `user_cartList` 要不要多帶 `cart_item_id`？（`DELETE`／`PATCH /:cart_item_id` 需要它，但 `GET /list` 的 response 沒有輸出，`cart.js:209–225`。） | **A 帶**。後果：目前 response 不變（controller 不讀）；日後 controller 加上即可讓前端刪除與修改項目。<br>**B 不帶**。後果：前端目前拿不到 `cart_item_id` 的狀況不變，之後要加得改 view。 | （低風險，可直接採用建議）**A**。理由：對現有 API 沒有影響，且為 P4 交易保留。 |  |
-| 36 | `user_couponList`（待確認 2） | `user_couponList` 要不要同時提供 `expired_date`（多了 d）？`middlewares/discounts/index.js:65`、`middlewares/checkout/index.js:136` 讀 `expire_date`，`controllers/discounts.js:34` 讀 `expired_date`。 | **A 只提供 `expire_date`**。後果：`POST /user/trade/discounts/:order_id` 的 response 少了 `date_period`（`JSON.stringify` 略過 `undefined`），前端若依賴會顯示空白。<br>**B 兩個都提供（同值）**。後果：response 有 `date_period`；admin API（`SELECT *`，`admin.js:239`）多一個重複欄位。<br>（只提供 `expired_date` 不可行：`new Date(undefined)` 讓過期檢查被靜默略過。） | （低風險，可直接採用建議）**B**。理由：只有 B 讓三處讀取都不用改 controller。 |  |
-| 37 | `user_couponList`（待確認 3） | `user_couponList` 的 `status = -1`（預覽中占用，只由 `checkout.js:149` 寫入）要不要原樣輸出？ | **A 原樣輸出**。後果：管理者 API 看到 -1。<br>**B view 把 -1 換算成別的顯示值**。後果：`checkout.js:216` 的 `status = -1` 失效，結帳摘要看不到已套用的優惠卷。 | （低風險，可直接採用建議）**A**。理由：`checkout.js:216` 依賴 -1；controller 不用改。 |  |
-| 38 | `user_couponList`（待確認 4） | 同一個 (使用者, `code`) 有多筆綁定時怎麼辦？V1 有 `UNIQUE (user_id, coupon_id)`（V1 `:420`）但 `coupon.code` 不 unique；`middlewares/discounts/index.js:41`、`controllers/discounts.js:14` 取 `rows[0]`。 | **A 不處理**。後果：取到哪張不固定；view 維持每個 `user_coupon` 一列，管理者 API（`admin.js:239`）列出全部綁定。<br>**B view 只取最新一筆**。後果：結果固定，但管理者 API 看不到其他綁定；要另定「最新」的規則。 | **A**（不屬低風險：兩張 `discount` 不同的優惠卷共用同一 `code` 時，`rows[0]` 決定計價用哪個折扣，影響金額；但需要管理者建立重複代碼才會發生，機率低）。理由：重複 `code` 的根源是建立優惠卷時沒有檢查唯一，在 view 裡藏掉會隱瞞資料；根本修正見 §4.2 (d4)。controller 不用改。 |  |
-| 39 | `user_level_point_coupon`（待確認 3） | `user_level_point_coupon` 只列出可用的優惠卷（`status = 0` 且未過期），還是全部綁定？（`userProfile.js:153` 把每一列都放進 `coupon[]`，view 輸出沒有 `status` 欄位可供判斷。） | **A 列出全部綁定**。後果：`coupon[]` 含已使用（1）與占用中（-1）的優惠卷，前端無法區分；seed 使用者 `b2c3...`、`a1b2...` 的優惠卷都是 `status = 1`（`db/seed/R__seed.sql:917,919,920`），會全部顯示。<br>**B 只列 `status = 0` 且未過期**。後果：`coupon[]` 只含可用的優惠卷；沒有可用優惠卷的使用者要靠 LEFT JOIN 才不會消失（見 #40）。<br>**C 排除 `status = 1`，保留 -1**。後果：占用中的優惠卷仍顯示為可用。 | **B**。理由：`coupon[]` 沒有 `status` 欄位，前端無法自行篩選，列出不可用的優惠卷是錯誤顯示；折抵檢查只讀 `rows[0].使用者旅遊積分`（`middlewares/discounts/index.js:77`、`middlewares/checkout/index.js:148`），不受影響。代價：必須同時採 #40 的 LEFT JOIN。 |  |
-| 40 | `user_level_point_coupon`（待確認 4） | `user_level_point_coupon` 對優惠卷用 LEFT 還是 INNER JOIN（沒有優惠卷的使用者是否保留一列）？ | **A LEFT JOIN**。後果：使用者得到 1 列、優惠卷欄位全為 `NULL`；`userProfile.js:153–159` 沒有檢查，`coupon` 會是 `[{coupon_id: null, code: null, ...}]`。<br>**B INNER JOIN**。後果：沒有優惠卷的使用者完全不在 view 內，`GET /pointslevel` 回 `[]`，而且 `middlewares/discounts/index.js:81–89`、`middlewares/checkout/index.js:152–160` 的 `pointRepo.rowCount === 0` 回 409「查無可使用的點數」，即使使用者有積分也無法折抵。 | **A**。理由：B 會讓沒有優惠卷的使用者無法使用點數折抵；A 的瑕疵（`coupon[]` 含全 `null` 物件）只是顯示問題，controller 補 `if` 即可（P5 會員中心）。 |  |
-| 41 | `user_favorite`（待確認 4）、`user_orders`（待確認 6） | 下架行程（`tour.status = 2`）的收藏（`user_favorite`）與購買紀錄（`user_orders`、`user_order_item`）要不要出現？ | **A 出現**（view 對 `tour` 或「含全部」的 `tour_base` JOIN）。後果：使用者看得到已下架的收藏與購買紀錄；點進商品詳情的行為由 `tour_tour_detail` 決定。<br>**B 不出現**（對「只含上架」的 `tour_base` JOIN）。後果：收藏列仍在 `favorite` 表但清單看不到，無法由列表取消這筆收藏（`DELETE` 需要 `favorite_id`，`collection.js:100`）；購買紀錄消失。 | （低風險，可直接採用建議）**A**。理由：B 會讓使用者無法取消收藏、看不到買過的東西；與 #7 的建議（`tour_base` 含全部）一致，controller 不用改。 |  |
-| 42 | `user_favorite`（待確認 3）、`user_orders`（待確認 3）、`user_order_item`（待確認 3） | `user_favorite`、`user_orders`、`user_order_item` 的 `偏好分類 1/2/3`（`user_order_item` 為英文 `preference1/2/3`）是行程的偏好還是使用者的偏好？ | **A `tour.preference1/2/3`**。後果：每筆收藏／購買顯示該行程自己的分類標籤；與 `tour_base` 同名欄位一致。<br>**B `user.preference1/2/3`**。後果：同一位使用者所有列的偏好完全相同，對清單沒有意義。 | （低風險，可直接採用建議）**A**。理由：使用者的偏好在 §2 叫 `個人偏好 1/2/3`，`偏好分類` 的命名與 `tour_base` 相同；controller 只轉換數字，不用改。 |  |
-| 43 | `user_favorite`（待確認 2） | `user_favorite` 的 `建立時間` 是收藏時間還是行程建立時間？（`collection.js:15` 的 `ORDER BY 建立時間 DESC`。） | **A `favorite.created_at`**。後果：最近收藏的排最前面；seed 7 筆時間相同（皆 `CURRENT_TIMESTAMP`），同一使用者內順序不穩定。<br>**B `tour.created_at`**。後果：排序與收藏無關，取消後重新收藏不會改變位置。 | （低風險，可直接採用建議）**A**。理由：符合「使用者查看收藏項目」的語意；controller 不用改。seed 時間相同的問題由 P1b 調整 seed。 |  |
-| 44 | `user_orders`（待確認 1） | `user_orders` 一列的粒度：每個 `order_item` 一列，還是每張 `orders` 一列？ | **A 每個 `order_item` 一列**（含 `order_item_id`）。後果：每列可接到明細 API；一張訂單多個項目會是多列（但 `checkout.js:20–33,42–56` 目前每張訂單只產生 1 個項目）。<br>**B 每張訂單一列**（彙總）。後果：沒有 `order_item_id`，前端無法呼叫明細 API（`routes/purchases.js:14–20`）。 | （低風險，可直接採用建議）**A**。理由：明細 API 需要 `order_item_id`。 |  |
-| 45 | `user_orders`（待確認 5） | `user_orders` 要不要在 view 內排序？（`purchases.js:9–11` 沒有 `ORDER BY`、沒有 `LIMIT`。） | **A view 內含 `ORDER BY`**（例如依下單時間由新到舊）。後果：順序穩定，但 PostgreSQL 不保證 view 內的 `ORDER BY` 被外層保留（單純 `SELECT *` 加 `WHERE` 通常會保留，加了 JOIN 或排序就不一定）。<br>**B 不排序**。後果：順序不穩定，重新整理可能不同。 | （低風險，可直接採用建議）**A**。理由：controller 沒有排序，A 至少在常見查詢下穩定；controller 不用改。 |  |
-| 46 | `user_order_item`（待確認 2） | `user_order_item` 一個 `order_item_id` 回幾列？（controller 一律 `rows.map` 成陣列，`purchases.js:63` 起。） | **A 恰好 1 列**（只 JOIN 一對一的 `order_item`、`orders`、`tour`）。後果：`body.data` 是長度 1 的陣列。<br>**B JOIN 一對多的表**（例如 `tour_detail`、`restaurant_menu`、`hotel_room`）。後果：一個項目多列，每個元素重複訂單資料。 | （低風險，可直接採用建議）**A**。理由：明細是單一項目；controller 不用改。 |  |
-| 47 | `user_order_item`（待確認 4） | `user_order_item` 明細帶入哪些訂單資料？（與 §4.2 (c) 的擁有者檢查有關。） | **A 只有 `order_item` 加 `tour`**。後果：明細頁沒有地址與電話；別人的 `order_item_id` 被讀到時洩漏較少。<br>**B 再帶入 `orders`**（地址、電話、付款方式、折扣類型、訂單總額）。後果：明細完整，但沒有擁有者檢查時（`middlewares/purchases/index.js:31`、`controllers/purchases.js:59`）會把別人的地址與電話暴露。<br>**C 再帶入 `payment`**（`V1:308–325`）。後果：可顯示付款結果，但一張訂單可能有多筆付款紀錄（失敗重試），可能產生多列，與 #46 的 B 相同。 | **A，並多帶 `使用者編號`（`orders.user_id`）**。理由：controller 不讀這些欄位，任何選項都不用改；A 在擁有者檢查補上之前洩漏最少，多帶 `使用者編號` 讓日後可在 controller 補 `WHERE 使用者編號 = $2`。若 §4.2 (d1) 的核對顯示明細頁需要地址與電話，改採 B，且要先處理 §4.2 (c)。 |  |
-| 48 | `user_level_review_forHome`（待確認 2） | `user_level_review_forHome`（首頁好評）要篩選哪些評論？（V1 `review.type` 可為 web／travel／hotel／food／spot；路由註解「使用者查看此網頁好評內容」。） | **A 只含 `review.type = 'web'`**。後果：首頁只顯示網站整體好評；seed 有 2 筆 web 評論（`db/seed/R__seed.sql:818–819`）。<br>**B 含所有 `review`**。後果：行程評論也出現在首頁。<br>**C 只含評分達標**（例如 `rating >= 4`）。後果：要另定門檻；低分評論不出現。 | **A**。理由：controller 不篩選（`home.js:132`），篩選條件只能寫在 view；A 與路由註解、V1 的 `type` 註解相符。這是依名稱與註解的推測。 |  |
-| 49 | `user_adminList`（待確認 2） | `user_adminList` 的偏好欄位輸出數字還是文字？（`admin.js` 沒有像 `collection.js`／`purchases.js` 使用 `reversePreferenceMap`。） | **A `smallint` 數字**（`個人偏好 1/2/3`）。後果：管理者頁面拿到 1～10，要自己對照文字。<br>**B view 內轉成文字**。後果：對照表要放進 view（SQL `CASE`），且與其他 view 的型別不一致。 | （低風險，可直接採用建議）**A**。理由：與 `user_level_point_coupon` 的 `個人偏好 1/2/3` 一致，controller 不用改。 |  |
+| 1 | `user_couponList`（待確認 1） | `coupon.discount` 是折扣倍率、折抵金額，還是折扣百分比？（spec 3.1 已知問題 2）程式碼只做 `total_price * discount`：`controllers/discounts.js:38`（回傳）、`controllers/checkout.js:155`（寫入 `orders.discount_price`）；沒有任何地方做減法或除以 100。 | **A 倍率**（0 到 1，`0.9` ＝ 九折，`discount_price` ＝ 折後應付金額）。後果：兩處運算不用改，且與 `checkout.js:165`（點數路徑 `total_price - ...`，同樣把折後應付金額寫進 `orders.discount_price`）一致；seed 的 5 個值（100、50、10、300、20，`db/seed/R__seed.sql:143–181`）與 `description` 都要改（P1b）；admin 驗證器 `coupon_Validator.js:45` 只要求 `> 0` 沒有上限，管理者仍可建立 `discount = 100`，要擋需補 `.max(1)`；請求欄位名 `discount_amount` 與倍率語意不符。<br>**B 折抵金額**（NT$）。後果：seed 不用改，admin 驗證器與欄位名相容；但兩處運算會算出金額的數百倍（`total_price` 3576.74、`discount` 100.0 → 357,674），要把 controller 改成 `total_price - discount`；`TRAVEL10P` 的 `10.0` 只折 10 元，與其 `description`「10% 折扣 (最高折抵 500 元)」矛盾。<br>**C 混合**（`TRAVEL10P` 是百分比，其餘是金額）。後果：同一欄位兩種語意，`total_price * discount` 兩種都算錯；要靠新增欄位區分（V1 沒有，需改 migration）；admin 驗證器無法區分。<br>**D 百分比**（0–100）。後果：seed 5 個值都要改成百分比；controller 要改成 `total_price * (1 - discount / 100)`；admin 驗證器要補 `.max(100)`。 | **A**。理由：只有 A 讓 `discounts.js:38`、`checkout.js:155` 不用改就正確，B／C／D 都要改 controller（違反 P1「controller 不改」）。代價：P1b 改 seed（值與 description）；admin 驗證器的 `.max(1)` 屬 validator 修改，留給 P6 後台（優惠卷 CRUD）。 | **B 折抵金額**（使用者選擇，與建議 A 不同） |
+| 2 | `user_level_point_coupon`（待確認 1.a、2）、`user_adminList`（待確認 5） | `使用者旅遊積分`（點數餘額）取哪個來源？結帳預覽的預扣（`point_record` 的 `'減少_確認中'`，`controllers/checkout.js:158–161`）要不要即時反映？餘額有兩條讀取路徑：本 view（`GET /pointslevel`、折抵檢查 `middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160`），以及 `controllers/userinfo.js:56,117,228,356` 直接讀 `user_level.travel_point`（輸出為 `level.points`）。 | **A `user_level.travel_point`**（預扣不反映）。後果：與 `userinfo.js` 四處是同一個欄位，兩條路徑一致；`backend/src` 沒有任何 UPDATE `travel_point`，餘額永遠是註冊時的 0 或 seed 的 1500／3000／800，使用點數不會扣，同一批點數可重複折抵；多張訂單同時預覽也能重複使用同一批點數。<br>**B `SUM(point_record.point)`**（全部類型，預扣即時反映）。後果：`減少_確認中` 立刻從餘額扣掉；同一預覽重複 PATCH 會重複扣（每次新增一列）；取消預覽沒有回補程式（`discounts.js:78–115` 沒有任何寫入），點數被占住；與 `userinfo.js` 四處不一致（seed 使用者 `c3d4...`：登入 response 顯示 800，`pointslevel` 顯示 1174）。<br>**C `SUM(point_record.point)` 但排除 `減少_確認中`**。後果：預覽不影響餘額，但沒有任何程式把 `減少_確認中` 轉成 `減少`，使用點數永遠不減餘額；同樣與 `userinfo.js` 不一致（`c3d4...` 為 800 對 1174）。<br>**D `travel_point` 加上 `SUM(減少_確認中)`**。後果：預扣即時生效，但付款完成前沒有人真正扣 `travel_point`；`pointslevel` 與登入 response 的餘額不一致；seed 沒有 `減少_確認中` 列，所以 seed 上等於 A。<br>**附帶（`user_adminList` 原待確認 5）**：採 B／C 時，沒有 `point_record` 的使用者餘額是 `0` 還是 `NULL`？後果：`0` 讓管理者頁面一律是數字；`NULL` 表示無紀錄。註冊流程一律會插入一筆 `point_record`（`userinfo.js:36,189`），只有 seed 缺漏或手動建立的使用者會遇到。建議 `0`。 | **A**。理由：只有 A 讓本 view 與 `userinfo.js` 四處讀同一欄位，controller 不用改。「使用點數不會扣」是 controller 缺少寫入，屬點數功能（spec 4 節 P5「點數規則照 P1 契約中確認的語意」）。型別為 `integer`。 | 採用建議（A，型別 `integer`） |
+| 3 | `user_level_point_coupon`（待確認 1.c） | `point * 0.8` 是什麼意思？`controllers/discounts.js:66`（回傳）與 `controllers/checkout.js:165`（寫入 `orders.discount_price`）都是 `total_price - used_point * 0.8`，同一請求在 `point_record` 記的是 `0 - used_point`（`checkout.js:160`）。另有 `checkout.js:225` 的 `total_price * 0.1`（累積，只顯示在 `summary.get_point`，沒有寫入任何表）。 | **A 1 點折抵 0.8 元**（兌換率）。後果：`discount_price` ＝ 折後應付金額，與程式碼一致，不用改；`total_price - used_point * 0.8` 沒有下限，點數夠多時 `discount_price` 會變負數（兩條路徑只檢查點數餘額，`middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160`），B、C 解讀同樣有此問題；7 點折 5.6 元（`orders.discount_price` 是 FLOAT 可存）；與累積 0.1 並存時，消費 100 元得 10 點、10 點折 8 元，等於 8% 回饋。seed 的 `-436` 對 `436.75`（約 1:1，`db/seed/R__seed.sql:909,792`）、`新增 1610` 對 `1610.73`（約 100% 回饋，`:908`）都不是這個比率。<br>**B 1 點折抵 1 元，0.8 是上限**（例如最多折訂單的 80%）。後果：程式碼沒有任何上限檢查，實作與此解讀不符；`total_price - used_point * 0.8` 沒有下限，大量點數可使 `discount_price` 變負數。<br>**C 原意是 1 點 ＝ 1 元，0.8 是舊值或誤植**（依 seed 約 1:1）。後果：兩處 `0.8` 要改成 `1`（違反「controller 不改」）；不改則每點只折 0.8 元。 | **A**（累積 0.1 一併視為設計值）。理由：A 讓 `discounts.js:66`、`checkout.js:165`、`checkout.js:225` 不用改；B 與實作矛盾，C 要改 controller。代價：P1b 的 `point_record`／`orders` seed 資料要調成與 0.8、0.1 相符，或接受 seed 與規則不符。 | 採用建議（A，累積 0.1 一併視為設計值） |
+| 4 | `tour_travel_popular`（待確認 1） | `tour_travel_popular` 的「購買」計入哪些 `order_item.payment_status`？（值：-1 剛建立、0 填寫完成未付款、1 已付款、2 已取消、3 已退款、4 付款逾時；`checkout.js:48` 建立 `order_item` 一律寫 -1。） | **A 全部**。後果：未付款、已取消的訂單也灌水，連尚未填寫就放棄的結帳都計入。<br>**B 只算 1（已付款）**。後果：seed 有 6 筆 `payment_status = 1`（`db/seed/R__seed.sql:800–809`）所以有榜單；但經 API 產生的訂單寫不到 1（`newebpay.js:80–84,211–215` 對 `order_item` 寫不存在的 `payment` 欄位，交易 ROLLBACK，見 §3 `user_orders` 邊界 controller 行為 3），所以新訂單不會進榜，直到付款流程修好。<br>**C 排除 2、3、4（保留 -1、0、1）**。後果：仍計入未付款的訂單。<br>**D 只算 0 與 1**。後果：排除剛建立與所有失敗狀態，介於 A、B 之間。 | **B**。理由：controller 只 `ORDER BY 購買排行 ASC`（`home.js:18,27,71,80`），不讀購買數，任何選項都不用改 controller；「熱門」語意為已付款購買，搭配 #23 的 A（無購買的行程排最後）榜單不會因為沒有已付款訂單而變空。 | 採用建議（B） |
+| 5 | `hotel_booking`（待確認 1）、`restaurant_booking`（待確認 2）；`restaurant_booking` 另見 #15 | `hotel_booking`、`restaurant_booking` 的 `booking_count`（占房／占名額）計入哪些 `payment_status`？（值的定義同 #4。） | **A 不看 `payment_status`**。後果：-1、2、3、4 都占房，被放棄、已取消、已退款的訂單仍占著。<br>**B 只數 1**。後果：只有付款的占房；有人下單未付款時，別人仍可加入購物車（超賣風險）；且經 API 產生的訂單寫不到 1（見 #4），檢查等於不作用。<br>**C 數 `IN (-1, 0, 1)`**。後果：未付款的訂單占房，取消／退款／逾時的釋放；沒有任何程式寫入 4（逾時），放棄的結帳會一直占房。<br>**D 數 `IN (0, 1)`**。後果：排除「剛建立、還沒填寫」的訂單，其餘同 C。<br>**E 數 `cart_item`**（購物車內項目）。後果：占房的是還沒結帳的項目；PATCH 時（`middlewares/cart/index.js:187,207`）呼叫端沒有排除自己，修改會與自己衝突。<br>**F `order_item` 與 `cart_item` 都數**（僅 `hotel_booking` 列出）。後果：同一人的購物車與訂單各算一次，重複計算。 | **C**。理由：controller 只比較 `booking_count >= room_count`（`middlewares/cart/index.js:62,197`）與 `>= reservation_limit`（`:80,215`），任何選項 controller 都不用改；C 讓經 API 產生的訂單（只會是 -1 或 0，`checkout.js:36–56,133–139`）仍然占房，檢查才有作用，同時釋放 2、3、4。代價：沒有逾時機制，放棄的結帳會占房，屬 P4 交易。 | 採用建議（C） |
+| 6 | `user_orders`（待確認 2）、`user_order_item`（待確認 5） | 「已購買」清單與明細要列出哪些 `payment_status`？`user_orders`（清單）與 `user_order_item`（明細）要不要用同一個篩選？ | **A 不篩選（`-1`～`4`）**。後果：經 API 產生的新訂單項目（只有 -1、0）也出現在「已購買」；seed 上 Alice 1 筆、Bob 5 筆、Carol 4 筆，含已取消（2）與已退款（3）（Bob 是 `admin`，`authRole('User')` 讓他呼叫 `GET /purchases/info` 回 403，他的數字只在 view 內可見，下同）。<br>**B 只含 `order_item.payment_status = 1`**。後果：已取消、已退款、逾時都不顯示；經 API 產生的訂單不會出現（寫不到 1，見 #4），只有 seed 資料；seed 上 Alice 0 筆（回「查無資料」）、Bob 4 筆、Carol 2 筆。<br>**C 含 `IN (1, 2, 3, 4)`**。後果：保留取消／退款／逾時的歷史；經 API 產生的訂單同樣不會出現（寫不到 1，見 #4）；seed 上與 A 相同（seed 沒有 -1、0、4）。<br>**D 依 `orders.payment_status = 1`（訂單層級）**。後果：經 API 產生的訂單同樣不會出現；seed 上只有訂單 `58fcd7d9...`（Carol）符合，Alice、Bob 都是「查無資料」；seed 內 `orders` 與 `order_item` 的付款狀態不一致，結果與項目層級不同。<br>明細：**與清單相同篩選**，後果：兩個 view 一致，不在清單的項目回「查無資料」；**不篩選**，後果：任何狀態的項目都可從網址直接開啟；**不同篩選**，後果：清單看得到但明細回「查無資料」，或相反。 | 清單與明細都用 **B**。理由：兩個 controller 都不篩選也不讀付款狀態（`purchases.js:9–11`、`:58–61`），任何選項 controller 都不用改；「已購買」的語意是已付款，理由純粹是語意，不是 controller 的限制。代價：付款流程修好（P4）之前，API 產生的訂單不會出現在這兩支 API。 | 採用建議（清單與明細都用 B） |
+| 7 | `tour_base`（待確認 1）、`tour_travel`（待確認 4）、`tour_travel_popular`（待確認 4）、`tour_travel_most_favorited`（待確認 3）、`tour_tour_detail`（待確認 3）、`user_cartList`（待確認 4） | `tour_base` 是否含下架（`status = 2`）行程？以及 `tour_travel`、`tour_travel_popular`、`tour_travel_most_favorited`、`tour_tour_detail` 要不要只回傳上架行程？（程式碼矛盾：`admin.js:168`、`product.js:1067` 用 `上下架狀態` 篩選，要含下架；`home.js:15/33/49/68` 的公開首頁直接查 `tour_base`，沒有上架過濾。） | **tour_base A 含全部**。後果：管理者清單與 `status=2` 篩選正常；未登入首頁促銷分頁（`home.js:33`，直接查 `tour_base`）會列出下架行程；`cart.js`／`checkout.js` 查價也能查到下架行程。<br>**tour_base B 只含上架**。後果：首頁正常，但 `GET /admin/product?status=2` 永遠是空的、管理者清單看不到下架行程；上架 API 本身不受影響（`patch_tourStatus`，`product.js:1332–1341`，直接 UPDATE `tour`），但前端清單裡沒有可選的 `tour_id`。<br>**其餘四個 function 只回 `status = 1`**。後果：未登入的熱門／最多收藏（`INNER JOIN` function）、已登入首頁與商品搜尋都不會露出下架行程。`tour_tour_detail` 在 `product.js:178–183` 已先過濾 `status = 1`，function 內是否過濾不影響該 API。<br>**其餘四個 function 不過濾**。後果：下架行程出現在公開搜尋與首頁熱門。<br>`user_cartList` 對 `tour_base` 的 JOIN：tour_base 採 A 時 INNER／LEFT 結果相同；採 B 時 INNER 會讓購物車裡已下架的項目消失，LEFT 則行程欄位為 `NULL`、小計 0。 | **tour_base 採 A，其餘四個 function 過濾 `status = 1`**。沒有任何一個選項能讓所有 controller 路徑都不改就正確：採 A 時，只剩未登入首頁促銷分頁（`home.js:33`）會露出下架行程，已登入版走 `tour_travel`（`home.js:41`）已濾掉；採 B 則直接讓 `admin.js:168`、`product.js:1067` 的下架篩選失效。A 是改動最小的選項。採 A 後剩下兩個 controller 缺口，留給 P3 商品／P4 交易：`home.js:33` 的未登入促銷分頁露出下架行程；下架行程仍可加入購物車並結帳（`middlewares/cart/index.js:26` 只確認 `tour` 列存在，`cart.js:19–22`、`checkout.js:24` 都從 `tour_base` 取價）。 | 採用建議（`tour_base` 採 A，其餘四個 function 過濾 `status = 1`） |
+| 8 | `tour_base`（待確認 2）、`tour_tour_detail`（待確認 1）、`tour_hotel`（待確認 4）、`tour_restaurant`（待確認 3） | 一個行程有多筆通知（例如同時有「促銷」與「異動」）時，一列怎麼呈現？`notification` 沒有 unique 約束，同一個 `tour_id` 可有多列。 | **A 每個行程只取一筆**（例如最新）。後果：`通知狀態` 只會是其中一個，另一種看不到；有促銷又有異動時，`cart.js:22` 可能讀不到促銷價。<br>**B 促銷與異動各自成欄**（`促銷價錢`…取自 type='促銷'、`異動通知內容` 取自 type='異動'，`通知狀態` 依優先順序取一個）。後果：兩者都能顯示；需另定優先順序。<br>**C 每筆通知一列**。後果：同一行程在首頁、admin 清單重複出現；`rows[0]` 取哪筆不固定；`hotel`／`food` 的 `rows.map` 會與房型、菜單相乘而重複。 | **B，`通知狀態` 優先序為 促銷 高於 異動**（同類型有多筆時取 `updated_at` 最大者，此為建議的細節）。理由：`tour_tour_detail` 同時讀 `異動通知內容` 與促銷欄位且只讀 `rows[0]`（`product.js:357–363`），`hotel`／`restaurant` 用 `rows.map`（`product.js:409`、`:263`、`:268`），只有 B 一個行程一列且兩者都在；促銷優先是因為 `home.js:33`（`通知狀態 = '促銷'`）與 `cart.js:22`（CASE）只認 `'促銷'`。 | 採用建議（B，`通知狀態` 優先序 促銷 高於 異動） |
+| 9 | `tour_base`（待確認 4） | 促銷期間外，`通知狀態` 要不要在 view 內就不回 `'促銷'`？（原 `tour_base` 待確認 4。）這個決定適用所有從 `notification` 輸出 `通知狀態`／`促銷價錢`／`促銷開始／結束日期` 的物件：`tour_base`、`tour_travel`（欄位集合見 #26）、`tour_tour_detail`、`tour_hotel`、`tour_restaurant`，以及取自 `tour_base` 的 `user_cartList`；`user_orderList` 僅在 #13 採 A（取目前行程價）時才適用，#13 採 B（建議）時它的價格取自 `order_item`，也沒有 `通知狀態` 欄位。與 #10 是兩個獨立的問題。controller 自己再檢查 `now() between`（`cart.js:22`、`checkout.js:31`）。 | **A view 不判斷**，期間外仍是 `通知狀態='促銷'`。後果：首頁促銷分頁（`home.js:33`、`home.js:41`）列出已過期或尚未開始的促銷行程；詳情的 `promotion.tag`（`product.js:361`）期間外仍是 '促銷'；管理者促銷清單（`promotion.js:8` 的 `通知狀態 = '促銷'`，`:42` 查 `tour_base`）仍列出所有促銷（含未開始與已過期），管理功能正常。<br>**B 只在期間內才回 `'促銷'`，否則 `NULL`**。後果：首頁促銷分頁正確；但管理者促銷清單（`promotion.js:8,42`）看不到尚未開始與已過期的促銷，無法管理；管理者商品清單（`admin.js:168` 選取 `通知狀態`）這些行程顯示 `NULL`。seed 的兩筆促銷日期是浮動的（起日 ＝ `2025-11-01`／`2025-10-01` 加上載入日與 `2025-05-20` 的天數差，`db/seed/R__seed.sql:590–591,601–602`），載入後 165 天與 134 天才開始，載入當天都不在期間內，所以 B 之下 seed 的管理者促銷清單與首頁促銷分頁從第一天起都是空的，P1b 要調整 seed 日期。 | **A**（不判斷）。沒有任何選項能讓所有 controller 路徑都不改就正確：A 讓 `home.js:33,41` 在期間外仍列出促銷（controller 缺期間條件，留給 P3 商品）；B 則讓管理者促銷清單（`promotion.js:8,42`）失去未開始與已過期的促銷，破壞管理功能。A 是改動最小的選項。`is_promoted` 的問題由 #10 處理，不依賴本題。 | 採用建議（A） |
+| 10 | `user_cartList`（待確認 2） | 促銷期間外，`促銷價錢` 要不要在 view 內就是 `NULL`？（原 `user_cartList` 待確認 2；同樣適用 `tour_base`、`tour_tour_detail`、`tour_hotel`、`tour_restaurant` 的 `促銷價錢`；`user_orderList` 僅在 #13 採 A 時適用。）`is_promoted` 在三處以 `促銷價錢` 的真偽判斷：`product.js:284`（restaurant）、`:359`（travel／spot）、`:450`（hotel）。 | **A 永遠是 `notification.promo_price` 原值**。後果：期間外三處 `is_promoted` 仍為 true；`cart` 的 `promo_price`（`cart.js:217`）期間外仍有值，前端要自己判斷期間。<br>**B 只在期間內才有值，否則 `NULL`**（`促銷開始／結束日期` 照常輸出；可與 #9 的 A 或 B 獨立搭配）。後果：三處 `is_promoted` 與 `cart` 的 `promo_price` 都正確；`cart.js:22`、`checkout.js:31` 的 `now() between` 檢查變成多餘但無害；管理者促銷清單仍依 `通知狀態` 找得到所有促銷，但該 API `select * from tour_base` 並以 `...rest` 回傳（`promotion.js:42`、`:59–63`），`促銷價錢` 會在 response 裡：未開始與已過期的促銷顯示 `促銷價錢 = NULL`，以目前的 seed 而言，載入當天起每一筆促銷都是 NULL（管理者看得到促銷但看不到價格）。 | **B**（只 gate `促銷價錢`，`通知狀態` 照 #9 不 gate）。沒有任何選項完全不改 controller 就正確（`home.js:33,41` 的期間條件仍缺，見 #9）；但這個組合讓 `is_promoted`（`product.js:284,359,450`）與 cart 的 `promo_price` 不用改就正確，仍可管理所有促銷（只是期間外的促銷在管理者清單上 `促銷價錢` 為 NULL），回歸比 #9 的 B 小，是改動最小的選擇。代價：seed 的促銷在開始前（載入後 134、165 天內），詳情的 `is_promoted` 是 false。 | 採用建議（B，只 gate `促銷價錢`，`通知狀態` 照 #9 不 gate） |
+| 11 | `user_level_review_forHome`（待確認 1）、`user_favorite`（待確認 1）、`user_orders`（待確認 4）、`user_order_item`（待確認 1）、`user_adminList`（待確認 1） | 程式碼沒有讀取、只能推測欄位集合與命名的 view：`user_level_review_forHome`、`user_favorite`、`user_orders`、`user_order_item`、`user_adminList`。controller 都是 `SELECT *` 後整份放進 response，前端（`phase-0`）依實際 key 讀取；這一題決定五支 API 的 response 形狀，並牽動 §4.2 (d1)。 | **整體做法 A 照契約中的推測欄位建立**。後果：若 frontend 讀取的 key 不同，首頁好評、收藏清單、已購買清單、管理者會員詳情會缺資料。**整體做法 B 先核對 frontend 實際讀取的 key 再定**（唯讀，見 §4.2 (d1)）。後果：多花一道工，欄位與命名有證據。<br>**`user_level_review_forHome` 欄位集合**（原待確認 1）：A 照推測欄位（評論編號、名稱、個人照片 Url、旅遊等級、旅遊等級名稱、旅遊徽章 Url、評分、評論內容、評論時間）。後果：前端 key 不同時首頁好評缺資料。B 先查 frontend 再定。後果：多一道工。<br>**`user_favorite` 欄位集合**（原待確認 1）：A `favorite` 加 `tour_base` 的欄位（再加 `favorite_id`）。後果：一次拿到收藏卡片所需的名稱、圖、價錢，欄位要與 `tour_base` 一致。B 只有 `favorite` 自己的欄位（`favorite_id`、`旅遊編號`、`建立時間`）加偏好分類。後果：偏好分類沒有行程以外的合理來源，前端要另打商品 API。C 對齊 `tour_tour_detail` 的欄位集合。後果：欄位過多，含收藏清單用不到的 `異動通知內容` 等。<br>**`user_adminList` 欄位集合**（原待確認 1）：A `user` 加 `user_level` 的欄位（鏡射 `user_level_point_coupon` 去掉優惠卷）。後果：管理者看到基本資料與等級，優惠卷另查（`admin.js:239`）。B 再加優惠卷欄位（一位使用者多列）。後果：`body.data.data[]` 長度等於優惠卷數、使用者資料每列重複，沒有優惠卷的使用者是否保留一列看 #40。C 再加訂單或積分統計。後果：view 需要聚合，欄位名稱沒有依據。<br>**命名，每個 view 各自一題**（`user_orders` 原待確認 4、`user_order_item` 原待確認 1 是兩個獨立的待確認，可分別決定；兩者選不同風格時，已購買清單與明細頁的 key 風格不一致）：中文為主、`order_item_id` 保持英文。後果：前端讀 `旅遊名稱` 等。英文為主（沿用 `order_item`／`tour`／`orders` 欄位名）。後果：前端讀 `title`、`total_price` 一類，與中文風格的 `user_orders` 不同。中英混合（類似 `user_orderList`）。後果：同一頁面要讀兩種風格。 | 整體做法 **B**，作法與時程見 §4.2 (d1)；各欄位集合與命名在核對 frontend 之前不預選。理由：controller 對這些欄位幾乎一個都不讀（只讀 `使用者編號`、`order_item_id`、偏好分類），任何選項 controller 都不用改，唯一的依據是 frontend。 | 採用建議（B：依 §4.2 (d1) 在 P1b 寫 V3 SQL 前核對 frontend 後回填） |
+| 12 | `user_cartList`（待確認 1）、`user_orderList`（待確認 3） | `singleTotal_Price` 怎麼算、什麼型別？（`user_cartList`：程式碼只讀；`user_orderList`：`checkout.js:260` 沒有 `Number()`，`cart.js:224` 有。） | **cartList A 有效單價 × `quantity`**（促銷期間內用促銷價，否則原價，同 `cart.js:19–22` 的 CASE）。後果：與 `cart.total_price` 的累計邏輯一致。<br>**cartList B 原價 × `quantity`**。後果：有促銷的項目小計大於 `cart.total_price` 實際加的金額，`summary.total_price` 與 `cart.total_price` 不一致。<br>**cartList C 促銷價 × `quantity`**（NULL 退回原價，不檢查期間）。後果：過期促銷仍用促銷價。<br>**orderList A `order_item.total_price`**（`checkout.js:49` 寫入的 `價錢 * quantity`，不含促銷）。後果：`orders[].total_price` 是原價小計，下單當時固定，與 `orders.discount_price`（整張訂單折後應付金額）不相加；促銷項目的 `orders[].total_price` 會大於 `summary.total_price`（後者是 `orders.total_price`，取自以促銷價計算的 `cart.total_price`，`checkout.js:38,264`）。<br>**orderList B 有效單價 × `quantity`**。後果：與 cartList A 一致，但隨行程目前的促銷變動。<br>**orderList C `order_item.discount_price`**（非促銷是 0）。後果：非促銷項目小計為 0。<br>型別：`numeric`／`bigint` 時 pg 回字串；`cart.js:224` 有 `Number()` 所以任何型別都可；`checkout.js:260` 沒有，只有 `double precision`（或 integer）才是 JSON 數字。 | cartList 採 **A**；orderList 採 **A**；兩者型別都用 **`double precision`**（`order_item.total_price` 在 V1 即 FLOAT，`V1:293`）。理由：cartList A 與 `cart.js:19–22`、`cart.total_price` 累計一致；orderList A 是訂單建立時寫入的值，歷史訂單不隨行程調價改變，與 #13 的建議同方向；`double precision` 讓沒有 `Number()` 的 `checkout.js:260` 不用改。程式碼沒有指定 cartList 與 orderList 的計算方式，這是依一致性的建議。 | 採用建議（cartList A、orderList A、`double precision`） |
+| 13 | `user_orderList`（待確認 1、2） | `user_orderList` 的 `價錢` 與 `促銷價錢` 是行程目前的價格，還是下單當時的？（response 把 `促銷價錢` 輸出成 `orders[].discount_price`，`checkout.js:253`。） | **A 目前的行程價**（`tour_base.價錢`、`tour_base.促銷價錢`）。後果：行程後來調價或促銷結束，歷史訂單的 `price`、`discount_price` 跟著變（促銷結束後變 NULL）。<br>**B 下單當時的單價**（`價錢` ＝ `order_item.total_price / quantity`，`促銷價錢` ＝ `order_item.discount_price / quantity`，寫入處 `checkout.js:49–50`）。後果：歷史訂單固定；`價錢` 型別變成 `double precision`；`quantity = 0` 時除以零（V1 無 CHECK，但 `cart_Validator` 要求人數 ≥ 1）；非促銷時 `order_item.discount_price` 是 `0 * quantity ＝ 0`，輸出 `0` 而不是 `NULL`，前端若用「有值＝促銷」判斷會把非促銷當促銷。<br>**C `促銷價錢` ＝ `order_item.discount_price`（小計，不除數量）**。後果：欄位名是「價錢」卻是小計，與單價的 `價錢` 不對稱。 | **B**，非促銷（0）時 `促銷價錢` 輸出 `NULL`，且用 `NULLIF(quantity, 0)` 避免除以零。理由：訂單明細應固定下單當時的價格；`checkout.js:252–253` 原樣輸出，不用改。輸出 `NULL` 與 `user_cartList` 的 `促銷價錢`（非促銷為 NULL）一致。這個細節是建議，不是程式碼已證實的行為。 | 採用建議（B，非促銷（0）時 `促銷價錢` 輸出 `NULL`，用 `NULLIF(quantity, 0)`） |
+| 14 | `user_orderList`（待確認 5） | `user_orderList` 要不要依 `payment_status` 篩選？（程式碼只用 `order_id` 取全部項目。） | **A 不篩選**。後果：預覽階段（-1／0）的項目也在，`GET /summary` 正常。<br>**B 只含部分狀態**。後果：預覽階段看不到項目，`orderItemRepo.rows[0].total_count`（`checkout.js:263`）取不到而 500。 | （低風險，可直接採用建議）**A**。理由：只有 A 讓 `GET /checkout/summary/:order_id` 在 -1／0 的訂單上不 500（`checkout.js:263`），controller 不用改。 | 採用建議（A） |
+| 15 | `restaurant_booking`（待確認 2） | `restaurant_booking` 的 `booking_count` 數什麼？（狀態篩選見 #5。） | **A `order_item` 筆數**（該行程 `tour.item='food'`）。後果：已取消、已退款、逾時的訂單也占名額（若不加狀態篩選）；一筆訂單不論人數都算 1。<br>**B `order_item.quantity` 加總**（人數）。後果：與 `reservation_limit`（`restaurant.reservation_limit`，seed 為 50、30）同單位，符合「人數限制」的語意（`tour_restaurant` 輸出為 `餐廳人員限制`，`response.feature.about.people`）。<br>**C A 或 B 加上 `payment_status` 篩選**。後果：同 #5。<br>**D 數 `cart_item`**。後果：占名額的是尚未結帳的購物車項目。 | **B**（狀態篩選照 #5）。理由：controller 只比較數字（`middlewares/cart/index.js:80,215`），不用改；`reservation_limit` 是人數上限，單位要相同。 | 採用建議（B，狀態篩選照 #5） |
+| 16 | `restaurant_booking`（待確認 1） | `restaurant_booking` 的第 1 個參數經 API 恆為 `NULL`（`middlewares/cart/index.js:73,208` 傳 `options.start_time`，但 `foodSchema`，`cart_Validator.js:22–27`，只有 `start_date`，帶 `start_time` 會被驗證擋成 400），function 要怎麼處理？ | **A 忽略參數 1**，只以行程計算總預約數對 `reservation_limit`。後果：整個行程累計到上限就額滿，不分時段；與「預約時間」語意不符，但額滿檢查有作用。<br>**B 以參數 1 比對時段**（程式碼原意）。後果：參數恆為 `NULL`，永遠比對不到，額滿檢查形同虛設；要有效必須改 controller 讀 `options.start_date`。<br>**C 參數為 `NULL` 時回 0 列**。後果：`middlewares/cart/index.js:77,212` 的 `rowCount > 0` 不成立而略過檢查，結果同 B。 | **A**。理由：只有 A 在 controller 不改的前提下，額滿檢查仍有作用。保留參數 1（簽章不變），P4 修好 controller 傳 `start_date` 後再改成時段比對（依 spec 重構規則，要同時更新契約與契約測試）。 | 採用建議（A） |
+| 17 | `hotel_booking`（待確認 2） | `hotel_booking` 日期區間重疊的判定，含不含退房當日？（`order_item.start_date`／`end_date` 是 `timestamp`，V1 `:296–297`，是否取到日期精度也要定。） | **A 半開區間 `[start_date, end_date)`**。後果：退房日當天可被下一位入住，連續住宿可接續。<br>**B 閉區間 `[start_date, end_date]`**。後果：退房日當天仍算占房，連續住宿無法接續。 | （低風險，可直接採用建議）**A**。理由：一般飯店退房日當天房間可再出租；controller 只比較結果，不用改。 | 採用建議（A） |
+| 18 | `hotel_booking`（待確認 3） | `hotel_booking` 找不到 (行程, 房型)（例如 `room_type` 拼錯）時怎麼回？ | **A 回 0 列**。後果：`middlewares/cart/index.js:59,194` 的 `rowCount > 0` 不成立而略過檢查，無效房型的項目被加入購物車。<br>**B 回 1 列 `booking_count = 0, room_count = 0`**（例如 `COALESCE`）。後果：`0 >= 0` 成立，被「選擇的房間已無空房」擋下，訊息不準確但不會加入無效房型。<br>**C 丟例外**。後果：API 回 500。 | **B**。理由：controller 不改的前提下，只有 B 能擋下無效房型且不 500。 | 採用建議（B） |
+| 19 | `restaurant_isClosed`（待確認 1、2） | `restaurant_isClosed` 依什麼判斷「休息」？預約時間為 `NULL` 或餐廳不存在時怎麼回？（function 必須永遠回 1 列：`middlewares/cart/index.js:110,245` 沒有 `rowCount` 檢查，0 列會 500。） | 判斷依據：**A** 只看 `restaurant_business` 有沒有對應星期的列，沒有＝公休。後果：與 `restaurant_business_parsed` 重複（先過 `parsed`，無該星期列已在前面被擋），實務上永遠回 `false`。**B** 看 `business_hours` 時段。後果：與 `parsed` 幾乎重複，通過 `parsed` 的請求必然 `false`。**C** 依尚未存在的公休日表。後果：要新增表（超出「V3 只建 view／function」），沒有該表之前無法實作。**D** 永遠回 `false`（占位）。後果：「此時段無營業」永遠不觸發，其餘功能不受影響。<br>NULL／不存在：**A 回 1 列 `isclosed = false`**（放行）。後果：不存在的餐廳不會在此被擋（但 `parsed` 已先回 0 列而擋下）。**B 回 `true`**（擋下）。後果：擋下。**丟例外**：API 回 500。 | （低風險，可直接採用建議）判斷依據 **A**，NULL／不存在回 **`false`**。理由：兩者在 `parsed` 先行把關後不會改變實際行為（`middlewares/cart/index.js:90–102`），A 不需要新表；controller 不用改，且保證回 1 列。 | 採用建議（判斷依據 A，NULL／不存在回 `false`） |
+| 20 | `restaurant_business_parsed`（待確認 2） | `restaurant_business_parsed` 遇到跨午夜時段（seed 的 `17:00~00:00`，`db/seed/R__seed.sql:489,490`）怎麼處理？`BETWEEN start_time AND end_time` 是閉區間且不處理跨午夜。 | **A `00:00` 視為 `24:00`，轉成 `end_time = 23:59:59`**。後果：週五、週六 17:00 到 23:59:59 可預約，`00:00` 之後不可。<br>**B 保持 `00:00:00`**。後果：`start_time > end_time`，`BETWEEN` 永遠不成立，這兩天任何預約都回「餐廳已關閉」。<br>**C 拆成兩列**（`17:00~23:59:59` 與隔日 `00:00~00:00`）。後果：隔日時段要記在下一個 `week`，view 較複雜。 | （低風險，可直接採用建議）**A**。理由：controller 不改，只有 A（與 C）能讓 seed 的週五、週六營業時段可預約；A 最簡單。 | 採用建議（A） |
+| 21 | `restaurant_business_parsed`（待確認 1、3） | `restaurant_business_parsed` 的其他邊界：`business_hours` 無法解析（格式不符）的列怎麼辦？沒有 `restaurant` 列的行程呢？ | 無法解析：**A view 忽略該列**。後果：該餐廳該星期視為「已關閉」。**B 丟例外**。後果：整個 view 查詢失敗，所有餐廳加入購物車都回 500。<br>沒有 `restaurant` 列的行程：view 內沒有列，`rowCount === 0`，回「餐廳已關閉」（400）；INNER JOIN 與 LEFT JOIN 結果相同，不需要選擇，只記錄。 | （低風險，可直接採用建議）無法解析採 **A**。理由：B 會讓一筆壞資料拖垮所有餐廳；controller 不用改。 | 採用建議（無法解析採 A） |
+| 22 | `user_user_level`（待確認 1、2）、`user_level_review_forHome`（待確認 3）、`user_adminList`（待確認 3、4） | 使用者沒有 `user_level` 列、或有多筆時，`user_user_level`、`user_level_review_forHome`、`user_adminList`（以及 `user_level_point_coupon` 的邊界）怎麼處理？V1 `user_level` 沒有 unique（`V1:39–50`）。 | 沒有列：**A INNER JOIN**。後果：該使用者的評論、隱藏玩法在商品頁消失（`product.js:495,553` 的 `inner JOIN`）、首頁好評消失；`GET /admin/members/:user_id` 回 200 但 `data: []`；`user_level_point_coupon` 中該使用者消失。**B LEFT JOIN**。後果：評論照常顯示，等級欄位為 `null`。<br>多筆：**A 直接 JOIN**。後果：該使用者每筆評論重複（筆數 ＝ 等級列數）；admin 回多列。**B 取最新一筆**（`updated_at` 最大）。後果：不重複，但要定義「最新」。 | （低風險，可直接採用建議）沒有列採 **LEFT JOIN**，多筆採 **B 取最新一筆**。理由：註冊流程一律會建立 `user_level`（`userinfo.js:30,185`），seed 每位使用者各 1 筆（`db/seed/R__seed.sql:102–134`），所以在正常資料上四個物件結果相同；LEFT JOIN＋取一筆能保證每位使用者最多一列，不讓缺漏或重複的資料影響評論與管理者頁面。controller 不用改。 | 採用建議（沒有列採 LEFT JOIN，多筆採 B 取最新一筆） |
+| 23 | `tour_travel_popular`（待確認 2）、`tour_travel_most_favorited`（待確認 1） | 沒有任何購買（`tour_travel_popular`）或沒有任何人收藏（`tour_travel_most_favorited`）的行程要不要出現？ | **A 出現，排在最後**（`LEFT JOIN`，排行用計數 0 排序）。後果：新 DB 熱門與最多收藏分頁仍有資料。<br>**B 不出現**（`INNER JOIN`）。後果：沒有訂單或收藏時，首頁對應分頁回 200「查無資料」；P1b 的 seed 需要有已付款訂單與收藏紀錄。 | （低風險，可直接採用建議）**A**。理由：controller 對兩個 function 做 `INNER JOIN` 後 `ORDER BY` 排行（`home.js:15,49`），A 不依賴 seed 資料量就有東西可看。 | 採用建議（A） |
+| 24 | `tour_travel_popular`（待確認 3）、`tour_travel_most_favorited`（待確認 2） | 排名並列時怎麼處理？（`home.js` 的 `ORDER BY 購買排行 ASC LIMIT/OFFSET` 與 `ORDER BY 收藏排行 ASC LIMIT/OFFSET` 沒有次要排序。） | **A `RANK()`**（並列同名次）。後果：並列時分頁可能重複或漏列。<br>**B `ROW_NUMBER()` 並加次要排序**（例如 `tour_id`）。後果：分頁穩定，並列者的先後由次要排序決定。 | （低風險，可直接採用建議）**B**。理由：controller 沒有次要排序，只有 B 保證分頁穩定；不用改 controller。 | 採用建議（B） |
+| 25 | `user_orderList`（待確認 4）；另涉及輸出欄位型別（無獨立待確認）：`hotel_booking`、`restaurant_booking`、`tour_travel_popular`、`tour_travel_most_favorited`、`user_level_point_coupon` | 計數類欄位的型別：`user_orderList.total_count`（原待確認 4）、`hotel_booking`／`restaurant_booking` 的 `booking_count`、`購買排行`／`收藏排行`、`使用者旅遊積分`（若用 `SUM`）。`COUNT`／`SUM` 預設是 `bigint`，pg 回字串（§2 共通觀察）。 | **A `integer`**（view／function 內 `::int`）。後果：JSON 是數字；`summary.total_items`（`checkout.js:263`，沒有 `Number()`）是數字。<br>**B `bigint`**。後果：`summary.total_items` 是字串（如 `"1"`）；`booking_count >= room_count` 的比較仍正確（JS 轉數字），但排行欄位在首頁 response 是字串。 | （低風險，可直接採用建議）**A**。理由：controller 對 `total_count`、`使用者旅遊積分` 沒有 `Number()`（`checkout.js:263`、`discounts.js:60`、`userProfile.js:148`），只有數字型別不用改。若採用，Step 4 要同步更新五處：§1 `tour_travel_popular`、`tour_travel_most_favorited` 簽章的 `bigint`（推測）、§2 `hotel_booking`、`restaurant_booking` 的 `booking_count` 型別格（「integer 或 bigint」）、§2 `user_orderList` 的 `total_count` 型別格（「integer 或 bigint」）。 | 採用建議（A） |
+| 26 | `tour_base`（待確認 3）、`tour_travel`（待確認 2） | `tour_base` 與 `tour_travel` 的欄位集合是否相同（只差 `收藏狀態`）？`旅遊標語`、`旅遊結束日期`、`旅遊天數`、`旅遊代表圖 Url`、`異動通知內容` 是否也在 `tour_base`？ | **A 相同**（`tour_travel` ＝ `tour_base` ＋ `收藏狀態`）。後果：登入與未登入首頁 response 結構只差 `收藏狀態`。<br>**B `tour_base` 只含目前表格列的欄位**。後果：登入與未登入首頁 response 欄位不同，前端要處理兩種形狀。 | （低風險，可直接採用建議）**A**。理由：兩條路徑共用同一個 JS 轉換（`home.js:90–96`），A 讓 response 形狀一致，不用改 controller。 | 採用建議（A） |
+| 27 | `tour_travel`（待確認 1） | `tour_travel` 名稱是 travel，但被用在所有種類（旅行團 travel、背包客 hotel／food／spot），要不要只回 `item='travel'`？ | **A 回傳所有種類**。後果：商品搜尋與首頁背包客（已登入）正常。<br>**B 只回 `item='travel'`**。後果：`GET /user/product/search?type=backpacker` 與已登入首頁背包客永遠為空，但未登入路徑（`tour_base`）仍有資料，兩者不一致。 | （低風險，可直接採用建議）**A**。理由：`product.js:116` 沒有小分類限制，`home.js:77` 在 `type=backpacker` 也呼叫它。 | 採用建議（A） |
+| 28 | `tour_travel`（待確認 3）、`tour_tour_detail`（待確認 4） | 未登入（`NULL` 參數）時 `收藏狀態` 是 `false` 還是 `NULL`？（`tour_travel`、`tour_tour_detail`、`tour_hotel`、`tour_restaurant` 同。） | **A `false`**。後果：前端 `is_favorited` 一律布林。<br>**B `NULL`**。後果：JSON 內是 `null`，布林判斷結果相同，但嚴格比較（`=== false`）的測試會失敗。 | （低風險，可直接採用建議）**A**。理由：`EXISTS (...)` 自然得到 `false`；`product.js:356` 直接輸出為 `is_favorited`，不用改。 | 採用建議（A） |
+| 29 | `tour_base`（待確認 5） | `tour_base` 的 `建立時間`、`更新時間` 來自 `tour` 還是 `notification`？（`promotion.js:44` 用 `ORDER BY 更新時間`、`:23` 用 `DATE(建立時間)`；`admin.js:168`、`product.js:1067` 用 `建立時間`。） | **A 兩者都來自 `tour`**。後果：促銷清單依行程本身的更新時間排序，建立日期篩選是行程建立日。<br>**B 兩者都來自 `notification`**。後果：促銷清單依促銷最近修改排序；但無通知的行程 `建立時間` 為 `NULL`，管理者商品清單的排序與篩選失效。<br>**C `建立時間` 取 `tour.created_at`，`更新時間` 取 `GREATEST(tour.updated_at, notification.updated_at)`**。後果：促銷清單排序反映促銷異動，商品清單不受影響；需確認這是否合理。 | （低風險，可直接採用建議）**A**。理由：B 會破壞管理者清單，A 最單純，controller 不用改；若希望促銷清單依促銷異動排序，再改採 C。 | 採用建議（A） |
+| 30 | `tour_tour_detail`（待確認 2） | `tour_tour_detail` 對 `tour_detail` 用 INNER 還是 LEFT JOIN？（`spot` 也用此 function 並讀特色圖，`product.js:335`；`spot` 行程不保證有 `tour_detail` 列。） | **A INNER JOIN**。後果：每個 spot 都必須有 `tour_detail`，否則整列消失，`product.js:209` 讀 `rows[0]` 時 TypeError，詳情頁 500；seed 與新增商品流程要補。<br>**B LEFT JOIN**。後果：沒有 `tour_detail` 時特色圖、行程規劃為 `NULL`，頁面可顯示。 | （低風險，可直接採用建議）**B**。理由：controller 不改的前提下，B 不會 500。 | 採用建議（B） |
+| 31 | `tour_hotel`（待確認 1） | `tour_hotel` 的 `房型描述` 沒有明確來源（`hotel_room` 只有 `image_desc`）。 | **A `房型描述 = hotel_room.image_desc`**。後果：房型描述就是圖片說明文字。<br>**B 新增 `hotel_room.description`**。後果：超出「V3 只建 view／function」，要改 migration。 | （低風險，可直接採用建議）**A**。理由：`product.js:411` 讀 `房型描述`，A 不需要 migration，controller 不用改。 | 採用建議（A） |
+| 32 | `tour_hotel`（待確認 2） | `hotel` 有 6 個描述欄位（`facility_desc`、`food_desc`、`room_desc`、`leisure_desc`、`traffic_desc`、`other_desc`，`V1:172–177`），controller 只讀 5 個（`product.js:416–436`，最後一個是 `其他便利服務`）。`其他便利服務` 取哪個？ | **A `other_desc`**。後果：`leisure_desc` 的資料不會在 API 顯示。<br>**B `leisure_desc`**。後果：`other_desc` 的資料不會顯示。<br>**C 兩者串接**。後果：兩者都能顯示，但要定分隔格式。 | **A**。理由：controller 的標籤是「其他便利服務」，與 `other_desc` 對應，沒有任何標籤對應「休閒」；controller 不用改。這是依名稱的推測。 | 採用建議（A） |
+| 33 | `tour_hotel`（待確認 3）、`tour_restaurant`（待確認 2） | `tour_hotel` 沒有房型、`tour_restaurant` 沒有菜單或沒有營業時間時，行程要不要出現？ | **A INNER JOIN**。後果：飯店或餐廳整個消失，`product.js:209` 讀 `rows[0]` 時 TypeError，詳情頁 500。<br>**B LEFT JOIN**。後果：出現一列，房型／菜單／營業時間欄位為 `NULL`，response 的 `room[]`、`menu[]`、`opening[]` 內是欄位全為 `null` 的物件，頁面不會 500。 | （低風險，可直接採用建議）**B**。理由：controller 不改的前提下，B 不會 500。 | 採用建議（B） |
+| 34 | `tour_restaurant`（待確認 1） | `tour_restaurant` 的 `menu[]` 與 `opening[]` 共用 `rows`（`product.js:263`、`:268`），列要怎麼展開？ | **A 菜單與營業時間 CROSS JOIN**。後果：兩個陣列各有大量重複項（3 道菜 × 7 天 ＝ 21 列，`menu[]` 與 `opening[]` 各 21 項）。<br>**B `UNION ALL`／位置對齊**。後果：每列各帶一筆菜單或一筆營業時間，另一邊為 `NULL`，陣列內有 `name: null` 或 `week: null` 的空項，但沒有重複（3 ＋ 7 ＝ 10 列）。<br>**C 每個餐廳一列，菜單與營業時間聚合成 JSON**。後果：`row.菜單名稱` 會是陣列，與 `rows.map` 的用法不符，controller 不改就無法使用。 | **B**。沒有任何選項能不改 controller 就完全正確：A 資料齊全但大量重複，B 沒有重複但有空項，C 需要改 controller。B 的瑕疵最小（空項是欄位為 `null` 的物件，不會丟例外）；完整修正需改 controller（P3 商品）。 | 採用建議（B） |
+| 35 | `user_cartList`（待確認 3） | `user_cartList` 要不要多帶 `cart_item_id`？（`DELETE`／`PATCH /:cart_item_id` 需要它，但 `GET /list` 的 response 沒有輸出，`cart.js:209–225`。） | **A 帶**。後果：目前 response 不變（controller 不讀）；日後 controller 加上即可讓前端刪除與修改項目。<br>**B 不帶**。後果：前端目前拿不到 `cart_item_id` 的狀況不變，之後要加得改 view。 | （低風險，可直接採用建議）**A**。理由：對現有 API 沒有影響，且為 P4 交易保留。 | 採用建議（A） |
+| 36 | `user_couponList`（待確認 2） | `user_couponList` 要不要同時提供 `expired_date`（多了 d）？`middlewares/discounts/index.js:65`、`middlewares/checkout/index.js:136` 讀 `expire_date`，`controllers/discounts.js:34` 讀 `expired_date`。 | **A 只提供 `expire_date`**。後果：`POST /user/trade/discounts/:order_id` 的 response 少了 `date_period`（`JSON.stringify` 略過 `undefined`），前端若依賴會顯示空白。<br>**B 兩個都提供（同值）**。後果：response 有 `date_period`；admin API（`SELECT *`，`admin.js:239`）多一個重複欄位。<br>（只提供 `expired_date` 不可行：`new Date(undefined)` 讓過期檢查被靜默略過。） | （低風險，可直接採用建議）**B**。理由：只有 B 讓三處讀取都不用改 controller。 | 採用建議（B） |
+| 37 | `user_couponList`（待確認 3） | `user_couponList` 的 `status = -1`（預覽中占用，只由 `checkout.js:149` 寫入）要不要原樣輸出？ | **A 原樣輸出**。後果：管理者 API 看到 -1。<br>**B view 把 -1 換算成別的顯示值**。後果：`checkout.js:216` 的 `status = -1` 失效，結帳摘要看不到已套用的優惠卷。 | （低風險，可直接採用建議）**A**。理由：`checkout.js:216` 依賴 -1；controller 不用改。 | 採用建議（A） |
+| 38 | `user_couponList`（待確認 4） | 同一個 (使用者, `code`) 有多筆綁定時怎麼辦？V1 有 `UNIQUE (user_id, coupon_id)`（V1 `:420`）但 `coupon.code` 不 unique；`middlewares/discounts/index.js:41`、`controllers/discounts.js:14` 取 `rows[0]`。 | **A 不處理**。後果：取到哪張不固定；view 維持每個 `user_coupon` 一列，管理者 API（`admin.js:239`）列出全部綁定。<br>**B view 只取最新一筆**。後果：結果固定，但管理者 API 看不到其他綁定；要另定「最新」的規則。 | **A**（不屬低風險：兩張 `discount` 不同的優惠卷共用同一 `code` 時，`rows[0]` 決定計價用哪個折扣，影響金額；但需要管理者建立重複代碼才會發生，機率低）。理由：重複 `code` 的根源是建立優惠卷時沒有檢查唯一，在 view 裡藏掉會隱瞞資料；根本修正見 §4.2 (d4)。controller 不用改。 | 採用建議（A） |
+| 39 | `user_level_point_coupon`（待確認 3） | `user_level_point_coupon` 只列出可用的優惠卷（`status = 0` 且未過期），還是全部綁定？（`userProfile.js:153` 把每一列都放進 `coupon[]`，view 輸出沒有 `status` 欄位可供判斷。） | **A 列出全部綁定**。後果：`coupon[]` 含已使用（1）與占用中（-1）的優惠卷，前端無法區分；seed 使用者 `b2c3...`、`a1b2...` 的優惠卷都是 `status = 1`（`db/seed/R__seed.sql:917,919,920`），會全部顯示。<br>**B 只列 `status = 0` 且未過期**。後果：`coupon[]` 只含可用的優惠卷；沒有可用優惠卷的使用者要靠 LEFT JOIN 才不會消失（見 #40）。<br>**C 排除 `status = 1`，保留 -1**。後果：占用中的優惠卷仍顯示為可用。 | **B**。理由：`coupon[]` 沒有 `status` 欄位，前端無法自行篩選，列出不可用的優惠卷是錯誤顯示；折抵檢查只讀 `rows[0].使用者旅遊積分`（`middlewares/discounts/index.js:77`、`middlewares/checkout/index.js:148`），不受影響。代價：必須同時採 #40 的 LEFT JOIN。 | 採用建議（B） |
+| 40 | `user_level_point_coupon`（待確認 4） | `user_level_point_coupon` 對優惠卷用 LEFT 還是 INNER JOIN（沒有優惠卷的使用者是否保留一列）？ | **A LEFT JOIN**。後果：使用者得到 1 列、優惠卷欄位全為 `NULL`；`userProfile.js:153–159` 沒有檢查，`coupon` 會是 `[{coupon_id: null, code: null, ...}]`。<br>**B INNER JOIN**。後果：沒有優惠卷的使用者完全不在 view 內，`GET /pointslevel` 回 `[]`，而且 `middlewares/discounts/index.js:81–89`、`middlewares/checkout/index.js:152–160` 的 `pointRepo.rowCount === 0` 回 409「查無可使用的點數」，即使使用者有積分也無法折抵。 | **A**。理由：B 會讓沒有優惠卷的使用者無法使用點數折抵；A 的瑕疵（`coupon[]` 含全 `null` 物件）只是顯示問題，controller 補 `if` 即可（P5 會員中心）。 | 採用建議（A） |
+| 41 | `user_favorite`（待確認 4）、`user_orders`（待確認 6） | 下架行程（`tour.status = 2`）的收藏（`user_favorite`）與購買紀錄（`user_orders`、`user_order_item`）要不要出現？ | **A 出現**（view 對 `tour` 或「含全部」的 `tour_base` JOIN）。後果：使用者看得到已下架的收藏與購買紀錄；點進商品詳情的行為由 `tour_tour_detail` 決定。<br>**B 不出現**（對「只含上架」的 `tour_base` JOIN）。後果：收藏列仍在 `favorite` 表但清單看不到，無法由列表取消這筆收藏（`DELETE` 需要 `favorite_id`，`collection.js:100`）；購買紀錄消失。 | （低風險，可直接採用建議）**A**。理由：B 會讓使用者無法取消收藏、看不到買過的東西；與 #7 的建議（`tour_base` 含全部）一致，controller 不用改。 | 採用建議（A） |
+| 42 | `user_favorite`（待確認 3）、`user_orders`（待確認 3）、`user_order_item`（待確認 3） | `user_favorite`、`user_orders`、`user_order_item` 的 `偏好分類 1/2/3`（`user_order_item` 為英文 `preference1/2/3`）是行程的偏好還是使用者的偏好？ | **A `tour.preference1/2/3`**。後果：每筆收藏／購買顯示該行程自己的分類標籤；與 `tour_base` 同名欄位一致。<br>**B `user.preference1/2/3`**。後果：同一位使用者所有列的偏好完全相同，對清單沒有意義。 | （低風險，可直接採用建議）**A**。理由：使用者的偏好在 §2 叫 `個人偏好 1/2/3`，`偏好分類` 的命名與 `tour_base` 相同；controller 只轉換數字，不用改。 | 採用建議（A） |
+| 43 | `user_favorite`（待確認 2） | `user_favorite` 的 `建立時間` 是收藏時間還是行程建立時間？（`collection.js:15` 的 `ORDER BY 建立時間 DESC`。） | **A `favorite.created_at`**。後果：最近收藏的排最前面；seed 7 筆時間相同（皆 `CURRENT_TIMESTAMP`），同一使用者內順序不穩定。<br>**B `tour.created_at`**。後果：排序與收藏無關，取消後重新收藏不會改變位置。 | （低風險，可直接採用建議）**A**。理由：符合「使用者查看收藏項目」的語意；controller 不用改。seed 時間相同的問題由 P1b 調整 seed。 | 採用建議（A） |
+| 44 | `user_orders`（待確認 1） | `user_orders` 一列的粒度：每個 `order_item` 一列，還是每張 `orders` 一列？ | **A 每個 `order_item` 一列**（含 `order_item_id`）。後果：每列可接到明細 API；一張訂單多個項目會是多列（但 `checkout.js:20–33,42–56` 目前每張訂單只產生 1 個項目）。<br>**B 每張訂單一列**（彙總）。後果：沒有 `order_item_id`，前端無法呼叫明細 API（`routes/purchases.js:14–20`）。 | （低風險，可直接採用建議）**A**。理由：明細 API 需要 `order_item_id`。 | 採用建議（A） |
+| 45 | `user_orders`（待確認 5） | `user_orders` 要不要在 view 內排序？（`purchases.js:9–11` 沒有 `ORDER BY`、沒有 `LIMIT`。） | **A view 內含 `ORDER BY`**（例如依下單時間由新到舊）。後果：順序穩定，但 PostgreSQL 不保證 view 內的 `ORDER BY` 被外層保留（單純 `SELECT *` 加 `WHERE` 通常會保留，加了 JOIN 或排序就不一定）。<br>**B 不排序**。後果：順序不穩定，重新整理可能不同。 | （低風險，可直接採用建議）**A**。理由：controller 沒有排序，A 至少在常見查詢下穩定；controller 不用改。 | 採用建議（A） |
+| 46 | `user_order_item`（待確認 2） | `user_order_item` 一個 `order_item_id` 回幾列？（controller 一律 `rows.map` 成陣列，`purchases.js:63` 起。） | **A 恰好 1 列**（只 JOIN 一對一的 `order_item`、`orders`、`tour`）。後果：`body.data` 是長度 1 的陣列。<br>**B JOIN 一對多的表**（例如 `tour_detail`、`restaurant_menu`、`hotel_room`）。後果：一個項目多列，每個元素重複訂單資料。 | （低風險，可直接採用建議）**A**。理由：明細是單一項目；controller 不用改。 | 採用建議（A） |
+| 47 | `user_order_item`（待確認 4） | `user_order_item` 明細帶入哪些訂單資料？（與 §4.2 (c) 的擁有者檢查有關。） | **A 只有 `order_item` 加 `tour`**。後果：明細頁沒有地址與電話；別人的 `order_item_id` 被讀到時洩漏較少。<br>**B 再帶入 `orders`**（地址、電話、付款方式、折扣類型、訂單總額）。後果：明細完整，但沒有擁有者檢查時（`middlewares/purchases/index.js:31`、`controllers/purchases.js:59`）會把別人的地址與電話暴露。<br>**C 再帶入 `payment`**（`V1:308–325`）。後果：可顯示付款結果，但一張訂單可能有多筆付款紀錄（失敗重試），可能產生多列，與 #46 的 B 相同。 | **A，並多帶 `使用者編號`（`orders.user_id`）**。理由：controller 不讀這些欄位，任何選項都不用改；A 在擁有者檢查補上之前洩漏最少，多帶 `使用者編號` 讓日後可在 controller 補 `WHERE 使用者編號 = $2`。若 §4.2 (d1) 的核對顯示明細頁需要地址與電話，改採 B，且要先處理 §4.2 (c)。 | 採用建議（A，並多帶 `使用者編號`） |
+| 48 | `user_level_review_forHome`（待確認 2） | `user_level_review_forHome`（首頁好評）要篩選哪些評論？（V1 `review.type` 可為 web／travel／hotel／food／spot；路由註解「使用者查看此網頁好評內容」。） | **A 只含 `review.type = 'web'`**。後果：首頁只顯示網站整體好評；seed 有 2 筆 web 評論（`db/seed/R__seed.sql:818–819`）。<br>**B 含所有 `review`**。後果：行程評論也出現在首頁。<br>**C 只含評分達標**（例如 `rating >= 4`）。後果：要另定門檻；低分評論不出現。 | **A**。理由：controller 不篩選（`home.js:132`），篩選條件只能寫在 view；A 與路由註解、V1 的 `type` 註解相符。這是依名稱與註解的推測。 | 採用建議（A） |
+| 49 | `user_adminList`（待確認 2） | `user_adminList` 的偏好欄位輸出數字還是文字？（`admin.js` 沒有像 `collection.js`／`purchases.js` 使用 `reversePreferenceMap`。） | **A `smallint` 數字**（`個人偏好 1/2/3`）。後果：管理者頁面拿到 1～10，要自己對照文字。<br>**B view 內轉成文字**。後果：對照表要放進 view（SQL `CASE`），且與其他 view 的型別不一致。 | （低風險，可直接採用建議）**A**。理由：與 `user_level_point_coupon` 的 `個人偏好 1/2/3` 一致，controller 不用改。 | 採用建議（A） |
 
 ### 4.2 契約以外、需要使用者決定的事項
 
@@ -1423,13 +1427,13 @@
 
 | # | 事項 | 選項與後果 | 建議 | 使用者的決定 |
 |---|---|---|---|---|
-| a | **seed 主鍵不是 uuidv4，seed 走不通部分 API。** seed 的 `tour`（10 筆，`db/seed/R__seed.sql:189` 起）、`coupon`（5 筆，`:138` 起）主鍵，以及 3 位 seed `user`（`:15–62`，版本位 7、9、a）都是手寫值，不是 v4。購物車、結帳、折扣、已購買的驗證器只接受 v4（`utils/Validator/cart_Validator.js:84,92`、`checkout_Vaildator.js:4,12,71`、`discounts_Validatior.js:29`、`purchases_Validator.js:8`），`admin_Validator.js:8–15` 只接受 v4／v5。後果：`POST /user/trade/cart/:tour_id` 對任何 seed 行程回 400；`PATCH /user/checkout/preview/:order_id` 帶 seed 的 `coupon_id` 回 400；`GET /admin/members/:user_id`、`PATCH /admin/members/roles`、`GET /admin/members/list/:user_id` 對 seed 使用者回 400。詳見 §2 B 組共通觀察「UUID 版本檢查」與 §3 C 組共通觀察「UUID 版本檢查補充」。 | **A 把 seed 的 `tour`、`coupon`、`user` 主鍵改寫成 v4**（連同所有引用它們的外鍵，P1b）。後果：seed 能走通購物車、結帳、折扣與管理者會員 API；要同時改寫引用這些主鍵的所有資料列，契約內引用的 seed 行程識別值（例如 `99999999-cccc-dddd-eeee-999999999999`）與行號也要隨之更新。<br>**B 放寬驗證器**（`utils/Validator`，P2 以後）。後果：seed 不用動；但這是 controller 以外的程式碼修改（P1a 不允許），會放寬輸入驗證，要改 5 個驗證器檔案、共 8 處。 | **A**。理由：驗證器與 controller 都不用改；seed 本來就是 P1b 要補資料的對象。代價：P1b 的 seed 改寫工作量較大（外鍵多）。 |  |
-| b | **權限提升：任何已登入帳號都能把任何註冊帳號改成 admin。** `routes/admin.js:26` 的 `authRole('admin')` 被註解掉，`PATCH /api/v1/admin/members/roles` 只剩 `auth`；`controllers/admin.js:59` 原樣 UPDATE `user.role`。被提權者重新登入後 JWT 帶 `admin`（`controllers/userinfo.js:96`），通過所有 `authRole('admin')` 閘門。詳見 §3 C 組共通觀察「安全問題」。spec 4 節已把它列在 P2 的已知 bug。 | **A 在任何公開展示之前先修**（取消 `routes/admin.js:26` 的註解，一行；要走紅燈／綠燈兩個 commit）。後果：漏洞關閉；這是 P1a 計畫之外的檔案修改，需要使用者同意。<br>**B 照 P2 計畫處理**。後果：在 P2 完成前，任何能連到服務的註冊帳號都能取得 admin 權限；計畫規定 seed 會在本機與展示環境載入（計畫 Global Constraints），所以只有在 P2 前不對外開放時才安全。 | **B，但加一條規則：P2 完成前不對外開放**。理由：spec 已把它排進 P2，P1 不改 route 以外的行為；若 P2 前就要公開展示，改採 A。 |  |
-| c | **已購買明細的擁有者檢查（IDOR）：任何登入的 `User` 都能讀任何 `order_item`。** 只有明細端點受影響：`GET /api/v1/user/purchases/info/:order_item_id` 的 `middlewares/purchases/index.js:31` 與 `controllers/purchases.js:59` 都只用 `order_item_id` 查，沒有 `user_id` 條件（清單端點 `GET /purchases/info` 以 `使用者編號 = req.user.id` 限定，`controllers/purchases.js:9–11`，不受影響）。另一個保護的缺口：`middlewares/purchases/index.js:34` 的 404 永遠不會觸發。後果：若明細 view 帶入 `orders` 的地址與電話（#47），別人的資料會被讀到。spec 4 節的 P2 已知 bug 清單沒有這一項。 | **A 在任何公開展示之前先修**（兩處查詢加 `user_id` 條件，`user_order_item` view 要提供 `使用者編號`，見 #47）。後果：漏洞關閉；這是 controller 修改（P1 不允許），要有紅燈測試。<br>**B 排進 P5 會員中心**（訂單功能）。後果：P5 完成前，知道或猜到 `order_item_id` 的登入使用者可讀到他人訂單明細；`order_item_id` 是 uuid，不易猜，但 seed 的識別值公開在契約與 seed 裡。 | **B，P5 要列為獨立 Task 並先寫紅燈測試；P5 完成前不對外開放**。理由：同 (b)，P1 不改 controller；同時依 #47 的建議讓 view 帶 `使用者編號`，P5 修起來不必動 view。若 P5 前要公開展示，改採 A。 |  |
-| d1 | **frontend 欄位核對（前面延後的檢查）。** #11 列出的 view 沒有 controller 證據，要靠 frontend `phase-0` 實際讀取的 key 才能確定欄位與命名。P1a 不動 frontend，但讀取不受限。 | **A 在 P1b 寫 V3 SQL 之前，唯讀地 grep frontend `phase-0` 讀取的 key**，回填契約。後果：多一個小步驟；欄位與命名有證據，不必事後重做 view 與契約測試（spec 重構規則要求動到 view 時同步更新契約與契約測試）。<br>**B 不核對，照契約推測建**，等 P3–P6 各功能做到時再修。後果：每個推測錯誤都要改 view、契約與契約測試。 | **A**。理由：唯讀、成本小，且是 #11 的前置。 |  |
-| d2 | **seed 的優惠卷代碼不符合驗證器。** `utils/Validator/discounts_Validatior.js:9–13` 要求 `discount.coupon` 為 `^[A-Z0-9]{6}$`；seed 的 5 個 `code`（`db/seed/R__seed.sql:143,152,161,170,179`）只有 `VIP300` 符合，`WELCOME100`、`SUMMER50`、`TRAVEL10P`、`SPRING20` 會被 `POST /user/trade/discounts/:order_id` 以 400 擋下。 | **A 把 seed 代碼改成 6 碼大寫英數**（P1b）。後果：seed 全部可用；`description` 與代碼需一起檢查。<br>**B 放寬驗證器的 regex**。後果：seed 不用動，但要改 `utils/Validator`（P1a 不允許）。 | **A**。理由：不用動驗證器與 controller，並與 (a) 的 seed 重寫一起做。 |  |
-| d3 | **seed 每位使用者有 2 個購物車，與 controller 衝突。** `controllers/cart.js:47–50` 的 `UPDATE public."cart" ... WHERE user_id = $1` 沒有限定 `cart_id`，會更新該使用者的所有購物車；seed（`db/seed/R__seed.sql:765–772`）每人 2 個，加入購物車會同時改兩個購物車的 `total_price`（見 §2 `user_cartList` 邊界 controller 行為 2）。V1 `cart` 沒有 `user_id` unique。 | **A seed 改成每位使用者 1 個購物車**（P1b）。後果：controller 不用改就一致；`cart` 的 seed 筆數與引用它的 `cart_item` 要調整。<br>**B 保留 2 個**。後果：對 seed 使用者加入購物車會同時改兩個購物車的 `total_price`，結果依 `rows[0]` 與全部更新而不一致；日後 P4 修 controller 才會好。 | **A**。理由：controller 不用改，只動 seed。 |  |
-| d4 | **是否補唯一約束。** 多題待確認的根源是 V1 缺少 unique：`notification`（一個行程多筆通知，#8）、`user_level`（一位使用者多筆，#22）、`favorite`（重複收藏，`V1:382–390` 沒有 `UNIQUE (user_id, tour_id)`，只靠 `middlewares/collection/index.js:68–70` 先查再寫）、`coupon.code`（#38）。 | **A 不補（V3 只建 view／function）**。後果：重複資料由 view 的規則處理（#8、#22），並行收藏仍可能寫入重複列。<br>**B 補唯一約束**（新增 migration）。後果：從根源消除重複，但動到 V1 的表結構，既有重複資料要先清理，範圍超出 P1a 與「V3 只建 view／function」。 | **A**。理由：controller 與現有流程都不需要約束就能運作，約束屬功能階段（P5 收藏、P6 優惠卷）的設計；P1b 不擴大範圍。 |  |
+| a | **seed 主鍵不是 uuidv4，seed 走不通部分 API。** seed 的 `tour`（10 筆，`db/seed/R__seed.sql:189` 起）、`coupon`（5 筆，`:138` 起）主鍵，以及 3 位 seed `user`（`:15–62`，版本位 7、9、a）都是手寫值，不是 v4。購物車、結帳、折扣、已購買的驗證器只接受 v4（`utils/Validator/cart_Validator.js:84,92`、`checkout_Vaildator.js:4,12,71`、`discounts_Validatior.js:29`、`purchases_Validator.js:8`），`admin_Validator.js:8–15` 只接受 v4／v5。後果：`POST /user/trade/cart/:tour_id` 對任何 seed 行程回 400；`PATCH /user/checkout/preview/:order_id` 帶 seed 的 `coupon_id` 回 400；`GET /admin/members/:user_id`、`PATCH /admin/members/roles`、`GET /admin/members/list/:user_id` 對 seed 使用者回 400。詳見 §2 B 組共通觀察「UUID 版本檢查」與 §3 C 組共通觀察「UUID 版本檢查補充」。 | **A 把 seed 的 `tour`、`coupon`、`user` 主鍵改寫成 v4**（連同所有引用它們的外鍵，P1b）。後果：seed 能走通購物車、結帳、折扣與管理者會員 API；要同時改寫引用這些主鍵的所有資料列，契約內引用的 seed 行程識別值（例如 `99999999-cccc-dddd-eeee-999999999999`）與行號也要隨之更新。<br>**B 放寬驗證器**（`utils/Validator`，P2 以後）。後果：seed 不用動；但這是 controller 以外的程式碼修改（P1a 不允許），會放寬輸入驗證，要改 5 個驗證器檔案、共 8 處。 | **A**。理由：驗證器與 controller 都不用改；seed 本來就是 P1b 要補資料的對象。代價：P1b 的 seed 改寫工作量較大（外鍵多）。 | 採用建議（A） |
+| b | **權限提升：任何已登入帳號都能把任何註冊帳號改成 admin。** `routes/admin.js:26` 的 `authRole('admin')` 被註解掉，`PATCH /api/v1/admin/members/roles` 只剩 `auth`；`controllers/admin.js:59` 原樣 UPDATE `user.role`。被提權者重新登入後 JWT 帶 `admin`（`controllers/userinfo.js:96`），通過所有 `authRole('admin')` 閘門。詳見 §3 C 組共通觀察「安全問題」。spec 4 節已把它列在 P2 的已知 bug。 | **A 在任何公開展示之前先修**（取消 `routes/admin.js:26` 的註解，一行；要走紅燈／綠燈兩個 commit）。後果：漏洞關閉；這是 P1a 計畫之外的檔案修改，需要使用者同意。<br>**B 照 P2 計畫處理**。後果：在 P2 完成前，任何能連到服務的註冊帳號都能取得 admin 權限；計畫規定 seed 會在本機與展示環境載入（計畫 Global Constraints），所以只有在 P2 前不對外開放時才安全。 | **B，但加一條規則：P2 完成前不對外開放**。理由：spec 已把它排進 P2，P1 不改 route 以外的行為；若 P2 前就要公開展示，改採 A。 | 採用建議（B，P2 完成前不對外開放） |
+| c | **已購買明細的擁有者檢查（IDOR）：任何登入的 `User` 都能讀任何 `order_item`。** 只有明細端點受影響：`GET /api/v1/user/purchases/info/:order_item_id` 的 `middlewares/purchases/index.js:31` 與 `controllers/purchases.js:59` 都只用 `order_item_id` 查，沒有 `user_id` 條件（清單端點 `GET /purchases/info` 以 `使用者編號 = req.user.id` 限定，`controllers/purchases.js:9–11`，不受影響）。另一個保護的缺口：`middlewares/purchases/index.js:34` 的 404 永遠不會觸發。後果：若明細 view 帶入 `orders` 的地址與電話（#47），別人的資料會被讀到。spec 4 節的 P2 已知 bug 清單沒有這一項。 | **A 在任何公開展示之前先修**（兩處查詢加 `user_id` 條件，`user_order_item` view 要提供 `使用者編號`，見 #47）。後果：漏洞關閉；這是 controller 修改（P1 不允許），要有紅燈測試。<br>**B 排進 P5 會員中心**（訂單功能）。後果：P5 完成前，知道或猜到 `order_item_id` 的登入使用者可讀到他人訂單明細；`order_item_id` 是 uuid，不易猜，但 seed 的識別值公開在契約與 seed 裡。 | **B，P5 要列為獨立 Task 並先寫紅燈測試；P5 完成前不對外開放**。理由：同 (b)，P1 不改 controller；同時依 #47 的建議讓 view 帶 `使用者編號`，P5 修起來不必動 view。若 P5 前要公開展示，改採 A。 | 採用建議（B，P5 列為獨立 Task 並先寫紅燈測試；P5 完成前不對外開放） |
+| d1 | **frontend 欄位核對（前面延後的檢查）。** #11 列出的 view 沒有 controller 證據，要靠 frontend `phase-0` 實際讀取的 key 才能確定欄位與命名。P1a 不動 frontend，但讀取不受限。 | **A 在 P1b 寫 V3 SQL 之前，唯讀地 grep frontend `phase-0` 讀取的 key**，回填契約。後果：多一個小步驟；欄位與命名有證據，不必事後重做 view 與契約測試（spec 重構規則要求動到 view 時同步更新契約與契約測試）。<br>**B 不核對，照契約推測建**，等 P3–P6 各功能做到時再修。後果：每個推測錯誤都要改 view、契約與契約測試。 | **A**。理由：唯讀、成本小，且是 #11 的前置。 | 採用建議（A） |
+| d2 | **seed 的優惠卷代碼不符合驗證器。** `utils/Validator/discounts_Validatior.js:9–13` 要求 `discount.coupon` 為 `^[A-Z0-9]{6}$`；seed 的 5 個 `code`（`db/seed/R__seed.sql:143,152,161,170,179`）只有 `VIP300` 符合，`WELCOME100`、`SUMMER50`、`TRAVEL10P`、`SPRING20` 會被 `POST /user/trade/discounts/:order_id` 以 400 擋下。 | **A 把 seed 代碼改成 6 碼大寫英數**（P1b）。後果：seed 全部可用；`description` 與代碼需一起檢查。<br>**B 放寬驗證器的 regex**。後果：seed 不用動，但要改 `utils/Validator`（P1a 不允許）。 | **A**。理由：不用動驗證器與 controller，並與 (a) 的 seed 重寫一起做。 | 採用建議（A） |
+| d3 | **seed 每位使用者有 2 個購物車，與 controller 衝突。** `controllers/cart.js:47–50` 的 `UPDATE public."cart" ... WHERE user_id = $1` 沒有限定 `cart_id`，會更新該使用者的所有購物車；seed（`db/seed/R__seed.sql:765–772`）每人 2 個，加入購物車會同時改兩個購物車的 `total_price`（見 §2 `user_cartList` 邊界 controller 行為 2）。V1 `cart` 沒有 `user_id` unique。 | **A seed 改成每位使用者 1 個購物車**（P1b）。後果：controller 不用改就一致；`cart` 的 seed 筆數與引用它的 `cart_item` 要調整。<br>**B 保留 2 個**。後果：對 seed 使用者加入購物車會同時改兩個購物車的 `total_price`，結果依 `rows[0]` 與全部更新而不一致；日後 P4 修 controller 才會好。 | **A**。理由：controller 不用改，只動 seed。 | 採用建議（A） |
+| d4 | **是否補唯一約束。** 多題待確認的根源是 V1 缺少 unique：`notification`（一個行程多筆通知，#8）、`user_level`（一位使用者多筆，#22）、`favorite`（重複收藏，`V1:382–390` 沒有 `UNIQUE (user_id, tour_id)`，只靠 `middlewares/collection/index.js:68–70` 先查再寫）、`coupon.code`（#38）。 | **A 不補（V3 只建 view／function）**。後果：重複資料由 view 的規則處理（#8、#22），並行收藏仍可能寫入重複列。<br>**B 補唯一約束**（新增 migration）。後果：從根源消除重複，但動到 V1 的表結構，既有重複資料要先清理，範圍超出 P1a 與「V3 只建 view／function」。 | **A**。理由：controller 與現有流程都不需要約束就能運作，約束屬功能階段（P5 收藏、P6 優惠卷）的設計；P1b 不擴大範圍。 | 採用建議（A） |
 
 #### 契約已記錄、不需決定的問題（供 P2 以後排程）
 
@@ -1445,4 +1449,5 @@
 - 角色大小寫：管理者 PATCH 只接受 `admin`／`user`（`admin_Validator.js:4,67–74`），降權成 `user` 後通不過 `authRole('User')`（`routes/collection.js:11`、`routes/purchases.js:11,17`）；seed 的 Bob 是 `admin`，無法呼叫收藏與已購買的 GET（§3 C 組共通觀察）。
 - 收藏：`GET /collection/info/all` 每次送兩次回應（`collection.js:39–64`）；`POST` 的 `tour_id` 不驗 UUID，格式錯誤時 500（`middlewares/collection/index.js:46`）（§3 `user_favorite`）。
 - 已購買：`middlewares/purchases/index.js:34` 的 404 永遠不會觸發（§3 `user_order_item`）。
-- 依 §4.1 與 §4.2 的決定，P1b 的 seed 需要調整：優惠卷 `discount` 與 `description`（#1）、促銷通知日期（#9）、`point_record` 與訂單的點數資料（#2、#3）、`payment` 資料與各 `payment_status`（#4、#5、#6）、主鍵與代碼（(a)、(d2)）、購物車數量（(d3)）、收藏時間（#43）。
+- 優惠卷 `discount` 的運算（§4.1 #1 定案 B ＝ 折抵金額）：`controllers/discounts.js:38`、`controllers/checkout.js:155` 做 `total_price * discount`，在金額語意下會算出數百倍金額（例：`total_price` 3576.74 × `discount` 100.0 → 357,674）；要改成 `total_price - discount`（`orders.discount_price` 為折後應付金額，與點數路徑 `checkout.js:165` 同語意），屬 P4 結帳。P4 修好之前優惠卷結帳金額是錯的。V3 view 照金額語意輸出原值，不為了配合乘法而轉換數值。`coupon_Validator.js:45` 的 `> 0` 無上限與金額語意相容；是否加上限（例如不得超過訂單金額）只是 P4／P6 的觀察，不是決定。
+- 依 §4.1 與 §4.2 的決定，P1b 的 seed 需要調整：優惠卷只修 `TRAVEL10P` 的 `description`（或數值），讓它與折抵金額語意一致（`discount` 的 5 個值 100、50、10、300、20 保留不改，#1 定案 B）、促銷通知日期（#9）、`point_record` 與訂單的點數資料（#2、#3）、`payment` 資料與各 `payment_status`（#4、#5、#6）、主鍵與代碼（(a)、(d2)）、購物車數量（(d3)）、收藏時間（#43）。
