@@ -1,4 +1,5 @@
 """共用 fixture：API session、DB 連線、測試使用者、JWT。"""
+import importlib.util
 import os
 import uuid
 from pathlib import Path
@@ -17,6 +18,15 @@ FRONTEND_BASE = os.getenv("TEST_FRONTEND_BASE", "http://localhost:5173")
 MAILPIT_BASE = os.getenv("TEST_MAILPIT_BASE", "http://localhost:8025")
 MOCK_OAUTH_BASE = os.getenv("TEST_MOCK_OAUTH_BASE", "http://localhost:8090")
 DEFAULT_TIMEOUT = 10
+BUILD_SCRIPT = ROOT / "db" / "seed-build" / "build_seed.py"
+
+
+def load_build_seed():
+    """seed 產生腳本不在 package 裡，用路徑載入。"""
+    spec = importlib.util.spec_from_file_location("build_seed", BUILD_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class Api(requests.Session):
