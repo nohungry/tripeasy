@@ -70,7 +70,7 @@
 >   - **刪除來源檔的列後重建**：`orders`（5 筆）、`order_item`（10 筆）、`point_record`（2 筆）。
 >   - **純新增**：`payment`（來源檔沒有資料列）。
 >   - **保留來源檔的列、逐列修改，再加新增列**：`favorite`（7 筆保留、改 `created_at`，加 2 筆）、`notification`（促銷日期；加新行程的通知）、`cart_item`（`start_date`；移除被移除購物車底下的項目）、`review`（加 3 則 `web`，並設 5 則 `web` 的 `created_at`）、`user_coupon`（4 列保留，只改指向的訂單）、`coupon`（代碼與一則 `description`）、`tour`（加 13 個行程）。
->   - 新增表（`orders`、`order_item`、`point_record`、`favorite`、`payment`、`notification`）的主鍵自然鍵形狀為 `{table}:{email}:{title}[:{type}]`（`notification` 的 `{type}` 為 `促銷`／`異動`；`point_record` 一定要含 `type`，因為同一張訂單可有 `新增` 與 `減少` 兩筆），由 Task 3 實作，形狀同 Global Constraints 第 5 條。
+>   - 新增列的主鍵自然鍵形狀，由 Task 3 實作，形狀同 Global Constraints 第 5 條：`orders`、`order_item`、`favorite`、`payment` 用 `{table}:{email}:{title}`；`point_record` 用 `point_record:{email}:{title}:{type}`（同一張訂單可有 `新增` 與 `減少` 兩筆，一定要含 `type`）；`notification` 沒有使用者欄位，用 `notification:{title}:{type}`（`{type}` 為 `促銷`／`異動`，每個行程至多 1 列通知，所以不重複）。
 > - 本節沒有寫到的欄位（行程的國家、地區、圖片、內文，訂單項目的出發日期，新增行程的子表等）由 Task 3 決定，不影響下面任何斷言。
 
 **1. 筆數（Task 3 的 `SEED_COUNTS` 依此）**
@@ -239,14 +239,14 @@
 - 價格依據：行程 `price`（來源檔 `:204–:403` 的 tour 區段）北海道 45000、馬爾地夫 98000、義大利 72000、紐西蘭 85000、大阪 15000、高雄 4200、巴黎 22000、首爾 9500、曼谷 9000，加上第 3 項固定的沖繩 8800；`total_price` 都是整數且為 10 的倍數。
 - 篩選結果（#6 定案 B，只含 `order_item.payment_status = 1`）：`user_orders`／`user_order_item` 對 alice 5 筆（#1、#4、#7、#10、#15）、bob 5 筆（#2、#6、#8、#12、#13）、carol 5 筆（#3、#5、#9、#11、#14）。#16、#17 的狀態落在 #5 定案 C（`IN (-1, 0, 1)`）的範圍內，#18、#19、#20 不在；`hotel_booking`／`restaurant_booking` 只數住宿與餐廳類項目，且訂單項目的出發日期由 Task 3 決定，所以這裡不定 `booking_count` 的目標值。
 - 折抵的基底：優惠卷與點數都以 `total_price` 為基底，不與促銷價疊加（`checkout.js:155,165`），所以訂單 #2 的 `orders.discount_price` 44990 高於 `order_item.discount_price` 40500 是照 controller 行為，不是錯誤。
-- 訂單時間：`orders.created_at` 與其 `order_item.created_at` ＝ 載入時間減（21 − #）天（#1 為 −20 天，#20 為 −1 天），20 筆兩兩不同，讓 `user_orders` 的 `ORDER BY orders.created_at DESC`（#45）可測；alice 已付款訂單依序為 #15、#10、#7、#4、#1。
+- 訂單時間：`orders.created_at` 與其 `order_item.created_at` ＝ 載入時間減 N 天，20 筆兩兩不同，讓 `user_orders` 的 `ORDER BY orders.created_at DESC`（#45）可測。帶促銷價的訂單必須落在該促銷期間內（#13：促銷價是下單當時有效的價格）：北海道的 #1、#2、#3 ＝ −9、−8、−7 天（期間 −10～+20 天），馬爾地夫的 #4、#5 ＝ −4、−3 天（期間 −5～+25 天）；其餘 #6～#20 ＝ −（36 − #）天，即 #6 −30 天、#7 −29、#8 −28 … #20 −16 天。alice 已付款訂單由新到舊依序為 #4（−4）、#1（−9）、#15（−21）、#10（−26）、#7（−29）。
 - `user_coupon`（4 列，來源檔 `:911` 起）只改 `order_id` 與 `status` 的對應，`status` 不變：bob 的 `TRV010` → 訂單 #2（`status 1`）、bob 的 `VIP300` → 訂單 #6（`1`）、alice 的 `VIP300` → 訂單 #4（`1`）、carol 的 `TRV010` 未使用（`order_id` 為 `NULL`，`0`）。`orders.discount_price` ＝ `total_price − coupon.discount`（#1 定案 B：折抵金額；與 `checkout.js:165` 同為折後應付金額）。
 
 `payment`（15 筆，每張 `payment_status = 1` 的訂單 #1～#15 各 1 筆，其餘訂單沒有——#18（已取消）、#19（已退款）刻意不建 `payment`，只滿足「已付款的訂單有 1 筆」；欄位順序與值的寫法照 `controllers/newebpay.js:182–199`，V1 `payment` 表 `V1:308–323`）：
 
 | 欄位 | 值 |
 |---|---|
-| `payment_id` | 由（使用者 `email`，行程 `title`）決定性產生的 v4 形狀 id（Task 3 決定鍵的寫法） |
+| `payment_id` | 由 `payment:{email}:{title}` 決定性產生的 v4 形狀 id（形狀見本節開頭各表處理方式） |
 | `user_id`、`order_id` | 該訂單的 `user_id`、`order_id` |
 | `address`、`phone` | 同該訂單的 `orders.address`、`orders.phone` |
 | `payment_method` | 同該訂單的 `orders.payment_type`（`newebpay.js:194` 寫 `result.PaymentType`；seed 自定值，非藍新實際格式，真實的 `PaymentType` 是 `CREDIT` 之類的代碼） |

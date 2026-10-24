@@ -277,7 +277,7 @@ git commit -m "test: seed 資料量與資料目標的測試 🔴"
 
 - [ ] **Step 3: 寫 `extra_seed.sql` 並接進產生器**
   - 格式與 fakedata 相同（`INSERT INTO ... VALUES ...;`）。`extra_seed.sql` 放：補的行程與其子表（`tour_detail`、`hotel`／`hotel_room`、`restaurant`／`restaurant_business`／`restaurant_menu`）、新行程的 `notification`、重建後的 `orders`／`order_item`／`point_record`（契約 §0.1 第 9、10 項的 20 張訂單與 18 筆點數）、純新增的 `payment`，以及 `favorite`、`review` 的新增列。
-  - 手寫主鍵用可讀的佔位字面值（例如 `'extra-tour-01'`），外鍵可以指到來源檔的舊 id；`remap_ids` 會一起換掉（Global Constraints 第 5 條）。新增表的自然鍵形狀為 `{table}:{email}:{title}[:{type}]`（契約 §0.1 各表處理方式）。
+  - 手寫主鍵用可讀的佔位字面值（例如 `'extra-tour-01'`），外鍵可以指到來源檔的舊 id；`remap_ids` 會一起換掉（Global Constraints 第 5 條）。新增列的自然鍵形狀見契約 §0.1 各表處理方式（`{table}:{email}:{title}`；`point_record` 加 `:{type}`；`notification` 為 `notification:{title}:{type}`）。
   - 日期一律寫成 `2025-05-20` 基準的字面值，交給既有的 `shift_dates` 平移。`orders.created_at` 等「載入時間減 N 天」的欄位用 `CURRENT_TIMESTAMP - INTERVAL 'N days'`。
   - `build_seed.py` 的 `build()` 在 `parse_inserts` 後：(1) **丟棄來源檔的 `orders`（5 列）、`order_item`（10 列）、`point_record`（2 列）**，每張表 assert 丟棄的列數（P1b 計畫 2026-10-25 controller 裁決，理由見契約 §0.1：來源金額非 10 的倍數、一張訂單多個項目，無法只改狀態滿足 #3、#4–#6）；(2) 把 `extra_seed.sql` 的 INSERT 依表名併到來源檔的同一張表（沒有的表就附加在後）；(3) 再做資料列改寫。
   - 對來源檔既有列的逐列修改仍放在資料列改寫步驟，每項 assert 命中的列數：促銷日期（`notification`）、`cart_item.start_date`（含移除被移除購物車的項目）、收藏時間（`favorite` 7 列）、`review` 的 `created_at`、`user_coupon` 指向的訂單。
