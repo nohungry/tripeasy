@@ -54,9 +54,9 @@
 4. **重寫後要重新對齊本契約的所有 `db/seed/R__seed.sql:N` 行號與寫死的 seed 識別值**（例如 `99999999-cccc-dddd-eeee-999999999999`、`c3d4e5f6-7890-abcd-ef12-34567890abcd`、`11111111-aaaa-bbbb-cccc-111111111111`）。可重用 `.superpowers/sdd/2026-10-20-p1a-routes-seed-contract/task-7-selfcheck.py` 的作法檢查，或改用穩定的錨點（coupon `code`、user `email`、tour `title`）。
 5. **既有 volume 的處理（使用者 2026-10-23 決定：不加 migrate guard）**。`R__seed.sql` 靠主鍵 `ON CONFLICT DO NOTHING`；V1 的 `"user".email`、`coupon.code`、`tour` 都沒有 unique。主鍵一改，保留舊 volume 重跑 Flyway 時舊列與新列並存（例如兩筆 `alice@example.com`），migrate 仍會成功，`test_seed_is_rerunnable` 只重跑同一份檔案所以抓不到。因此：
    - 主鍵改寫後，**由使用者自己執行** `docker compose down -v`（agent 不代跑）。
-   - 加 seed 測試：關鍵表的筆數用 exact count（例如 seed `user` 3 筆、`tour` 10 筆、`coupon` 5 筆）、seed email 無重複，讓重複的 volume 直接失敗。
+   - 加 seed 測試：關鍵表的筆數用 exact count（各表筆數見下方 seed 目標值小節的第 1 項）、seed email 無重複，讓重複的 volume 直接失敗。
    - 新 id 要**從自然鍵決定性產生**（例如 `tour:<title>`、`user:<email>`、`coupon:<code>`、`country:<name>`，每張表各自的鍵），**不用**現行 `fix_generated_ids` 的位置序號 `seed-row-{i}`（`db/seed-build/build_seed.py:73–82`），日後增刪 seed 列 id 才不會跟著移動。
-   - **新舊 id 對照依欄位所屬的表建立，不可對字面值整份取代**。來源檔的手寫主鍵在不同表重複使用同一個字面值：`db/seed/R__seed.sql` 現行的 `11111111-aaaa-bbbb-cccc-111111111111` 同時是 `coupon.coupon_id`（`:142`）、`tour.tour_id`（`:200`）、`country.country_id`（`:649`），三者要換成各自表的新 id；對字面值整份取代會讓三張表拿到同一個新值，或把 `cart_item.tour_id`、`order_item.tour_id` 等外鍵指到錯的表（理由同 P1b 計畫 Global Constraints 第 5 條：外鍵依欄位名稱對應被參照的表）。
+   - **新舊 id 對照依欄位所屬的表建立，不可對字面值整份取代**。來源檔的手寫主鍵在不同表重複使用同一個字面值：`db/seed/R__seed.sql` 現行的 `11111111-aaaa-bbbb-cccc-111111111111` 是至少 6 張表的主鍵（另有 `restaurant_menu`、`hotel`、`notification` 等），其中在 (a) 改寫範圍內的是 `coupon.coupon_id`（`:142`）、`tour.tour_id`（`:200`）、`country.country_id`（`:649`），三者要換成各自表的新 id；對字面值整份取代會讓三張表拿到同一個新值，或把 `cart_item.tour_id`、`order_item.tour_id` 等外鍵指到錯的表（理由同 P1b 計畫 Global Constraints 第 5 條：外鍵依欄位名稱對應被參照的表）。
    - 新 id 必須是 **v4 形狀**（版本位 `4`、variant 位 `8`／`9`／`a`／`b`）；現行 `fix_generated_ids` 用 `uuid.uuid5` 產生的是 v5，會被 v4 專用驗證器擋下（`admin_Validator.js` 接受 v5，其餘不接受，見 §4.2 (a)）。
 6. **seed 測試**：每個被 v4 專用驗證器擋住的主鍵都要是 v4——至少涵蓋 `tour`、`coupon`、`user`、`country`，以及 `cart`、`cart_item`、`orders`、`order_item`。
 
@@ -66,7 +66,11 @@
 >
 > - **載入日**＝seed 載入那天的 `CURRENT_DATE`（`build_seed.py` 的 `DATE_ANCHOR` 平移）。「+N 天」＝載入日加 N 天，「−N 天」＝載入日減 N 天；日期欄位取當日 `00:00:00`，期間的結束日取當日 `23:59:59`（與來源檔的寫法相同）。「載入時間」＝載入當下的 `CURRENT_TIMESTAMP`。
 > - 資料列以自然鍵稱呼：使用者用 `email`（`alice@example.com`、`bob@example.com`、`carol@example.com`）、優惠卷用 `code`、行程用 `title`；訂單與訂單項目用（使用者 `email`，行程 `title`）——下面 20 筆訂單中這組值不重複。
-> - 本節的訂單、`order_item`、`payment`、`point_record`、`favorite` 整批取代來源檔同名表的列（來源檔的訂單數字如 `total_price` 3576.74 乘 10% 不是整數，且訂單與項目的付款狀態不一致，無法調成符合 #3、#4–#6，所以不是逐列修改）。`user_coupon` 保留來源檔的 4 列，只改指向的訂單。
+> - **各表處理方式（P1b 計畫 2026-10-25 controller 裁決：來源金額非 10 的倍數、一張訂單多個項目，無法只改狀態滿足 #3、#4–#6；#3 定案已含「與相關訂單」）**：
+>   - **刪除來源檔的列後重建**：`orders`（5 筆）、`order_item`（10 筆）、`point_record`（2 筆）。
+>   - **純新增**：`payment`（來源檔沒有資料列）。
+>   - **保留來源檔的列、逐列修改，再加新增列**：`favorite`（7 筆保留、改 `created_at`，加 2 筆）、`notification`（促銷日期；加新行程的通知）、`cart_item`（`start_date`；移除被移除購物車底下的項目）、`review`（加 3 則 `web`，並設 5 則 `web` 的 `created_at`）、`user_coupon`（4 列保留，只改指向的訂單）、`coupon`（代碼與一則 `description`）、`tour`（加 13 個行程）。
+>   - 新增表（`orders`、`order_item`、`point_record`、`favorite`、`payment`、`notification`）的主鍵自然鍵形狀為 `{table}:{email}:{title}[:{type}]`（`notification` 的 `{type}` 為 `促銷`／`異動`；`point_record` 一定要含 `type`，因為同一張訂單可有 `新增` 與 `減少` 兩筆），由 Task 3 實作，形狀同 Global Constraints 第 5 條。
 > - 本節沒有寫到的欄位（行程的國家、地區、圖片、內文，訂單項目的出發日期，新增行程的子表等）由 Task 3 決定，不影響下面任何斷言。
 
 **1. 筆數（Task 3 的 `SEED_COUNTS` 依此）**
@@ -108,7 +112,7 @@
 | `backpacker` | `spot`（5） | 巴黎歷史建築巡禮、首爾咖啡文青小旅行；**新增** 京都古寺散步、倫敦博物館漫遊、新加坡花園城市導覽 | — |
 | `backpacker` | `hotel`（5） | 曼谷設計旅店探索；**新增** 沖繩海景度假旅店、峇里島別墅旅宿、河內古城精品旅店、釜山海岸旅店 | 清邁自然旅宿體驗（來源檔 `:350` 起，`status = 2`，保留） |
 
-`home.js` 實際用到的每組 (大分類, 小分類) 與條件（`limit` 預設 4，`home_Validator.js:47`；2 頁需要至少 5 列）：
+`home.js` 實際用到的每組 (大分類, 小分類) 與條件（`home_Validator.js:47` 的預設 `limit` 是 4，但首頁 middleware 的預設值不會寫回 `req.query`〔`middlewares/home/index.js:7`，見 §4.2 末段〕，所以測試要明確帶 `limit=4`；2 頁需要至少 5 列）：
 
 | 區塊（API 參數） | 未登入／已登入的行號 | (大分類, 小分類) | 額外條件 | 目標列數 |
 |---|---|---|---|---|
@@ -123,7 +127,7 @@
 
 **5. 熱門與收藏排行（#4、#7、#23、#24）**
 
-「購買數」＝該行程 `order_item.payment_status = 1` 的**列數**（#4 定案 B；一個項目算 1，不乘 `quantity`）；「收藏數」＝該行程的 `favorite` 列數。名次欄只列出購買數或收藏數**唯一**的名次；其餘行程的數值都是 0，並列者以 `tour_id` 升冪決定先後（#24），測試不 assert 其順序。購買數與收藏數都以第 8、9 項的資料為準。
+「購買數」＝該行程 `order_item.payment_status = 1` 的**列數**（#4 定案 B 只定「只算 `payment_status = 1`」；計數方式依 §1 `tour_travel_popular` 的 controller 裁決 2026-10-25：一個項目算 1，不乘 `quantity`；本節資料兩種算法名次相同）；「收藏數」＝該行程的 `favorite` 列數。名次欄只列出購買數或收藏數**唯一**的名次；其餘行程的數值都是 0，並列者以 `tour_id` 升冪決定先後（#24），測試不 assert 其順序。購買數與收藏數都以第 8、9 項的資料為準。
 
 | 區塊 | 行程 | 購買數 | 購買排行 | 收藏數 | 收藏排行 |
 |---|---|---|---|---|---|
@@ -233,27 +237,29 @@
 | 20 | alice | 紐西蘭壯麗景觀自駕遊 | **4** | 1 | 85000 | `NULL` | `cvs` | `none` | `NULL` |
 
 - 價格依據：行程 `price`（來源檔 `:204–:403` 的 tour 區段）北海道 45000、馬爾地夫 98000、義大利 72000、紐西蘭 85000、大阪 15000、高雄 4200、巴黎 22000、首爾 9500、曼谷 9000，加上第 3 項固定的沖繩 8800；`total_price` 都是整數且為 10 的倍數。
-- 篩選結果（#6 定案 B，只含 `order_item.payment_status = 1`）：`user_orders`／`user_order_item` 對 alice 5 筆（#1、#4、#7、#10、#15）、bob 5 筆（#2、#6、#8、#12、#13）、carol 5 筆（#3、#5、#9、#11、#14）。`booking_count`（#5 定案 C，`IN (-1, 0, 1)`）會計入 #16、#17 與 15 筆已付款訂單，不計 #18、#19、#20。
+- 篩選結果（#6 定案 B，只含 `order_item.payment_status = 1`）：`user_orders`／`user_order_item` 對 alice 5 筆（#1、#4、#7、#10、#15）、bob 5 筆（#2、#6、#8、#12、#13）、carol 5 筆（#3、#5、#9、#11、#14）。#16、#17 的狀態落在 #5 定案 C（`IN (-1, 0, 1)`）的範圍內，#18、#19、#20 不在；`hotel_booking`／`restaurant_booking` 只數住宿與餐廳類項目，且訂單項目的出發日期由 Task 3 決定，所以這裡不定 `booking_count` 的目標值。
+- 折抵的基底：優惠卷與點數都以 `total_price` 為基底，不與促銷價疊加（`checkout.js:155,165`），所以訂單 #2 的 `orders.discount_price` 44990 高於 `order_item.discount_price` 40500 是照 controller 行為，不是錯誤。
+- 訂單時間：`orders.created_at` 與其 `order_item.created_at` ＝ 載入時間減（21 − #）天（#1 為 −20 天，#20 為 −1 天），20 筆兩兩不同，讓 `user_orders` 的 `ORDER BY orders.created_at DESC`（#45）可測；alice 已付款訂單依序為 #15、#10、#7、#4、#1。
 - `user_coupon`（4 列，來源檔 `:911` 起）只改 `order_id` 與 `status` 的對應，`status` 不變：bob 的 `TRV010` → 訂單 #2（`status 1`）、bob 的 `VIP300` → 訂單 #6（`1`）、alice 的 `VIP300` → 訂單 #4（`1`）、carol 的 `TRV010` 未使用（`order_id` 為 `NULL`，`0`）。`orders.discount_price` ＝ `total_price − coupon.discount`（#1 定案 B：折抵金額；與 `checkout.js:165` 同為折後應付金額）。
 
-`payment`（15 筆，每張 `payment_status = 1` 的訂單 #1～#15 各 1 筆，其餘訂單沒有；欄位順序與值的寫法照 `controllers/newebpay.js:182–199`，V1 `payment` 表 `V1:308–323`）：
+`payment`（15 筆，每張 `payment_status = 1` 的訂單 #1～#15 各 1 筆，其餘訂單沒有——#18（已取消）、#19（已退款）刻意不建 `payment`，只滿足「已付款的訂單有 1 筆」；欄位順序與值的寫法照 `controllers/newebpay.js:182–199`，V1 `payment` 表 `V1:308–323`）：
 
 | 欄位 | 值 |
 |---|---|
 | `payment_id` | 由（使用者 `email`，行程 `title`）決定性產生的 v4 形狀 id（Task 3 決定鍵的寫法） |
 | `user_id`、`order_id` | 該訂單的 `user_id`、`order_id` |
 | `address`、`phone` | 同該訂單的 `orders.address`、`orders.phone` |
-| `payment_method` | 同該訂單的 `orders.payment_type`（`newebpay.js:190` 寫 `result.PaymentType`） |
+| `payment_method` | 同該訂單的 `orders.payment_type`（`newebpay.js:194` 寫 `result.PaymentType`；seed 自定值，非藍新實際格式，真實的 `PaymentType` 是 `CREDIT` 之類的代碼） |
 | `payment_status` | `1` |
-| `discount_price` | 同該訂單的 `orders.discount_price`（`NULL` 就寫 `NULL`，`newebpay.js:193`） |
-| `return_data` | JSON 字串 `{"Status":"SUCCESS","Result":{"MerchantOrderNo":"<該訂單的 order_id>","PaymentType":"<payment_method>","Message":"付款成功"}}` |
+| `discount_price` | 同該訂單的 `orders.discount_price`（`NULL` 就寫 `NULL`，`newebpay.js:196`） |
+| `return_data` | seed 自定值，非藍新實際格式：JSON 字串 `{"Status":"SUCCESS","Result":{"MerchantOrderNo":"<該訂單的 order_id>","PaymentType":"<payment_method>","Message":"付款成功"}}` |
 | `return_time`、`result_time` | 載入時間 |
 | `result_info` | `付款成功` |
 | `created_at`、`updated_at` | 預設（載入時間） |
 
 **10. 點數（#2、#3）**
 
-`point_record` 共 18 筆，來源檔 `:905–:907` 的 2 筆（`新增 1610`、`減少 -436`，對應一張未付款訂單，與 #3 規則不符）刪除，改為下表。取整：每張訂單的 `total_price` 都是 10 的倍數，所以「10%」恰為整數，不需要取整規則（#3 沒有指定取整方式，見下方說明）。
+`point_record` 共 18 筆，來源檔 `:906–:907` 的 2 筆（`新增 1610`、`減少 -436`，對應一張未付款訂單，與 #3 規則不符）刪除，改為下表。取整：每張訂單的 `total_price` 都是 10 的倍數，所以「10%」恰為整數，不需要取整規則（#3 沒有指定取整方式，見下方說明）。
 
 - **`新增`（15 筆）**：每張 `payment_status = 1` 的訂單（#1～#15）各 1 筆，`point` ＝ `total_price × 0.1`，`order_id` ＝ 該訂單：
 
@@ -278,6 +284,7 @@
 
 **12. 說明：本節沒有定案、由 Task 3 或使用者另行處理的事**
 
+- `cart.total_price` 與購物車內項目的金額不一致（來源檔既有），本節不處理，也不 assert。
 - #3 只定了 1 點折 0.8 元與 10% 回饋，沒有指定 10% 的取整方式；本節用 10 的倍數的金額避開。日後改金額時若出現非 10 的倍數，要先請使用者定取整方式。
 - 新增的 13 個行程只定了 `type`、`item`、`title`、`status`、促銷與少數欄位；它們的 `tour_detail`、`hotel`／`hotel_room`、`restaurant` 等子表是否補、補多少，由 Task 3 決定。沒有子表的行程，詳情頁會走到契約已記錄的「function 回 0 列時 `product.js:209` TypeError」（§4.2 末段），不影響本節的任何斷言。
 
@@ -547,7 +554,7 @@
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | tour_id（英文，不是中文） | uuid | `tour.tour_id` | `home.js:17,26,70,79`（`tf.tour_id`） | JOIN 條件 |
-  | 購買排行 | integer（【定案 #25】） | 依 `order_item`（購買數）由多到少的名次，1 為最熱門；【定案 #4】購買數只算 `payment_status = 1`，【定案 #24】`ROW_NUMBER()` 並加次要排序 | `home.js:18,27,71,80` | ORDER BY ASC，數字小的在前 |
+  | 購買排行 | integer（【定案 #25】） | 依 `order_item`（購買數）由多到少的名次，1 為最熱門；【定案 #4】購買數只算 `payment_status = 1`，【定案 #24】`ROW_NUMBER()` 並加次要排序；**購買數是 `order_item` 的列數，不是 `quantity` 加總**（controller 裁決 2026-10-25：#4 只定狀態，未定計數方式；以 seed 資料兩種算法名次相同） | `home.js:18,27,71,80` | ORDER BY ASC，數字小的在前 |
 
   `SELECT *` 讓 `tour_id` 與 `購買排行` 一起進入 response（`tour_id` 是額外的英文欄位）。
 
