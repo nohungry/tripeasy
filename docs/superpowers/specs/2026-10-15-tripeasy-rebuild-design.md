@@ -120,7 +120,7 @@
    - 語意不明確的地方要列在契約裡，**請使用者確認**。目前已知兩處：
      - 點數的累積和扣抵規則（`checkout.js:159`、`discounts.js:66` 的 `point * 0.8`）
      - `coupon.discount` 是折扣倍率還是折抵金額（`discounts.js:38`）
-4. 寫 `migrations/V3__views_functions.sql`，照程式碼期待的中文欄位名稱，**controller 不改**。
+4. 寫 `backend/migrations/R__views_functions.sql`（repeatable migration；2026-10-23 P1b 計畫改用 repeatable，原寫 `migrations/V3__views_functions.sql`，理由見該計畫 Global Constraints 第 1 條），照程式碼期待的中文欄位名稱，**controller 不改**。
 
 ### 3.2 Seed
 - 以 `tripeasy_fakedata.sql` 為基礎，改寫成 `db/seed/R__seed.sql`（Flyway 的 repeatable migration），記下來源。

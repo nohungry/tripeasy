@@ -1,4 +1,4 @@
-# TripEasy DB 契約（V3 views / functions）
+# TripEasy DB 契約（`backend/migrations/R__views_functions.sql`）
 
 > 狀態：定案（2026-10-22 使用者確認）；2026-10-23 final review 補充（§0.1、#11、(a) 範圍） · 依據 spec 3.1 · 從 backend 程式碼反推（四份既有 SQL 都沒有這些物件）
 
@@ -6,7 +6,8 @@
 
 - 範圍：程式碼查詢了、但 migration 沒有建立的 21 個物件（12 個 view、9 個 function）。
 - 反推方法：見 `docs/superpowers/plans/2026-10-20-p1a-routes-seed-contract.md` 的「反推方法」。
-- 原則：V3 照程式碼期待的中文欄位名建立，**controller 不改**。
+- 原則：view／function 照程式碼期待的中文欄位名建立，**controller 不改**。
+- 檔案位置（2026-10-23 P1b 計畫改用 repeatable migration）：21 個物件放在 `backend/migrations/R__views_functions.sql`，不再是 spec 3.1 原寫的 versioned V3 migration。理由：versioned migration 套用後內容不能再改（Flyway validate 會失敗），開發中每次修 SQL 都要 `down -v`；P2 起的重構規則又要求動到 view 時同步更新。repeatable migration 內容一改，下次 `migrate` 就重新套用；檔案開頭先 `DROP ... IF EXISTS ... CASCADE` 全部 21 個物件，再依相依順序 `CREATE`（P1b 計畫 Global Constraints 第 1 條）。文中其餘「V3」指這一批 view／function，不是檔名。
 - 行號以 backend `phase-1` 分支、P1a Task 1 完成後的版本為準。
 
 ### 識別字對照（`CREATE` 時的寫法）
@@ -41,9 +42,9 @@
 
 ### 0.1 P1b 開工前待補
 
-> 2026-10-23 final review 補充。下列事項不需要使用者再決定（決定已在 §4），但 P1b 要在寫 V3 SQL 之前或同時釘住，否則 SQL 作者會停住或各自選擇，之後又要依 spec 重構規則一起改 view、契約與契約測試。
+> 2026-10-23 final review 補充。下列事項不需要使用者再決定（決定已在 §4），但 P1b 要在寫 view／function 的 SQL 之前或同時釘住，否則 SQL 作者會停住或各自選擇，之後又要依 spec 重構規則一起改 view、契約與契約測試。
 
-1. **seed 目標值要先寫成具體值**（再寫 seed 測試）：
+1. **seed 目標值要先寫成具體值**（再寫 seed 測試）。具體值已寫在本節最後的小節（標題見該節），以下四點是來源與依據：
    - #9 促銷通知日期（§4.1 #9；現值 `db/seed/R__seed.sql:590–591`、`:601–602`）。
    - #43 收藏時間（§4.1 #43；現值 `:896–902`，7 筆同一個 `CURRENT_TIMESTAMP`）。
    - #4–#6 `payment` 資料與各 `payment_status`（§4.1 #4、#5、#6；現值 `orders` `:790–794`、`order_item` `:800–809`）。
@@ -55,8 +56,230 @@
    - 主鍵改寫後，**由使用者自己執行** `docker compose down -v`（agent 不代跑）。
    - 加 seed 測試：關鍵表的筆數用 exact count（例如 seed `user` 3 筆、`tour` 10 筆、`coupon` 5 筆）、seed email 無重複，讓重複的 volume 直接失敗。
    - 新 id 要**從自然鍵決定性產生**（例如 `tour:<title>`、`user:<email>`、`coupon:<code>`、`country:<name>`，每張表各自的鍵），**不用**現行 `fix_generated_ids` 的位置序號 `seed-row-{i}`（`db/seed-build/build_seed.py:73–82`），日後增刪 seed 列 id 才不會跟著移動。
+   - **新舊 id 對照依欄位所屬的表建立，不可對字面值整份取代**。來源檔的手寫主鍵在不同表重複使用同一個字面值：`db/seed/R__seed.sql` 現行的 `11111111-aaaa-bbbb-cccc-111111111111` 同時是 `coupon.coupon_id`（`:142`）、`tour.tour_id`（`:200`）、`country.country_id`（`:649`），三者要換成各自表的新 id；對字面值整份取代會讓三張表拿到同一個新值，或把 `cart_item.tour_id`、`order_item.tour_id` 等外鍵指到錯的表（理由同 P1b 計畫 Global Constraints 第 5 條：外鍵依欄位名稱對應被參照的表）。
    - 新 id 必須是 **v4 形狀**（版本位 `4`、variant 位 `8`／`9`／`a`／`b`）；現行 `fix_generated_ids` 用 `uuid.uuid5` 產生的是 v5，會被 v4 專用驗證器擋下（`admin_Validator.js` 接受 v5，其餘不接受，見 §4.2 (a)）。
 6. **seed 測試**：每個被 v4 專用驗證器擋住的主鍵都要是 v4——至少涵蓋 `tour`、`coupon`、`user`、`country`，以及 `cart`、`cart_item`、`orders`、`order_item`。
+
+#### seed 目標值（定案）
+
+> 2026-10-23 P1b Task 1 補。Task 2、3 與 seed 測試只引用本節，不自己決定數值。本節的每個數字都標出依據：§4 題號、程式碼行號，或「來源檔」（`db/seed-build/tripeasy_fakedata.sql`，行號為該檔行號）。
+>
+> - **載入日**＝seed 載入那天的 `CURRENT_DATE`（`build_seed.py` 的 `DATE_ANCHOR` 平移）。「+N 天」＝載入日加 N 天，「−N 天」＝載入日減 N 天；日期欄位取當日 `00:00:00`，期間的結束日取當日 `23:59:59`（與來源檔的寫法相同）。「載入時間」＝載入當下的 `CURRENT_TIMESTAMP`。
+> - 資料列以自然鍵稱呼：使用者用 `email`（`alice@example.com`、`bob@example.com`、`carol@example.com`）、優惠卷用 `code`、行程用 `title`；訂單與訂單項目用（使用者 `email`，行程 `title`）——下面 20 筆訂單中這組值不重複。
+> - 本節的訂單、`order_item`、`payment`、`point_record`、`favorite` 整批取代來源檔同名表的列（來源檔的訂單數字如 `total_price` 3576.74 乘 10% 不是整數，且訂單與項目的付款狀態不一致，無法調成符合 #3、#4–#6，所以不是逐列修改）。`user_coupon` 保留來源檔的 4 列，只改指向的訂單。
+> - 本節沒有寫到的欄位（行程的國家、地區、圖片、內文，訂單項目的出發日期，新增行程的子表等）由 Task 3 決定，不影響下面任何斷言。
+
+**1. 筆數（Task 3 的 `SEED_COUNTS` 依此）**
+
+| 表 | 筆數 | 說明 |
+|---|---|---|
+| `"user"`／`user_level` | 3／3 | 不變（來源檔 `:30–:82`、`:116–:152`）；`user_level.travel_point` 不變：alice 1500、bob 3000、carol 800（見第 10 項） |
+| `coupon` | 5 | 不變（第 2 項只改代碼與一則 `description`） |
+| `tour` | 23 | `status = 1` 共 22、`status = 2` 共 1（第 3 項） |
+| `notification` | 9 | `促銷` 7、`異動` 2（第 6 項） |
+| `cart`／`cart_item` | 3／6 | 第 7 項 |
+| `orders`／`order_item` | 20／20 | 每張訂單恰好 1 個項目（與 `checkout.js:20–33,42–56` 只取購物車第一個項目一致，見 §2 `user_orderList` 邊界）；第 9 項 |
+| `payment` | 15 | 每張 `payment_status = 1` 的訂單 1 筆（第 9 項） |
+| `point_record` | 18 | `新增` 15、`減少` 3（第 10 項） |
+| `favorite` | 9 | 第 8 項 |
+| `review` | 13 | 來源檔 10 則加 3 則 `web`；`type = 'web'` 共 5 則（第 11 項） |
+| `user_coupon` | 4 | 第 9 項最後一段 |
+
+**2. 優惠卷（(d2)、#1 定案 B）**
+
+| 舊 `code`（來源檔） | 新 `code` | `discount` | `description` |
+|---|---|---|---|
+| `WELCOME100` | `WEL100` | `100.0` | 不變：`首次註冊禮，折抵新台幣 100 元` |
+| `SUMMER50` | `SUM050` | `50.0` | 不變：`夏日旅遊季，折抵新台幣 50 元` |
+| `TRAVEL10P` | `TRV010` | `10.0` | **改成 `旅遊商品折抵新台幣 10 元`**（原 `旅遊商品 10% 折扣 (最高折抵 500 元)`，與 #1 定案 B 的折抵金額矛盾；新文字沿用其他代碼「折抵新台幣 N 元」的句型，`10` 與 `discount` 一致） |
+| `VIP300` | `VIP300` | `300.0` | 不變：`尊榮會員專屬，折抵新台幣 300 元` |
+| `SPRING20` | `SPR020` | `20.0` | 不變：`春季限定，旅遊折抵新台幣 20 元` |
+
+`expire_date` 維持來源檔的平移結果：`SPR020` +11 天、`SUM050` +103 天、`TRV010` +133 天、`WEL100` 與 `VIP300` +225 天（來源檔 `:154–:203` 的 `2025-05-31`、`2025-08-31`、`2025-09-30`、`2025-12-31` 減 `2025-05-20`），載入日當天五張都未過期。
+
+**3. 行程名單（23 個）與首頁區塊**
+
+來源檔 10 個行程全部保留（`status` 不變），另新增 13 個（`status = 1`）。新增行程的 `type`、`item` 與 `title` 如下，其餘欄位（`price` 為正整數、`country`／`region`、圖片、內文等）由 Task 3 決定，唯一例外是 `沖繩海景度假旅店` 的 `price` 固定為 `8800`（第 9 項的訂單用到）。
+
+| 大分類 `type` | 小分類 `item` | `status = 1` 的行程（共 22 個） | `status = 2` |
+|---|---|---|---|
+| `tourgroup` | `travel`（7） | 北海道雪景 5 日深度遊、馬爾地夫蜜月天堂 6 日、義大利深度文化之旅、紐西蘭壯麗景觀自駕遊；**新增** 冰島極光 8 日探索、瑞士鐵道山岳 7 日、西班牙陽光巡禮 9 日 | — |
+| `backpacker` | `food`（5） | 大阪美食自由行、高雄夜市美食攻略；**新增** 台南小吃巡禮、東京拉麵地圖、曼谷街頭美食 | — |
+| `backpacker` | `spot`（5） | 巴黎歷史建築巡禮、首爾咖啡文青小旅行；**新增** 京都古寺散步、倫敦博物館漫遊、新加坡花園城市導覽 | — |
+| `backpacker` | `hotel`（5） | 曼谷設計旅店探索；**新增** 沖繩海景度假旅店、峇里島別墅旅宿、河內古城精品旅店、釜山海岸旅店 | 清邁自然旅宿體驗（來源檔 `:350` 起，`status = 2`，保留） |
+
+`home.js` 實際用到的每組 (大分類, 小分類) 與條件（`limit` 預設 4，`home_Validator.js:47`；2 頁需要至少 5 列）：
+
+| 區塊（API 參數） | 未登入／已登入的行號 | (大分類, 小分類) | 額外條件 | 目標列數 |
+|---|---|---|---|---|
+| `type=tourgroup&item=popular` | `home.js:19`／`:28` | `('tourgroup','travel')` | `tour_travel_popular`（#4、#7：只回 `status = 1`） | 7（2 頁：4＋3） |
+| `type=tourgroup&item=promotion` | `home.js:36`／`:44`（SQL 在 `:33–:35`、`:41–:43`） | `('tourgroup','travel')` | `通知狀態 = '促銷'`（`:34`、`:42`）；**本計畫另要求**促銷期間內（#9 定案 A：view 不判斷期間，所以靠 seed 的日期達成）、`status = 1`（#7：`tour_base` 含下架行程，此區塊直接查 `tour_base`，不過濾） | 5（2 頁：4＋1；第 6 項的 5 個期間內促銷） |
+| `type=tourgroup&item=most_favorited` | `home.js:53`／`:62` | `('tourgroup','travel')` | `tour_travel_most_favorited`（#7） | 7（2 頁：4＋3） |
+| `type=backpacker&item=hotel` | `home.js:72`／`:81`（`item` 取自 query，`home_Validator.js:8`） | `('backpacker','hotel')` | `tour_travel_popular`（#4、#7） | 5（2 頁：4＋1） |
+| `type=backpacker&item=food` | 同上 | `('backpacker','food')` | 同上 | 5（2 頁） |
+| `type=backpacker&item=spot` | 同上 | `('backpacker','spot')` | 同上 | 5（2 頁） |
+
+**4. 搜尋清單**：`status = 1` 的行程 22 個（`limit` 預設 10，`product_Validator.js:75`，所以 10＋10＋2 共 3 頁，第 2 頁有資料）；`status = 2` 的行程 1 個（清邁自然旅宿體驗）。
+
+**5. 熱門與收藏排行（#4、#7、#23、#24）**
+
+「購買數」＝該行程 `order_item.payment_status = 1` 的**列數**（#4 定案 B；一個項目算 1，不乘 `quantity`）；「收藏數」＝該行程的 `favorite` 列數。名次欄只列出購買數或收藏數**唯一**的名次；其餘行程的數值都是 0，並列者以 `tour_id` 升冪決定先後（#24），測試不 assert 其順序。購買數與收藏數都以第 8、9 項的資料為準。
+
+| 區塊 | 行程 | 購買數 | 購買排行 | 收藏數 | 收藏排行 |
+|---|---|---|---|---|---|
+| `tourgroup/travel` | 北海道雪景 5 日深度遊 | 3 | 1 | 2 | 2 |
+| | 馬爾地夫蜜月天堂 6 日 | 2 | 2 | 3 | 1 |
+| | 紐西蘭壯麗景觀自駕遊 | 1 | 3 | 1 | 3 |
+| | 義大利深度文化之旅、冰島極光 8 日探索、瑞士鐵道山岳 7 日、西班牙陽光巡禮 9 日 | 0 | 4–7（並列） | 0 | 4–7（並列） |
+| `backpacker/food` | 高雄夜市美食攻略 | 2 | 1 | 0 | 不使用 |
+| | 大阪美食自由行 | 1 | 2 | 1 | 不使用 |
+| | 台南小吃巡禮、東京拉麵地圖、曼谷街頭美食 | 0 | 3–5（並列） | 0 | 不使用 |
+| `backpacker/spot` | 首爾咖啡文青小旅行 | 2 | 1 | 0 | 不使用 |
+| | 巴黎歷史建築巡禮 | 1 | 2 | 1 | 不使用 |
+| | 京都古寺散步、倫敦博物館漫遊、新加坡花園城市導覽 | 0 | 3–5（並列） | 0 | 不使用 |
+| `backpacker/hotel` | 曼谷設計旅店探索 | 2 | 1 | 1 | 不使用 |
+| | 沖繩海景度假旅店 | 1 | 2 | 0 | 不使用 |
+| | 峇里島別墅旅宿、河內古城精品旅店、釜山海岸旅店 | 0 | 3–5（並列） | 0 | 不使用 |
+| `status = 2` | 清邁自然旅宿體驗 | 0 | 不出現（#7） | 0 | 不出現 |
+
+「收藏排行」只用於 `tourgroup/travel`（`home.js:53,62`，見 §1 `tour_travel_most_favorited`）。每個排行區塊都有 3 個以上購買數不同的行程（`tourgroup/travel`：3、2、1、0；其餘三組：2、1、0）；`tourgroup/travel` 的收藏數 3、2、1、0 各不相同，且與購買排行的順序不同（馬爾地夫在收藏排行第 1、在購買排行第 2）。
+
+**6. 促銷（#8、#9、#10）**
+
+`notification` 共 9 列：下表 7 筆 `促銷`，加上來源檔 `:617–:638` 的 2 筆 `異動`（義大利深度文化之旅、紐西蘭壯麗景觀自駕遊，日期、折扣、價格皆 `NULL`，保留不動；它們不是促銷，所以不影響 `tourgroup/promotion` 區塊）。每個行程至多 1 列通知。
+
+| 行程 | 組別 | 開始 | 結束 | 期間狀態 | `discount`／`promo_price` |
+|---|---|---|---|---|---|
+| 北海道雪景 5 日深度遊 | `tourgroup/travel` | −10 天 | +20 天 | 期間內 | 來源檔 `10.0`／`40500.0`，不變（來源檔日期 `2025-11-01`～`2025-11-30`＝+165～+194 天，載入日不在期間內，所以要改） |
+| 馬爾地夫蜜月天堂 6 日 | `tourgroup/travel` | −5 天 | +25 天 | 期間內 | 來源檔 `15.0`／`83300.0`，不變（來源檔日期 `2025-10-01`～`2025-10-31`＝+134～+164 天，同上） |
+| 冰島極光 8 日探索（新增） | `tourgroup/travel` | −7 天 | +14 天 | 期間內 | Task 3 決定 |
+| 瑞士鐵道山岳 7 日（新增） | `tourgroup/travel` | −3 天 | +30 天 | 期間內 | Task 3 決定 |
+| 西班牙陽光巡禮 9 日（新增） | `tourgroup/travel` | −1 天 | +7 天 | 期間內 | Task 3 決定 |
+| 台南小吃巡禮（新增） | `backpacker/food` | +10 天 | +40 天 | **未開始** | Task 3 決定 |
+| 京都古寺散步（新增） | `backpacker/spot` | −40 天 | −10 天 | **已結束** | Task 3 決定 |
+
+- 新增促銷的 `discount` 與 `promo_price` 必須維持來源檔的關係 `promo_price = 該行程 price × (1 − discount / 100)`（`45000 × 0.9 = 40500`、`98000 × 0.85 = 83300`）。
+- 依據：#9 定案 A（view 不判斷期間，`通知狀態` 期間外仍是 `促銷`，所以未開始與已結束的促銷仍出現在管理者促銷清單 `promotion.js:8,42`）；#10 定案 B（`促銷價錢` 只在期間內有值，所以期間內 5 筆的 `促銷價錢` 非 `NULL`，另 2 筆為 `NULL`）。5 個期間內促銷全在 `tourgroup/travel`，達成第 3 項促銷區塊的 5 列；未開始與已結束各一筆放在 `backpacker`，不進首頁促銷區塊。
+- `tourgroup/travel` 的 7 個行程 `tour_start_date` 兩兩不同（首頁促銷區塊 `ORDER BY 旅遊開始日期 DESC`，`home.js:35,43`）：北海道 +195 天、馬爾地夫 +174 天、紐西蘭 +169 天、義大利 +148 天（來源檔 `2025-12-01`、`2025-11-10`、`2025-11-05`、`2025-10-15` 平移，不變），新增的冰島 +220 天、瑞士 +100 天、西班牙 +60 天；`tour_end_date` ＝ 開始日加（`days` − 1）天，`days` 分別為 8、7、9。`backpacker` 行程的 `tour_start_date`／`tour_end_date` 為 `NULL`、`days` 為 `0`（與來源檔相同）。
+
+**7. 購物車（(d3)）與 `cart_item.start_date`**
+
+每位使用者保留 1 個 `cart`。規則：保留有 `cart_item` 的；兩個都有時保留 `cart_item` 較多的；筆數相同時保留 `total_price` 較大的。被移除的 `cart` 底下的 `cart_item` 一起移除（`cart_item` 由 10 筆變 6 筆）。保留的 `cart` 的 `total_price` 不變（與項目金額不一致是來源檔既有的，本節不處理）。
+
+| 使用者 | 保留的 `cart_id`（來源檔 `:772–:777`） | 移除的 `cart_id`（連同其 `cart_item`） |
+|---|---|---|
+| alice | `83018530-f182-4734-afc2-cf4ecc96802d`（1 項） | `7bc2f92f-dafe-4cb2-9211-ffc67f16822e`（0 項） |
+| bob | `65d6a65f-bcd8-4970-bf47-e28ae67a1c11`（3 項） | `9221921d-33b0-4273-8e07-5fbb22acb772`（`f0e74ade-183f-4648-b9fe-cbb23458b89c` 清邁、`70cc5744-2a87-4193-b503-1a5c73dc0b0c` 曼谷） |
+| carol | `08b4e271-f584-4297-9441-a299afb81098`（2 項） | `7c09b1e1-8edc-44a7-a847-bdccf3153cfd`（`4936201b-d691-460b-97d0-000afae599c3` 北海道、`c4b9e4b5-d0e9-4e5b-8884-7b115b6877de` 首爾） |
+
+保留的 6 個 `cart_item` 的 `start_date`（來源檔 `:781–:790`；表中「來源檔日期」為 `2025-05-20` 基準的字面值，載入日 ＝ 0 天），全部晚於載入日；`end_date` 與 `start_date` 的間隔維持來源檔的天數：
+
+| 使用者 | 行程 | `cart_item_id`（來源檔） | 來源檔 `start_date`（相對天數） | **目標 `start_date`** | **目標 `end_date`** |
+|---|---|---|---|---|---|
+| alice | 大阪美食自由行 | `53f15e11-2350-4d9d-ade4-f4483af848da` | `2025-05-16`（−4） | **+30 天** | `NULL` |
+| bob | 高雄夜市美食攻略 | `c5cefe38-ff77-497c-b3fb-2831bbfb898c` | `2025-05-18`（−2） | **+14 天** | `NULL` |
+| bob | 義大利深度文化之旅 | `f348640b-6ca0-4168-8615-6b19b4baf588` | `2025-10-15`（+148） | +148 天（不變） | +155 天 |
+| bob | 紐西蘭壯麗景觀自駕遊 | `faa39aa2-6715-4dfa-bbac-2c6b1dc7de37` | `2025-11-05`（+169） | +169 天（不變） | +179 天 |
+| carol | 馬爾地夫蜜月天堂 6 日 | `084a3d2b-f8d8-47f5-a977-47f225871375` | `2025-11-10`（+174） | +174 天（不變） | +179 天 |
+| carol | 巴黎歷史建築巡禮 | `ecc926ca-d9f6-422f-8366-5d273236051b` | `2025-05-15`（−5） | **+20 天** | **+21 天** |
+
+最小值為 +14 天，載入日當天與之後都在未來。移除的 4 個項目中，清邁（`status = 2`）也一併離開購物車。
+
+**8. 收藏（#43）**
+
+9 筆 `favorite`：來源檔 `:895–:901` 的 7 筆保留，加 2 筆（bob 收藏馬爾地夫、alice 收藏北海道，用來讓 `tourgroup/travel` 的收藏數成為 3、2、1）。`created_at` 為「載入時間減 N 天」，同一使用者兩兩不同（實際上 9 筆全部不同）；`updated_at` 取與 `created_at` 相同的值。
+
+| 使用者 | 行程 | `created_at` 偏移 | 來源 |
+|---|---|---|---|
+| alice | 紐西蘭壯麗景觀自駕遊 | −10 天 | 來源檔 |
+| alice | 馬爾地夫蜜月天堂 6 日 | −7 天 | 來源檔 |
+| alice | 大阪美食自由行 | −3 天 | 來源檔 |
+| alice | 北海道雪景 5 日深度遊 | −1 天 | 新增 |
+| bob | 北海道雪景 5 日深度遊 | −9 天 | 來源檔 |
+| bob | 巴黎歷史建築巡禮 | −5 天 | 來源檔 |
+| bob | 馬爾地夫蜜月天堂 6 日 | −2 天 | 新增 |
+| carol | 馬爾地夫蜜月天堂 6 日 | −8 天 | 來源檔 |
+| carol | 曼谷設計旅店探索 | −4 天 | 來源檔 |
+
+`GET /collection/info/all` 對 alice 依 `建立時間 DESC` 的順序是：北海道、大阪、馬爾地夫、紐西蘭。
+
+**9. 訂單、`payment_status` 與 `payment`（#4、#5、#6、#13）**
+
+`order_item.payment_status` 與其所屬 `orders.payment_status` 相同（消除來源檔「訂單與項目付款狀態不一致」，#6 定案 B 以項目層級篩選）。`order_item.total_price` ＝ `orders.total_price` ＝ 行程 `price × quantity`；`order_item.discount_price` 對期間內促銷的行程（北海道、馬爾地夫）＝ `promo_price × quantity`，其餘 `NULL`（#13：`價錢` ＝ `total_price / quantity`，`促銷價錢` ＝ `NULLIF(discount_price, 0) / quantity`）。
+
+各付款狀態的筆數：`1` 15 筆、`-1`／`0`／`2`／`3`／`4` 各 1 筆（共 20）。`orders` 的 `address`／`phone`（`payment_status = -1` 的訂單為 `NULL`，因為 `checkout.js:36–39` 建立時沒有寫）依使用者固定：alice `台北市中山區南京東路3段123號`／`0987654321`（來源檔 `:798`）、bob `高雄市鼓山區美術館路45號`／`0912345678`（`:794`）、carol `台中市西區公益路321巷9號`／`0987654321`（`:795`）。
+
+| # | 使用者 | 行程 | `payment_status` | `quantity` | `total_price` | `order_item.discount_price` | `payment_type` | `discount_type` | `orders.discount_price` |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | alice | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `none` | `NULL` |
+| 2 | bob | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `coupon` | 44990（`TRV010`，45000 − 10） |
+| 3 | carol | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `none` | `NULL` |
+| 4 | alice | 馬爾地夫蜜月天堂 6 日 | 1 | 1 | 98000 | 83300 | `credit_card` | `coupon` | 97700（`VIP300`，98000 − 300） |
+| 5 | carol | 馬爾地夫蜜月天堂 6 日 | 1 | 1 | 98000 | 83300 | `atm` | `none` | `NULL` |
+| 6 | bob | 紐西蘭壯麗景觀自駕遊 | 1 | 1 | 85000 | `NULL` | `credit_card` | `coupon` | 84700（`VIP300`，85000 − 300） |
+| 7 | alice | 高雄夜市美食攻略 | 1 | 2 | 8400 | `NULL` | `credit_card` | `point` | 8200（用 250 點） |
+| 8 | bob | 高雄夜市美食攻略 | 1 | 3 | 12600 | `NULL` | `cvs` | `none` | `NULL` |
+| 9 | carol | 大阪美食自由行 | 1 | 2 | 30000 | `NULL` | `credit_card` | `point` | 29680（用 400 點） |
+| 10 | alice | 首爾咖啡文青小旅行 | 1 | 2 | 19000 | `NULL` | `credit_card` | `none` | `NULL` |
+| 11 | carol | 首爾咖啡文青小旅行 | 1 | 1 | 9500 | `NULL` | `credit_card` | `none` | `NULL` |
+| 12 | bob | 巴黎歷史建築巡禮 | 1 | 1 | 22000 | `NULL` | `credit_card` | `none` | `NULL` |
+| 13 | bob | 曼谷設計旅店探索 | 1 | 2 | 18000 | `NULL` | `credit_card` | `point` | 17600（用 500 點） |
+| 14 | carol | 曼谷設計旅店探索 | 1 | 1 | 9000 | `NULL` | `credit_card` | `none` | `NULL` |
+| 15 | alice | 沖繩海景度假旅店 | 1 | 2 | 17600 | `NULL` | `credit_card` | `none` | `NULL` |
+| 16 | alice | 義大利深度文化之旅 | **-1** | 1 | 72000 | `NULL` | `NULL` | `NULL` | `NULL` |
+| 17 | bob | 大阪美食自由行 | **0** | 1 | 15000 | `NULL` | `atm` | `none` | `NULL` |
+| 18 | carol | 紐西蘭壯麗景觀自駕遊 | **2** | 1 | 85000 | `NULL` | `credit_card` | `none` | `NULL` |
+| 19 | carol | 巴黎歷史建築巡禮 | **3** | 1 | 22000 | `NULL` | `credit_card` | `none` | `NULL` |
+| 20 | alice | 紐西蘭壯麗景觀自駕遊 | **4** | 1 | 85000 | `NULL` | `cvs` | `none` | `NULL` |
+
+- 價格依據：行程 `price`（來源檔 `:204–:403` 的 tour 區段）北海道 45000、馬爾地夫 98000、義大利 72000、紐西蘭 85000、大阪 15000、高雄 4200、巴黎 22000、首爾 9500、曼谷 9000，加上第 3 項固定的沖繩 8800；`total_price` 都是整數且為 10 的倍數。
+- 篩選結果（#6 定案 B，只含 `order_item.payment_status = 1`）：`user_orders`／`user_order_item` 對 alice 5 筆（#1、#4、#7、#10、#15）、bob 5 筆（#2、#6、#8、#12、#13）、carol 5 筆（#3、#5、#9、#11、#14）。`booking_count`（#5 定案 C，`IN (-1, 0, 1)`）會計入 #16、#17 與 15 筆已付款訂單，不計 #18、#19、#20。
+- `user_coupon`（4 列，來源檔 `:911` 起）只改 `order_id` 與 `status` 的對應，`status` 不變：bob 的 `TRV010` → 訂單 #2（`status 1`）、bob 的 `VIP300` → 訂單 #6（`1`）、alice 的 `VIP300` → 訂單 #4（`1`）、carol 的 `TRV010` 未使用（`order_id` 為 `NULL`，`0`）。`orders.discount_price` ＝ `total_price − coupon.discount`（#1 定案 B：折抵金額；與 `checkout.js:165` 同為折後應付金額）。
+
+`payment`（15 筆，每張 `payment_status = 1` 的訂單 #1～#15 各 1 筆，其餘訂單沒有；欄位順序與值的寫法照 `controllers/newebpay.js:182–199`，V1 `payment` 表 `V1:308–323`）：
+
+| 欄位 | 值 |
+|---|---|
+| `payment_id` | 由（使用者 `email`，行程 `title`）決定性產生的 v4 形狀 id（Task 3 決定鍵的寫法） |
+| `user_id`、`order_id` | 該訂單的 `user_id`、`order_id` |
+| `address`、`phone` | 同該訂單的 `orders.address`、`orders.phone` |
+| `payment_method` | 同該訂單的 `orders.payment_type`（`newebpay.js:190` 寫 `result.PaymentType`） |
+| `payment_status` | `1` |
+| `discount_price` | 同該訂單的 `orders.discount_price`（`NULL` 就寫 `NULL`，`newebpay.js:193`） |
+| `return_data` | JSON 字串 `{"Status":"SUCCESS","Result":{"MerchantOrderNo":"<該訂單的 order_id>","PaymentType":"<payment_method>","Message":"付款成功"}}` |
+| `return_time`、`result_time` | 載入時間 |
+| `result_info` | `付款成功` |
+| `created_at`、`updated_at` | 預設（載入時間） |
+
+**10. 點數（#2、#3）**
+
+`point_record` 共 18 筆，來源檔 `:905–:907` 的 2 筆（`新增 1610`、`減少 -436`，對應一張未付款訂單，與 #3 規則不符）刪除，改為下表。取整：每張訂單的 `total_price` 都是 10 的倍數，所以「10%」恰為整數，不需要取整規則（#3 沒有指定取整方式，見下方說明）。
+
+- **`新增`（15 筆）**：每張 `payment_status = 1` 的訂單（#1～#15）各 1 筆，`point` ＝ `total_price × 0.1`，`order_id` ＝ 該訂單：
+
+  | 訂單 | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10 | #11 | #12 | #13 | #14 | #15 |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | `point` | 4500 | 4500 | 4500 | 9800 | 9800 | 8500 | 840 | 1260 | 3000 | 1900 | 950 | 2200 | 1800 | 900 | 1760 |
+
+- **`減少`（3 筆）**：只有 `discount_type = 'point'` 的訂單，`point` 為負值，`|point| × 0.8 ＝ total_price − orders.discount_price`（#3 定案 A，`checkout.js:165`）：
+
+  | 訂單 | 使用者 | `point` | `total_price` | `discount_price` | 驗算 |
+  |---|---|---|---|---|---|
+  | #7 | alice | −250 | 8400 | 8200 | 250 × 0.8 ＝ 200 ＝ 8400 − 8200 |
+  | #9 | carol | −400 | 30000 | 29680 | 400 × 0.8 ＝ 320 ＝ 30000 − 29680 |
+  | #13 | bob | −500 | 18000 | 17600 | 500 × 0.8 ＝ 400 ＝ 18000 − 17600 |
+
+- 沒有 `減少_確認中` 的列（結帳預覽才會寫，`checkout.js:158–161`；#2 定案 A 下 seed 與 `tour_travel_popular`、餘額都不依賴它）。未付款與已取消／退款／逾時的訂單（#16～#20）沒有 `point_record`。
+- **`user_level.travel_point` 與 `point_record` 的關係（#2 定案 A）**：餘額取 `user_level.travel_point`，**不**加總 `point_record`，所以兩者不需要相等，`travel_point` 維持 alice 1500、bob 3000、carol 800（來源檔 `:116–:152`）；上表每筆 `減少` 的點數都不超過該使用者的 `travel_point`（250 ≤ 1500、400 ≤ 800、500 ≤ 3000），`pointslevel` 與 `userinfo.js` 讀到相同的餘額。
+
+**11. 首頁好評（#48）**
+
+`review.type = 'web'` 共 5 則：來源檔的 2 則（alice「整個網站設計非常友善，喜歡！」、bob「下單流程簡單又快速，推薦。」，來源檔 `:820–:821`）加 3 則新增（依序 carol、alice、bob；`rating` 為 1–5 的整數，內文由 Task 3 決定）。`GET /home/search/reviews` 以 `評論時間 DESC` 排序（`home.js:132`），所以 5 則的 `created_at` 兩兩不同：alice 既有 −5 天、bob 既有 −4 天，新增的三則依序 −3、−2、−1 天（載入時間減 N 天）。其餘 8 則（非 `web`）不變。
+
+**12. 說明：本節沒有定案、由 Task 3 或使用者另行處理的事**
+
+- #3 只定了 1 點折 0.8 元與 10% 回饋，沒有指定 10% 的取整方式；本節用 10 的倍數的金額避開。日後改金額時若出現非 10 的倍數，要先請使用者定取整方式。
+- 新增的 13 個行程只定了 `type`、`item`、`title`、`status`、促銷與少數欄位；它們的 `tour_detail`、`hotel`／`hotel_room`、`restaurant` 等子表是否補、補多少，由 Task 3 決定。沒有子表的行程，詳情頁會走到契約已記錄的「function 回 0 列時 `product.js:209` TypeError」（§4.2 末段），不影響本節的任何斷言。
 
 ## 1. A 組：商品與首頁
 
@@ -1220,7 +1443,7 @@
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
   | 收藏人員編號 | uuid | `favorite.user_id` | `controllers/collection.js:15` | WHERE |
-  | 建立時間 | timestamptz | `favorite.created_at`（見待確認 2；【定案 #43】收藏時間） | `controllers/collection.js:15` | ORDER BY |
+  | 建立時間 | timestamptz | `favorite.created_at`（見待確認 2；【定案 #43】收藏時間；**不是** `tour_base` 的 `建立時間`） | `controllers/collection.js:15` | ORDER BY |
   | 偏好分類1 | smallint | `tour.preference1`（欄位名稱確定，來源見待確認 3；【定案 #42】行程的偏好） | `controllers/collection.js:23,32` | JS 讀取 `row.偏好分類1` → 轉成文字放入 response `偏好分類[0]`，原欄位設為 `undefined` |
   | 偏好分類2 | smallint | `tour.preference2`（同上；【定案 #42】） | `controllers/collection.js:24,33` | 同上 → `偏好分類[1]` |
   | 偏好分類3 | smallint | `tour.preference3`（同上；【定案 #42】） | `controllers/collection.js:25,34` | 同上 → `偏好分類[2]` |
@@ -1231,7 +1454,7 @@
   |---|---|---|---|
   | favorite_id（英文） | uuid | `favorite.favorite_id` | 取消收藏 `DELETE /api/v1/user/collection/info/:favorite_id`（`routes/collection.js:17`、`collection.js:97`）要前端帶 `favorite_id`，而列表是前端唯一可能取得它的 API；欄位名稱是否為英文，程式碼沒有證據 |
   | 旅遊編號 | uuid | `favorite.tour_id`（= `tour.tour_id`） | 沿用 `tour_base` 的命名（§1） |
-  | 旅遊名稱、旅遊代表圖 Url、價錢、大分類、小分類、所屬國家、所屬地區（即 §1 `tour_base` 輸出欄位表的全部欄位） | 同 §1 `tour_base` | 同 §1 `tour_base` | 收藏清單要顯示行程；偏好分類 1/2/3 的命名與 `tour_base` 相同，表示 view 很可能由 `tour_base` 衍生 |
+  | 旅遊名稱、旅遊代表圖 Url、價錢、大分類、小分類、所屬國家、所屬地區等（§1 `tour_base` 輸出欄位表的其餘欄位；**不含** `旅遊編號`——上一列已列，整個 view 只出現一次；**不含** `建立時間`、`更新時間`——`建立時間` 一律取自 `favorite.created_at`，不帶入 `tour_base` 的 `建立時間`／`更新時間`；`偏好分類1/2/3` 見上面第一張表） | 同 §1 `tour_base` | 同 §1 `tour_base` | 收藏清單要顯示行程；偏好分類 1/2/3 的命名與 `tour_base` 相同，表示 view 很可能由 `tour_base` 衍生 |
 
 - **列的語意**：每筆 `favorite` 一列，帶入被收藏行程的資料（待確認 1；【定案 #11，2026-10-23】選 A：帶入 `tour_base` 的欄位）。【定案 #41、#43】下架行程的收藏也出現；`建立時間` ＝ `favorite.created_at`。`WHERE 收藏人員編號 = $1` 取出單一使用者的收藏，controller 以 `建立時間 DESC` 排序並分頁（`LIMIT`／`OFFSET`）。
 - **邊界**：
@@ -1283,7 +1506,7 @@
   |---|---|---|---|
   | order_item_id（英文） | uuid | `order_item.order_item_id` | 明細 API `GET /api/v1/user/purchases/info/:order_item_id`（`routes/purchases.js:14–20`）以 `order_item_id` 查 `user_order_item`；列表是前端取得此 id 的唯一合理來源。`user_order_item` 的此欄位是英文（`purchases.js:59`），所以這裡也可能是英文 |
   | 旅遊名稱、旅遊代表圖 Url、大分類、小分類、價錢（即 §1 `tour_base` 輸出欄位表的全部欄位） | 同 §1 `tour_base` | 同 §1 `tour_base` | 「已購買項目清單」要顯示項目；`偏好分類` 命名與 `tour_base` 一致 |
-  | 付款狀態、數量、出發日期、小計、促銷小計 | 見 `order_item` | 依序為 `order_item.payment_status`、`quantity`、`start_date`、`total_price`、`discount_price` | 同上，名稱無程式碼證據（【定案 #11】採用此命名） |
+  | 付款狀態、數量、出發日期、小計、促銷小計 | 見 `order_item` | 依序為 `order_item.payment_status`、`quantity`、`start_date`、`total_price`、`discount_price` | 同上，名稱無程式碼證據；`付款狀態`、`數量`、`出發日期`、`小計` 的命名為【定案 #11】採用，`促銷小計` 的名稱於 2026-10-23 final review 修正時補上，非使用者決定 |
 
 - **列的語意**：推測為「每個訂單項目（`order_item`）一列」（見待確認 1），列出該使用者（`orders.user_id`）名下的項目，並帶入行程資料。沒有預設排序。【定案 #44、#6、#45、#41】每個 `order_item` 一列（含 `order_item_id`）；只含 `order_item.payment_status = 1`；view 內含 `ORDER BY`（依 `orders.created_at` 由新到舊，V1:280）；下架行程的購買紀錄也出現。
 - **邊界**：
@@ -1499,6 +1722,7 @@
 - 角色大小寫：管理者 PATCH 只接受 `admin`／`user`（`admin_Validator.js:4,67–74`），降權成 `user` 後通不過 `authRole('User')`（`routes/collection.js:11`、`routes/purchases.js:11,17`）；seed 的 Bob 是 `admin`，無法呼叫收藏與已購買的 GET（§3 C 組共通觀察）。
 - 收藏：`GET /collection/info/all` 每次送兩次回應（`collection.js:39–64`）；`POST` 的 `tour_id` 不驗 UUID，格式錯誤時 500（`middlewares/collection/index.js:46`）（§3 `user_favorite`）。
 - 已購買：`middlewares/purchases/index.js:34` 的 404 永遠不會觸發（§3 `user_order_item`）。
+- 優惠卷代碼格式前後台不一致：後台新增與修改（`coupon_Validator.js:34` 的 `coupon` 只是 `Joi.string()`；`controllers/coupon.js:10` 新增、`:107` 修改）不限格式，消費者使用時（`discounts_Validatior.js:9–13`）只接受 `^[A-Z0-9]{6}$`，所以後台建立的非 6 碼代碼消費者永遠用不了。修法是兩邊用同一條規則，統一成哪一條由 P6（後台優惠卷 CRUD）決定，不是本表的決定項。seed 依 (d2) 改成 6 碼，不受影響。
 - 優惠卷 `discount` 的運算（§4.1 #1 定案 B ＝ 折抵金額）：`controllers/discounts.js:38`、`controllers/checkout.js:155` 做 `total_price * discount`，在金額語意下會算出數百倍金額（例：`total_price` 3576.74 × `discount` 100.0 → 357,674）；要改成 `total_price - discount`（`orders.discount_price` 為折後應付金額，與點數路徑 `checkout.js:165` 同語意），屬 P4 結帳。P4 修好之前優惠卷結帳金額是錯的。V3 view 照金額語意輸出原值，不為了配合乘法而轉換數值。`coupon_Validator.js:45` 的 `> 0` 無上限與金額語意相容；是否加上限（例如不得超過訂單金額）只是 P4／P6 的觀察，不是決定。
 - 依 §4.1 與 §4.2 的決定，P1b 的 seed 需要調整：優惠卷只修 `TRAVEL10P` 的 `description`，讓它與折抵金額語意一致（`discount` 的 5 個值 100、50、10、300、20 保留不改，#1 定案 B）、促銷通知日期（#9）、`point_record` 與訂單的點數資料（#2、#3；#3 於 2026-10-23 決定調成與 1 點折 0.8 元、10% 回饋相符，`db/seed/R__seed.sql:908–909` 與相關訂單）、`payment` 資料與各 `payment_status`（#4、#5、#6）、主鍵與代碼（(a)，2026-10-23 起含 `country` 主鍵與 `region.country_id`；(d2)）、購物車數量（(d3)）、收藏時間（#43）。
 - 展示環境（P7）：seed 管理者 `bob@example.com`（角色 `admin`）的密碼 `Tripeasy123` 公開在 `.env.example:1–3`，而計畫規定 seed 會在本機與展示環境載入。任何公開展示之前，要改成由環境變數注入展示管理者密碼，或展示環境不載入 seed 管理者；與 seed 圖片網址寫死的 `IMAGE_BASE`（`db/seed-build/build_seed.py:40`）併為同一個 P7 項目。
