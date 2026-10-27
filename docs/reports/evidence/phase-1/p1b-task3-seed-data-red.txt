@@ -1,0 +1,227 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 34 items
+
+tests/test_seed.py::test_flyway_applied_seed PASSED                      [  2%]
+tests/test_seed.py::test_seed_loaded_every_table FAILED                  [  5%]
+tests/test_seed.py::test_seed_is_rerunnable PASSED                       [  8%]
+tests/test_seed.py::test_seed_file_is_generated_from_source PASSED       [ 11%]
+tests/test_seed.py::test_seed_user_can_login PASSED                      [ 14%]
+tests/test_seed.py::test_seed_roles_match_authorize_roles PASSED         [ 17%]
+tests/test_seed.py::test_seed_admin_passes_authorize_roles PASSED        [ 20%]
+tests/test_seed.py::test_seed_dates_are_relative_to_load_day PASSED      [ 23%]
+tests/test_seed.py::test_seed_uses_local_placeholder_images PASSED       [ 26%]
+tests/test_seed.py::test_seed_primary_keys_are_v4 PASSED                 [ 29%]
+tests/test_seed.py::test_seed_natural_keys_are_not_duplicated PASSED     [ 32%]
+tests/test_seed.py::test_seed_coupon_codes_match_validator PASSED        [ 35%]
+tests/test_seed.py::test_seed_one_cart_per_user PASSED                   [ 38%]
+tests/test_seed.py::test_seed_foreign_keys_follow_column_owner FAILED    [ 41%]
+tests/test_seed.py::test_seed_source_ids_are_all_remapped PASSED         [ 44%]
+tests/test_seed.py::test_seed_home_sections_have_two_pages FAILED        [ 47%]
+tests/test_seed.py::test_seed_search_list_has_two_pages FAILED           [ 50%]
+tests/test_seed.py::test_seed_rankings_are_distinct FAILED               [ 52%]
+tests/test_seed.py::test_seed_promotions_cover_in_and_out_of_period FAILED [ 55%]
+tests/test_seed.py::test_seed_travel_tours_have_distinct_start_dates FAILED [ 58%]
+tests/test_seed.py::test_seed_cart_items_start_in_future FAILED          [ 61%]
+tests/test_seed.py::test_seed_favorite_times_are_distinct FAILED         [ 64%]
+tests/test_seed.py::test_seed_orders_match_contract FAILED               [ 67%]
+tests/test_seed.py::test_seed_payment_status_coverage FAILED             [ 70%]
+tests/test_seed.py::test_seed_points_follow_rules FAILED                 [ 73%]
+tests/test_seed.py::test_seed_user_coupons_point_to_rebuilt_orders FAILED [ 76%]
+tests/test_seed.py::test_seed_web_reviews_for_home FAILED                [ 79%]
+tests/test_build_seed.py::test_seed_id_is_deterministic_v4 PASSED        [ 82%]
+tests/test_build_seed.py::test_parse_inserts_round_trip PASSED           [ 85%]
+tests/test_build_seed.py::test_remap_follows_column_owner PASSED         [ 88%]
+tests/test_build_seed.py::test_emit_round_trip PASSED                    [ 91%]
+tests/test_build_seed.py::test_remap_asserts_when_foreign_key_has_no_mapping PASSED [ 94%]
+tests/test_build_seed.py::test_remap_keeps_null_foreign_keys PASSED      [ 97%]
+tests/test_build_seed.py::test_remap_asserts_on_unknown_user_with_message FAILED [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_seed_loaded_every_table _________________________
+tests/test_seed.py:43: in test_seed_loaded_every_table
+    assert not wrong, f"（實際, 預期）：{wrong}"
+E   AssertionError: （實際, 預期）：{'tour': (10, 23), 'tour_detail': (6, 19), 'restaurant': (2, 5), 'restaurant_business': (14, 35), 'restaurant_menu': (6, 12), 'hotel': (2, 6), 'hotel_room': (4, 12), 'notification': (4, 9), 'orders': (5, 20), 'order_item': (10, 20), 'payment': (0, 15), 'review': (10, 13), 'favorite': (7, 9), 'point_record': (2, 18)}
+E   assert not {'favorite': (7, 9), 'hotel': (2, 6), 'hotel_room': (4, 12), 'notification': (4, 9), ...}
+__________________ test_seed_foreign_keys_follow_column_owner __________________
+tests/test_seed.py:220: in test_seed_foreign_keys_follow_column_owner
+    assert found == expected, f"{table}：{set(expected.items()) ^ set(found.items())}"
+E   AssertionError: order_item：{('7d853da0-3b46-4572-adac-417d355c63ab', '義大利深度文化之旅'), ('ffb27682-d280-4387-90ad-35e0e312381a', '高雄夜市美食攻略'), ('d08ff861-d52f-4846-aee0-f1a76a1594b4', '大阪美食自由行'), ('7968a1cc-3ac5-4ccf-ac9c-8b60afa31060', '巴黎歷史建築巡禮'), ('4c31ffc2-b421-4b86-b380-e106354e6cd6', '北海道雪景 5 日深度遊'), ('92652aec-e95e-46e5-aed5-0de97bd66d2c', '曼谷設計旅店探索'), ('30be478c-7f47-4762-8b14-49ffe33c70ea', '紐西蘭壯麗景觀自駕遊'), ('58f91973-bccd-47fc-8385-111268543ba2', '北海道雪景 5 日深度遊'), ('6b1a2f2a-5920-4ea0-9c00-ad73f907b7b2', '紐西蘭壯麗景觀自駕遊'), ('59359423-b6e2-4a5c-92b6-c14610fd132d', '高雄夜市美食攻略'), ('2624af5f-345f-4cb5-9fff-40a1a967717d', '大阪美食自由行'), ('b69ab9ad-09de-4fe0-bcc4-5c1875ed7891', '曼谷設計旅店探索'), ('36c2bb92-ba7f-4159-8271-daff43511545', '巴黎歷史建築巡禮'), ('74250bad-0935-454a-9a5e-7778b0c3d49f', '北海道雪景 5 日深度遊'), ('fa0e554d-bf1c-40cc-940a-d92baeb85c41', '沖繩海景度假旅店'), ('befaa739-14d4-47d6-bbfd-4f08facafff1', '馬爾地夫蜜月天堂 6 日'), ('36d81ec3-dc39-457d-b1fc-69a5a18b5795', '首爾咖啡文青小旅行'), ('f5ae4782-f21a-4b85-b138-7b94b542acbb', '紐西蘭壯麗景觀自駕遊'), ('da29b386-b399-4e2e-a473-3967808057d8', '馬爾地夫蜜月天堂 6 日'), ('87526e29-bb46-40eb-8710-e70b944028fe', '首爾咖啡文青小旅行')}
+E   assert {} == {'2624af5f-34...咖啡文青小旅行', ...}
+E     
+E     Right contains 20 more items:
+E     {'2624af5f-345f-4cb5-9fff-40a1a967717d': '大阪美食自由行',
+E      '30be478c-7f47-4762-8b14-49ffe33c70ea': '紐西蘭壯麗景觀自駕遊',
+E      '36c2bb92-ba7f-4159-8271-daff43511545': '巴黎歷史建築巡禮',
+E      '36d81ec3-dc39-457d-b1fc-69a5a18b5795': '首爾咖啡文青小旅行',
+E      '4c31ffc2-b421-4b86-b380-e106354e6cd6': '北海道雪景 5 日深度遊',...
+E     
+E     ...Full output truncated (40 lines hidden), use '-vv' to show
+____________________ test_seed_home_sections_have_two_pages ____________________
+tests/test_seed.py:346: in test_seed_home_sections_have_two_pages
+    assert {(t, i): n for t, i, n in rows} == {k: len(v) for k, v in TOURS_BY_GROUP.items()}
+E   AssertionError: assert {('backpacker... 'travel'): 4} == {('backpacker... 'travel'): 7}
+E     
+E     Differing items:
+E     {('backpacker', 'spot'): 2} != {('backpacker', 'spot'): 5}
+E     {('backpacker', 'hotel'): 1} != {('backpacker', 'hotel'): 5}
+E     {('tourgroup', 'travel'): 4} != {('tourgroup', 'travel'): 7}
+E     {('backpacker', 'food'): 2} != {('backpacker', 'food'): 5}
+E     ...
+E     
+E     ...Full output truncated (19 lines hidden), use '-vv' to show
+_____________________ test_seed_search_list_has_two_pages ______________________
+tests/test_seed.py:366: in test_seed_search_list_has_two_pages
+    assert dict(rows) == {1: 22, 2: 1}
+E   AssertionError: assert {1: 9, 2: 1} == {1: 22, 2: 1}
+E     
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {1: 9} != {1: 22}
+E     
+E     Full diff:
+E       {...
+E     
+E     ...Full output truncated (6 lines hidden), use '-vv' to show
+_______________________ test_seed_rankings_are_distinct ________________________
+tests/test_seed.py:377: in test_seed_rankings_are_distinct
+    assert purchases == PURCHASES
+E   AssertionError: assert {'巴黎歷史建築巡禮': ...觀自駕遊': 1, ...} == {'北海道雪景 5 日深度...旅店探索': 2, ...}
+E     
+E     Omitting 2 identical items, use -vv to show
+E     Differing items:
+E     {'高雄夜市美食攻略': 1} != {'高雄夜市美食攻略': 2}
+E     {'曼谷設計旅店探索': 1} != {'曼谷設計旅店探索': 2}
+E     {'首爾咖啡文青小旅行': 1} != {'首爾咖啡文青小旅行': 2}
+E     Left contains 1 more item:...
+E     
+E     ...Full output truncated (26 lines hidden), use '-vv' to show
+_______________ test_seed_promotions_cover_in_and_out_of_period ________________
+tests/test_seed.py:396: in test_seed_promotions_cover_in_and_out_of_period
+    assert {r[0]: (r[1], r[2]) for r in rows} == PROMOS
+E   AssertionError: assert {'北海道雪景 5 日深度...': (134, 164)} == {'京都古寺散步': (-...(10, 40), ...}
+E     
+E     Differing items:
+E     {'北海道雪景 5 日深度遊': (165, 194)} != {'北海道雪景 5 日深度遊': (-10, 20)}
+E     {'馬爾地夫蜜月天堂 6 日': (134, 164)} != {'馬爾地夫蜜月天堂 6 日': (-5, 25)}
+E     Right contains 5 more items:
+E     {'京都古寺散步': (-40, -10),
+E      '冰島極光 8 日探索': (-7, 14),...
+E     
+E     ...Full output truncated (47 lines hidden), use '-vv' to show
+_______________ test_seed_travel_tours_have_distinct_start_dates _______________
+tests/test_seed.py:419: in test_seed_travel_tours_have_distinct_start_dates
+    assert {r[0]: (r[1], r[2]) for r in rows} == TRAVEL_STARTS
+E   AssertionError: assert {'北海道雪景 5 日深度... 日': (174, 6)} == {'冰島極光 8 日探索'...169, 11), ...}
+E     
+E     Omitting 4 identical items, use -vv to show
+E     Right contains 3 more items:
+E     {'冰島極光 8 日探索': (220, 8), '瑞士鐵道山岳 7 日': (100, 7), '西班牙陽光巡禮 9 日': (60, 9)}
+E     
+E     Full diff:
+E       {...
+E     
+E     ...Full output truncated (29 lines hidden), use '-vv' to show
+_____________________ test_seed_cart_items_start_in_future _____________________
+tests/test_seed.py:436: in test_seed_cart_items_start_in_future
+    assert {(r[0], r[1]): (r[2], r[3]) for r in rows} == {
+E   AssertionError: assert {('alice@exam...2, None), ...} == {('alice@exam...4, None), ...}
+E     
+E     Omitting 3 identical items, use -vv to show
+E     Differing items:
+E     {('bob@example.com', '高雄夜市美食攻略'): (-2, None)} != {('bob@example.com', '高雄夜市美食攻略'): (14, None)}
+E     {('alice@example.com', '大阪美食自由行'): (-4, None)} != {('alice@example.com', '大阪美食自由行'): (30, None)}
+E     {('carol@example.com', '巴黎歷史建築巡禮'): (-5, -4)} != {('carol@example.com', '巴黎歷史建築巡禮'): (20, 21)}
+E     ...
+E     
+E     ...Full output truncated (39 lines hidden), use '-vv' to show
+____________________ test_seed_favorite_times_are_distinct _____________________
+tests/test_seed.py:447: in test_seed_favorite_times_are_distinct
+    assert {(r[0], r[1], r[2]) for r in rows} == {(EMAIL[u], t, d) for u, t, d in FAVORITES}
+E   AssertionError: assert {('alice@exam...店探索', 0), ...} == {('alice@exam...築巡禮', 5), ...}
+E     
+E     Extra items in the left set:
+E     ('carol@example.com', '馬爾地夫蜜月天堂 6 日', 0)
+E     ('alice@example.com', '紐西蘭壯麗景觀自駕遊', 0)
+E     ('carol@example.com', '曼谷設計旅店探索', 0)
+E     ('bob@example.com', '巴黎歷史建築巡禮', 0)
+E     ('alice@example.com', '大阪美食自由行', 0)...
+E     
+E     ...Full output truncated (81 lines hidden), use '-vv' to show
+_______________________ test_seed_orders_match_contract ________________________
+tests/test_seed.py:460: in test_seed_orders_match_contract
+    assert len(rows) == 20
+E   AssertionError: assert 10 == 20
+E    +  where 10 = len([('bob@example.com', '高雄夜市美食攻略', 0, 1, 2, 3576.74, ...), ('carol@example.com', '馬爾地夫蜜月天堂 6 日', 1, 2, 3, 6482.73, ...), ('carol@example.com', '北海道雪景 5 日深度遊', 0, 3, 1, 1610.73, ...), ('bob@example.com', '清邁自然旅宿體驗', 0, 1, 4, 5769.06, ...), ('carol@example.com', '巴黎歷史建築巡禮', 1, 1, 3, 6482.73, ...), ('bob@example.com', '義大利深度文化之旅', 0, 3, 5, 3576.74, ...), ...])
+______________________ test_seed_payment_status_coverage _______________________
+tests/test_seed.py:474: in test_seed_payment_status_coverage
+    assert dict(rows) == {1: 15, -1: 1, 0: 1, 2: 1, 3: 1, 4: 1}
+E   AssertionError: assert {0: 4, 1: 1} == {-1: 1, 0: 1,...15, 2: 1, ...}
+E     
+E     Differing items:
+E     {0: 4} != {0: 1}
+E     {1: 1} != {1: 15}
+E     Right contains 4 more items:
+E     {-1: 1, 2: 1, 3: 1, 4: 1}
+E     ...
+E     
+E     ...Full output truncated (12 lines hidden), use '-vv' to show
+________________________ test_seed_points_follow_rules _________________________
+tests/test_seed.py:504: in test_seed_points_follow_rules
+    assert Counter(r[3] for r in rows) == {"新增": 15, "減少": 3}
+E   AssertionError: assert Counter({'新增': 1, '減少': 1}) == {'新增': 15, '減少': 3}
+E     
+E     Differing items:
+E     {'減少': 1} != {'減少': 3}
+E     {'新增': 1} != {'新增': 15}
+E     
+E     Full diff:
+E     - {...
+E     
+E     ...Full output truncated (10 lines hidden), use '-vv' to show
+________________ test_seed_user_coupons_point_to_rebuilt_orders ________________
+tests/test_seed.py:534: in test_seed_user_coupons_point_to_rebuilt_orders
+    assert sorted(rows, key=str) == sorted([
+E   AssertionError: assert [('alice@exam...5769.06), ...] == [('alice@exam..., None, None)]
+E     
+E     At index 0 diff: ('alice@example.com', 'VIP300', 1, True, '大阪美食自由行', 6263.64) != ('alice@example.com', 'VIP300', 1, True, '馬爾地夫蜜月天堂 6 日', 98000)
+E     Left contains 3 more items, first extra item: ('bob@example.com', 'VIP300', 1, True, '曼谷設計旅店探索', 5769.06)
+E     
+E     Full diff:
+E       [
+E           (...
+E     
+E     ...Full output truncated (66 lines hidden), use '-vv' to show
+________________________ test_seed_web_reviews_for_home ________________________
+tests/test_seed.py:554: in test_seed_web_reviews_for_home
+    assert len(rows) >= 5
+E   AssertionError: assert 2 >= 5
+E    +  where 2 = len([('alice@example.com', 0, 5), ('bob@example.com', 0, 4)])
+_______________ test_remap_asserts_on_unknown_user_with_message ________________
+tests/test_build_seed.py:84: in test_remap_asserts_on_unknown_user_with_message
+    build_seed.remap_ids(inserts)
+db/seed-build/build_seed.py:265: in remap_ids
+    key = NATURAL_KEY[table](row_dict(ins, row))
+db/seed-build/build_seed.py:248: in row_dict
+    r["user_email"] = natural["user"][r["user_id"]]
+E   KeyError: 'ghost'
+=========================== short test summary info ============================
+FAILED tests/test_seed.py::test_seed_loaded_every_table - AssertionError: （...
+FAILED tests/test_seed.py::test_seed_foreign_keys_follow_column_owner - Asser...
+FAILED tests/test_seed.py::test_seed_home_sections_have_two_pages - Assertion...
+FAILED tests/test_seed.py::test_seed_search_list_has_two_pages - AssertionErr...
+FAILED tests/test_seed.py::test_seed_rankings_are_distinct - AssertionError: ...
+FAILED tests/test_seed.py::test_seed_promotions_cover_in_and_out_of_period - ...
+FAILED tests/test_seed.py::test_seed_travel_tours_have_distinct_start_dates
+FAILED tests/test_seed.py::test_seed_cart_items_start_in_future - AssertionEr...
+FAILED tests/test_seed.py::test_seed_favorite_times_are_distinct - AssertionE...
+FAILED tests/test_seed.py::test_seed_orders_match_contract - AssertionError: ...
+FAILED tests/test_seed.py::test_seed_payment_status_coverage - AssertionError...
+FAILED tests/test_seed.py::test_seed_points_follow_rules - AssertionError: as...
+FAILED tests/test_seed.py::test_seed_user_coupons_point_to_rebuilt_orders - A...
+FAILED tests/test_seed.py::test_seed_web_reviews_for_home - AssertionError: a...
+FAILED tests/test_build_seed.py::test_remap_asserts_on_unknown_user_with_message
+======================== 15 failed, 19 passed in 0.87s =========================

@@ -1,6 +1,9 @@
 """spec 3.2：fakedata 改寫成 Flyway repeatable migration，可以重複執行。"""
+import json
 import re
 import uuid
+from collections import Counter, defaultdict
+from typing import NamedTuple
 
 import jwt
 
@@ -8,14 +11,15 @@ from conftest import BUILD_SCRIPT, ROOT, load_build_seed
 
 SEED = ROOT / "db" / "seed" / "R__seed.sql"
 
-# fakedata（2025-05）每張表的筆數。測試可能另外新增資料，所以檢查「至少」
+# 每張表的確切筆數（契約 §0.1 seed 目標值第 1 項；契約沒列的子表筆數由 extra_seed.sql 決定）。
+# 重複的 volume 或殘留的舊列都會讓筆數不符，所以用 exact count
 SEED_COUNTS = {
     "user": 3, "socialLogin": 3, "user_level": 3, "coupon": 5,
-    "tour": 10, "tour_detail": 6, "restaurant": 2, "restaurant_business": 14,
-    "restaurant_menu": 6, "hotel": 2, "hotel_room": 4, "notification": 4,
+    "tour": 23, "tour_detail": 19, "restaurant": 5, "restaurant_business": 35,
+    "restaurant_menu": 12, "hotel": 6, "hotel_room": 12, "notification": 9,
     "country": 37, "region": 87, "cart": 3, "cart_item": 6,
-    "orders": 5, "order_item": 10, "review": 10, "hidden_play": 6,
-    "auto_setting": 4, "favorite": 7, "point_record": 2, "user_coupon": 4,
+    "orders": 20, "order_item": 20, "payment": 15, "review": 13, "hidden_play": 6,
+    "auto_setting": 4, "favorite": 9, "point_record": 18, "user_coupon": 4,
 }
 
 
@@ -35,8 +39,8 @@ def test_flyway_applied_seed(db):
 
 def test_seed_loaded_every_table(db):
     counts = _counts(db)
-    short = {t: (counts[t], n) for t, n in SEED_COUNTS.items() if counts[t] < n}
-    assert not short, f"（實際, 預期至少）：{short}"
+    wrong = {t: (counts[t], n) for t, n in SEED_COUNTS.items() if counts[t] != n}
+    assert not wrong, f"（實際, 預期）：{wrong}"
 
 
 def test_seed_is_rerunnable(tx):
@@ -107,6 +111,11 @@ def test_seed_dates_are_relative_to_load_day(db):
         "SELECT count(*) FROM coupon WHERE expire_date < %s", (load_day,)
     ).fetchone()
     assert (past_tours, expired_coupons) == (0, 0)
+    # 契約 §0.1 第 2 項：確切偏移，不只是「不早於載入日」
+    rows = db.execute("SELECT code, expire_date::date - %s FROM coupon", (load_day,)).fetchall()
+    assert dict(rows) == COUPON_EXPIRE_DAYS
+    (earliest,) = db.execute("SELECT min(expire_date)::date - %s FROM coupon", (load_day,)).fetchone()
+    assert earliest == min(COUPON_EXPIRE_DAYS.values())
 
 
 def test_seed_uses_local_placeholder_images(api):
@@ -122,6 +131,8 @@ V4 = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 UUID_LITERAL = re.compile(r"'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'")
 SEED_EMAILS = list(SEED_USERS)
 COUPON_CODES = ["WEL100", "SUM050", "TRV010", "VIP300", "SPR020"]
+# 契約 §0.1 第 2 項：expire_date 相對載入日的天數
+COUPON_EXPIRE_DAYS = {"SPR020": 11, "SUM050": 103, "TRV010": 133, "WEL100": 225, "VIP300": 225}
 # 契約 §0.1 第 7 項：被移除的購物車項目（來源檔的 cart_item_id）
 REMOVED_CART_ITEMS = {
     "f0e74ade-183f-4648-b9fe-cbb23458b89c", "70cc5744-2a87-4193-b503-1a5c73dc0b0c",
@@ -192,13 +203,16 @@ def test_seed_foreign_keys_follow_column_owner(db):
     old_title = {r["tour_id"]: r["title"] for r in _source_rows("tour")}
     old_email = {r["user_id"]: r["email"] for r in _source_rows("user")}
 
-    for table, pk, skip in (
-        ("cart_item", "cart_item_id", REMOVED_CART_ITEMS), ("order_item", "order_item_id", set()),
+    # order_item 已改成重建（契約 §0.1 第 9 項的 20 張訂單），期望值取自契約的訂單表
+    for table, pk, expected in (
+        ("cart_item", "cart_item_id", {
+            build_seed.seed_id("cart_item", r["cart_item_id"]): old_title[r["tour_id"]]
+            for r in _source_rows("cart_item") if r["cart_item_id"] not in REMOVED_CART_ITEMS
+        }),
+        ("order_item", "order_item_id", {
+            build_seed.seed_id("order_item", f"{EMAIL[o.user]}:{o.title}"): o.title for o in ORDERS
+        }),
     ):
-        expected = {
-            build_seed.seed_id(table, r[pk]): old_title[r["tour_id"]]
-            for r in _source_rows(table) if r[pk] not in skip
-        }
         actual = dict(db.execute(
             f'SELECT t."{pk}"::text, tour.title FROM "{table}" t JOIN tour USING (tour_id)'
         ).fetchall())
@@ -217,3 +231,329 @@ def test_seed_source_ids_are_all_remapped():
     source = set(UUID_LITERAL.findall(build_seed.SOURCE.read_text(encoding="utf-8").lower()))
     leaked = {i for i in source if i in SEED.read_text(encoding="utf-8").lower()}
     assert source and not leaked, f"R__seed.sql 還有來源檔的 id：{sorted(leaked)[:3]}"
+
+
+# ---- 資料目標（契約 §0.1「seed 目標值（定案）」第 3–11 項）----
+EMAIL = {"alice": "alice@example.com", "bob": "bob@example.com", "carol": "carol@example.com"}
+HOKKAIDO, MALDIVES, ITALY, NZ = "北海道雪景 5 日深度遊", "馬爾地夫蜜月天堂 6 日", "義大利深度文化之旅", "紐西蘭壯麗景觀自駕遊"
+OSAKA, KAOHSIUNG, PARIS, SEOUL = "大阪美食自由行", "高雄夜市美食攻略", "巴黎歷史建築巡禮", "首爾咖啡文青小旅行"
+BANGKOK, OKINAWA, CHIANG_MAI = "曼谷設計旅店探索", "沖繩海景度假旅店", "清邁自然旅宿體驗"
+ICELAND, SWISS, SPAIN = "冰島極光 8 日探索", "瑞士鐵道山岳 7 日", "西班牙陽光巡禮 9 日"
+TAINAN, KYOTO = "台南小吃巡禮", "京都古寺散步"
+
+# 第 3 項：(type, item) → status = 1 的行程
+TOURS_BY_GROUP = {
+    ("tourgroup", "travel"): {HOKKAIDO, MALDIVES, ITALY, NZ, ICELAND, SWISS, SPAIN},
+    ("backpacker", "food"): {OSAKA, KAOHSIUNG, TAINAN, "東京拉麵地圖", "曼谷街頭美食"},
+    ("backpacker", "spot"): {PARIS, SEOUL, KYOTO, "倫敦博物館漫遊", "新加坡花園城市導覽"},
+    ("backpacker", "hotel"): {BANGKOK, OKINAWA, "峇里島別墅旅宿", "河內古城精品旅店", "釜山海岸旅店"},
+}
+
+
+class Order(NamedTuple):
+    n: int
+    user: str
+    title: str
+    status: int
+    quantity: int
+    total: int
+    item_discount: int | None
+    payment_type: str | None
+    discount_type: str | None
+    discount: int | None  # orders.discount_price
+
+    @property
+    def days_ago(self) -> int:  # 第 9 項「訂單時間」
+        return {1: 9, 2: 8, 3: 7, 4: 4, 5: 3}.get(self.n, 36 - self.n)
+
+
+# 第 9 項的 20 張訂單
+ORDERS = [Order(*row) for row in (
+    (1, "alice", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "none", None),
+    (2, "bob", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "coupon", 44990),
+    (3, "carol", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "none", None),
+    (4, "alice", MALDIVES, 1, 1, 98000, 83300, "credit_card", "coupon", 97700),
+    (5, "carol", MALDIVES, 1, 1, 98000, 83300, "atm", "none", None),
+    (6, "bob", NZ, 1, 1, 85000, None, "credit_card", "coupon", 84700),
+    (7, "alice", KAOHSIUNG, 1, 2, 8400, None, "credit_card", "point", 8200),
+    (8, "bob", KAOHSIUNG, 1, 3, 12600, None, "cvs", "none", None),
+    (9, "carol", OSAKA, 1, 2, 30000, None, "credit_card", "point", 29680),
+    (10, "alice", SEOUL, 1, 2, 19000, None, "credit_card", "none", None),
+    (11, "carol", SEOUL, 1, 1, 9500, None, "credit_card", "none", None),
+    (12, "bob", PARIS, 1, 1, 22000, None, "credit_card", "none", None),
+    (13, "bob", BANGKOK, 1, 2, 18000, None, "credit_card", "point", 17600),
+    (14, "carol", BANGKOK, 1, 1, 9000, None, "credit_card", "none", None),
+    (15, "alice", OKINAWA, 1, 2, 17600, None, "credit_card", "none", None),
+    (16, "alice", ITALY, -1, 1, 72000, None, None, None, None),
+    (17, "bob", OSAKA, 0, 1, 15000, None, "atm", "none", None),
+    (18, "carol", NZ, 2, 1, 85000, None, "credit_card", "none", None),
+    (19, "carol", PARIS, 3, 1, 22000, None, "credit_card", "none", None),
+    (20, "alice", NZ, 4, 1, 85000, None, "cvs", "none", None),
+)]
+ADDRESS_PHONE = {
+    "alice": ("台北市中山區南京東路3段123號", "0987654321"),
+    "bob": ("高雄市鼓山區美術館路45號", "0912345678"),
+    "carol": ("台中市西區公益路321巷9號", "0987654321"),
+}
+# 第 5 項：購買數（order_item.payment_status = 1 的列數）與收藏數；沒列出的行程都是 0
+PURCHASES = {
+    HOKKAIDO: 3, MALDIVES: 2, NZ: 1, KAOHSIUNG: 2, OSAKA: 1, SEOUL: 2, PARIS: 1, BANGKOK: 2, OKINAWA: 1,
+}
+FAVORITE_COUNTS = {MALDIVES: 3, HOKKAIDO: 2, NZ: 1, OSAKA: 1, PARIS: 1, BANGKOK: 1}
+# 第 8 項：(使用者, 行程, created_at 減幾天)
+FAVORITES = {
+    ("alice", NZ, 10), ("alice", MALDIVES, 7), ("alice", OSAKA, 3), ("alice", HOKKAIDO, 1),
+    ("bob", HOKKAIDO, 9), ("bob", PARIS, 5), ("bob", MALDIVES, 2),
+    ("carol", MALDIVES, 8), ("carol", BANGKOK, 4),
+}
+# 第 6 項：(開始, 結束) 相對載入日的天數
+PROMOS = {
+    HOKKAIDO: (-10, 20), MALDIVES: (-5, 25), ICELAND: (-7, 14), SWISS: (-3, 30), SPAIN: (-1, 7),
+    TAINAN: (10, 40), KYOTO: (-40, -10),
+}
+# 第 6 項最後一點：tourgroup/travel 的開始日與天數
+TRAVEL_STARTS = {
+    HOKKAIDO: (195, 5), MALDIVES: (174, 6), NZ: (169, 11), ITALY: (148, 8),
+    ICELAND: (220, 8), SWISS: (100, 7), SPAIN: (60, 9),
+}
+# 第 7 項：保留的購物車項目 (使用者, 行程) → (start_date, end_date) 相對載入日的天數
+CART_ITEMS = {
+    ("alice", OSAKA): (30, None), ("bob", KAOHSIUNG): (14, None), ("bob", ITALY): (148, 155),
+    ("bob", NZ): (169, 179), ("carol", MALDIVES): (174, 179), ("carol", PARIS): (20, 21),
+}
+# 第 11 項：web 評論 (使用者, created_at 減幾天)
+WEB_REVIEWS = {("alice", 5), ("bob", 4), ("carol", 3), ("alice", 2), ("bob", 1)}
+
+LOAD_TS = (
+    "(SELECT min(installed_on) FROM flyway_schema_history WHERE script = 'R__seed.sql' AND success)"
+)
+
+
+def _load_day(db):
+    return db.execute(f"SELECT {LOAD_TS}::date").fetchone()[0]
+
+
+def _days_ago(column: str) -> str:
+    """載入時間減 column 的天數（四捨五入到整天；載入時間取 Flyway 記錄的 installed_on）。"""
+    return f"round(extract(epoch FROM ({LOAD_TS} - {column}::timestamp)) / 86400)::int"
+
+
+def test_seed_home_sections_have_two_pages(db):
+    # 第 3 項：limit=4 時每個首頁區塊都要有第 2 頁（至少 5 列）
+    rows = db.execute(
+        "SELECT type, item, count(*) FROM tour WHERE status = 1 GROUP BY type, item"
+    ).fetchall()
+    assert {(t, i): n for t, i, n in rows} == {k: len(v) for k, v in TOURS_BY_GROUP.items()}
+    assert all(len(v) >= 5 for v in TOURS_BY_GROUP.values())
+    rows = db.execute("SELECT type, item, title FROM tour WHERE status = 1").fetchall()
+    found = defaultdict(set)
+    for t, i, title in rows:
+        found[(t, i)].add(title)
+    assert dict(found) == TOURS_BY_GROUP
+    # 促銷區塊：tourgroup/travel、通知類型 促銷、載入日在期間內 → 5 列（4＋1）
+    (n,) = db.execute(
+        "SELECT count(*) FROM tour t JOIN notification n USING (tour_id)"
+        " WHERE t.type = 'tourgroup' AND t.item = 'travel' AND t.status = 1 AND n.type = '促銷'"
+        " AND n.start_date::date <= %s AND n.end_date::date >= %s",
+        (_load_day(db), _load_day(db)),
+    ).fetchone()
+    assert n == 5
+
+
+def test_seed_search_list_has_two_pages(db):
+    # 第 4 項：status = 1 共 22 個（limit 10 → 3 頁），status = 2 共 1 個
+    rows = db.execute("SELECT status, count(*) FROM tour GROUP BY status").fetchall()
+    assert dict(rows) == {1: 22, 2: 1}
+    (title,) = db.execute("SELECT title FROM tour WHERE status = 2").fetchone()
+    assert title == CHIANG_MAI
+
+
+def test_seed_rankings_are_distinct(db):
+    # 第 5 項：購買數、收藏數的確切值，且每組都有 3 個以上不同的購買數
+    purchases = dict(db.execute(
+        "SELECT t.title, count(*) FROM order_item oi JOIN tour t USING (tour_id)"
+        " WHERE oi.payment_status = 1 GROUP BY t.title"
+    ).fetchall())
+    assert purchases == PURCHASES
+    favorites = dict(db.execute(
+        "SELECT t.title, count(*) FROM favorite f JOIN tour t USING (tour_id) GROUP BY t.title"
+    ).fetchall())
+    assert favorites == FAVORITE_COUNTS
+    for group, titles in TOURS_BY_GROUP.items():
+        assert len({PURCHASES.get(t, 0) for t in titles}) >= 3, group
+    travel = TOURS_BY_GROUP[("tourgroup", "travel")]
+    assert sorted({FAVORITE_COUNTS.get(t, 0) for t in travel}) == [0, 1, 2, 3]
+
+
+def test_seed_promotions_cover_in_and_out_of_period(db):
+    load_day = _load_day(db)
+    rows = db.execute(
+        "SELECT t.title, n.start_date::date - %s, n.end_date::date - %s, n.end_date::time::text,"
+        " n.discount, n.promo_price, t.price"
+        " FROM notification n JOIN tour t USING (tour_id) WHERE n.type = '促銷'",
+        (load_day, load_day),
+    ).fetchall()
+    assert {r[0]: (r[1], r[2]) for r in rows} == PROMOS
+    assert {r[3] for r in rows} == {"23:59:59"}
+    for title, _, _, _, discount, promo_price, price in rows:
+        assert abs(promo_price - price * (1 - discount / 100)) < 0.01, title
+    in_period = [t for t, (s, e) in PROMOS.items() if s <= 0 <= e]
+    assert len(in_period) == 5
+    assert any(s > 0 for s, _ in PROMOS.values()) and any(e < 0 for _, e in PROMOS.values())
+    # 異動通知保留：義大利、紐西蘭，日期與折扣皆 NULL
+    rows = db.execute(
+        "SELECT t.title, n.start_date, n.end_date, n.discount, n.promo_price"
+        " FROM notification n JOIN tour t USING (tour_id) WHERE n.type = '異動'"
+    ).fetchall()
+    assert {r[0] for r in rows} == {ITALY, NZ}
+    assert all(r[1:] == (None, None, None, None) for r in rows)
+
+
+def test_seed_travel_tours_have_distinct_start_dates(db):
+    load_day = _load_day(db)
+    rows = db.execute(
+        "SELECT title, tour_start_date::date - %s, tour_end_date::date - tour_start_date::date + 1, days"
+        " FROM tour WHERE type = 'tourgroup' AND item = 'travel'",
+        (load_day,),
+    ).fetchall()
+    assert {r[0]: (r[1], r[2]) for r in rows} == TRAVEL_STARTS
+    assert all(r[2] == r[3] for r in rows)
+    (n,) = db.execute(
+        "SELECT count(*) FROM tour WHERE type = 'backpacker' AND"
+        " (tour_start_date IS NOT NULL OR tour_end_date IS NOT NULL OR days <> 0)"
+    ).fetchone()
+    assert n == 0
+
+
+def test_seed_cart_items_start_in_future(db):
+    load_day = _load_day(db)
+    rows = db.execute(
+        'SELECT u.email, t.title, ci.start_date::date - %s, ci.end_date::date - %s'
+        ' FROM cart_item ci JOIN cart USING (cart_id) JOIN "user" u USING (user_id)'
+        " JOIN tour t USING (tour_id)",
+        (load_day, load_day),
+    ).fetchall()
+    assert {(r[0], r[1]): (r[2], r[3]) for r in rows} == {
+        (EMAIL[u], t): v for (u, t), v in CART_ITEMS.items()
+    }
+    assert min(r[2] for r in rows) >= 14
+
+
+def test_seed_favorite_times_are_distinct(db):
+    rows = db.execute(
+        f'SELECT u.email, t.title, {_days_ago("f.created_at")}, f.created_at = f.updated_at'
+        ' FROM favorite f JOIN "user" u USING (user_id) JOIN tour t USING (tour_id)'
+    ).fetchall()
+    assert {(r[0], r[1], r[2]) for r in rows} == {(EMAIL[u], t, d) for u, t, d in FAVORITES}
+    assert all(r[3] for r in rows)
+    assert len({(r[0], r[2]) for r in rows}) == len(rows)  # 同一使用者兩兩不同
+
+
+def test_seed_orders_match_contract(db):
+    rows = db.execute(
+        f'SELECT u.email, t.title, o.payment_status, oi.payment_status, oi.quantity, o.total_price,'
+        f' oi.total_price, oi.discount_price, o.payment_type, o.discount_type, o.discount_price,'
+        f' o.address, o.phone, {_days_ago("o.created_at")}, {_days_ago("oi.created_at")}'
+        ' FROM orders o JOIN "user" u USING (user_id) JOIN order_item oi USING (order_id)'
+        " JOIN tour t USING (tour_id)"
+    ).fetchall()
+    assert len(rows) == 20
+    got = {(r[0], r[1]): r for r in rows}
+    assert len(got) == 20
+    for o in ORDERS:
+        r = got[(EMAIL[o.user], o.title)]
+        address_phone = ADDRESS_PHONE[o.user] if o.status != -1 else (None, None)
+        want = (o.status, o.status, o.quantity, o.total, o.total, o.item_discount, o.payment_type,
+                o.discount_type, o.discount, *address_phone, o.days_ago, o.days_ago)
+        assert r[2:] == want, f"#{o.n}：{r[2:]} != {want}"
+    assert len({o.days_ago for o in ORDERS}) == 20
+
+
+def test_seed_payment_status_coverage(db):
+    rows = db.execute("SELECT payment_status, count(*) FROM orders GROUP BY payment_status").fetchall()
+    assert dict(rows) == {1: 15, -1: 1, 0: 1, 2: 1, 3: 1, 4: 1}
+    # 每個已付款訂單恰好 1 筆 payment，其他訂單沒有
+    rows = db.execute(
+        "SELECT o.payment_status, count(p.payment_id) FROM orders o"
+        " LEFT JOIN payment p USING (order_id) GROUP BY o.order_id, o.payment_status"
+    ).fetchall()
+    assert sorted(rows) == sorted([(1, 1)] * 15 + [(s, 0) for s in (-1, 0, 2, 3, 4)])
+    # payment 欄位照契約 §0.1 第 9 項
+    rows = db.execute(
+        'SELECT o.order_id::text, o.user_id, o.address, o.phone, o.payment_type, o.discount_price,'
+        " p.user_id, p.address, p.phone, p.payment_method, p.payment_status, p.discount_price,"
+        " p.return_data, p.result_info, p.return_time IS NOT NULL, p.result_time IS NOT NULL"
+        " FROM payment p JOIN orders o USING (order_id)"
+    ).fetchall()
+    assert len(rows) == 15
+    for r in rows:
+        order_id, *order, user_id, address, phone, method, status, discount, data, info, rt, rs = r
+        assert (user_id, address, phone, method, discount) == (order[0], order[1], order[2], order[3], order[4])
+        assert status == 1 and info == "付款成功" and rt and rs
+        assert json.loads(data) == {
+            "Status": "SUCCESS",
+            "Result": {"MerchantOrderNo": order_id, "PaymentType": method, "Message": "付款成功"},
+        }
+
+
+def test_seed_points_follow_rules(db):
+    rows = db.execute(
+        "SELECT o.total_price, o.discount_price, o.discount_type, pr.type, pr.point"
+        " FROM point_record pr JOIN orders o USING (order_id)"
+    ).fetchall()
+    assert Counter(r[3] for r in rows) == {"新增": 15, "減少": 3}
+    for total, discount, discount_type, kind, point in rows:
+        if kind == "新增":
+            assert abs(point - total * 0.1) < 0.01
+        else:
+            assert discount_type == "point" and point < 0
+            assert abs(-point * 0.8 - (total - discount)) < 0.01
+    # 每張已付款訂單 1 筆新增；未付款等狀態沒有點數
+    rows = db.execute(
+        "SELECT o.payment_status, pr.type, count(*) FROM point_record pr JOIN orders o USING (order_id)"
+        " GROUP BY o.payment_status, pr.type"
+    ).fetchall()
+    assert {(s, t) for s, t, _ in rows} == {(1, "新增"), (1, "減少")}
+    assert dict(db.execute(
+        "SELECT u.email, sum(pr.point) FILTER (WHERE pr.type = '減少') FROM point_record pr"
+        ' JOIN "user" u USING (user_id) GROUP BY u.email'
+    ).fetchall()) == {EMAIL["alice"]: -250, EMAIL["bob"]: -500, EMAIL["carol"]: -400}
+    # 餘額取 user_level.travel_point，不加總 point_record（#2 定案 A），維持不變
+    assert dict(db.execute(
+        'SELECT u.email, ul.travel_point FROM user_level ul JOIN "user" u USING (user_id)'
+    ).fetchall()) == {EMAIL["alice"]: 1500, EMAIL["bob"]: 3000, EMAIL["carol"]: 800}
+
+
+def test_seed_user_coupons_point_to_rebuilt_orders(db):
+    rows = db.execute(
+        'SELECT u.email, c.code, uc.status, o.order_id IS NOT NULL, t.title, o.total_price'
+        ' FROM user_coupon uc JOIN "user" u USING (user_id) JOIN coupon c USING (coupon_id)'
+        " LEFT JOIN orders o USING (order_id) LEFT JOIN order_item oi USING (order_id)"
+        " LEFT JOIN tour t ON t.tour_id = oi.tour_id"
+    ).fetchall()
+    assert sorted(rows, key=str) == sorted([
+        (EMAIL["bob"], "TRV010", 1, True, HOKKAIDO, 45000),   # 訂單 #2
+        (EMAIL["bob"], "VIP300", 1, True, NZ, 85000),          # 訂單 #6
+        (EMAIL["alice"], "VIP300", 1, True, MALDIVES, 98000),  # 訂單 #4
+        (EMAIL["carol"], "TRV010", 0, False, None, None),
+    ], key=str)
+    # 優惠卷折抵：orders.discount_price = total_price - coupon.discount
+    rows = db.execute(
+        "SELECT o.total_price - c.discount, o.discount_price, o.discount_type"
+        " FROM user_coupon uc JOIN orders o USING (order_id) JOIN coupon c USING (coupon_id)"
+    ).fetchall()
+    assert all(a == b and kind == "coupon" for a, b, kind in rows) and len(rows) == 3
+
+
+def test_seed_web_reviews_for_home(db):
+    rows = db.execute(
+        f'SELECT u.email, {_days_ago("r.created_at")}, r.rating FROM review r'
+        ' JOIN "user" u USING (user_id) WHERE r.type = %s',
+        ("web",),
+    ).fetchall()
+    assert len(rows) >= 5
+    assert {(r[0], r[1]) for r in rows} == {(EMAIL[u], d) for u, d in WEB_REVIEWS}
+    assert len({r[1] for r in rows}) == 5  # created_at 兩兩不同（首頁以評論時間排序）
+    assert all(1 <= r[2] <= 5 for r in rows)
+    (n,) = db.execute("SELECT count(*) FROM review WHERE type <> 'web'").fetchone()
+    assert n == 8

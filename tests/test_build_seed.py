@@ -1,6 +1,8 @@
 """seed 產生腳本的單元測試：不需要 DB。"""
 import re
 
+import pytest
+
 from conftest import load_build_seed
 
 build_seed = load_build_seed()
@@ -33,3 +35,50 @@ def test_remap_follows_column_owner():
     out = {i.table: i for i in build_seed.remap_ids(inserts)}
     assert out["cart_item"].rows[0][1] == f"'{build_seed.seed_id('tour', 'A')}'"
     assert out['"coupon"'].rows[0][0] == f"'{build_seed.seed_id('coupon', 'VIP300')}'"
+
+
+def test_emit_round_trip():
+    sql = (
+        '---- 1. t\nINSERT INTO "t" (a, b) VALUES\n'
+        "('it''s', (1 + 2)),\n(NULL, now());\n"
+    )
+    [ins] = build_seed.parse_inserts(sql)
+    assert ins.heading == "---- 1. t"
+    out = build_seed.emit([ins])
+    assert out.startswith("---- 1. t\n") and out.rstrip().endswith("ON CONFLICT DO NOTHING;")
+    # emit 加了 ON CONFLICT；parse_inserts 讀的是來源檔寫法，所以還原成 ; 再讀
+    [again] = build_seed.parse_inserts(out.replace("\nON CONFLICT DO NOTHING;", ";"))
+    assert (again.table, again.columns, again.rows, again.heading) == (
+        ins.table, ins.columns, ins.rows, ins.heading,
+    )
+
+
+def test_remap_asserts_when_foreign_key_has_no_mapping():
+    inserts = [
+        build_seed.Insert('"tour"', ["tour_id", "title"], [["'t1'", "'A'"]]),
+        build_seed.Insert("cart_item", ["cart_item_id", "tour_id"], [["'x'", "'no-such-tour'"]]),
+    ]
+    with pytest.raises(AssertionError, match="no-such-tour"):
+        build_seed.remap_ids(inserts)
+
+
+def test_remap_keeps_null_foreign_keys():
+    inserts = [
+        build_seed.Insert('"tour"', ["tour_id", "title"], [["'t1'", "'A'"]]),
+        build_seed.Insert("cart_item", ["cart_item_id", "tour_id"], [["'x'", "NULL"]]),
+    ]
+    out = {i.table: i for i in build_seed.remap_ids(inserts)}
+    assert out["cart_item"].rows[0][1] == "NULL"
+
+
+def test_remap_asserts_on_unknown_user_with_message():
+    # review 的自然鍵要用 user 的 email；user_id 不存在時要有可讀的訊息，不是裸 KeyError
+    inserts = [
+        build_seed.Insert('"user"', ["user_id", "email"], [["'u1'", "'a@x'"]]),
+        build_seed.Insert(
+            '"review"', ["review_id", "user_id", "tour_id", "type"],
+            [["uuid_generate_v4()", "'ghost'", "NULL", "'web'"]],
+        ),
+    ]
+    with pytest.raises(AssertionError, match="ghost"):
+        build_seed.remap_ids(inserts)
