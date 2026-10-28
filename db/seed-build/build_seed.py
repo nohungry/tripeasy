@@ -45,6 +45,7 @@ EXPECTED_KEPT_CARTS = {
 
 # 契約 §0.1 第 9、10 項：這三張表的來源檔列整批丟掉，改由 extra_seed.sql 重建（P1b 計畫 2026-10-25 controller 裁決）
 REBUILT_TABLES = {"orders": 5, "order_item": 10, "point_record": 2}
+REBUILT_FINAL_COUNTS = {"orders": 20, "order_item": 20, "point_record": 18}  # 契約 §0.1 第 1 項
 PAYMENT_HEADING = '---- 19. 付款紀錄資料 "payment"'
 
 # 以下的舊 id 都是來源檔的手寫主鍵
@@ -305,6 +306,8 @@ def remap_ids(inserts: list[Insert]) -> list[Insert]:
             assert r["user_id"] in natural["user"], f"{table}.user_id = {r['user_id']} 在 user 找不到"
             r["user_email"] = natural["user"][r["user_id"]]
         if "tour_id" in r and table != "tour":
+            assert r["tour_id"] == "" or r["tour_id"] in natural["tour"], \
+                f"{table}.tour_id = {r['tour_id']} 在 tour 找不到"
             r["tour_title"] = natural["tour"].get(r["tour_id"], "")
         if "country_id" in r and table != "country":
             assert r["country_id"] in natural["country"], f"{table}.country_id = {r['country_id']} 在 country 找不到"
@@ -452,7 +455,9 @@ def rewrite_promotions(by_table: dict[str, Insert]) -> None:
     for row in ins.rows:
         if unquote(row[kind]) != "促銷":
             continue
-        s_off, e_off = SOURCE_PROMOS[titles[unquote(row[tour])]]
+        title = titles.get(unquote(row[tour]))
+        assert title in SOURCE_PROMOS, f"來源檔有預期之外的促銷：{title}"
+        s_off, e_off = SOURCE_PROMOS[title]
         row[start], row[end] = anchor_date(s_off), anchor_date(e_off, True)
         hits += 1
     assert hits == len(SOURCE_PROMOS), f"促銷 {hits} 筆，預期 {len(SOURCE_PROMOS)}"
@@ -488,7 +493,9 @@ def rewrite_favorite_times(by_table: dict[str, Insert]) -> None:
     created, updated = _col(ins, "created_at"), _col(ins, "updated_at")
     hits = 0
     for row in ins.rows:
-        days = FAVORITE_DAYS_AGO[(emails[unquote(row[user])], titles[unquote(row[tour])])]
+        key = (emails.get(unquote(row[user])), titles.get(unquote(row[tour])))
+        assert key in FAVORITE_DAYS_AGO, f"來源檔有預期之外的收藏：{key}"
+        days = FAVORITE_DAYS_AGO[key]
         row[created] = row[updated] = _days_ago(days)
         hits += 1
     assert hits == len(FAVORITE_DAYS_AGO), f"favorite {hits} 筆，預期 {len(FAVORITE_DAYS_AGO)}"
@@ -503,7 +510,9 @@ def rewrite_web_review_times(by_table: dict[str, Insert]) -> None:
     hits = 0
     for row in ins.rows:
         if unquote(row[kind]) == "web":
-            row[created] = row[updated] = _days_ago(WEB_REVIEW_DAYS_AGO[emails[unquote(row[user])]])
+            email = emails.get(unquote(row[user]))
+            assert email in WEB_REVIEW_DAYS_AGO, f"來源檔有預期之外的 web 評論：{email}"
+            row[created] = row[updated] = _days_ago(WEB_REVIEW_DAYS_AGO[email])
             hits += 1
     assert hits == len(WEB_REVIEW_DAYS_AGO), f"web 評論 {hits} 則，預期 {len(WEB_REVIEW_DAYS_AGO)}"
 
@@ -542,6 +551,9 @@ def merge_extra(inserts: list[Insert], extra: list[Insert]) -> list[Insert]:
             assert table == "payment", f"extra_seed.sql 的 {table} 在來源檔沒有"
             ins.heading = PAYMENT_HEADING
             out.insert(out.index(by_table["order_item"]) + 1, ins)
+    for table, expected in REBUILT_FINAL_COUNTS.items():
+        n = len(by_table[table].rows)
+        assert n == expected, f"{table} 重建後 {n} 列，預期 {expected}：檢查 extra_seed.sql"
     return out
 
 
@@ -580,7 +592,7 @@ def use_local_images(text: str) -> str:
     return text
 
 
-def build(text: str, extra_text: str = "") -> str:
+def build(text: str, extra_text: str) -> str:
     text = text.replace("\r\n", "\n")
     text = drop_delete_block(text)
     inserts = parse_inserts(text)
@@ -596,6 +608,7 @@ def build(text: str, extra_text: str = "") -> str:
     rewrite_web_review_times(by_table)
     rewrite_user_coupon_orders(by_table)
     extra = parse_inserts(extra_text.replace("\r\n", "\n"))
+    assert extra, "extra_seed.sql 沒有任何 INSERT"
     inserts = remap_ids(merge_extra(inserts, extra))
     fill_payment_return_data(inserts)
     text = emit(inserts)

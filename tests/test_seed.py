@@ -336,7 +336,11 @@ def _load_day(db):
 
 
 def _days_ago(column: str) -> str:
-    """載入時間減 column 的天數（四捨五入到整天；載入時間取 Flyway 記錄的 installed_on）。"""
+    """載入時間減 column 的天數（四捨五入到整天；載入時間取 Flyway 記錄的 installed_on）。
+
+    已知限制：installed_on 是 migrate 結束後記錄、不含時區的時間，seed 的 CURRENT_TIMESTAMP 是交易開始時間；
+    migrate 跨過午夜，或 Flyway 與測試連線的時區不同，日期類斷言會差一天。遇到差一天的失敗先看這裡。
+    """
     return f"round(extract(epoch FROM ({LOAD_TS} - {column}::timestamp)) / 86400)::int"
 
 
@@ -471,6 +475,37 @@ def test_seed_orders_match_contract(db):
     assert len({o.days_ago for o in ORDERS}) == 20
 
 
+def test_seed_promo_orders_fall_inside_promo_window(db):
+    # 帶促銷價的訂單是下單當時有效的價格（契約 §0.1 第 9 項）：訂單時間在該行程的促銷期間內，
+    # 且 order_item.discount_price = promo_price × quantity。用關聯檢查，不靠兩邊的字面值剛好一致
+    rows = db.execute(
+        "SELECT t.title, oi.created_at BETWEEN n.start_date AND n.end_date, o.created_at BETWEEN n.start_date AND n.end_date,"
+        " oi.discount_price, n.promo_price * oi.quantity"
+        " FROM order_item oi JOIN orders o USING (order_id) JOIN tour t ON t.tour_id = oi.tour_id"
+        " JOIN notification n ON n.tour_id = oi.tour_id AND n.type = '促銷'"
+        " WHERE oi.discount_price IS NOT NULL"
+    ).fetchall()
+    assert len(rows) == 5
+    assert all(r[1] and r[2] for r in rows), rows
+    assert all(abs(r[3] - r[4]) < 0.01 for r in rows), rows
+    (n,) = db.execute(
+        "SELECT count(*) FROM order_item oi LEFT JOIN notification n ON n.tour_id = oi.tour_id AND n.type = '促銷'"
+        " WHERE oi.discount_price IS NOT NULL AND n.notification_id IS NULL"
+    ).fetchone()
+    assert n == 0
+
+
+def test_seed_alice_paid_orders_newest_first(db):
+    rows = db.execute(
+        "SELECT t.title FROM orders o JOIN \"user\" u USING (user_id) JOIN order_item oi USING (order_id)"
+        " JOIN tour t ON t.tour_id = oi.tour_id WHERE u.email = %s AND o.payment_status = 1"
+        " ORDER BY o.created_at DESC",
+        (EMAIL["alice"],),
+    ).fetchall()
+    want = [next(o.title for o in ORDERS if o.n == n) for n in (4, 1, 15, 10, 7)]  # 契約 §0.1 第 9 項
+    assert [r[0] for r in rows] == want
+
+
 def test_seed_payment_status_coverage(db):
     rows = db.execute("SELECT payment_status, count(*) FROM orders GROUP BY payment_status").fetchall()
     assert dict(rows) == {1: 15, -1: 1, 0: 1, 2: 1, 3: 1, 4: 1}
@@ -500,11 +535,18 @@ def test_seed_payment_status_coverage(db):
 
 def test_seed_points_follow_rules(db):
     rows = db.execute(
-        "SELECT o.total_price, o.discount_price, o.discount_type, pr.type, pr.point"
+        "SELECT o.total_price, o.discount_price, o.discount_type, pr.type, pr.point, pr.user_id = o.user_id"
         " FROM point_record pr JOIN orders o USING (order_id)"
     ).fetchall()
     assert Counter(r[3] for r in rows) == {"新增": 15, "減少": 3}
-    for total, discount, discount_type, kind, point in rows:
+    assert all(r[5] for r in rows), "point_record.user_id 必須是訂單的使用者"
+    # 每張已付款訂單恰好 1 筆新增
+    per_order = db.execute(
+        "SELECT o.payment_status, count(pr.point_id) FROM orders o"
+        " LEFT JOIN point_record pr ON pr.order_id = o.order_id AND pr.type = '新增' GROUP BY o.order_id, o.payment_status"
+    ).fetchall()
+    assert sorted(per_order) == sorted([(1, 1)] * 15 + [(s, 0) for s in (-1, 0, 2, 3, 4)])
+    for total, discount, discount_type, kind, point, _ in rows:
         if kind == "新增":
             assert abs(point - total * 0.1) < 0.01
         else:
