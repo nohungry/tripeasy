@@ -1,4 +1,4 @@
-"""確認 Flyway 已套用 V1、V2，並且 V1 的 25 張表都存在。"""
+"""確認 Flyway 已套用 V1、V2 與 R__views_functions，並且 V1 的 25 張表都存在。"""
 
 EXPECTED_TABLES = {
     "user", "socialLogin", "user_level", "coupon", "user_coupon", "point_record",

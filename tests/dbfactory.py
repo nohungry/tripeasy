@@ -1,10 +1,11 @@
 """在測試交易裡塞資料的小工具：只填必要欄位，其餘用 DEFAULTS 補 NOT NULL 欄位。
 
-外鍵欄位（user_id、tour_id…）沒有預設，一定要由呼叫端給。
+外鍵欄位（user_id、tour_id…）沒有預設，一定要由呼叫端給；影響語意的欄位（金額、狀態、type）
+也請由呼叫端明確給值，DEFAULTS 只是讓 NOT NULL 通過。
 DEFAULTS 的值若是 callable，每次 insert 呼叫一次（用於要唯一的欄位）。
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from psycopg import sql
 from psycopg.rows import dict_row
@@ -32,12 +33,13 @@ DEFAULTS: dict[str, dict] = {
     "user_level": {},
     "coupon": {
         "code": lambda: f"T{_uid()}",
-        "discount": 0.9,
+        "discount": 100.0,  # 契約 #1 定案 B：折抵金額（NT$）
         "description": "測試優惠卷",
-        "expire_date": _now,
+        "expire_date": lambda: _now() + timedelta(days=30),
     },
     "user_coupon": {"status": 0},
-    "point_record": {"type": "earn", "point": 10},
+    # type 用 app 實際寫的值（userinfo.js:37 '新增'；扣點是 checkout.js:160 的 '減少_確認中'）
+    "point_record": {"type": "新增", "point": 10},
     "tour": {
         "type": "tourgroup",
         "item": "travel",

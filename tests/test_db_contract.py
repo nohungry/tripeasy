@@ -1,4 +1,6 @@
 """契約 §0、§1–§3：每個物件的識別字、欄位（view）與簽章（function）都要和 docs/db-contract.md 一致。"""
+import re
+
 import pytest
 
 from conftest import ROOT
@@ -19,7 +21,7 @@ _TYPE_ALIASES = {
 
 def normalize_type(s: str) -> str:
     """把 PostgreSQL 的型別名稱換成契約的寫法：去掉 (…) 長度，並套用別名。"""
-    base = s.split("(")[0].strip()
+    base = re.sub(r"\s+", " ", re.sub(r"\([^)]*\)", "", s)).strip()
     return _TYPE_ALIASES.get(base, base)
 
 
@@ -29,6 +31,8 @@ def test_normalize_type():
     assert normalize_type("timestamp with time zone") == "timestamptz"
     assert normalize_type("time without time zone") == "time"
     assert normalize_type("numeric(10,2)") == "numeric"
+    assert normalize_type("timestamp(3) with time zone") == "timestamptz"
+    assert normalize_type("time(0) without time zone") == "time"
     assert normalize_type("double precision") == "double precision"
 
 

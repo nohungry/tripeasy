@@ -30,7 +30,7 @@ _TOUR_LIST_COLUMNS = [
     ("偏好分類1", "smallint"),
     ("偏好分類2", "smallint"),
     ("偏好分類3", "smallint"),
-    ("異動通知內容", "text"),
+    ("異動通知內容", "text"),  # 旅遊標語、旅遊結束日期、旅遊天數、旅遊代表圖 Url、異動通知內容 為 #26 加入
 ]
 
 # tour_tour_detail／tour_hotel／tour_restaurant 共用的行程與通知欄位（契約：「同 tour_tour_detail」）
