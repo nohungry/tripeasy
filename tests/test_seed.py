@@ -58,7 +58,9 @@ IMAGE_NAMES = ("tour", "feature", "hidden", "badge", "avatar")
 def test_seed_file_is_generated_from_source():
     # R__seed.sql 不能手動改：內容必須跟 build_seed.py 從來源檔產生的結果完全相同
     build_seed = load_build_seed()
-    expected = build_seed.build(build_seed.SOURCE.read_text(encoding="utf-8"))
+    expected = build_seed.build(
+        build_seed.SOURCE.read_text(encoding="utf-8"), build_seed.EXTRA.read_text(encoding="utf-8")
+    )
     assert SEED.read_text(encoding="utf-8") == expected
 
 
