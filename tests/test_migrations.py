@@ -27,3 +27,11 @@ def test_all_v1_tables_exist(db):
     }
     missing = EXPECTED_TABLES - names
     assert not missing, f"缺少資料表：{sorted(missing)}"
+
+
+def test_flyway_applied_views_functions(db):
+    row = db.execute(
+        "SELECT success FROM flyway_schema_history "
+        "WHERE script = 'R__views_functions.sql' ORDER BY installed_rank DESC LIMIT 1"
+    ).fetchone()
+    assert row == (True,)
