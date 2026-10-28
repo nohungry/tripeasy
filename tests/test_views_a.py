@@ -246,13 +246,17 @@ def test_tour_base_promo_period_bounds_are_inclusive(tx):
 
 
 def test_tour_base_latest_notification_of_same_type_wins(tx):
+    # 每組中較舊的列給排序在前的 notification_id：只靠 notification_id 排序的退化實作會選到舊的
     tour = make_tour(tx)
-    insert(tx, "notification", tour_id=tour["tour_id"], type="促銷", promo_price=700.0,
-           start_date=days(-1), end_date=days(1), updated_at=days(-3))
-    insert(tx, "notification", tour_id=tour["tour_id"], type="促銷", promo_price=900.0,
-           start_date=days(-1), end_date=days(1), updated_at=days(-1))
-    insert(tx, "notification", tour_id=tour["tour_id"], type="異動", change_desc="舊", updated_at=days(-4))
-    insert(tx, "notification", tour_id=tour["tour_id"], type="異動", change_desc="新", updated_at=days(-2))
+    ids = [f"00000000-0000-4000-8000-00000000000{i}" for i in range(1, 5)]
+    insert(tx, "notification", notification_id=ids[0], tour_id=tour["tour_id"], type="促銷",
+           promo_price=700.0, start_date=days(-1), end_date=days(1), updated_at=days(-3))
+    insert(tx, "notification", notification_id=ids[1], tour_id=tour["tour_id"], type="促銷",
+           promo_price=900.0, start_date=days(-1), end_date=days(1), updated_at=days(-1))
+    insert(tx, "notification", notification_id=ids[2], tour_id=tour["tour_id"], type="異動",
+           change_desc="舊", updated_at=days(-4))
+    insert(tx, "notification", notification_id=ids[3], tour_id=tour["tour_id"], type="異動",
+           change_desc="新", updated_at=days(-2))
     (row,) = rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = %s', (tour["tour_id"],))
     assert row["促銷價錢"] == 900.0  # #8：同類型取 updated_at 最大
     assert row["異動通知內容"] == "新"
@@ -260,7 +264,9 @@ def test_tour_base_latest_notification_of_same_type_wins(tx):
 
 def test_tour_travel_matches_tour_base_columns(tx):
     """tour_travel 的欄位 ＝ tour_base ＋ 收藏狀態，值也要一致（防欄位位置錯位）。"""
-    tour = make_tour(tx)
+    # 同型別的欄位用不同的值，欄位錯位才看得出來
+    tour = make_tour(tx, tour_start_date=days(10), tour_end_date=days(14),
+                     created_at=days(-5), updated_at=days(-2))
     insert(tx, "notification", tour_id=tour["tour_id"], type="促銷", promo_price=500.0,
            start_date=days(-1), end_date=days(1))
     (base,) = rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = %s', (tour["tour_id"],))
@@ -300,6 +306,16 @@ def test_tour_restaurant_menu_only_has_no_placeholder_row(tx):
     result = rows(tx, 'SELECT * FROM tour_restaurant(NULL::uuid) WHERE "旅遊編號" = %s', (tour["tour_id"],))
     assert len(result) == 2
     assert all(r["菜單名稱"] is not None and r["營業星期"] is None for r in result)
+
+
+def test_tour_restaurant_opening_only_has_no_placeholder_row(tx):
+    tour = make_tour(tx, type="backpacker", item="food")
+    restaurant = insert(tx, "restaurant", tour_id=tour["tour_id"])
+    for week in ("週一", "週二", "週三"):
+        insert(tx, "restaurant_business", restaurant_id=restaurant["restaurant_id"], week=week)
+    result = rows(tx, 'SELECT * FROM tour_restaurant(NULL::uuid) WHERE "旅遊編號" = %s', (tour["tour_id"],))
+    assert len(result) == 3
+    assert all(r["營業星期"] is not None and r["菜單名稱"] is None for r in result)
 
 
 def test_user_user_level_without_level_still_one_row(tx):
