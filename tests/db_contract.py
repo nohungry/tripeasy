@@ -3,7 +3,7 @@
 key 是 CREATE 時的識別字（等於 pg_class.relname／pg_proc.proname，所以
 restaurant_isClosed 的 key 是小寫的 restaurant_isclosed）。
 型別用契約寫法；args 只比型別與順序，名稱僅供閱讀。
-Task 4 放 A 組，Task 5、6 加入 B、C 組。
+Task 4 放 A 組，Task 5 加 B 組，Task 6 加 C 組。
 """
 
 _TOUR_LIST_COLUMNS = [
@@ -150,6 +150,111 @@ OBJECTS: dict[str, dict] = {
             ("旅遊徽章 Url", "varchar"),
             ("評分", "integer"),
             ("評論內容", "text"),
+        ],
+    },
+    # ---------- B 組：購物車、訂位、折扣、結帳 ----------
+    "user_cartList": {
+        "kind": "view",
+        "args": [],
+        "columns": [
+            ("user_id", "uuid"),
+            ("cart_id", "uuid"),
+            ("tour_id", "uuid"),
+            ("大分類", "varchar"),
+            ("小分類", "varchar"),
+            ("旅遊名稱", "varchar"),
+            ("旅遊代表圖 Url", "text"),
+            ("價錢", "integer"),
+            ("促銷價錢", "double precision"),
+            ("quantity", "integer"),
+            ("start_date", "timestamp"),
+            ("end_date", "timestamp"),
+            ("room_type", "varchar"),
+            ("singleTotal_Price", "double precision"),
+            ("cart_item_id", "uuid"),  # #35 多帶
+        ],
+    },
+    "hotel_booking": {
+        "kind": "function",
+        "args": [("房型", "varchar"), ("入住日期", "timestamp"), ("退房日期", "timestamp"), ("旅遊編號", "uuid")],
+        "columns": [("booking_count", "integer"), ("room_count", "integer")],
+    },
+    "restaurant_booking": {
+        "kind": "function",
+        "args": [("預約時間", "timestamp"), ("旅遊編號", "uuid")],
+        "columns": [("booking_count", "integer"), ("reservation_limit", "integer")],
+    },
+    "restaurant_isclosed": {
+        "kind": "function",
+        "args": [("預約時間", "timestamp"), ("旅遊編號", "uuid")],
+        "columns": [("isclosed", "boolean")],
+    },
+    "restaurant_business_parsed": {
+        "kind": "view",
+        "args": [],
+        "columns": [
+            ("tour_id", "uuid"),
+            ("week", "varchar"),
+            ("start_time", "time"),
+            ("end_time", "time"),
+        ],
+    },
+    "user_couponList": {
+        "kind": "view",
+        "args": [],
+        "columns": [
+            ("user_id", "uuid"),
+            ("coupon_id", "uuid"),
+            ("code", "varchar"),
+            ("discount", "double precision"),
+            ("description", "text"),
+            ("expire_date", "timestamp"),
+            ("expired_date", "timestamp"),  # #36 同值多帶
+            ("status", "smallint"),
+            ("order_id", "uuid"),
+        ],
+    },
+    "user_level_point_coupon": {
+        "kind": "view",
+        "args": [],
+        "columns": [
+            ("使用者編號", "uuid"),
+            ("名稱", "varchar"),
+            ("信箱", "varchar"),
+            ("角色", "varchar"),
+            ("個人照片 Url", "varchar"),
+            ("個人偏好 1", "smallint"),
+            ("個人偏好 2", "smallint"),
+            ("個人偏好 3", "smallint"),
+            ("旅遊等級", "varchar"),
+            ("旅遊等級名稱", "varchar"),
+            ("旅遊徽章 Url", "varchar"),
+            ("使用者旅遊積分", "integer"),
+            ("優惠卷編號", "uuid"),
+            ("優惠卷代碼", "varchar"),
+            ("優惠卷折扣", "double precision"),
+            ("優惠卷描述", "text"),
+            ("優惠卷期限", "timestamp"),
+        ],
+    },
+    "user_orderList": {
+        "kind": "view",
+        "args": [],
+        "columns": [
+            ("order_id", "uuid"),
+            ("tour_id", "uuid"),
+            ("大分類", "varchar"),
+            ("小分類", "varchar"),
+            ("旅遊名稱", "varchar"),
+            ("旅遊代表圖 Url", "text"),
+            ("價錢", "double precision"),
+            ("促銷價錢", "double precision"),
+            ("quantity", "integer"),
+            ("start_date", "timestamp"),
+            ("end_date", "timestamp"),
+            ("room_type", "varchar"),
+            ("singleTotal_Price", "double precision"),
+            ("total_count", "integer"),
         ],
     },
 }
