@@ -18,6 +18,7 @@ def rows(tx, query: str, params=()) -> list[dict]:
 
 
 def days(n: int) -> datetime:
+    # 用 Python 本地時間；DB session 是 UTC，所以只拿來做相差幾天的資料，精確邊界請用 now()::timestamp
     return datetime.now() + timedelta(days=n)
 
 
@@ -163,6 +164,26 @@ def test_hotel_booking_date_range_is_half_open(tx):
     assert count(d(3), d(4)) == 1, "包在既有訂單裡"
     assert count(d(0), d(9)) == 1, "包住既有訂單"
     assert count(d(2), d(5)) == 1, "完全相同"
+
+
+def test_hotel_booking_room_count_sums_same_title_rooms(tx):
+    tour = make_tour(tx)
+    make_hotel_room(tx, tour, "同名房", 2)
+    make_hotel_room(tx, tour, "同名房", 3)
+    make_hotel_room(tx, tour, "別的房", 100)
+    q = "SELECT room_count FROM hotel_booking('同名房', %s, %s, %s)"
+    assert rows(tx, q, (days(1), days(2), tour["tour_id"])) == [{"room_count": 5}]
+
+
+def test_hotel_booking_skips_order_item_with_null_end_date(tx):
+    """V1 的 order_item.end_date 可為 NULL（契約 h）：沒有退房日就不計入。"""
+    user = make_user(tx)
+    tour = make_tour(tx)
+    make_hotel_room(tx, tour, "房A", 5)
+    make_order_item(tx, user, tour, room_type="房A", payment_status=1, start_date=days(10), end_date=None)
+    make_order_item(tx, user, tour, room_type="房A", payment_status=1, start_date=days(10), end_date=days(12))
+    (row,) = rows(tx, "SELECT * FROM hotel_booking('房A', %s, %s, %s)", (days(9), days(13), tour["tour_id"]))
+    assert row == {"booking_count": 1, "room_count": 5}
 
 
 def test_hotel_booking_room_count_from_the_right_tour(tx):
@@ -329,8 +350,9 @@ def test_point_coupon_only_usable_and_keeps_user(tx):
     insert(tx, "user_level", user_id=user["user_id"], level="Lv1", name="探險家",
            badge_url="https://img.example.com/b.png", travel_point=1500)
     usable = _bind(tx, user, 0, days(5), discount=70.0, description="可用")
-    on_boundary = _bind(tx, user, 0, datetime.now().replace(microsecond=0), description="邊界")
-    # 以 now()::timestamp 精確等於「現在」：到期時刻本身仍算未過期（controller：now > expire 才過期）
+    on_boundary = _bind(tx, user, 0, days(5), description="邊界")
+    # 用 DB 的 tx 時鐘（now() 在 tx 內固定）設成精確等於「現在」，Python 時鐘與 DB 的 UTC 不同，湊不出精確邊界；
+    # 到期時刻本身仍算未過期（controller：now > expire 才過期）
     tx.execute("UPDATE coupon SET expire_date = now()::timestamp WHERE coupon_id = %s", (on_boundary["coupon_id"],))
     _bind(tx, user, 1, days(5))                                    # 已使用
     _bind(tx, user, -1, days(5))                                   # 預覽占用
