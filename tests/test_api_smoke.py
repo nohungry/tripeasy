@@ -275,7 +275,7 @@ def test_points_level_alice_has_null_coupon_placeholder(api, alice_h, alice):
     assert_has_keys(me, POINTS_KEYS)
     assert me["level"] and me["travel_point"] > 0
     # alice 唯一的優惠卷 VIP300 已使用（status = 1），不符合 #39（只列 status = 0 且未過期）。
-    # 契約 #40（docs/db-contract.md:1304–1306）：LEFT JOIN → 仍有 1 列，優惠卷欄位全 NULL，
+    # 契約 #40（docs/db-contract.md:1303–1306）：LEFT JOIN → 仍有 1 列，優惠卷欄位全 NULL，
     # controller 會 push 一個全 null 的物件。
     assert me["coupon"] == [dict.fromkeys(COUPON_KEYS)]
 
@@ -283,8 +283,10 @@ def test_points_level_alice_has_null_coupon_placeholder(api, alice_h, alice):
 def test_points_level_carol_has_usable_coupon(api, users):
     # carol 的 TRV010 是 status = 0。注意：TRV010 的 expire_date 由 db/seed-build/build_seed.py 以載入日為錨點
     # （+133 天），到期後 view 的 expire_date >= now() 會把它濾掉，這支測試就要重載 seed（seed 日期維護點）。
-    r = api.get(f"{BASE}/user/userinfo/pointslevel", headers=auth_header(users["carol@example.com"]))
+    carol = users["carol@example.com"]
+    r = api.get(f"{BASE}/user/userinfo/pointslevel", headers=auth_header(carol))
     me = data_rows(r)[0]
+    assert me["user_id"] == carol["user_id"]
     assert_has_keys(me, POINTS_KEYS)
     assert_has_keys(me["coupon"][0], COUPON_KEYS)
     assert me["coupon"][0]["code"] == "TRV010"
