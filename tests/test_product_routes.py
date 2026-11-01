@@ -21,9 +21,9 @@ def test_guest_can_reach_public_tour_detail(api):
 
 
 def test_guest_tour_list_is_not_blocked_by_admin_auth(api):
-    r = api.get(PUBLIC)
-    # P1a 還沒有 tour_base view，所以這裡可能是 500；P1b 的冒煙測試會要求 200
-    assert r.status_code not in (401, 403), r.text
+    # queryschema 規定 page／limit／sort_by／order／lang 必填，不帶會是 400（跟 admin auth 無關）
+    r = api.get(PUBLIC, params={"page": 1, "limit": 10, "sort_by": "date", "order": "asc", "lang": "zh-TW"})
+    assert r.status_code == 200, r.text
 
 
 def test_admin_status_route_is_reachable(api, make_user):
@@ -55,3 +55,22 @@ def test_public_routes_not_exposed_under_admin_prefix(api):
     r = api.get(f"{ADMIN}/{uuid.uuid4()}/reviews")
     assert r.status_code == 404, r.text
     assert r.json()["message"] == NOT_FOUND_ROUTE
+
+
+def test_admin_patch_tour_is_reachable(api, db, make_user):
+    # 走到 PATCH /:tour_id（而不是被 /status 或 404 吃掉）。送一個驗證器必定拒絕的 body：
+    # tour_product 存在、travel.features 型別錯誤 → middleware 回 400，不會進 controller，也就不會改資料。
+    admin = make_user(role="admin")
+    tour_id, updated_at = db.execute(
+        "SELECT t.tour_id, t.updated_at FROM tour t JOIN tour_detail d USING (tour_id) "
+        "WHERE t.status = 1 ORDER BY t.title LIMIT 1"
+    ).fetchone()
+    r = api.patch(
+        f"{ADMIN}/{tour_id}",
+        headers=auth_header(admin),
+        json={"tour_product": {}, "travel": {"features": "not-an-array"}},
+    )
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "欄位未填寫正確"
+    after = db.execute("SELECT updated_at FROM tour WHERE tour_id = %s", (tour_id,)).fetchone()[0]
+    assert after == updated_at  # 沒有改到 seed
