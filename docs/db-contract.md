@@ -1729,6 +1729,7 @@
 
 - 首頁沒帶 `type`（或 `type=tourgroup` 沒帶 `item`）時整個回 500：`middlewares/home/index.js:7` 的 default 沒寫回 `req.query`，`home.js:86` 對 `''` 讀 `.rows`（§1 `tour_base` 邊界）。
 - 詳情頁找不到行程、已下架或 type／item 不在對照表時回 500，不是 404（`product.js:178–202`）；function 回 0 列時 `product.js:209` 先 TypeError（§1 `tour_tour_detail` 邊界）。
+- 管理者商品清單 `GET /api/v1/admin/product` 一律回 500（P1b Task 7 冒煙測試發現）：兩個獨立 bug，都要修。(1) `middlewares/product/index.js:296` 從 `req.user` 解構 `tour_ids`，但登入簽發的 JWT 只有 `{ id, role }`（`controllers/userinfo.js:96,208`），`:312` 的 `tour_ids.map` 對 `undefined` 丟 TypeError；(2) 即使有 `tour_ids`，`:312–315` 把 `map` 回傳的 Promise 陣列當查詢結果讀 `.rows`（`userResult.rows` 為 `undefined`，`.length` 再丟 TypeError），那段「查無此項目 404」檢查本身也從未生效。後果：管理者看不到商品清單（`tour_base` 的 admin 使用位置 `controllers/product.js:1067` 因此在 API 層走不到）。P2 管理者商品負責處理；`tests/test_api_smoke.py::test_admin_product_list` 以 `xfail(strict=True)` 記錄，修好後會 XPASS 失敗，提醒移除 xfail。
 - 餐廳額滿檢查的第 1 個參數恆為 `NULL`：`middlewares/cart/index.js:73,208` 傳 `options.start_time`，驗證器只有 `start_date`（§2 `restaurant_booking`）。
 - 購物車：`cart.js:47–50` 更新使用者所有購物車；`cart.total_price` 與 `GET /list` 的 `summary.total_price` 各自計算（`cart.js:230`）；list 不輸出 `cart_item_id`（`cart.js:209–225`）；分頁排序鍵相同（`cart.js:204`）（§2 `user_cartList`）。
 - 結帳：只有購物車第一個項目進入 `order_item`（`checkout.js:20–33,42–56`）；訂單沒有項目或非擁有者時 `GET /summary` 500（`checkout.js:263`、`:225`）（§2 `user_orderList`）。

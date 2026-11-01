@@ -110,6 +110,7 @@ def test_home_products_guest(api, type_, item, ranking):
     r = api.get(f"{BASE}/user/home/search/products", params={"type": type_, "item": item, **PAGING})
     rows = data_rows(r)
     assert_has_keys(rows[0], _home_expected("tour_base", ranking))
+    assert {row["小分類"] for row in rows} == {item if type_ == "backpacker" else "travel"}
     assert "收藏狀態" not in rows[0]  # 未登入走 tour_base，沒有收藏狀態
 
 
@@ -123,6 +124,7 @@ def test_home_products_logged_in(api, alice_h, type_, item, ranking):
     )
     rows = data_rows(r)
     assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+    assert {row["小分類"] for row in rows} == {item if type_ == "backpacker" else "travel"}
 
 
 def test_home_promotion_rows_are_promotions(api):
@@ -172,6 +174,9 @@ def _get_detail(api, tour_id, headers=None):
     assert data["tour_id"] == tour_id
     assert_has_keys(data, DETAIL_COMMON)
     assert len(data["image_spot"]) == 6
+    for spot in data["image_spot"]:
+        assert set(spot) == {"description", "image_url"}
+    assert data["image_spot"][0]["image_url"]  # 來自 旅遊圖1 Url，不是 controller 常數
     assert_has_keys(data["location"], ["country", "region", "address", "google_map"])
     assert_has_keys(data["promotion"], ["is_promoted", "promo_price", "tag", "start_at", "end_at"])
     return data
@@ -181,6 +186,7 @@ def test_detail_travel_tour_tour_detail(api, db):
     # tourgroup/travel → tour_tour_detail
     data = _get_detail(api, seed_tour_id(db, "tourgroup", "travel"))
     assert data["type"] == "tourgroup" and data["item"] == "travel"
+    assert data["is_favorited"] is False  # 未登入：使用者編號 NULL
     assert data["itinerary"]
     assert len(data["feature"]) == 3 and all(f["description"] for f in data["feature"])
 
@@ -197,7 +203,7 @@ def test_detail_hotel_tour_hotel(api, db):
     assert data["item"] == "hotel"
     rooms = data["feature"]["room"]
     assert rooms and all(room["name"] for room in rooms)
-    assert [s["name"] for s in data["feature"]["service"]][0] == "基本設施與服務"
+    assert data["feature"]["service"][0]["item"]  # 來自 基本設施與服務 欄位
 
 
 def test_detail_food_tour_restaurant(api, db):
@@ -205,7 +211,9 @@ def test_detail_food_tour_restaurant(api, db):
     assert data["item"] == "food"
     feature = data["feature"]
     assert_has_keys(feature, ["about", "menu", "opening"])
-    assert feature["menu"] and feature["opening"]
+    # 菜單列與營業時間列是分開的列（menu XOR opening），所以各自找有值的列
+    assert any(m["name"] for m in feature["menu"])
+    assert any(o["week"] for o in feature["opening"])
 
 
 def test_detail_logged_in_has_favorite_flag(api, db, alice_h):
@@ -243,24 +251,44 @@ def test_tour_hidden_shares_use_user_level(api, db):
         params={"page": 1, "limit": 10, "lang": LANG},
     )
     assert r.status_code == 200, r.text
-    assert r.json()["data"], r.text
+    rows = r.json()["data"]
+    assert rows, r.text
+    assert_has_keys(rows[0], ["shares_id", "name", "avatar", "level", "content", "url", "create_date"])
+    # controller 的 title 讀 row.type，hidden_play 沒有這欄（undefined → JSON 省略），不是 view 的問題，這裡不斷言
+    assert rows[0]["name"] and rows[0]["level"]["name"] and rows[0]["level"]["badge_icon"]
 
 
 # ------------------------------------------------------- 會員等級與點數：user_level_point_coupon
 
 
-def test_points_level_and_coupons(api, alice_h, alice):
+POINTS_KEYS = [
+    "name", "email", "role", "avatar_url", "preference1", "preference2", "preference3",
+    "level", "level_name", "badge_url", "travel_point", "coupon",
+]  # fmt: skip
+COUPON_KEYS = ["coupon_id", "code", "discount", "description", "expire_date"]
+
+
+def test_points_level_alice_has_null_coupon_placeholder(api, alice_h, alice):
     r = api.get(f"{BASE}/user/userinfo/pointslevel", headers=alice_h)
     me = data_rows(r)[0]
     assert me["user_id"] == alice["user_id"]
-    assert_has_keys(
-        me,
-        ["name", "email", "role", "avatar_url", "preference1", "preference2", "preference3",
-         "level", "level_name", "badge_url", "travel_point", "coupon"],
-    )  # fmt: skip
+    assert_has_keys(me, POINTS_KEYS)
     assert me["level"] and me["travel_point"] > 0
-    assert me["coupon"], "alice 應有優惠卷"
-    assert_has_keys(me["coupon"][0], ["coupon_id", "code", "discount", "description", "expire_date"])
+    # alice 唯一的優惠卷 VIP300 已使用（status = 1），不符合 #39（只列 status = 0 且未過期）。
+    # 契約 #40（docs/db-contract.md:1304–1306）：LEFT JOIN → 仍有 1 列，優惠卷欄位全 NULL，
+    # controller 會 push 一個全 null 的物件。
+    assert me["coupon"] == [dict.fromkeys(COUPON_KEYS)]
+
+
+def test_points_level_carol_has_usable_coupon(api, users):
+    # carol 的 TRV010 是 status = 0。注意：TRV010 的 expire_date 由 db/seed-build/build_seed.py 以載入日為錨點
+    # （+133 天），到期後 view 的 expire_date >= now() 會把它濾掉，這支測試就要重載 seed（seed 日期維護點）。
+    r = api.get(f"{BASE}/user/userinfo/pointslevel", headers=auth_header(users["carol@example.com"]))
+    me = data_rows(r)[0]
+    assert_has_keys(me, POINTS_KEYS)
+    assert_has_keys(me["coupon"][0], COUPON_KEYS)
+    assert me["coupon"][0]["code"] == "TRV010"
+    assert me["coupon"][0]["expire_date"] is not None
 
 
 # ------------------------------------------------------------------------- 購物車：user_cartList
@@ -370,18 +398,21 @@ def test_admin_change_info(api, bob_h):
     # controllers/admin.js:get_Changeinfo 只 SELECT 這幾欄
     assert_has_keys(
         rows[0],
-        ["旅遊編號", "上下架狀態", "旅遊名稱", "旅遊描述", "所屬國家", "所屬地區", "建立時間", "價錢",
-         "旅遊代表圖 Url"],
+        ["旅遊編號", "上下架狀態", "通知狀態", "旅遊名稱", "旅遊描述", "所屬國家", "所屬地區", "建立時間",
+         "價錢", "旅遊代表圖 Url"],
     )  # fmt: skip
 
 
 @pytest.mark.xfail(
     strict=True,
-    reason="契約 §4.2 未記錄：middlewares/product/index.js:296,312 讀 req.user.tour_ids，登入簽發的 JWT 只有 {id, role}，"
-    "GET /admin/product 一律 TypeError → 500。controller 不在 P1 範圍，待使用者決定排程",
+    raises=AssertionError,
+    reason="契約 §4.2：GET /admin/product 一律 500，兩個獨立 bug 都要修——"
+    "middlewares/product/index.js:296 讀 req.user.tour_ids，JWT 只有 {id, role} 所以是 undefined；"
+    "index.js:312–315 對 map 回傳的 Promise 陣列讀 .rows。controller 不在 P1 範圍，P2 處理",
 )
 def test_admin_product_list(api, bob_h):
     r = api.get(f"{BASE}/admin/product", headers=bob_h, params={"page": 1, "limit": 20})
+    assert r.status_code == 200, r.text  # 目前是 500 → AssertionError → xfail
     rows = data_rows(r)
     assert_has_keys(
         rows[0],
@@ -394,7 +425,10 @@ def test_admin_product_list(api, bob_h):
 
 
 def test_filter_region_for_seed_country(api, db):
-    country_id, name = db.execute("SELECT country_id, name FROM country ORDER BY name LIMIT 1").fetchone()
+    country_id, name = db.execute(
+        "SELECT c.country_id, c.name FROM country c "
+        "WHERE EXISTS (SELECT 1 FROM region r WHERE r.country_id = c.country_id) ORDER BY c.name LIMIT 1"
+    ).fetchone()
     r = api.get(f"{BASE}/web/filter/{country_id}/region")
     rows = data_rows(r)
     assert_has_keys(rows[0], ["region_id", "name"])
