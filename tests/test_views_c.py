@@ -127,7 +127,7 @@ def test_orders_view_keeps_order_by_created_at_desc(tx):
         (str(uuid.uuid4()),),
     ).fetchone()
     node = plan[0]["Plan"]
-    while node["Node Type"] != "Sort":  # 最外層可能是 Subquery Scan
+    while node["Node Type"] != "Sort":  # 往下找第一個 Sort（上層可能有 Subquery Scan 等節點）
         assert node.get("Plans"), f"計畫裡找不到 Sort：{node['Node Type']}"
         node = node["Plans"][0]
     assert node["Sort Key"] == ["o.created_at DESC"]

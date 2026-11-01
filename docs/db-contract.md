@@ -1564,8 +1564,8 @@
 
   | 欄位 | 型別 | 來源（【定案 #11】） | 依據（原推測理由） |
   |---|---|---|---|
-  | order_id、tour_id、payment_status、total_price、discount_price、quantity、start_date、end_date、room_type | 同 `order_item` | `order_item.*`（`V1:288–303`） | 「訂單明細」；`preference1` 與 `order_item_id` 都是 V1 風格的英文欄位名，可能整個 view 沿用英文欄位 |
-  | title、cover_image、type、item 等（`tour` 的欄位，英文欄位名） | 同 `tour` | `tour.*` | 明細頁要顯示行程 |
+  | order_id、tour_id、payment_status、total_price、discount_price、quantity、start_date、end_date、room_type、created_at、updated_at | 同 `order_item` | `order_item.*`（`V1:288–303`；`created_at`／`updated_at` 取 `order_item`，2026-11-01 使用者決定） | 「訂單明細」；`preference1` 與 `order_item_id` 都是 V1 風格的英文欄位名，可能整個 view 沿用英文欄位 |
+  | title、cover_image、type、item 等（`tour` 的欄位，英文欄位名） | 同 `tour` | `tour.*`（不含 `created_at`／`updated_at`；`tour_id` 只出現一次） | 明細頁要顯示行程 |
   | address、phone、payment_type、discount_type | 同 `orders` | `orders.*`（`V1:270–283`） | 明細頁要顯示收件／付款資訊。【定案 #47】**不帶入**這些欄位，只多帶 `使用者編號`（`orders.user_id`）；若日後 P3–P6 接前端時發現明細頁需要地址與電話，改採 #47 的 B（依 spec 重構規則，view、契約與契約測試一起改），且要先處理 §4.2 (c) |
 
   註記：`created_at`／`updated_at` 取 `order_item`（2026-11-01 使用者決定），不取 `tour` 的；`tour` 的其餘欄位照 `tour.*`（`tour_id` 只出現一次）。`address` 是 `tour.address`（行程地點），**不是**收件地址（#47 不帶 `orders.address`）。
