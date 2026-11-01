@@ -287,7 +287,7 @@ OBJECTS: dict[str, dict] = {
     "user_order_item": {
         "kind": "view",
         "args": [],
-        # #11 命名 A（全部英文）：order_item 的欄位 ＋ tour.*（tour_id 只出現一次）＋ #47 的 使用者編號
+        # #11 命名 A（全部英文）：order_item 的欄位 ＋ tour.*（tour_id 只出現一次；created_at／updated_at 取 order_item）＋ #47 的 使用者編號
         "columns": [
             ("order_item_id", "uuid"),
             ("使用者編號", "uuid"),

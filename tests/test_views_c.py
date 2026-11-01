@@ -116,11 +116,29 @@ def test_orders_paid_only_newest_first(tx):
     assert (r["偏好分類1"], r["偏好分類2"], r["偏好分類3"]) == (1, 2, 3)  # #42
 
 
+def test_orders_view_keeps_order_by_created_at_desc(tx):
+    """#45 的確定性檢查（不靠資料的物理順序）：定義裡有 ORDER BY，且 controller 的查詢
+    （purchases.js:9，帶 WHERE）計畫的頂層 Sort 仍是 orders.created_at DESC。"""
+    (viewdef,) = tx.execute("SELECT pg_get_viewdef('\"user_orders\"'::regclass)").fetchone()
+    assert " ".join(viewdef.split()).rstrip(";").endswith("ORDER BY o.created_at DESC")
+
+    (plan,) = tx.execute(
+        'EXPLAIN (FORMAT JSON) SELECT * FROM "user_orders" WHERE "使用者編號" = %s',
+        (str(uuid.uuid4()),),
+    ).fetchone()
+    node = plan[0]["Plan"]
+    while node["Node Type"] != "Sort":  # 最外層可能是 Subquery Scan
+        assert node.get("Plans"), f"計畫裡找不到 Sort：{node['Node Type']}"
+        node = node["Plans"][0]
+    assert node["Sort Key"] == ["o.created_at DESC"]
+
+
 # ---------- user_order_item ----------
 
 def test_order_item_exactly_one_row_with_owner(tx):
     user = make_user(tx)
-    tour = make_tour(tx, title="明細行程", preference1=3, preference2=4, preference3=5)
+    tour = make_tour(tx, title="明細行程", preference1=3, preference2=4, preference3=5,
+                     created_at=BASE + timedelta(days=100), updated_at=BASE + timedelta(days=101))
     # 讓一對多的表都有多列：若 view 誤 JOIN 它們，就會變成多列（#46）
     insert(tx, "tour_detail", tour_id=tour["tour_id"])
     insert(tx, "tour_detail", tour_id=tour["tour_id"])
@@ -130,7 +148,8 @@ def test_order_item_exactly_one_row_with_owner(tx):
         hotel = insert(tx, "hotel", tour_id=tour["tour_id"])
         insert(tx, "hotel_room", hotel_id=hotel["hotel_id"])
     item = make_item(tx, user, tour, payment_status=1, total_price=900.0, discount_price=800.0,
-                     quantity=3, room_type="雙人房")
+                     quantity=3, room_type="雙人房",
+                     created_at=BASE + timedelta(days=1), updated_at=BASE + timedelta(days=2))
     # 同一張訂單的另一個項目與別人的項目不應混進來
     insert(tx, "order_item", order_id=item["order_id"], tour_id=tour["tour_id"], payment_status=1)
 
@@ -143,6 +162,9 @@ def test_order_item_exactly_one_row_with_owner(tx):
     assert r["tour_id"] == tour["tour_id"]
     assert (r["total_price"], r["discount_price"], r["quantity"], r["room_type"]) == (900.0, 800.0, 3, "雙人房")
     assert r["title"] == "明細行程"
+    # created_at／updated_at 取 order_item（2026-11-01 使用者決定），不是 tour 的
+    assert (r["created_at"], r["updated_at"]) == (BASE + timedelta(days=1), BASE + timedelta(days=2))
+    assert (r["created_at"], r["updated_at"]) != (tour["created_at"], tour["updated_at"])
     assert (r["preference1"], r["preference2"], r["preference3"]) == (3, 4, 5)  # #42
     assert "address" in r and r["address"] == tour["address"]  # tour.address，不是 orders.address
     assert "phone" not in r and "payment_type" not in r  # #47 不帶 orders 的地址電話
@@ -172,17 +194,23 @@ def test_order_item_inactive_tour_still_appears(tx):
 def test_adminlist_one_row_latest_level(tx):
     user = make_user(tx, role="admin", preference1=6, preference2=7, preference3=8)
     other = make_user(tx)
-    # 最新的那筆 level_id 較大、最舊的那筆 level_id 較小，且先插入最新的：
-    # 若 view 改成只用 level_id／插入順序決勝，會選到舊的
-    newest_id = uuid.UUID("ffffffff-0000-4000-8000-000000000001")
-    oldest_id = uuid.UUID("00000000-0000-4000-8000-000000000001")
-    middle_id = uuid.UUID("88888888-0000-4000-8000-000000000001")
-    insert(tx, "user_level", level_id=str(newest_id), user_id=user["user_id"], level="Level 3",
-           name="最新", badge_url="https://b/3", travel_point=300, updated_at=BASE + timedelta(days=10))
-    insert(tx, "user_level", level_id=str(oldest_id), user_id=user["user_id"], level="Level 1",
-           name="最舊", badge_url="https://b/1", travel_point=100, updated_at=BASE)
-    insert(tx, "user_level", level_id=str(middle_id), user_id=user["user_id"], level="Level 2",
-           name="中間", badge_url="https://b/2", travel_point=200, updated_at=BASE + timedelta(days=5))
+    # 「updated_at 最新」的那筆在 level_id 順序、插入順序、created_at 順序上都不是頭也不是尾，
+    # 所以 level_id ASC／DESC、不排序（heap 頭／尾）、created_at DESC 這些錯誤實作都會選錯。
+    #   level_id：oldest=ffff… > newest=8888… > middle=0000…
+    #   插入順序：oldest → newest → middle
+    #   created_at：與 updated_at 相反（newest 的 created_at 最早）
+    oldest_id = "ffffffff-0000-4000-8000-000000000001"
+    newest_id = "88888888-0000-4000-8000-000000000001"
+    middle_id = "00000000-0000-4000-8000-000000000001"
+    insert(tx, "user_level", level_id=oldest_id, user_id=user["user_id"], level="Level 1",
+           name="最舊", badge_url="https://b/1", travel_point=100,
+           updated_at=BASE, created_at=BASE + timedelta(days=30))
+    insert(tx, "user_level", level_id=newest_id, user_id=user["user_id"], level="Level 3",
+           name="最新", badge_url="https://b/3", travel_point=300,
+           updated_at=BASE + timedelta(days=10), created_at=BASE)
+    insert(tx, "user_level", level_id=middle_id, user_id=user["user_id"], level="Level 2",
+           name="中間", badge_url="https://b/2", travel_point=200,
+           updated_at=BASE + timedelta(days=5), created_at=BASE + timedelta(days=15))
     insert(tx, "user_level", user_id=other["user_id"], level="Other", name="別人", travel_point=1)
 
     got = rows(tx, 'SELECT * FROM "user_adminList" WHERE "使用者編號" = %s', (user["user_id"],))

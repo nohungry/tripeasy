@@ -1517,6 +1517,7 @@
 
 - **列的語意**：推測為「每個訂單項目（`order_item`）一列」（見待確認 1），列出該使用者（`orders.user_id`）名下的項目，並帶入行程資料。沒有預設排序。【定案 #44、#6、#45、#41】每個 `order_item` 一列（含 `order_item_id`）；只含 `order_item.payment_status = 1`；view 內含 `ORDER BY`（依 `orders.created_at` 由新到舊，V1:280）；下架行程的購買紀錄也出現。
 - **邊界**：
+  - **排序（2026-11-01 使用者決定）**：`ORDER BY` 只有 `orders.created_at DESC`，不加第二排序鍵；同一張訂單的多個項目之間沒有穩定順序，P4 若一張訂單可有多個項目再重新檢視。
   - **controller 行為 1（沒有分頁）**：`purchases.js:9` 沒有 `LIMIT`，使用者的所有項目一次回傳。
   - **controller 行為 2（回應形狀）**：有資料時 `dbdata: transformedRows`（陣列，`purchases.js:37`），client 拿到 `body.data[]`；沒有資料時 `message: '查無資料'` 且沒有 `data`（`purchases.js:41–45`，`resStatus` 對空陣列也不放 `data`）。
   - **controller 行為 3（付款狀態實際上寫不到 1）**：能影響這個 view 的 `payment_status` 寫入點：`controllers/checkout.js:36–39`（`orders` 建立，`-1`）、`:43–56`（`order_item` 建立，`-1`）、`:133–139`（`orders` 與 `order_item` 都改成 `0`）、`controllers/newebpay.js:70–72`（`orders` 改 `0`）、`:206`（`orders` 改 `1`）。`newebpay.js:80–84`、`:211–215` 對 `order_item` 寫的是不存在的欄位 `payment`（V1 `order_item`，`V1:288–303`，只有 `payment_status`；詳見 §2 `user_orderList` 邊界 controller 行為 4），SQL 失敗後 `:127`／`:221` 的 `ROLLBACK` 會把同一個交易裡的 `payment_status` 更新（`:71`、`:206`）一起撤銷。因此：**在乾淨的 DB 上，經 API 產生的訂單，`order_item.payment_status` 只會是 `-1` 或 `0`，`orders.payment_status` 也只會是 `-1` 或 `0`；沒有任何程式碼會寫入 `1`、`2`、`3`、`4`**。這四個值只出現在 seed。
@@ -1566,6 +1567,8 @@
   | order_id、tour_id、payment_status、total_price、discount_price、quantity、start_date、end_date、room_type | 同 `order_item` | `order_item.*`（`V1:288–303`） | 「訂單明細」；`preference1` 與 `order_item_id` 都是 V1 風格的英文欄位名，可能整個 view 沿用英文欄位 |
   | title、cover_image、type、item 等（`tour` 的欄位，英文欄位名） | 同 `tour` | `tour.*` | 明細頁要顯示行程 |
   | address、phone、payment_type、discount_type | 同 `orders` | `orders.*`（`V1:270–283`） | 明細頁要顯示收件／付款資訊。【定案 #47】**不帶入**這些欄位，只多帶 `使用者編號`（`orders.user_id`）；若日後 P3–P6 接前端時發現明細頁需要地址與電話，改採 #47 的 B（依 spec 重構規則，view、契約與契約測試一起改），且要先處理 §4.2 (c) |
+
+  註記：`created_at`／`updated_at` 取 `order_item`（2026-11-01 使用者決定），不取 `tour` 的；`tour` 的其餘欄位照 `tour.*`（`tour_id` 只出現一次）。`address` 是 `tour.address`（行程地點），**不是**收件地址（#47 不帶 `orders.address`）。
 
 - **列的語意**：由 `WHERE order_item_id = $1`（`order_item` 的主鍵，`V1:289`）取單一訂單項目的明細。預期 0 或 1 列（見待確認 2）。controller 一律把結果 `rows.map(...)` 成**陣列**放進 response，所以即使只有一列，`body.data` 也是長度 1 的陣列。【定案 #46】恰好 1 列（只 JOIN 一對一的 `order_item`、`orders`、`tour`）。
 - **邊界**：
