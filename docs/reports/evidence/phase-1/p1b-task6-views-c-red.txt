@@ -1,0 +1,836 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 57 items
+
+tests/test_db_contract.py::test_normalize_type PASSED                    [  1%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[hotel_booking] PASSED [  3%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_booking] PASSED [  5%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_business_parsed] PASSED [  7%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_isclosed] PASSED [  8%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_base] PASSED [ 10%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_hotel] PASSED [ 12%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_restaurant] PASSED [ 14%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_tour_detail] PASSED [ 15%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel] PASSED [ 17%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_most_favorited] PASSED [ 19%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_popular] PASSED [ 21%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_adminList] FAILED [ 22%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_cartList] PASSED [ 24%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_couponList] PASSED [ 26%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_favorite] FAILED [ 28%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_point_coupon] PASSED [ 29%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome] PASSED [ 31%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orderList] PASSED [ 33%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_order_item] FAILED [ 35%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orders] FAILED [ 36%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_user_level] PASSED [ 38%]
+tests/test_db_contract.py::test_view_columns_match_contract[restaurant_business_parsed] PASSED [ 40%]
+tests/test_db_contract.py::test_view_columns_match_contract[tour_base] PASSED [ 42%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_adminList] FAILED [ 43%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_cartList] PASSED [ 45%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_couponList] PASSED [ 47%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_favorite] FAILED [ 49%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_point_coupon] PASSED [ 50%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_review_forHome] PASSED [ 52%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orderList] PASSED [ 54%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_order_item] FAILED [ 56%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orders] FAILED [ 57%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_user_level] PASSED [ 59%]
+tests/test_db_contract.py::test_function_signature_matches_contract[hotel_booking] PASSED [ 61%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_booking] PASSED [ 63%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_isclosed] PASSED [ 64%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel] PASSED [ 66%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant] PASSED [ 68%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail] PASSED [ 70%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel] PASSED [ 71%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_most_favorited] PASSED [ 73%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_popular] PASSED [ 75%]
+tests/test_db_contract.py::test_views_functions_file_is_rerunnable PASSED [ 77%]
+tests/test_db_contract.py::test_contract_lists_all_21_objects PASSED     [ 78%]
+tests/test_views_c.py::test_favorite_keeps_inactive_and_uses_favorite_time FAILED [ 80%]
+tests/test_views_c.py::test_favorite_one_row_per_favorite_even_with_many_notifications FAILED [ 82%]
+tests/test_views_c.py::test_orders_paid_only_newest_first FAILED         [ 84%]
+tests/test_views_c.py::test_order_item_exactly_one_row_with_owner FAILED [ 85%]
+tests/test_views_c.py::test_order_item_not_paid_has_no_row[-1] FAILED    [ 87%]
+tests/test_views_c.py::test_order_item_not_paid_has_no_row[0] FAILED     [ 89%]
+tests/test_views_c.py::test_order_item_not_paid_has_no_row[2] FAILED     [ 91%]
+tests/test_views_c.py::test_order_item_not_paid_has_no_row[3] FAILED     [ 92%]
+tests/test_views_c.py::test_order_item_not_paid_has_no_row[4] FAILED     [ 94%]
+tests/test_views_c.py::test_order_item_inactive_tour_still_appears FAILED [ 96%]
+tests/test_views_c.py::test_adminlist_one_row_latest_level FAILED        [ 98%]
+tests/test_views_c.py::test_adminlist_user_without_level_still_one_row FAILED [100%]
+
+=================================== FAILURES ===================================
+___________ test_object_exists_with_exact_identifier[user_adminList] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_adminList'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_adminList 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+___________ test_object_exists_with_exact_identifier[user_favorite] ____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_favorite'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_favorite 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+__________ test_object_exists_with_exact_identifier[user_order_item] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_order_item'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_order_item 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+____________ test_object_exists_with_exact_identifier[user_orders] _____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_orders'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_orders 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+_______________ test_view_columns_match_contract[user_adminList] _______________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_adminList'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 12
+E       assert 0 == 12
+E        +  where 0 = len([])
+E        +  and   12 = len([('使用者編號', 'uuid'), ('名稱', 'varchar'), ('信箱', 'varchar'), ('角色', 'varchar'), ('個人照片 Url', 'varchar'), ('個人偏好 1', 'smallint'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+_______________ test_view_columns_match_contract[user_favorite] ________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_favorite'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 25
+E       assert 0 == 25
+E        +  where 0 = len([])
+E        +  and   25 = len([('收藏人員編號', 'uuid'), ('建立時間', 'timestamptz'), ('favorite_id', 'uuid'), ('旅遊編號', 'uuid'), ('上下架狀態', 'smallint'), ('通知狀態', 'varchar'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+______________ test_view_columns_match_contract[user_order_item] _______________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_order_item'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 45
+E       assert 0 == 45
+E        +  where 0 = len([])
+E        +  and   45 = len([('order_item_id', 'uuid'), ('使用者編號', 'uuid'), ('order_id', 'uuid'), ('tour_id', 'uuid'), ('payment_status', 'smallint'), ('total_price', 'double precision'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+________________ test_view_columns_match_contract[user_orders] _________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07d86e0>
+name = 'user_orders'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 31
+E       assert 0 == 31
+E        +  where 0 = len([])
+E        +  and   31 = len([('使用者編號', 'uuid'), ('order_item_id', 'uuid'), ('旅遊編號', 'uuid'), ('上下架狀態', 'smallint'), ('通知狀態', 'varchar'), ('旅遊名稱', 'varchar'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+_____________ test_favorite_keeps_inactive_and_uses_favorite_time ______________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed079f4d0>
+
+    def test_favorite_keeps_inactive_and_uses_favorite_time(tx):
+        user, other = make_user(tx), make_user(tx)
+        active = make_tour(tx, status=1, preference1=4, preference2=5, preference3=6, title="上架行程")
+        inactive = make_tour(tx, status=2, preference1=7, preference2=8, preference3=9, title="下架行程")
+        t_inactive = BASE + timedelta(days=2)
+        t_active = BASE + timedelta(days=1)
+        fav_inactive = insert(tx, "favorite", user_id=user["user_id"], tour_id=inactive["tour_id"],
+                              created_at=t_inactive)
+        fav_active = insert(tx, "favorite", user_id=user["user_id"], tour_id=active["tour_id"],
+                            created_at=t_active)
+        insert(tx, "favorite", user_id=other["user_id"], tour_id=active["tour_id"], created_at=BASE)
+    
+>       got = {r["旅遊編號"]: r for r in rows(
+            tx, 'SELECT * FROM "user_favorite" WHERE "收藏人員編號" = %s', (user["user_id"],))}
+
+tests/test_views_c.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed076a990>
+query = 'SELECT * FROM "user_favorite" WHERE "收藏人員編號" = %s'
+params = (UUID('47083065-e617-47a9-b416-6888576561f8'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_favorite" does not exist
+E           LINE 1: SELECT * FROM "user_favorite" WHERE "收藏人員編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_______ test_favorite_one_row_per_favorite_even_with_many_notifications ________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed0747bb0>
+
+    def test_favorite_one_row_per_favorite_even_with_many_notifications(tx):
+        """每筆 favorite 一列：行程有多筆促銷／異動通知也不會讓收藏重複（tour_base 已各取最新一筆）。"""
+        user = make_user(tx)
+        tour = make_tour(tx)
+        for i in range(2):
+            insert(tx, "notification", tour_id=tour["tour_id"], type="促銷", updated_at=BASE + timedelta(days=i))
+            insert(tx, "notification", tour_id=tour["tour_id"], type="異動", updated_at=BASE + timedelta(days=i))
+        insert(tx, "favorite", user_id=user["user_id"], tour_id=tour["tour_id"])
+>       got = rows(tx, 'SELECT * FROM "user_favorite" WHERE "收藏人員編號" = %s', (user["user_id"],))
+
+tests/test_views_c.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed076b890>
+query = 'SELECT * FROM "user_favorite" WHERE "收藏人員編號" = %s'
+params = (UUID('48ed373c-50da-479b-a63d-99d9ab525d6a'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_favorite" does not exist
+E           LINE 1: SELECT * FROM "user_favorite" WHERE "收藏人員編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+______________________ test_orders_paid_only_newest_first ______________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed0746ea0>
+
+    def test_orders_paid_only_newest_first(tx):
+        user, other = make_user(tx), make_user(tx)
+        tour = make_tour(tx, status=1)
+        inactive = make_tour(tx, status=2, title="下架行程")
+    
+        # 依「最舊 → 最新」之外的順序插入，且 order_item.created_at 與 orders.created_at 順序相反，
+        # 才能分辨「依 orders.created_at 排序」和「依插入順序／order_item.created_at 排序」
+        mid = make_item(tx, user, tour, order_created_at=BASE + timedelta(days=5), order_status=0,
+                        payment_status=1, created_at=BASE + timedelta(days=3), total_price=500.0,
+                        discount_price=450.0, quantity=2)
+        oldest = make_item(tx, user, inactive, order_created_at=BASE + timedelta(days=1), order_status=0,
+                           payment_status=1, created_at=BASE + timedelta(days=9))
+        newest = make_item(tx, user, tour, order_created_at=BASE + timedelta(days=8), order_status=0,
+                           payment_status=1, created_at=BASE + timedelta(days=1))
+        # 其餘 payment_status 全不出現（訂單層級狀態故意設成 1，確認篩選看的是 order_item）
+        unpaid = {}
+        for status in (-1, 0, 2, 3, 4):
+            unpaid[status] = make_item(tx, user, tour, order_created_at=BASE + timedelta(days=20 + status),
+                                       order_status=1, payment_status=status)
+        make_item(tx, other, tour, order_created_at=BASE + timedelta(days=30), payment_status=1)
+    
+>       got = rows(tx, 'SELECT * FROM "user_orders" WHERE "使用者編號" = %s', (user["user_id"],))
+
+tests/test_views_c.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed076bd10>
+query = 'SELECT * FROM "user_orders" WHERE "使用者編號" = %s'
+params = (UUID('9eac8c4e-ccfe-40f1-bf28-6126155d60c5'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_orders" does not exist
+E           LINE 1: SELECT * FROM "user_orders" WHERE "使用者編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________________ test_order_item_exactly_one_row_with_owner __________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07dc830>
+
+    def test_order_item_exactly_one_row_with_owner(tx):
+        user = make_user(tx)
+        tour = make_tour(tx, title="明細行程", preference1=3, preference2=4, preference3=5)
+        # 讓一對多的表都有多列：若 view 誤 JOIN 它們，就會變成多列（#46）
+        insert(tx, "tour_detail", tour_id=tour["tour_id"])
+        insert(tx, "tour_detail", tour_id=tour["tour_id"])
+        for i in range(2):
+            insert(tx, "notification", tour_id=tour["tour_id"], type="促銷", updated_at=BASE + timedelta(days=i))
+            insert(tx, "notification", tour_id=tour["tour_id"], type="異動", updated_at=BASE + timedelta(days=i))
+            hotel = insert(tx, "hotel", tour_id=tour["tour_id"])
+            insert(tx, "hotel_room", hotel_id=hotel["hotel_id"])
+        item = make_item(tx, user, tour, payment_status=1, total_price=900.0, discount_price=800.0,
+                         quantity=3, room_type="雙人房")
+        # 同一張訂單的另一個項目與別人的項目不應混進來
+        insert(tx, "order_item", order_id=item["order_id"], tour_id=tour["tour_id"], payment_status=1)
+    
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed076abd0>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('75425d3f-c63f-4183-8ed2-8504f6cc8105'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+___________________ test_order_item_not_paid_has_no_row[-1] ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03347c0>
+status = -1
+
+    @pytest.mark.parametrize("status", [-1, 0, 2, 3, 4])
+    def test_order_item_not_paid_has_no_row(tx, status):
+        """#6：明細與清單同一個篩選，只有 order_item.payment_status = 1。"""
+        user = make_user(tx)
+        tour = make_tour(tx)
+        item = make_item(tx, user, tour, order_status=1, payment_status=status)  # 訂單層級是 1 也不算
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed076b110>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('c34a382d-f6f6-4b4a-814a-aa0027de5c77'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+____________________ test_order_item_not_paid_has_no_row[0] ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed0335260>
+status = 0
+
+    @pytest.mark.parametrize("status", [-1, 0, 2, 3, 4])
+    def test_order_item_not_paid_has_no_row(tx, status):
+        """#6：明細與清單同一個篩選，只有 order_item.payment_status = 1。"""
+        user = make_user(tx)
+        tour = make_tour(tx)
+        item = make_item(tx, user, tour, order_status=1, payment_status=status)  # 訂單層級是 1 也不算
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03d47d0>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('11c0da41-9820-40bb-96c5-10e897ed0275'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+____________________ test_order_item_not_paid_has_no_row[2] ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03f8250>
+status = 2
+
+    @pytest.mark.parametrize("status", [-1, 0, 2, 3, 4])
+    def test_order_item_not_paid_has_no_row(tx, status):
+        """#6：明細與清單同一個篩選，只有 order_item.payment_status = 1。"""
+        user = make_user(tx)
+        tour = make_tour(tx)
+        item = make_item(tx, user, tour, order_status=1, payment_status=status)  # 訂單層級是 1 也不算
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03d4d10>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('4b7f1a07-21cd-48fc-b231-90a0dd289716'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+____________________ test_order_item_not_paid_has_no_row[3] ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03f8650>
+status = 3
+
+    @pytest.mark.parametrize("status", [-1, 0, 2, 3, 4])
+    def test_order_item_not_paid_has_no_row(tx, status):
+        """#6：明細與清單同一個篩選，只有 order_item.payment_status = 1。"""
+        user = make_user(tx)
+        tour = make_tour(tx)
+        item = make_item(tx, user, tour, order_status=1, payment_status=status)  # 訂單層級是 1 也不算
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03d5190>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('9f0aa433-6635-4a06-8cb1-7abd88ebc999'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+____________________ test_order_item_not_paid_has_no_row[4] ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed07b3e30>
+status = 4
+
+    @pytest.mark.parametrize("status", [-1, 0, 2, 3, 4])
+    def test_order_item_not_paid_has_no_row(tx, status):
+        """#6：明細與清單同一個篩選，只有 order_item.payment_status = 1。"""
+        user = make_user(tx)
+        tour = make_tour(tx)
+        item = make_item(tx, user, tour, order_status=1, payment_status=status)  # 訂單層級是 1 也不算
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed076a390>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('63164cf1-dc90-4d54-99d4-a119ec2be5dd'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_________________ test_order_item_inactive_tour_still_appears __________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed035e7b0>
+
+    def test_order_item_inactive_tour_still_appears(tx):
+        user = make_user(tx)
+        tour = make_tour(tx, status=2)
+        item = make_item(tx, user, tour, payment_status=1)
+>       got = rows(tx, 'SELECT * FROM "user_order_item" WHERE order_item_id = %s', (item["order_item_id"],))
+
+tests/test_views_c.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03d56d0>
+query = 'SELECT * FROM "user_order_item" WHERE order_item_id = %s'
+params = (UUID('12162971-f9f4-483c-a176-8408b9cd8060'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_order_item" does not exist
+E           LINE 1: SELECT * FROM "user_order_item" WHERE order_item_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_____________________ test_adminlist_one_row_latest_level ______________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed035de50>
+
+    def test_adminlist_one_row_latest_level(tx):
+        user = make_user(tx, role="admin", preference1=6, preference2=7, preference3=8)
+        other = make_user(tx)
+        # 最新的那筆 level_id 較大、最舊的那筆 level_id 較小，且先插入最新的：
+        # 若 view 改成只用 level_id／插入順序決勝，會選到舊的
+        newest_id = uuid.UUID("ffffffff-0000-4000-8000-000000000001")
+        oldest_id = uuid.UUID("00000000-0000-4000-8000-000000000001")
+        middle_id = uuid.UUID("88888888-0000-4000-8000-000000000001")
+        insert(tx, "user_level", level_id=str(newest_id), user_id=user["user_id"], level="Level 3",
+               name="最新", badge_url="https://b/3", travel_point=300, updated_at=BASE + timedelta(days=10))
+        insert(tx, "user_level", level_id=str(oldest_id), user_id=user["user_id"], level="Level 1",
+               name="最舊", badge_url="https://b/1", travel_point=100, updated_at=BASE)
+        insert(tx, "user_level", level_id=str(middle_id), user_id=user["user_id"], level="Level 2",
+               name="中間", badge_url="https://b/2", travel_point=200, updated_at=BASE + timedelta(days=5))
+        insert(tx, "user_level", user_id=other["user_id"], level="Other", name="別人", travel_point=1)
+    
+>       got = rows(tx, 'SELECT * FROM "user_adminList" WHERE "使用者編號" = %s', (user["user_id"],))
+
+tests/test_views_c.py:188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03d4650>
+query = 'SELECT * FROM "user_adminList" WHERE "使用者編號" = %s'
+params = (UUID('b8005543-979a-4110-bebc-e838e0f671c3'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_adminList" does not exist
+E           LINE 1: SELECT * FROM "user_adminList" WHERE "使用者編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_______________ test_adminlist_user_without_level_still_one_row ________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed035d310>
+
+    def test_adminlist_user_without_level_still_one_row(tx):
+        """#22 LEFT JOIN：沒有 user_level 的使用者仍有一列，等級欄位為 NULL。"""
+        user = make_user(tx)
+>       got = rows(tx, 'SELECT * FROM "user_adminList" WHERE "使用者編號" = %s', (user["user_id"],))
+
+tests/test_views_c.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_c.py:19: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x709ed03d5850>
+query = 'SELECT * FROM "user_adminList" WHERE "使用者編號" = %s'
+params = (UUID('4065ae04-eed7-4db6-9664-d0e39a87af06'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_adminList" does not exist
+E           LINE 1: SELECT * FROM "user_adminList" WHERE "使用者編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+=========================== short test summary info ============================
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_adminList]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_favorite]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_order_item]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orders]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_adminList]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_favorite]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_order_item]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_orders]
+FAILED tests/test_views_c.py::test_favorite_keeps_inactive_and_uses_favorite_time
+FAILED tests/test_views_c.py::test_favorite_one_row_per_favorite_even_with_many_notifications
+FAILED tests/test_views_c.py::test_orders_paid_only_newest_first - psycopg.er...
+FAILED tests/test_views_c.py::test_order_item_exactly_one_row_with_owner - ps...
+FAILED tests/test_views_c.py::test_order_item_not_paid_has_no_row[-1] - psyco...
+FAILED tests/test_views_c.py::test_order_item_not_paid_has_no_row[0] - psycop...
+FAILED tests/test_views_c.py::test_order_item_not_paid_has_no_row[2] - psycop...
+FAILED tests/test_views_c.py::test_order_item_not_paid_has_no_row[3] - psycop...
+FAILED tests/test_views_c.py::test_order_item_not_paid_has_no_row[4] - psycop...
+FAILED tests/test_views_c.py::test_order_item_inactive_tour_still_appears - p...
+FAILED tests/test_views_c.py::test_adminlist_one_row_latest_level - psycopg.e...
+FAILED tests/test_views_c.py::test_adminlist_user_without_level_still_one_row
+======================== 20 failed, 37 passed in 0.68s =========================

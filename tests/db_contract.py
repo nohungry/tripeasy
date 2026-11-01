@@ -257,4 +257,90 @@ OBJECTS: dict[str, dict] = {
             ("total_count", "integer"),
         ],
     },
+    # ---------- C 組：會員與後台 ----------
+    "user_favorite": {
+        "kind": "view",
+        "args": [],
+        # #11 A：favorite ＋ tour_base 的欄位（不含 tour_base 的 建立時間／更新時間）＋ favorite_id；
+        # 建立時間 ＝ favorite.created_at（#43）
+        "columns": [
+            ("收藏人員編號", "uuid"),
+            ("建立時間", "timestamptz"),
+            ("favorite_id", "uuid"),
+        ]
+        + [c for c in _TOUR_LIST_COLUMNS if c[0] not in ("建立時間", "更新時間")],
+    },
+    "user_orders": {
+        "kind": "view",
+        "args": [],
+        # #11：tour_base 的全部欄位 ＋ order_item_id ＋ 付款狀態、數量、出發日期、小計、促銷小計
+        "columns": [("使用者編號", "uuid"), ("order_item_id", "uuid")]
+        + _TOUR_LIST_COLUMNS
+        + [
+            ("付款狀態", "smallint"),
+            ("數量", "integer"),
+            ("出發日期", "timestamp"),
+            ("小計", "double precision"),
+            ("促銷小計", "double precision"),
+        ],
+    },
+    "user_order_item": {
+        "kind": "view",
+        "args": [],
+        # #11 命名 A（全部英文）：order_item 的欄位 ＋ tour.*（tour_id 只出現一次）＋ #47 的 使用者編號
+        "columns": [
+            ("order_item_id", "uuid"),
+            ("使用者編號", "uuid"),
+            ("order_id", "uuid"),
+            ("tour_id", "uuid"),
+            ("payment_status", "smallint"),
+            ("total_price", "double precision"),
+            ("discount_price", "double precision"),
+            ("quantity", "integer"),
+            ("start_date", "timestamp"),
+            ("end_date", "timestamp"),
+            ("room_type", "varchar"),
+            ("type", "varchar"),
+            ("item", "varchar"),
+            ("status", "smallint"),
+            ("title", "varchar"),
+            ("slogan", "varchar"),
+            ("tour_start_date", "timestamp"),
+            ("tour_end_date", "timestamp"),
+            ("days", "integer"),
+            ("price", "integer"),
+            ("country", "varchar"),
+            ("region", "varchar"),
+            ("address", "text"),
+            ("google_map_url", "varchar"),
+            ("calendar_url", "varchar"),
+            ("preference1", "smallint"),
+            ("preference2", "smallint"),
+            ("preference3", "smallint"),
+            ("notice", "text"),
+            ("description", "text"),
+            ("cover_image", "text"),
+        ]
+        + [(f"img{i}{suffix}", typ) for i in range(1, 7) for suffix, typ in (("", "text"), ("_desc", "varchar"))]
+        + [("created_at", "timestamptz"), ("updated_at", "timestamptz")],
+    },
+    "user_adminList": {
+        "kind": "view",
+        "args": [],
+        # #11 A：user ＋ user_level（鏡射 user_level_point_coupon 去掉優惠卷）；不含 password 等（契約「契約要求」）
+        "columns": [
+            ("使用者編號", "uuid"),
+            ("名稱", "varchar"),
+            ("信箱", "varchar"),
+            ("角色", "varchar"),
+            ("個人照片 Url", "varchar"),
+            ("個人偏好 1", "smallint"),
+            ("個人偏好 2", "smallint"),
+            ("個人偏好 3", "smallint"),
+            ("旅遊等級", "varchar"),
+            ("旅遊等級名稱", "varchar"),
+            ("旅遊徽章 Url", "varchar"),
+            ("使用者旅遊積分", "integer"),
+        ],
+    },
 }

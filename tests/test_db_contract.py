@@ -95,3 +95,8 @@ def test_views_functions_file_is_rerunnable(tx):
     script = VIEWS_FUNCTIONS_SQL.read_text(encoding="utf-8")
     tx.execute(script)
     tx.execute(script)
+
+
+def test_contract_lists_all_21_objects():
+    kinds = [o["kind"] for o in OBJECTS.values()]
+    assert (len(OBJECTS), kinds.count("view"), kinds.count("function")) == (21, 12, 9)
