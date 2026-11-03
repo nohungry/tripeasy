@@ -16,12 +16,12 @@ P1 的目標：讓全新的本機環境 `docker compose up` 之後，seed 帳號
 | CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯） |
 | backend 變更 | 4 檔 +796 −23（`main..phase-1`） |
 | frontend 變更 | 無 |
-| 總覽 repo 變更 | 36 檔 +15254 −8（含 seed、測試、契約、計畫與證據檔） |
+| 總覽 repo 變更 | 36 檔 +15254 −8（`main..a4182c1`，不含本報告與 CI 升級的 commit；含 seed、測試、契約、計畫與證據檔） |
 | 升級 Opus 實作 | 無（沒有任何 Task 連續兩次修不好） |
 
 Commit 範圍（`git log main..phase-1`）：
 
-- 總覽 repo：`0d98047`（開始 P1）→ `a4182c1`，共 48 個 commit。
+- 總覽 repo：`0d98047`（開始 P1）→ `a4182c1`，共 48 個 commit（不含報告 commit）。
 - backend：`52e5034`（路由）、`8d08e0d` / `f1b561c`（A 組）、`46e6710`（B 組）、`4423756` / `b0fa46c`（C 組），共 6 個 commit。
 - 這兩段的 backend 都是**綠燈在 backend repo、紅燈在總覽 repo**（沿用 P0）：測試放總覽 repo，所以每個紅燈 commit 只有測試與證據，修正的程式碼在 backend。
 - 一個誠實的說明：`ba201e8`（seed 日期測試改以載入日為基準）是 review 後修正測試本身，**沒有獨立的紅燈 commit**——問題是測試的基準日寫錯，會在 2026-11-02 之後讓保留 volume 的環境變紅，不是 seed 資料壞掉，所以沒有「修之前真的是壞的」可以存證。
@@ -56,7 +56,7 @@ E       assert 401 == 404
  src/server.js               |  3 ++-
 ```
 
-**綠燈**：`test_product_routes.py` 7 個測試通過；同時讓「管理者路由不會出現在 user 前綴、公開路由不會出現在 admin 前綴」成為回歸測試。
+**綠燈**：`test_product_routes.py` 6 個測試通過（P1b Task 7 再補 admin `PATCH /:tour_id` 可達的測試，現為 7 個）；同時讓「管理者路由不會出現在 user 前綴、公開路由不會出現在 admin 前綴」成為回歸測試。
 
 ### 1.2 seed 的四類問題
 
@@ -78,7 +78,7 @@ E       assert 401 == 404
 
 #### 1.2.3 角色大小寫不符 `authorizeRoles`
 
-**現象**：seed 的 admin 帳號呼叫管理者 API 回 403。**根因**：seed 寫 `Admin`／`user`，`middlewares/authorizeRoles` 與 `routes/*.js` 比對的是 `admin`／`User`（`routes/collection.js:11` 等）。**修正**：seed 改成 `User`／`admin`。測試 `test_seed_roles_match_authorize_roles`、`test_seed_admin_passes_authorize_roles`。
+**現象**：seed 的一般會員（alice、carol）呼叫 `authRole('User')` 的 API（收藏、已購買）會被擋成 403。**根因**：來源檔把一般會員的角色寫成小寫 `user`，而 `routes/collection.js:11` 等比對的是 `User`；bob 的 `admin` 本來就對。**修正**：`build_seed.py` 的 `fix_roles()` 把 `user` 改成 `User`（2 筆）。測試 `test_seed_roles_match_authorize_roles`、`test_seed_admin_passes_authorize_roles`；後者在紅燈時失敗是因為 admin 登入 401（假 hash，見 1.2.2），不是角色問題。
 
 #### 1.2.4 日期已過期、圖片是外部假網址
 
@@ -94,7 +94,7 @@ P1a 寫契約時發現（契約 §4.2 a、d2、d3），P1b 修正。
 
 **現象**：seed 的 `tour`（10 筆）、`coupon`（5 筆）、使用者與 `country`、`region.country_id` 的主鍵是手寫的 `11111111-aaaa-…` 之類，不是 v4。購物車、結帳、折扣、已購買的驗證器只接受 `uuid({version:'uuidv4'})`（`utils/Validator/cart_Validator.js:84,92`、`checkout_Vaildator.js:4,12,71`、`discounts_Validatior.js:29` 等），所以 seed 的行程加不進購物車、優惠卷不能預覽。優惠卷代碼只有 `VIP300` 符合 `^[A-Z0-9]{6}$`（`discounts_Validatior.js:9–13`）；每位使用者有 2 個購物車，但 `controllers/cart.js:47–50` 的 `UPDATE ... WHERE user_id = $1` 會一起更新。
 
-**紅燈**（[p1b-task2-seed-ids-red.txt](evidence/phase-1/p1b-task2-seed-ids-red.txt)，overview `63abda7`，7 failed 1 passed 10 errors）。**誠實的說明**：10 個 DB 測試是 `psycopg.OperationalError`（connection refused）的 ERROR，不是斷言失敗——當時 Docker Desktop 的 WSL 整合失效，**沒有在舊 seed 上真的觀察到這些 DB 測試的紅燈**。有斷言失敗的是 `test_build_seed.py` 的單元測試與需要 API 的 3 個測試（登入、admin、圖片，也因連不上而失敗）。綠燈（`d20cf86`）後使用者 `down -v` + `scripts/ci.sh` 得 37 passed 1 xfailed。
+**紅燈**（[p1b-task2-seed-ids-red.txt](evidence/phase-1/p1b-task2-seed-ids-red.txt)，overview `63abda7`，7 failed 1 passed 10 errors）。**誠實的說明**：10 個 DB 測試是 `psycopg.OperationalError`（connection refused）的 ERROR，不是斷言失敗——當時 Docker Desktop 的 WSL 整合失效，**沒有在舊 seed 上真的觀察到這些 DB 測試的紅燈**。7 個 FAILED 的成因各不相同：`test_build_seed.py` 3 個是 `AttributeError`（新函式還沒寫）、需要 API 的 3 個（登入、admin、圖片）是 `ConnectionError`，只有 `test_seed_source_ids_are_all_remapped` 是真的斷言失敗（`R__seed.sql` 仍含來源 id）。綠燈（`d20cf86`）後使用者 `down -v` + `scripts/ci.sh` 得 37 passed 1 xfailed。
 
 **修正**（`d20cf86`）：`build_seed.py` 改為**由自然鍵決定性產生 v4 id**（`tour:<title>`、`user:<email>`、`coupon:<code>`、`country:<name>`…，每張表各自的鍵），舊 id 對照**依欄位所屬的表**建立，不對字面值整份取代（因為來源檔同一個手寫字面值是至少 6 張表的主鍵）；優惠卷代碼改成 6 碼大寫英數；購物車每人 1 個。取代 1.2.1 的位置序號 `seed-row-{i}`，因為日後增刪 seed 列 id 才不會整批漂移，且 uuid5 產生的是 v5，會被 v4 驗證器擋下。
 
@@ -114,11 +114,11 @@ backend 的 controller 呼叫 12 個 view 與 9 個 function，V1／V2 都沒建
 | B 購物車、訂位、折扣、結帳（8） | `user_cartList`、`hotel_booking`、`restaurant_booking`、`restaurant_isClosed`、`restaurant_business_parsed`、`user_couponList`、`user_level_point_coupon`、`user_orderList` | [p1b-task5-views-b-red.txt](evidence/phase-1/p1b-task5-views-b-red.txt)（`09d6a9d`，38 failed 20 passed） | backend `46e6710` |
 | C 會員與後台（4） | `user_favorite`、`user_orders`、`user_order_item`、`user_adminList` | [p1b-task6-views-c-red.txt](evidence/phase-1/p1b-task6-views-c-red.txt)（`5f4c796`，20 failed 37 passed） | backend `4423756`、`b0fa46c` |
 
-（12 個 view／9 個 function 的分類在 P1a 契約寫作時依 inventory 為準；Task 4 發現 `tour_tour_detail`／`tour_hotel`／`tour_restaurant` 是以 `($2)` 呼叫的 function，最後在契約 Task 7 交叉核對。）
+（12 個 view／9 個 function 的分類在 P1a 契約寫作時依 inventory 為準；P1a Task 4 發現 `tour_tour_detail`／`tour_hotel`／`tour_restaurant` 是以 `($2)` 呼叫的 function，最後在 P1a Task 7 交叉核對。）
 
 每個紅燈證據裡「passed」那幾個是先存在的基準（例如 migration 檔存在、seed 基準測試），不是漏掉的測試。測試設計見 §3。
 
-A 組和 B 組的 SQL 都在 review 後調整過。幾個值得一提的契約定案（選項與後果在契約 §4.1）：
+A 組（backend `f1b561c`）和 C 組（`b0fa46c`）的 SQL 在 review 後調整過；B 組的 review 修正只動契約與測試（`d51bf01`）。幾個值得一提的契約定案（選項與後果在契約 §4.1）：
 
 - 優惠卷 `coupon.discount` 定為**折抵金額（NT$）**（#1 選 B）。後果：`controllers/discounts.js:38`、`checkout.js:155` 的乘法在金額語意下是錯的，記為 P4 要修的 controller bug，seed 只改 `TRAVEL10P` 的描述。
 - `restaurant_isClosed` 照契約 #19（只看該星期有沒有 `restaurant_business` 列，不存在回 false）；計畫表格「時段外 true」是計畫筆誤，以契約為準。
@@ -148,8 +148,8 @@ P1 新增的做法：
 
 - **契約先行**：P1a 的 Task 4–7 不寫任何 SQL，只從 controller 的呼叫處反推 21 個物件的欄位、語意與邊界，寫成 `docs/db-contract.md`，把「無法由程式碼決定的語意」整理成待確認題，由使用者決定後才進 P1b 寫 SQL。這樣 SQL 作者不必自己選語意。
 - **使用者確認**：Task 7 彙整成 §4.1 49 題 + §4.2 7 題（a、b、c、d1–d4）。2026-10-22 使用者回覆「全部採用建議，但 #1 選 B」。final review 之後 2026-10-23 又定 4 題：(d1) 前端核對沒有證據時，#11 的 5 個 view 以契約的「推測」欄位表為定案；(a) 的範圍擴及 `country` 與 `region.country_id`；保留 volume 的處理（不寫 migrate guard，改由 `down -v`＋exact count 測試）；#3 點數調成 0.8／10% 規則。2026-11-01 再定 §4.2 e–i（全部採建議 A）與兩個 view 欄位細節。
-- **計畫 pre-flight 掃描**：每份計畫先對 Task 之間「產出 vs 消費」做一次掃描（ledger 的 pre-flight 表），P1b 因此在開工前就補了 Task 1（契約補齊 seed 目標值）。
-- **紅燈證據存檔**：紅燈輸出存 `docs/reports/evidence/phase-1/`；過長的輸出之後改用 `--tb=short`。
+- **計畫 pre-flight 掃描**：每份計畫先對 Task 之間「產出 vs 消費」做一次掃描，P1b 的掃描確認各 Task 的產出與消費一致，只產生一個裁定（`test_build_seed.py` 的表名字串以來源檔寫法為準）。P1b Task 1（契約補齊 seed 目標值）則來自 P1a final review 的遺留裁定「殘留項目併入 P1b 第一步」，開工時就已寫進計畫。
+- **紅燈證據存檔**：紅燈輸出存 `docs/reports/evidence/phase-1/`；P1b Task 3 的存證起試用 `--tb=short` 縮短輸出（Task 4–6 仍是完整 traceback）。
 
 ### 2.2 Fable vs Opus review 對照
 
@@ -161,9 +161,9 @@ P1 新增的做法：
 | P1a-4 契約 A | Needs fixes（1 I：`tour_base` 解讀 B 的後果寫錯，`patch_tourStatus` 其實直接 UPDATE `tour`） | Needs fixes（1 I：報告宣稱 3 個 controller bug，文件只記 1 個） | 雙方都指出漏記的 controller bug |
 | P1a-5 契約 B | Needs fixes（2 I：`coupon.discount` 寫入端缺漏；「點數只經過 view」不實） | Needs fixes（2 I：同一個「點數」錯誤；`PATCH /preview` 不受影響不實） | 兩個「點數」Important 是獨立發現；Opus 的第二個讓 controller 查出 seed 主鍵不是 v4（全案最重要的發現之一） |
 | P1a-6 契約 C | Needs fixes（1 I：`PATCH /admin/members/roles` 缺 `authRole('admin')` 被淹沒） | Approved（0 I） | **只有 Fable 抓到提權**；controller 驗證 `routes/admin.js:26` 屬實 |
-| P1a-7 契約 §4 | Needs fixes（2 I：#43 丟掉 A／B／C 選項；#9 範圍漏 3 個 function） | Needs fixes（1 I：#9 選項 B 被誤寫成 controller 不用改） | #9 兩邊獨立命中；re-review 再抓到 1 個 Important（#10 同類錯誤） |
+| P1a-7 契約 §4（Step 4 定案文件另由兩邊各自 Approved，0/0/4 minor） | Needs fixes（2 I：#43 丟掉 A／B／C 選項；#9 範圍漏 3 個 function） | Needs fixes（1 I：#9 選項 B 被誤寫成 controller 不用改） | #9 兩邊獨立命中；re-review 再抓到 1 個 Important（#10 同類錯誤） |
 | P1a final | With fixes（2 I：frontend 沒有讀取證據；kept-volume 重複） | With fixes（4 I：v4 驗證器清單不全、kept-volume、契約不夠自足、公開的 admin 密碼） | kept-volume 兩邊獨立命中 |
-| P1b-1 契約補齊 | Needs fixes（2 I） | Needs fixes（1 I） | 逐表重建／保留的處理方式、訂單時間違反 #13 |
+| P1b-1 契約補齊 | Needs fixes（2 I） | Needs fixes（1 I） | 逐表重建／保留的處理方式（Important）；re-review 另補 1 個 Minor：訂單時間早於促銷期間，違反 #13 |
 | P1b-2 seed 主鍵 | Approved（9 minor；逐格比對 476 個 PK／FK、0 錯） | Approved（6 minor） | |
 | P1b-3 seed 資料 | Needs fixes（1 I） | Needs fixes（1 I） | 兩邊的 Important 都是「契約文字與 seed 實際不符」 |
 | P1b-4 A 組 | Approved（8 minor） | Needs fixes（1 I：LEFT JOIN 缺測試） | 只有 Opus 抓到 |
@@ -172,27 +172,26 @@ P1 新增的做法：
 | P1b-7 冒煙 | Needs fixes（1 I） | Needs fixes（1 I） | 兩邊獨立發現：優惠卷斷言形同虛設（alice 的優惠卷 `status = 1`，view 回全 NULL 佔位列，斷言永遠成立） |
 | P1b final | 待 final review（Task 9 前進行） | 待 final review（Task 9 前進行） | 尚未執行（待補） |
 
-觀察：雙 review 的互補價值在 P1 非常明顯——Task 6（契約 C）的提權與 P1b Task 4／6 的測試強度，都只有一邊抓到；而 #9、點數、日期測試與優惠卷斷言這四個，則是兩邊獨立命中，等於交叉驗證。
+觀察：雙 review 的互補價值在 P1 非常明顯——Task 6（契約 C）的提權與 P1b Task 4／6 的測試強度，都只有一邊抓到；而 #9、點數、kept-volume 重複、日期測試與優惠卷斷言這五個，則是兩邊獨立命中，等於交叉驗證。
 
 ### 2.3 升級 Opus 實作的紀錄
 
-無。所有 fix round 都由原 Sonnet implementer 在 1–2 輪內完成。
+無。各 Task 的 fix round 都由原 Sonnet implementer 在 1–2 輪內完成；P1a final review 之後的修正（`a5dda73`）由新派的 Sonnet agent 完成；行號與文字類的小修由 controller 直接 commit（`c288c85`、`4d64224`、`4bc7c15`、`dd098b4`、`c057903`、`25c26ae`、`a4182c1`）。
 
 ### 2.4 AI 出錯 / 人介入紀錄
 
 - **計畫缺陷（P1a Task 2）**：計畫的 seed 重跑原型只驗證「不報錯」，沒驗列數，110 處 `uuid_generate_v4()` 讓四張表在重跑時加倍。implementer 的測試抓到，controller 裁定加 `fix_generated_ids()`。
 - **計畫缺陷（P1a Task 3）**：計畫指令 `compose wait flyway` 在容器已結束時會失敗，改成 `compose run --rm flyway`。
-- **`down -v` 被權限分類器擋下（P1a Task 2、P1b Task 2／3）**：這個動作只有使用者能執行（Global Constraint 6），每次都停下請使用者跑，不由 agent 代行。
+- **`down -v` 一律由使用者執行**：P1a Task 2 時 agent 的 `down -v` 被權限分類器擋下；P1b 計畫把它寫成 Global Constraint 6，Task 2／3 依計畫停點請使用者跑，不由 agent 代行。
 - **契約錯誤斷言被兩個 reviewer 抓到（P1a Task 4–7）**：「點數只經過這個 view」、「`PATCH /preview` 用 `coupon_id` 不受影響」、#9 選項 B「controller 不用改」都是 implementer 寫了沒驗證的斷言；controller 每次查原始碼確認後才裁定修正。
 - **前端核對找不到證據（(d1)）**：契約 #11 的 5 個 view 沒有 controller 證據，原計畫要靠 frontend `phase-0` 實際讀取的 key。final review 查證後發現 frontend `phase-0` 的 `api.js` 只讀 `/auth/userinfo` 與 `/user/userinfo`，其他 view 沒有任何讀取者（`HomeView.vue:410` 是靜態資料）。controller 不自己選，交給使用者決定，使用者選「契約推測欄位表當定案」。
-- **P1b 的 final review 之前，Task 2 沒有在舊 seed 上觀察到 DB 測試紅燈**：Docker WSL 整合失效，見 §1.2.5。
-- **controller 少跑 re-review**：Task 7 fix round 2（3 行）與 P1b Task 1 fix round 2（4 行）controller 自己 word-diff／逐項核對、沒派 reviewer，已在 ledger 記錄「文字殘留風險由 final review 抓」。
+- **P1b Task 2 沒有在舊 seed 上觀察到 DB 測試紅燈**：Docker WSL 整合失效，見 §1.2.5。
+- **controller 少跑 re-review**：以下修正由 controller 自己 diff 或逐項核對、沒再派 reviewer：P1a Task 7 fix round 2（`a380c72`，3 行）與 Step 4 小修（`dd098b4`）、P1b Task 1 fix round 2（`4c678a3`，4 行）、P1b Task 3 文字修正（`c057903`）、P1b Task 4 fix round 2（`5ee3fe9`）、P1b Task 5 修正輪（`d51bf01`）。風險是文字殘留的小錯到 final review 才會被抓到。
 - **計畫與現況不符**：計畫 Task 8 預期「只有 P0 的 1 個 xfail」，但 Task 7 發現 `GET /admin/product` 500，所以預期改為 2 個。
 - **人工確認節奏**：使用者全程逐 Task 確認（「繼續」）才往下。
 
-### 2.5 刻意延後的 minor（已列入 ledger）
+### 2.5 刻意延後的 minor（見各 Task 的 review 紀錄）
 
-- 保留 volume 的 date 測試只斷言 `>= 載入日`，若寫死遠未來日期也會通過；更緊的寫法是 `min(coupon.expire_date)::date − 載入日 == 11`。
 - `restaurant_business_parsed` 不處理 `24:00` 與非 `00:00` 結束的跨午夜時段（§4.2 i，選 A 維持現狀）。
 - `tour_hotel`／`tour_restaurant` 的 INNER JOIN 與 `status = 1` 篩選（§4.2 e、f，選 A）。
 - `parse_inserts` 會靜默丟掉非 INSERT 敘述（由 INSERT_COUNT 守）；紅燈存證過長。
@@ -222,7 +221,7 @@ P1 新增的做法：
 
 ### 3.3 測試數量與 CI 結果
 
-| 里程碑（ledger 紀錄） | passed | xfailed |
+| 里程碑（逐 Task 回報的數字） | passed | xfailed |
 |---|---|---|
 | P0 結束 | 13 | 1 |
 | P1a Task 1（路由） | 19 | 1 |
@@ -276,18 +275,18 @@ curl -s -X POST http://localhost:3000/api/v1/auth/userinfo/login/email \
 
 - **seed 主鍵（或自然鍵規則）改變後必須跑一次** `docker compose down -v`，由**使用者自己**執行。原因：Flyway 的 repeatable seed 靠主鍵 `ON CONFLICT DO NOTHING`，V1 的 email、`coupon.code` 沒有 unique，舊主鍵的列不會被覆蓋，會與新列並存。這次 P1b 的 Task 2 與 Task 3 都需要。
 - 日常重跑（沒改主鍵）保留 volume 即可，`scripts/ci.sh` 兩種情況都會綠燈。若 seed 測試因筆數或 email 重複而變紅，通常就是漏跑 `down -v`。
-- 疑難排解：若 `scripts/ci.sh` 一開始就報 `docker could not be found in this WSL 2 distro`，是 Docker Desktop 沒啟動（或 WSL 整合失效），啟動後再跑即可（P1b 驗證時遇到兩次）。
+- 疑難排解：若 `docker` 指令一開始就報 `docker could not be found in this WSL 2 distro`，是 Docker Desktop 沒啟動（或 WSL 整合失效），啟動後再跑即可（P1b 驗證時遇到兩次）。
 - agent 不代跑 `down -v`（資料會被清掉，由使用者決定時機）。
 
 ## 附錄
 
 ### A. 變更檔案清單
 
-**總覽 repo**（`git diff --stat main..phase-1`：36 檔 +15254 −8），主要部分：
+**總覽 repo**（`git diff --stat main..phase-1`：36 檔 +15254 −8，`main..a4182c1`），主要部分：
 
 - 測試：`tests/test_product_routes.py`、`test_seed.py`、`test_build_seed.py`、`test_db_contract.py`、`test_views_a.py`／`b.py`／`c.py`、`test_api_smoke.py`、`db_contract.py`、`dbfactory.py`，並修改 `conftest.py`、`test_migrations.py`
 - seed：`db/seed/R__seed.sql`、`db/seed-build/build_seed.py`、`db/seed-build/extra_seed.sql`、`db/seed-build/tripeasy_fakedata.sql`、`db/seed-images/*.svg`
-- 契約與計畫：`docs/db-contract.md`、`docs/superpowers/plans/2026-10-20-p1a-routes-seed-contract.md`、`docs/superpowers/plans/2026-10-23-p1b-views-seed-tests.md`
+- 契約、計畫與設計文件：`docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md`（加入重構規則）、`docs/db-contract.md`、`docs/superpowers/plans/2026-10-20-p1a-routes-seed-contract.md`、`docs/superpowers/plans/2026-10-23-p1b-views-seed-tests.md`
 - 設定：`docker-compose.yml`、`.env.example`、`refs.env`、`.github/workflows/ci.yml`
 - 證據：`docs/reports/evidence/phase-1/*.txt`
 
@@ -306,7 +305,7 @@ curl -s -X POST http://localhost:3000/api/v1/auth/userinfo/login/email \
 **功能項目**
 
 - **優惠卷金額運算錯誤（P4）**：`coupon.discount` 定為折抵金額（§4.1 #1 選 B），但 `controllers/discounts.js:38`、`controllers/checkout.js:155` 做 `total_price * discount`，會算出數百倍金額（例：3576.74 × 100.0 = 357,674）。要改成 `total_price - discount`。
-- **`IMAGE_BASE` 寫死（P7）**：seed 圖片網址的前綴 `db/seed-build/build_seed.py` 的 `IMAGE_BASE`（目前在 `:90`；契約寫 `:40` 是舊行號）是 `http://localhost:3000/uploads/seed`，部署到非本機環境時圖片會壞，需與展示環境的 seed 管理者一併處理。
+- **`IMAGE_BASE` 寫死（P7）**：seed 圖片網址的前綴 `db/seed-build/build_seed.py` 的 `IMAGE_BASE`（`:90`）是 `http://localhost:3000/uploads/seed`，部署到非本機環境時圖片會壞，需與展示環境的 seed 管理者一併處理。
 - **`GET /api/v1/admin/product` 一律 500**：兩個獨立 bug（`middlewares/product/index.js:296`、`:312–315`），冒煙測試以 `xfail(strict=True)` 標記，修好會 XPASS 提醒移除。
 - **隱藏玩法回應沒有 `title`**：`controllers/product.js:574` 寫 `row.type`，應為 `row.title`（P3）。
 
