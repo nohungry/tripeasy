@@ -176,7 +176,7 @@ P1 新增的做法：
 
 ### 2.3 升級 Opus 實作的紀錄
 
-無。各 Task 的 fix round 都由原 Sonnet implementer 在 1–2 輪內完成；P1a final review 之後的修正（`a5dda73`）由新派的 Sonnet agent 完成；行號與文字類的小修由 controller 直接 commit（`c288c85`、`4d64224`、`4bc7c15`、`dd098b4`、`c057903`、`25c26ae`、`a4182c1`）。
+無。各 Task 的 fix round 都由原 Sonnet implementer 在 1–2 輪內完成；P1a final review 之後的修正（`a5dda73`）由新派的 Sonnet agent 完成；行號與文字類的小修由 controller 直接 commit（`c288c85`、`4d64224`、`4bc7c15`、`dd098b4`、`c057903`、`25c26ae`）；`a4182c1` 是 controller 補一個測試斷言（carol 優惠卷的 `user_id`）並修契約行號、補 §4.2 一行。
 
 ### 2.4 AI 出錯 / 人介入紀錄
 
@@ -282,12 +282,12 @@ curl -s -X POST http://localhost:3000/api/v1/auth/userinfo/login/email \
 
 ### A. 變更檔案清單
 
-**總覽 repo**（`git diff --stat main..phase-1`：36 檔 +15254 −8，`main..a4182c1`），主要部分：
+**總覽 repo**（`git diff --stat main..a4182c1`：36 檔 +15254 −8；不含本報告與 `.github/workflows/ci.yml` 的升級），主要部分：
 
 - 測試：`tests/test_product_routes.py`、`test_seed.py`、`test_build_seed.py`、`test_db_contract.py`、`test_views_a.py`／`b.py`／`c.py`、`test_api_smoke.py`、`db_contract.py`、`dbfactory.py`，並修改 `conftest.py`、`test_migrations.py`
 - seed：`db/seed/R__seed.sql`、`db/seed-build/build_seed.py`、`db/seed-build/extra_seed.sql`、`db/seed-build/tripeasy_fakedata.sql`、`db/seed-images/*.svg`
-- 契約、計畫與設計文件：`docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md`（加入重構規則）、`docs/db-contract.md`、`docs/superpowers/plans/2026-10-20-p1a-routes-seed-contract.md`、`docs/superpowers/plans/2026-10-23-p1b-views-seed-tests.md`
-- 設定：`docker-compose.yml`、`.env.example`、`refs.env`、`.github/workflows/ci.yml`
+- 契約、計畫與設計文件：`docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md`（加入「重構規則」；§3.1 步驟 4 的 view／function 檔改寫成 repeatable `R__views_functions.sql`）、`docs/db-contract.md`、`docs/superpowers/plans/2026-10-20-p1a-routes-seed-contract.md`、`docs/superpowers/plans/2026-10-23-p1b-views-seed-tests.md`
+- 設定：`docker-compose.yml`、`.env.example`、`refs.env`、`.github/workflows/ci.yml`（Task 8 升級 action，不在上列統計內）
 - 證據：`docs/reports/evidence/phase-1/*.txt`
 
 **backend**（`main..phase-1`：4 檔 +796 −23）：`src/routes/product.js`、`src/routes/product_admin.js`（新增）、`src/server.js`、`migrations/R__views_functions.sql`（新增，760 行）。
