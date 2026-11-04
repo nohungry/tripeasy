@@ -1,5 +1,5 @@
 # Phase 1：路由、seed、DB 契約、views／functions
-> 草稿（2026-11-03，待使用者審閱定稿） · backend tag `phase-1`（待 Task 9：`<sha>`） · frontend 維持 `phase-0`（P1 沒有改 frontend，不打 tag，`FRONTEND_REF` 仍是 `phase-0`）
+> 2026-11-04（定稿） · backend tag `phase-1`（merge commit `e4dfeb4`；分支最後一個 commit `b0fa46c`） · frontend 維持 `phase-0`（P1 沒有改 frontend，不打 tag，`FRONTEND_REF` 仍是 `phase-0`）
 >
 > P1 分兩段：P1a（路由修正、seed 改寫成 Flyway repeatable、DB 契約）與 P1b（seed 主鍵與資料量、21 個 view／function、三層測試、CI）。本報告涵蓋兩段。
 
@@ -13,7 +13,7 @@ P1 的目標：讓全新的本機環境 `docker compose up` 之後，seed 帳號
 | 紅燈 → 綠燈 | 路由 1 組、P1a seed 2 組、P1b seed 2 組、views／functions 3 組，共 8 個紅燈 commit，對應 8 個綠燈或修正 commit（細節見 §1）。P1b Task 7（API 冒煙）依計畫沒有紅燈 commit |
 | 新增物件 | 21 個 view／function（backend `migrations/R__views_functions.sql`，760 行）；seed 由 `db/seed-build/build_seed.py` 從 `db/seed-build/tripeasy_fakedata.sql` 加 `extra_seed.sql` 產生 `db/seed/R__seed.sql` |
 | 契約 | `docs/db-contract.md`：21 個物件的欄位、語意、邊界；§4.1 49 題語意確認、§4.2 a–i 與「不需決定」清單 |
-| CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯；第二次 Flyway 看到 `R__` 檔 checksum 沒變，不會重跑，重跑安全性的證據見 §3.2） |
+| CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯；第二次 Flyway 看到 `R__` 檔 checksum 沒變，不會重跑，重跑安全性的證據見 §3.3） |
 | backend 變更 | 4 檔 +796 −23（`main..phase-1`） |
 | frontend 變更 | 無 |
 | 總覽 repo 變更 | 36 檔 +15254 −8（`main..a4182c1`，不含本報告與 CI 升級的 commit；含 seed、測試、契約、計畫與證據檔） |
