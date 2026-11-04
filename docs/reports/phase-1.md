@@ -13,7 +13,7 @@ P1 的目標：讓全新的本機環境 `docker compose up` 之後，seed 帳號
 | 紅燈 → 綠燈 | 路由 1 組、P1a seed 2 組、P1b seed 2 組、views／functions 3 組，共 8 個紅燈 commit，對應 8 個綠燈或修正 commit（細節見 §1）。P1b Task 7（API 冒煙）依計畫沒有紅燈 commit |
 | 新增物件 | 21 個 view／function（backend `migrations/R__views_functions.sql`，760 行）；seed 由 `db/seed-build/build_seed.py` 從 `db/seed-build/tripeasy_fakedata.sql` 加 `extra_seed.sql` 產生 `db/seed/R__seed.sql` |
 | 契約 | `docs/db-contract.md`：21 個物件的欄位、語意、邊界；§4.1 49 題語意確認、§4.2 a–i 與「不需決定」清單 |
-| CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯；第二次 Flyway 看到 `R__` 檔 checksum 沒變，不會重跑，重跑安全性的證據見 §3.3） |
+| CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯；第二次 Flyway 看到 `R__` 檔 checksum 沒變，不會重跑，重跑安全性的證據見 §3.3）；GitHub Actions [run 41806061105](https://github.com/nohungry/tripeasy/actions/runs/41806061105)：195 passed, 2 xfailed |
 | backend 變更 | 4 檔 +796 −23（`main..phase-1`） |
 | frontend 變更 | 無 |
 | 總覽 repo 變更 | 36 檔 +15254 −8（`main..a4182c1`，不含本報告與 CI 升級的 commit；含 seed、測試、契約、計畫與證據檔） |
@@ -239,7 +239,7 @@ P1 新增的做法：
 
 - 乾淨狀態：195 passed, 2 xfailed，exit 0（2.78 秒）
 - 保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（這證明的是在既有 volume 上啟動不報錯，exact count 與 email 不重複測試通過；Flyway 只在 `R__` 檔 checksum 改變時才重跑，所以這一次並沒有重跑它們。重跑安全性的證據是 `test_seed_is_rerunnable` 與 `test_views_functions_file_is_rerunnable`（在 transaction 內重複執行檔案），以及 Task 4–6 在既有 DB 上用 `docker compose run --rm flyway` 套用修改後的 SQL）
-- GitHub Actions：待補 run 連結（`.github/workflows/ci.yml` 已升級 action 版本：`actions/checkout@v7`（3 處）、`actions/upload-artifact@v7`、`astral-sh/setup-uv@v10.3.3`；ci.yml 用到的 `with:` 輸入（`repository`／`ref`／`path`、`name`／`path`）在這幾個 major 之間沒有改名，`setup-uv` 沒有傳任何輸入）。第一次 push 的 run [41803860348](https://github.com/nohungry/tripeasy/actions/runs/41803860348) 在 Set up job 就失敗：`Unable to resolve action astral-sh/setup-uv@v10`——`setup-uv` 從 v8 起不再發布浮動 major tag（最後一個是 `v7`），只能寫完整版號，因此改成 `@v10.3.3`（見 §2.4）。
+- GitHub Actions：[run 41806061105](https://github.com/nohungry/tripeasy/actions/runs/41806061105) 綠燈，195 passed, 2 xfailed（2.50 秒），沒有 Node 20 deprecated 的 annotation，只有 `ubuntu-latest` 將遷移到 Ubuntu 26 的通知（`.github/workflows/ci.yml` 已升級 action 版本：`actions/checkout@v7`（3 處）、`actions/upload-artifact@v7`、`astral-sh/setup-uv@v10.3.3`；ci.yml 用到的 `with:` 輸入（`repository`／`ref`／`path`、`name`／`path`）在這幾個 major 之間沒有改名，`setup-uv` 沒有傳任何輸入）。第一次 push 的 run [41803860348](https://github.com/nohungry/tripeasy/actions/runs/41803860348) 在 Set up job 就失敗：`Unable to resolve action astral-sh/setup-uv@v10`——`setup-uv` 從 v8 起不再發布浮動 major tag（最後一個是 `v7`），只能寫完整版號，因此改成 `@v10.3.3`（見 §2.4）。
 
 ## 4. 操作指南
 
