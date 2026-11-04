@@ -26,7 +26,7 @@ jobs:
           ref: ${{ env.FRONTEND_REF }}
           path: frontend
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
 
       - name: 啟動服務並測試
         run: scripts/ci.sh

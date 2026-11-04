@@ -188,6 +188,7 @@ P1 新增的做法：
 - **P1b Task 2 沒有在舊 seed 上觀察到 DB 測試紅燈**：Docker WSL 整合失效，見 §1.2.5。
 - **controller 少跑 re-review**：以下修正由 controller 自己 diff 或逐項核對、沒再派 reviewer：P1a Task 7 fix round 2（`a380c72`，3 行）與 Step 4 小修（`dd098b4`）、P1b Task 1 fix round 2（`4c678a3`，4 行）、P1b Task 3 文字修正（`c057903`）、P1b Task 4 fix round 2（`5ee3fe9`）、P1b Task 5 修正輪（`d51bf01`）。風險是文字殘留的小錯到 final review 才會被抓到。
 - **計畫與現況不符**：計畫 Task 8 預期「只有 P0 的 1 個 xfail」，但 Task 7 發現 `GET /admin/product` 500，所以預期改為 2 個。
+- **action 版本只查了最新版、沒查 tag 是否存在（P1b Task 8）**：Task 8 查證「最新 release 是 v10.3.3」後寫成 `setup-uv@v10`，兩位 reviewer 也只核對了版本號，結果 `v10` 這個浮動 tag 不存在，push 後 CI 在 Set up job 失敗（run [41803860348](https://github.com/nohungry/tripeasy/actions/runs/41803860348)）。教訓：升級 action 時要確認寫進 workflow 的 ref 本身存在（`gh api repos/<owner>/<repo>/git/matching-refs/tags/<ref>`），不是只看最新版號；本機 `ci.sh` 不跑 workflow 檔，抓不到這類錯誤。
 - **人工確認節奏**：使用者全程逐 Task 確認（「繼續」）才往下。
 
 ### 2.5 刻意延後的 minor（見各 Task 的 review 紀錄）
@@ -238,7 +239,7 @@ P1 新增的做法：
 
 - 乾淨狀態：195 passed, 2 xfailed，exit 0（2.78 秒）
 - 保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（這證明的是在既有 volume 上啟動不報錯，exact count 與 email 不重複測試通過；Flyway 只在 `R__` 檔 checksum 改變時才重跑，所以這一次並沒有重跑它們。重跑安全性的證據是 `test_seed_is_rerunnable` 與 `test_views_functions_file_is_rerunnable`（在 transaction 內重複執行檔案），以及 Task 4–6 在既有 DB 上用 `docker compose run --rm flyway` 套用修改後的 SQL）
-- GitHub Actions：待 Task 9 push 後補上 run 連結（`.github/workflows/ci.yml` 已升級 action 版本：`actions/checkout@v7`（3 處）、`actions/upload-artifact@v7`、`astral-sh/setup-uv@v10`，這三個都是 2026-11-03 查證的最新 major；ci.yml 用到的 `with:` 輸入（`repository`／`ref`／`path`、`name`／`path`）在這幾個 major 之間沒有改名，`setup-uv` 沒有傳任何輸入）。
+- GitHub Actions：待補 run 連結（`.github/workflows/ci.yml` 已升級 action 版本：`actions/checkout@v7`（3 處）、`actions/upload-artifact@v7`、`astral-sh/setup-uv@v10.3.3`；ci.yml 用到的 `with:` 輸入（`repository`／`ref`／`path`、`name`／`path`）在這幾個 major 之間沒有改名，`setup-uv` 沒有傳任何輸入）。第一次 push 的 run [41803860348](https://github.com/nohungry/tripeasy/actions/runs/41803860348) 在 Set up job 就失敗：`Unable to resolve action astral-sh/setup-uv@v10`——`setup-uv` 從 v8 起不再發布浮動 major tag（最後一個是 `v7`），只能寫完整版號，因此改成 `@v10.3.3`（見 §2.4）。
 
 ## 4. 操作指南
 
