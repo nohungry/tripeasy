@@ -30,6 +30,7 @@ scripts/ci.sh        # 啟動全部服務並跑測試
 | 階段 | backend | frontend | 報告 |
 |---|---|---|---|
 | P0 地基 | `phase-0` | `phase-0` | [phase-0.md](docs/reports/phase-0.md) |
+| P1 路由、seed、DB 契約 | `phase-1` | `phase-0` | [phase-1.md](docs/reports/phase-1.md) |
 
 ## 文件
 

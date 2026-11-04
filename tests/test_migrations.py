@@ -1,4 +1,4 @@
-"""確認 Flyway 已套用 V1、V2，並且 V1 的 25 張表都存在。"""
+"""確認 Flyway 已套用 V1、V2 與 R__views_functions，並且 V1 的 25 張表都存在。"""
 
 EXPECTED_TABLES = {
     "user", "socialLogin", "user_level", "coupon", "user_coupon", "point_record",
@@ -27,3 +27,11 @@ def test_all_v1_tables_exist(db):
     }
     missing = EXPECTED_TABLES - names
     assert not missing, f"缺少資料表：{sorted(missing)}"
+
+
+def test_flyway_applied_views_functions(db):
+    row = db.execute(
+        "SELECT success FROM flyway_schema_history "
+        "WHERE script = 'R__views_functions.sql' ORDER BY installed_rank DESC LIMIT 1"
+    ).fetchone()
+    assert row == (True,)

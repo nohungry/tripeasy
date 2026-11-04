@@ -1,0 +1,1149 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 35 items
+
+tests/test_db_contract.py::test_normalize_type PASSED                    [  2%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_base] FAILED [  5%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_hotel] FAILED [  8%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_restaurant] FAILED [ 11%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_tour_detail] FAILED [ 14%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel] FAILED [ 17%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_most_favorited] FAILED [ 20%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_popular] FAILED [ 22%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome] FAILED [ 25%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_user_level] FAILED [ 28%]
+tests/test_db_contract.py::test_view_columns_match_contract[tour_base] FAILED [ 31%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_review_forHome] FAILED [ 34%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_user_level] FAILED [ 37%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel] FAILED [ 40%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant] FAILED [ 42%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail] FAILED [ 45%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel] FAILED [ 48%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_most_favorited] FAILED [ 51%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_popular] FAILED [ 54%]
+tests/test_db_contract.py::test_views_functions_file_is_rerunnable FAILED [ 57%]
+tests/test_views_a.py::test_tour_base_includes_inactive_tours FAILED     [ 60%]
+tests/test_views_a.py::test_tour_base_without_notification_has_null_notice FAILED [ 62%]
+tests/test_views_a.py::test_tour_base_promo_price_only_in_period FAILED  [ 65%]
+tests/test_views_a.py::test_tour_base_promo_and_change_in_one_row FAILED [ 68%]
+tests/test_views_a.py::test_tour_travel_active_only_with_favorite_flag FAILED [ 71%]
+tests/test_views_a.py::test_popular_counts_paid_only_and_breaks_ties FAILED [ 74%]
+tests/test_views_a.py::test_most_favorited_ranks_and_breaks_ties FAILED  [ 77%]
+tests/test_views_a.py::test_tour_detail_one_row_active_only FAILED       [ 80%]
+tests/test_views_a.py::test_tour_hotel_one_row_per_room FAILED           [ 82%]
+tests/test_views_a.py::test_tour_restaurant_rows_are_menu_xor_opening FAILED [ 85%]
+tests/test_views_a.py::test_user_user_level_one_row_per_user FAILED      [ 88%]
+tests/test_views_a.py::test_review_for_home_only_web FAILED              [ 91%]
+tests/test_migrations.py::test_flyway_applied_v1_and_v2 PASSED           [ 94%]
+tests/test_migrations.py::test_all_v1_tables_exist PASSED                [ 97%]
+tests/test_migrations.py::test_flyway_applied_views_functions FAILED     [100%]
+
+=================================== FAILURES ===================================
+_____________ test_object_exists_with_exact_identifier[tour_base] ______________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_base'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.tour_base 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:43: AssertionError
+_____________ test_object_exists_with_exact_identifier[tour_hotel] _____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_hotel'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.tour_hotel 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:50: AssertionError
+__________ test_object_exists_with_exact_identifier[tour_restaurant] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_restaurant'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.tour_restaurant 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:50: AssertionError
+__________ test_object_exists_with_exact_identifier[tour_tour_detail] __________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_tour_detail'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.tour_tour_detail 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:50: AssertionError
+____________ test_object_exists_with_exact_identifier[tour_travel] _____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_travel'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.tour_travel 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:50: AssertionError
+_____ test_object_exists_with_exact_identifier[tour_travel_most_favorited] _____
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_travel_most_favorited'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.tour_travel_most_favorited 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:50: AssertionError
+________ test_object_exists_with_exact_identifier[tour_travel_popular] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_travel_popular'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.tour_travel_popular 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:50: AssertionError
+_____ test_object_exists_with_exact_identifier[user_level_review_forHome] ______
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'user_level_review_forHome'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_level_review_forHome 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:43: AssertionError
+__________ test_object_exists_with_exact_identifier[user_user_level] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'user_user_level'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_user_level 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:43: AssertionError
+_________________ test_view_columns_match_contract[tour_base] __________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_base'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 24
+E       assert 0 == 24
+E        +  where 0 = len([])
+E        +  and   24 = len([('旅遊編號', 'uuid'), ('上下架狀態', 'smallint'), ('通知狀態', 'varchar'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('旅遊描述', 'text'), ...])
+
+tests/test_db_contract.py:64: AssertionError
+_________ test_view_columns_match_contract[user_level_review_forHome] __________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'user_level_review_forHome'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 9
+E       assert 0 == 9
+E        +  where 0 = len([])
+E        +  and   9 = len([('評論編號', 'uuid'), ('評論時間', 'timestamptz'), ('名稱', 'varchar'), ('個人照片 Url', 'varchar'), ('旅遊等級', 'varchar'), ('旅遊等級名稱', 'varchar'), ...])
+
+tests/test_db_contract.py:64: AssertionError
+______________ test_view_columns_match_contract[user_user_level] _______________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'user_user_level'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 6
+E       assert 0 == 6
+E        +  where 0 = len([])
+E        +  and   6 = len([('使用者編號', 'uuid'), ('名稱', 'varchar'), ('個人照片 Url', 'varchar'), ('旅遊等級', 'varchar'), ('旅遊等級名稱', 'varchar'), ('旅遊徽章 Url', 'varchar')])
+
+tests/test_db_contract.py:64: AssertionError
+_____________ test_function_signature_matches_contract[tour_hotel] _____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_hotel'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['uuid']
+E         
+E         Right contains one more item: 'uuid'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'uuid',
+E         - ]
+
+tests/test_db_contract.py:81: AssertionError
+__________ test_function_signature_matches_contract[tour_restaurant] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_restaurant'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['uuid']
+E         
+E         Right contains one more item: 'uuid'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'uuid',
+E         - ]
+
+tests/test_db_contract.py:81: AssertionError
+__________ test_function_signature_matches_contract[tour_tour_detail] __________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_tour_detail'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['uuid']
+E         
+E         Right contains one more item: 'uuid'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'uuid',
+E         - ]
+
+tests/test_db_contract.py:81: AssertionError
+____________ test_function_signature_matches_contract[tour_travel] _____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_travel'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['uuid']
+E         
+E         Right contains one more item: 'uuid'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'uuid',
+E         - ]
+
+tests/test_db_contract.py:81: AssertionError
+_____ test_function_signature_matches_contract[tour_travel_most_favorited] _____
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_travel_most_favorited'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['text', 'text']
+E         
+E         Right contains 2 more items, first extra item: 'text'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'text',
+E         -     'text',
+E         - ]
+
+tests/test_db_contract.py:81: AssertionError
+________ test_function_signature_matches_contract[tour_travel_popular] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+name = 'tour_travel_popular'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['text', 'text']
+E         
+E         Right contains 2 more items, first extra item: 'text'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'text',
+E         -     'text',
+E         - ]
+
+tests/test_db_contract.py:81: AssertionError
+___________________ test_views_functions_file_is_rerunnable ____________________
+
+tx = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1197390>
+
+    def test_views_functions_file_is_rerunnable(tx):
+        """repeatable migration 套用兩次都不能出錯（先 DROP … CASCADE 再 CREATE）。"""
+>       script = VIEWS_FUNCTIONS_SQL.read_text(encoding="utf-8")
+
+tests/test_db_contract.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('backend/migrations/R__views_functions.sql')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+E       FileNotFoundError: [Errno 2] No such file or directory: 'backend/migrations/R__views_functions.sql'
+
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+____________________ test_tour_base_includes_inactive_tours ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1197610>
+
+    def test_tour_base_includes_inactive_tours(tx):
+        tour = make_tour(tx, status=2)
+>       (row,) = rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = %s', (tour["tour_id"],))
+
+tests/test_views_a.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1167ad0>
+query = 'SELECT * FROM tour_base WHERE "旅遊編號" = %s'
+params = (UUID('7833361e-2f45-4758-896a-743d531ea37e'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "tour_base" does not exist
+E           LINE 1: SELECT * FROM tour_base WHERE "旅遊編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_____________ test_tour_base_without_notification_has_null_notice ______________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f113f230>
+
+    def test_tour_base_without_notification_has_null_notice(tx):
+        tour = make_tour(tx)
+>       (row,) = rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = %s', (tour["tour_id"],))
+
+tests/test_views_a.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de1550>
+query = 'SELECT * FROM tour_base WHERE "旅遊編號" = %s'
+params = (UUID('6132e839-7403-4fba-84bf-77bab00c63d2'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "tour_base" does not exist
+E           LINE 1: SELECT * FROM tour_base WHERE "旅遊編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________________ test_tour_base_promo_price_only_in_period ___________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f113fce0>
+
+    def test_tour_base_promo_price_only_in_period(tx):
+        ended = make_tour(tx)
+        insert(tx, "notification", tour_id=ended["tour_id"], type="促銷",
+               start_date=days(-10), end_date=days(-5), promo_price=700.0)
+        active = make_tour(tx)
+        insert(tx, "notification", tour_id=active["tour_id"], type="促銷",
+               start_date=days(-2), end_date=days(2), promo_price=800.0)
+        by_id = {
+            r["旅遊編號"]: r
+>           for r in rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = ANY(%s)',
+                          ([ended["tour_id"], active["tour_id"]],))
+        }
+
+tests/test_views_a.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de1910>
+query = 'SELECT * FROM tour_base WHERE "旅遊編號" = ANY(%s)'
+params = ([UUID('772eb45e-02ed-4525-9dc7-1d8382c6e7c1'), UUID('66f73769-a6d4-4666-bb8a-59945fa2c575')],)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "tour_base" does not exist
+E           LINE 1: SELECT * FROM tour_base WHERE "旅遊編號" = ANY($1)
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________________ test_tour_base_promo_and_change_in_one_row __________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d8950>
+
+    def test_tour_base_promo_and_change_in_one_row(tx):
+        tour = make_tour(tx)
+        insert(tx, "notification", tour_id=tour["tour_id"], type="異動", change_desc="班機異動")
+        insert(tx, "notification", tour_id=tour["tour_id"], type="促銷",
+               start_date=days(-1), end_date=days(1), promo_price=900.0)
+>       (row,) = rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = %s', (tour["tour_id"],))
+
+tests/test_views_a.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de1cd0>
+query = 'SELECT * FROM tour_base WHERE "旅遊編號" = %s'
+params = (UUID('6f7078af-3bce-414a-91df-13c884cf470e'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "tour_base" does not exist
+E           LINE 1: SELECT * FROM tour_base WHERE "旅遊編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_______________ test_tour_travel_active_only_with_favorite_flag ________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f114e8b0>
+
+    def test_tour_travel_active_only_with_favorite_flag(tx):
+        active = make_tour(tx)
+        inactive = make_tour(tx, status=2)
+        fan = make_user(tx)
+        other = make_user(tx)
+        insert(tx, "favorite", user_id=fan["user_id"], tour_id=active["tour_id"])
+        ids = [active["tour_id"], inactive["tour_id"]]
+        query = 'SELECT * FROM tour_travel(%s) WHERE "旅遊編號" = ANY(%s)'
+    
+>       (as_fan,) = rows(tx, query, (fan["user_id"], ids))
+
+tests/test_views_a.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1167ad0>
+query = 'SELECT * FROM tour_travel(%s) WHERE "旅遊編號" = ANY(%s)'
+params = (UUID('766ae28a-a4ad-4479-9afb-151aaf595df4'), [UUID('29c1c0f5-bce5-4a49-8324-9795a0eb2040'), UUID('7fc9c9b8-4666-48d8-b3d3-e10b10f99d66')])
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function tour_travel(uuid) does not exist
+E           LINE 1: SELECT * FROM tour_travel($1) WHERE "旅遊編號" = ANY($2)
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+________________ test_popular_counts_paid_only_and_breaks_ties _________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f114f8a0>
+
+    def test_popular_counts_paid_only_and_breaks_ties(tx):
+        big, small = unique_group()
+        user = make_user(tx)
+        order = insert(tx, "orders", user_id=user["user_id"])
+    
+        def buy(tour, status, quantity=1):
+            insert(tx, "order_item", order_id=order["order_id"], tour_id=tour["tour_id"],
+                   payment_status=status, quantity=quantity)
+    
+        two_paid = make_tour(tx, type=big, item=small)      # 2 筆已付款（quantity 各 1）
+        one_big = make_tour(tx, type=big, item=small)       # 1 筆已付款但 quantity 5：按列數數，所以排第 2
+        unpaid = make_tour(tx, type=big, item=small)        # 只有未付款／已取消
+        none_a = make_tour(tx, type=big, item=small)
+        none_b = make_tour(tx, type=big, item=small)
+        inactive = make_tour(tx, type=big, item=small, status=2)
+        buy(two_paid, 1); buy(two_paid, 1); buy(two_paid, 0)
+        buy(one_big, 1, quantity=5)
+        buy(unpaid, 0); buy(unpaid, -1); buy(unpaid, 2)
+        buy(inactive, 1)
+    
+>       result = rows(tx, "SELECT tour_id, 購買排行 FROM tour_travel_popular(%s, %s) ORDER BY 購買排行",
+                      (big, small))
+
+tests/test_views_a.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1166d50>
+query = 'SELECT tour_id, 購買排行 FROM tour_travel_popular(%s, %s) ORDER BY 購買排行'
+params = ('t-bed7075079', 'i-bed7075079')
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function tour_travel_popular(unknown, unknown) does not exist
+E           LINE 1: SELECT tour_id, 購買排行 FROM tour_travel_popular($1, $2) OR...
+E                                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+__________________ test_most_favorited_ranks_and_breaks_ties ___________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f119a950>
+
+    def test_most_favorited_ranks_and_breaks_ties(tx):
+        big, small = unique_group()
+        fans = [make_user(tx) for _ in range(3)]
+        top = make_tour(tx, type=big, item=small)
+        mid = make_tour(tx, type=big, item=small)
+        none_a = make_tour(tx, type=big, item=small)
+        none_b = make_tour(tx, type=big, item=small)
+        inactive = make_tour(tx, type=big, item=small, status=2)
+        for fan in fans[:3]:
+            insert(tx, "favorite", user_id=fan["user_id"], tour_id=top["tour_id"])
+        insert(tx, "favorite", user_id=fans[0]["user_id"], tour_id=mid["tour_id"])
+        for fan in fans:
+            insert(tx, "favorite", user_id=fan["user_id"], tour_id=inactive["tour_id"])
+    
+>       result = rows(tx, "SELECT tour_id, 收藏排行 FROM tour_travel_most_favorited(%s, %s) ORDER BY 收藏排行",
+                      (big, small))
+
+tests/test_views_a.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de1910>
+query = 'SELECT tour_id, 收藏排行 FROM tour_travel_most_favorited(%s, %s) ORDER BY 收藏排行'
+params = ('t-159ef98e5b', 'i-159ef98e5b')
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function tour_travel_most_favorited(unknown, unknown) does not exist
+E           LINE 1: SELECT tour_id, 收藏排行 FROM tour_travel_most_favorited($1,...
+E                                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+_____________________ test_tour_detail_one_row_active_only _____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f119b450>
+
+    def test_tour_detail_one_row_active_only(tx):
+        active = make_tour(tx)
+        insert(tx, "tour_detail", tour_id=active["tour_id"], itinerary="第一天")
+        inactive = make_tour(tx, status=2)
+        insert(tx, "tour_detail", tour_id=inactive["tour_id"])
+        query = 'SELECT * FROM tour_tour_detail(NULL::uuid) WHERE "旅遊編號" = %s'
+    
+>       (row,) = rows(tx, query, (active["tour_id"],))
+
+tests/test_views_a.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de13d0>
+query = 'SELECT * FROM tour_tour_detail(NULL::uuid) WHERE "旅遊編號" = %s'
+params = (UUID('245cfd09-7916-43d3-b7b2-a59dd9777316'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function tour_tour_detail(uuid) does not exist
+E           LINE 1: SELECT * FROM tour_tour_detail(NULL::uuid) WHERE "旅遊編號" ...
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+_______________________ test_tour_hotel_one_row_per_room _______________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0dee8a0>
+
+    def test_tour_hotel_one_row_per_room(tx):
+        tour = make_tour(tx, type="backpacker", item="hotel")
+        hotel = insert(tx, "hotel", tour_id=tour["tour_id"], facility_desc="泳池")
+        insert(tx, "hotel_room", hotel_id=hotel["hotel_id"], title="雙人房")
+        insert(tx, "hotel_room", hotel_id=hotel["hotel_id"], title="四人房")
+    
+>       result = rows(tx, 'SELECT * FROM tour_hotel(NULL::uuid) WHERE "旅遊編號" = %s', (tour["tour_id"],))
+
+tests/test_views_a.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de1610>
+query = 'SELECT * FROM tour_hotel(NULL::uuid) WHERE "旅遊編號" = %s'
+params = (UUID('a146b20a-7b3b-42c1-be01-dd74a161c417'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function tour_hotel(uuid) does not exist
+E           LINE 1: SELECT * FROM tour_hotel(NULL::uuid) WHERE "旅遊編號" = $1
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+________________ test_tour_restaurant_rows_are_menu_xor_opening ________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0defc50>
+
+    def test_tour_restaurant_rows_are_menu_xor_opening(tx):
+        tour = make_tour(tx, type="backpacker", item="food")
+        restaurant = insert(tx, "restaurant", tour_id=tour["tour_id"])
+        for _ in range(3):
+            insert(tx, "restaurant_menu", restaurant_id=restaurant["restaurant_id"])
+        for week in ("週一", "週二"):
+            insert(tx, "restaurant_business", restaurant_id=restaurant["restaurant_id"], week=week)
+    
+>       result = rows(tx, 'SELECT * FROM tour_restaurant(NULL::uuid) WHERE "旅遊編號" = %s', (tour["tour_id"],))
+
+tests/test_views_a.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0de25d0>
+query = 'SELECT * FROM tour_restaurant(NULL::uuid) WHERE "旅遊編號" = %s'
+params = (UUID('3dfd624c-309e-4161-9434-2abbee0b76ce'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function tour_restaurant(uuid) does not exist
+E           LINE 1: SELECT * FROM tour_restaurant(NULL::uuid) WHERE "旅遊編號" =...
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+____________________ test_user_user_level_one_row_per_user _____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0dee7b0>
+
+    def test_user_user_level_one_row_per_user(tx):
+        user = make_user(tx)
+        insert(tx, "user_level", user_id=user["user_id"], level="1", name="舊等級",
+               updated_at=days(-3))
+        insert(tx, "user_level", user_id=user["user_id"], level="2", name="新等級",
+               updated_at=days(-1))
+>       (row,) = rows(tx, 'SELECT * FROM user_user_level WHERE "使用者編號" = %s', (user["user_id"],))
+
+tests/test_views_a.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1166d50>
+query = 'SELECT * FROM user_user_level WHERE "使用者編號" = %s'
+params = (UUID('bc4cde0e-2d68-4904-8c9d-76e17618bb0b'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_user_level" does not exist
+E           LINE 1: SELECT * FROM user_user_level WHERE "使用者編號" = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+________________________ test_review_for_home_only_web _________________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f0decd70>
+
+    def test_review_for_home_only_web(tx):
+        user = make_user(tx)
+        tour = make_tour(tx)
+        web = insert(tx, "review", user_id=user["user_id"], type="web")
+        travel = insert(tx, "review", user_id=user["user_id"], type="travel", tour_id=tour["tour_id"])
+>       result = rows(tx, 'SELECT * FROM "user_level_review_forHome" WHERE "評論編號" = ANY(%s)',
+                      ([web["review_id"], travel["review_id"]],))
+
+tests/test_views_a.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_a.py:15: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f1167950>
+query = 'SELECT * FROM "user_level_review_forHome" WHERE "評論編號" = ANY(%s)'
+params = ([UUID('bea9a2a8-f7f4-49e8-91ef-bb391f72e82f'), UUID('d1443846-ddb6-40a7-be4c-00d4973899c7')],)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_level_review_forHome" does not exist
+E           LINE 1: SELECT * FROM "user_level_review_forHome" WHERE "評論編號" =...
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_____________________ test_flyway_applied_views_functions ______________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7649f11d46e0>
+
+    def test_flyway_applied_views_functions(db):
+        row = db.execute(
+            "SELECT success FROM flyway_schema_history "
+            "WHERE script = 'R__views_functions.sql' ORDER BY installed_rank DESC LIMIT 1"
+        ).fetchone()
+>       assert row == (True,)
+E       assert None == (True,)
+
+tests/test_migrations.py:37: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_base]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_hotel]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_restaurant]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_tour_detail]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_most_favorited]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_popular]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_user_level]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[tour_base]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_level_review_forHome]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_user_level]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_most_favorited]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_popular]
+FAILED tests/test_db_contract.py::test_views_functions_file_is_rerunnable - F...
+FAILED tests/test_views_a.py::test_tour_base_includes_inactive_tours - psycop...
+FAILED tests/test_views_a.py::test_tour_base_without_notification_has_null_notice
+FAILED tests/test_views_a.py::test_tour_base_promo_price_only_in_period - psy...
+FAILED tests/test_views_a.py::test_tour_base_promo_and_change_in_one_row - ps...
+FAILED tests/test_views_a.py::test_tour_travel_active_only_with_favorite_flag
+FAILED tests/test_views_a.py::test_popular_counts_paid_only_and_breaks_ties
+FAILED tests/test_views_a.py::test_most_favorited_ranks_and_breaks_ties - psy...
+FAILED tests/test_views_a.py::test_tour_detail_one_row_active_only - psycopg....
+FAILED tests/test_views_a.py::test_tour_hotel_one_row_per_room - psycopg.erro...
+FAILED tests/test_views_a.py::test_tour_restaurant_rows_are_menu_xor_opening
+FAILED tests/test_views_a.py::test_user_user_level_one_row_per_user - psycopg...
+FAILED tests/test_views_a.py::test_review_for_home_only_web - psycopg.errors....
+FAILED tests/test_migrations.py::test_flyway_applied_views_functions - assert...
+========================= 32 failed, 3 passed in 0.71s =========================

@@ -1,0 +1,106 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 9 items
+
+tests/test_seed.py::test_flyway_applied_seed PASSED                      [ 11%]
+tests/test_seed.py::test_seed_loaded_every_table PASSED                  [ 22%]
+tests/test_seed.py::test_seed_is_rerunnable PASSED                       [ 33%]
+tests/test_seed.py::test_seed_file_is_generated_from_source PASSED       [ 44%]
+tests/test_seed.py::test_seed_user_can_login FAILED                      [ 55%]
+tests/test_seed.py::test_seed_roles_match_authorize_roles FAILED         [ 66%]
+tests/test_seed.py::test_seed_admin_passes_authorize_roles FAILED        [ 77%]
+tests/test_seed.py::test_seed_dates_are_relative_to_today FAILED         [ 88%]
+tests/test_seed.py::test_seed_uses_local_placeholder_images FAILED       [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_seed_user_can_login ___________________________
+
+api = <conftest.Api object at 0x759321bc81a0>
+
+    def test_seed_user_can_login(api):
+        r = _login(api, "alice@example.com")
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"failed","message":"帳號密碼輸入錯誤。(已錯誤 1 次)"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401]>.status_code
+
+tests/test_seed.py:73: AssertionError
+____________________ test_seed_roles_match_authorize_roles _____________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x759321bc8980>
+
+    def test_seed_roles_match_authorize_roles(db):
+        rows = db.execute(
+            'SELECT email, role FROM "user" WHERE email = ANY(%s)', (list(SEED_USERS),)
+        ).fetchall()
+>       assert dict(rows) == SEED_USERS
+E       AssertionError: assert {'alice@examp....com': 'user'} == {'alice@examp....com': 'User'}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'carol@example.com': 'user'} != {'carol@example.com': 'User'}
+E         {'alice@example.com': 'user'} != {'alice@example.com': 'User'}
+E         
+E         Full diff:...
+E         
+E         ...Full output truncated (11 lines hidden), use '-vv' to show
+
+tests/test_seed.py:80: AssertionError
+____________________ test_seed_admin_passes_authorize_roles ____________________
+
+api = <conftest.Api object at 0x759321bc81a0>
+
+    def test_seed_admin_passes_authorize_roles(api):
+        r = _login(api, "bob@example.com")
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"failed","message":"帳號密碼輸入錯誤。(已錯誤 2 次)"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401]>.status_code
+
+tests/test_seed.py:85: AssertionError
+____________________ test_seed_dates_are_relative_to_today _____________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x759321bc8980>
+
+    def test_seed_dates_are_relative_to_today(db):
+        (past_tours,) = db.execute(
+            "SELECT count(*) FROM tour WHERE tour_start_date < CURRENT_DATE"
+        ).fetchone()
+        (expired_coupons,) = db.execute(
+            "SELECT count(*) FROM coupon WHERE expire_date < CURRENT_DATE"
+        ).fetchone()
+>       assert (past_tours, expired_coupons) == (0, 0)
+E       AssertionError: assert (4, 5) == (0, 0)
+E         
+E         At index 0 diff: 4 != 0
+E         
+E         Full diff:
+E           (
+E         -     0,
+E         ?     ^...
+E         
+E         ...Full output truncated (7 lines hidden), use '-vv' to show
+
+tests/test_seed.py:106: AssertionError
+___________________ test_seed_uses_local_placeholder_images ____________________
+
+api = <conftest.Api object at 0x759321bc81a0>
+
+    def test_seed_uses_local_placeholder_images(api):
+        text = SEED.read_text(encoding="utf-8")
+>       assert not re.search(r"https://example\.com/(images|avatar|badges|feature|hidden)/", text)
+E       assert not <re.Match object; span=(708, 735), match='https://example.com/avatar/'>
+E        +  where <re.Match object; span=(708, 735), match='https://example.com/avatar/'> = <function search at 0x759324494860>('https://example\\.com/(images|avatar|badges|feature|hidden)/', '-- 本檔由 db/seed-build/build_seed.py 產生，請勿手動修改；要改請改腳本後重新產生。\n-- 來源：db/seed-build/tripeasy_fakedata.sql\n-- 只在本機與展示環境載入（compose 的 Flyway -locations 加上 db/seed），正式環境不載入。\n-- 每個 INSERT 都是 ON CONFLICT DO NOTHING：重跑時既有的資料不會被更新。\n-- 改了既有資料列的內容，要 docker compose down -v 重建 DB 才看得到。\n\n/* ------------------ 產生假資料 -----------------------  */\n\n---- 1. 會員基本資料 "user"\nINSERT INTO "user" (\n    user_id, name, email, role, password, login_attempts, locked_datetime, avatar_url, \n    preference1, preference2, preference3, login_method, created_at, updated_at\n) VALUES\n(\n    \'a1b2c3d4-e5f6-7890-abcd-ef1234567890\',\n    \'Alice Wang\',\n    \'alice@example.com\',\n    \'user\',\n    \'$2b$10$abcd1234abcd1234abcd12\', \n    0,\n    NULL,\n    \'https://example.com/avatar/alice.jpg\',\n    1,\n    2,\n    3,\n    1,\n    CURRENT_TIMESTAMP,\n    CURRENT_TIMESTAMP\n),\n(\n    \'b2c3d4e5-f678-90ab-cdef-234567890abc\',\n    \'Bob Chen\',\n    \'bob@example.com\',\n    \'admin\',\n    \'$2b$10$efgh5678efgh5678efgh56\',\n    1,\n    NULL,\n    \'https://example.com/avatar/bob.jpg\',\n    2,\n    1,\n    3,\n    2,\n    CURRENT_TIMESTAMP,\n    CURRENT_TIMESTAMP\n),\n(\n    \'c3d4e5f6-7890-abcd-ef12-34...O point_record (point_id, user_id, order_id, type, point) VALUES\n(\'a2e85047-514d-486e-ba0e-b41adf788ea3\', \'c3d4e5f6-7890-abcd-ef12-34567890abcd\', \'f4977608-2efb-4725-94bc-b3265440b4c5\', \'新增\', 1610),\n(\'3c9e2b67-1478-4669-adeb-a5bef809d537\', \'c3d4e5f6-7890-abcd-ef12-34567890abcd\', \'f4977608-2efb-4725-94bc-b3265440b4c5\', \'減少\', -436)\nON CONFLICT DO NOTHING;\n\n\n---- 25. 優惠卷與使用者綁定的資料 "user_coupon"\nINSERT INTO "user_coupon" (\n    user_coupon_id, user_id, order_id, coupon_id, status\n) VALUES\n(\'6f610e1c-51cf-4709-b8e2-5b8b96751100\', \'b2c3d4e5-f678-90ab-cdef-234567890abc\', \'c62e3ad6-19cc-4b58-bec7-231f41b678ac\', \'33333333-cccc-dddd-eeee-333333333333\', 1),\n(\'079a19f1-679d-4282-b047-e57d40b473f8\', \'c3d4e5f6-7890-abcd-ef12-34567890abcd\', NULL, \'33333333-cccc-dddd-eeee-333333333333\', 0),\n(\'870df12e-1ec6-49da-8f91-3ffefb4ca8b0\', \'b2c3d4e5-f678-90ab-cdef-234567890abc\', \'8c1e4f18-841e-49de-bc5e-c6754473f929\', \'44444444-dddd-eeee-ffff-444444444444\', 1),\n(\'4b202c03-9bde-4c8c-9c03-f23aac550c03\', \'a1b2c3d4-e5f6-7890-abcd-ef1234567890\', \'8426dbe1-70cd-431c-b87a-5530a4d99a06\', \'44444444-dddd-eeee-ffff-444444444444\', 1)\nON CONFLICT DO NOTHING;\n')
+E        +    where <function search at 0x759324494860> = re.search
+
+tests/test_seed.py:111: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_seed.py::test_seed_user_can_login - AssertionError: {"statu...
+FAILED tests/test_seed.py::test_seed_roles_match_authorize_roles - AssertionE...
+FAILED tests/test_seed.py::test_seed_admin_passes_authorize_roles - Assertion...
+FAILED tests/test_seed.py::test_seed_dates_are_relative_to_today - AssertionE...
+FAILED tests/test_seed.py::test_seed_uses_local_placeholder_images - assert n...
+========================= 5 failed, 4 passed in 0.37s ==========================

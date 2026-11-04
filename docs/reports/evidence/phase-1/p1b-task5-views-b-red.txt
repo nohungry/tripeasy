@@ -1,0 +1,1545 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 58 items
+
+tests/test_db_contract.py::test_normalize_type PASSED                    [  1%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[hotel_booking] FAILED [  3%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_booking] FAILED [  5%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_business_parsed] FAILED [  6%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_isclosed] FAILED [  8%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_base] PASSED [ 10%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_hotel] PASSED [ 12%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_restaurant] PASSED [ 13%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_tour_detail] PASSED [ 15%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel] PASSED [ 17%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_most_favorited] PASSED [ 18%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_popular] PASSED [ 20%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_cartList] FAILED [ 22%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_couponList] FAILED [ 24%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_point_coupon] FAILED [ 25%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome] PASSED [ 27%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orderList] FAILED [ 29%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_user_level] PASSED [ 31%]
+tests/test_db_contract.py::test_view_columns_match_contract[restaurant_business_parsed] FAILED [ 32%]
+tests/test_db_contract.py::test_view_columns_match_contract[tour_base] PASSED [ 34%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_cartList] FAILED [ 36%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_couponList] FAILED [ 37%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_point_coupon] FAILED [ 39%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_review_forHome] PASSED [ 41%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orderList] FAILED [ 43%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_user_level] PASSED [ 44%]
+tests/test_db_contract.py::test_function_signature_matches_contract[hotel_booking] FAILED [ 46%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_booking] FAILED [ 48%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_isclosed] FAILED [ 50%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel] PASSED [ 51%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant] PASSED [ 53%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail] PASSED [ 55%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel] PASSED [ 56%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_most_favorited] PASSED [ 58%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_popular] PASSED [ 60%]
+tests/test_db_contract.py::test_views_functions_file_is_rerunnable PASSED [ 62%]
+tests/test_views_b.py::test_cartlist_row_per_item_with_owner FAILED      [ 63%]
+tests/test_views_b.py::test_cartlist_promo_price_only_in_period FAILED   [ 65%]
+tests/test_views_b.py::test_hotel_booking_always_one_row FAILED          [ 67%]
+tests/test_views_b.py::test_hotel_booking_counts_only_open_payment_statuses FAILED [ 68%]
+tests/test_views_b.py::test_hotel_booking_date_range_is_half_open FAILED [ 70%]
+tests/test_views_b.py::test_hotel_booking_room_count_from_the_right_tour FAILED [ 72%]
+tests/test_views_b.py::test_restaurant_booking_counts_by_status FAILED   [ 74%]
+tests/test_views_b.py::test_restaurant_booking_ignores_time_parameter FAILED [ 75%]
+tests/test_views_b.py::test_restaurant_booking_no_orders_and_no_restaurant FAILED [ 77%]
+tests/test_views_b.py::test_restaurant_isclosed_always_one_row FAILED    [ 79%]
+tests/test_views_b.py::test_business_hours_split_per_slot FAILED         [ 81%]
+tests/test_views_b.py::test_business_hours_midnight_end_becomes_2359 FAILED [ 82%]
+tests/test_views_b.py::test_business_hours_unparsable_slots_are_ignored FAILED [ 84%]
+tests/test_views_b.py::test_business_parsed_has_no_row_for_tour_without_restaurant FAILED [ 86%]
+tests/test_views_b.py::test_couponlist_keeps_used_and_expired FAILED     [ 87%]
+tests/test_views_b.py::test_point_coupon_only_usable_and_keeps_user FAILED [ 89%]
+tests/test_views_b.py::test_point_coupon_user_without_usable_coupon_keeps_one_row FAILED [ 91%]
+tests/test_views_b.py::test_point_coupon_user_without_level_and_latest_level_wins FAILED [ 93%]
+tests/test_views_b.py::test_point_coupon_two_usable_coupons_two_rows_same_points FAILED [ 94%]
+tests/test_views_b.py::test_orderlist_total_count_and_unit_promo FAILED  [ 96%]
+tests/test_views_b.py::test_orderlist_price_is_historical_not_current_tour_price FAILED [ 98%]
+tests/test_views_b.py::test_orderlist_zero_quantity_gives_null_prices FAILED [100%]
+
+=================================== FAILURES ===================================
+___________ test_object_exists_with_exact_identifier[hotel_booking] ____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'hotel_booking'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.hotel_booking 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:54: AssertionError
+_________ test_object_exists_with_exact_identifier[restaurant_booking] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'restaurant_booking'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.restaurant_booking 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:54: AssertionError
+_____ test_object_exists_with_exact_identifier[restaurant_business_parsed] _____
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'restaurant_business_parsed'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.restaurant_business_parsed 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+________ test_object_exists_with_exact_identifier[restaurant_isclosed] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'restaurant_isclosed'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+            assert row == ("v",), f"public.{name} 不是 view 或不存在"
+        else:
+            (count,) = db.execute(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'public' AND p.proname = %s",
+                (name,),
+            ).fetchone()
+>           assert count == 1, f"public.{name} 應恰有 1 個 function，實際 {count}"
+E           AssertionError: public.restaurant_isclosed 應恰有 1 個 function，實際 0
+E           assert 0 == 1
+
+tests/test_db_contract.py:54: AssertionError
+___________ test_object_exists_with_exact_identifier[user_cartList] ____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_cartList'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_cartList 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+__________ test_object_exists_with_exact_identifier[user_couponList] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_couponList'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_couponList 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+______ test_object_exists_with_exact_identifier[user_level_point_coupon] _______
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_level_point_coupon'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_level_point_coupon 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+___________ test_object_exists_with_exact_identifier[user_orderList] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_orderList'
+
+    @pytest.mark.parametrize("name", sorted(OBJECTS))
+    def test_object_exists_with_exact_identifier(db, name):
+        if OBJECTS[name]["kind"] == "view":
+            row = db.execute(
+                "SELECT relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relname = %s",
+                (name,),
+            ).fetchone()
+>           assert row == ("v",), f"public.{name} 不是 view 或不存在"
+E           AssertionError: public.user_orderList 不是 view 或不存在
+E           assert None == ('v',)
+
+tests/test_db_contract.py:47: AssertionError
+_________ test_view_columns_match_contract[restaurant_business_parsed] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'restaurant_business_parsed'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 4
+E       assert 0 == 4
+E        +  where 0 = len([])
+E        +  and   4 = len([('tour_id', 'uuid'), ('week', 'varchar'), ('start_time', 'time'), ('end_time', 'time')])
+
+tests/test_db_contract.py:68: AssertionError
+_______________ test_view_columns_match_contract[user_cartList] ________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_cartList'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 15
+E       assert 0 == 15
+E        +  where 0 = len([])
+E        +  and   15 = len([('user_id', 'uuid'), ('cart_id', 'uuid'), ('tour_id', 'uuid'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊名稱', 'varchar'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+______________ test_view_columns_match_contract[user_couponList] _______________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_couponList'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 9
+E       assert 0 == 9
+E        +  where 0 = len([])
+E        +  and   9 = len([('user_id', 'uuid'), ('coupon_id', 'uuid'), ('code', 'varchar'), ('discount', 'double precision'), ('description', 'text'), ('expire_date', 'timestamp'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+__________ test_view_columns_match_contract[user_level_point_coupon] ___________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_level_point_coupon'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 17
+E       assert 0 == 17
+E        +  where 0 = len([])
+E        +  and   17 = len([('使用者編號', 'uuid'), ('名稱', 'varchar'), ('信箱', 'varchar'), ('角色', 'varchar'), ('個人照片 Url', 'varchar'), ('個人偏好 1', 'smallint'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+_______________ test_view_columns_match_contract[user_orderList] _______________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'user_orderList'
+
+    @pytest.mark.parametrize("name", VIEWS)
+    def test_view_columns_match_contract(db, name):
+        rows = db.execute(
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+            "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relname = %s AND a.attnum > 0 AND NOT a.attisdropped",
+            (name,),
+        ).fetchall()
+        actual = [(col, normalize_type(typ)) for col, typ in rows]
+        expected = OBJECTS[name]["columns"]
+>       assert len(actual) == len(expected), f"欄位數 {len(actual)} ≠ 契約 {len(expected)}"
+E       AssertionError: 欄位數 0 ≠ 契約 14
+E       assert 0 == 14
+E        +  where 0 = len([])
+E        +  and   14 = len([('order_id', 'uuid'), ('tour_id', 'uuid'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊名稱', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+
+tests/test_db_contract.py:68: AssertionError
+___________ test_function_signature_matches_contract[hotel_booking] ____________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'hotel_booking'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['varchar', '...tamp', 'uuid']
+E         
+E         Right contains 4 more items, first extra item: 'varchar'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'varchar',...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+tests/test_db_contract.py:85: AssertionError
+_________ test_function_signature_matches_contract[restaurant_booking] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'restaurant_booking'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['timestamp', 'uuid']
+E         
+E         Right contains 2 more items, first extra item: 'timestamp'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'timestamp',
+E         -     'uuid',
+E         - ]
+
+tests/test_db_contract.py:85: AssertionError
+________ test_function_signature_matches_contract[restaurant_isclosed] _________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3edd8980>
+name = 'restaurant_isclosed'
+
+    @pytest.mark.parametrize("name", FUNCTIONS)
+    def test_function_signature_matches_contract(db, name):
+        def params(mode_sql):
+            return db.execute(
+                "SELECT p.parameter_name, p.data_type FROM information_schema.parameters p "
+                "JOIN information_schema.routines r ON r.specific_name = p.specific_name "
+                "AND r.specific_schema = p.specific_schema "
+                f"WHERE r.routine_schema = 'public' AND r.routine_name = %s AND {mode_sql} "
+                "ORDER BY p.ordinal_position",
+                (name,),
+            ).fetchall()
+    
+        in_types = [normalize_type(t) for _, t in params("p.parameter_mode = 'IN'")]
+>       assert in_types == [t for _, t in OBJECTS[name]["args"]]
+E       AssertionError: assert [] == ['timestamp', 'uuid']
+E         
+E         Right contains 2 more items, first extra item: 'timestamp'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     'timestamp',
+E         -     'uuid',
+E         - ]
+
+tests/test_db_contract.py:85: AssertionError
+____________________ test_cartlist_row_per_item_with_owner _____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed9fb10>
+
+    def test_cartlist_row_per_item_with_owner(tx):
+        alice, bob = make_user(tx), make_user(tx)
+        tour1 = make_tour(tx, price=1000)
+        tour2 = make_tour(tx, price=2000)
+        cart_a = insert(tx, "cart", user_id=alice["user_id"])
+        cart_b = insert(tx, "cart", user_id=bob["user_id"])
+        start = days(5)
+        item1 = insert(tx, "cart_item", cart_id=cart_a["cart_id"], tour_id=tour1["tour_id"], quantity=2,
+                       start_date=start)
+        item2 = insert(tx, "cart_item", cart_id=cart_a["cart_id"], tour_id=tour2["tour_id"], quantity=3,
+                       start_date=start, end_date=days(8), room_type="雙人房")
+        item3 = insert(tx, "cart_item", cart_id=cart_b["cart_id"], tour_id=tour1["tour_id"], quantity=1,
+                       start_date=start)
+>       result = rows(tx, 'SELECT * FROM "user_cartList" WHERE cart_id = ANY(%s)',
+                      ([cart_a["cart_id"], cart_b["cart_id"]],))
+
+tests/test_views_b.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e968d10>
+query = 'SELECT * FROM "user_cartList" WHERE cart_id = ANY(%s)'
+params = ([UUID('0b4b9960-8a56-4967-9f38-151f346e9cd3'), UUID('3cf85c7b-cc98-4705-9efd-1fd8a1529220')],)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_cartList" does not exist
+E           LINE 1: SELECT * FROM "user_cartList" WHERE cart_id = ANY($1)
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+___________________ test_cartlist_promo_price_only_in_period ___________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e990510>
+
+    def test_cartlist_promo_price_only_in_period(tx):
+        user = make_user(tx)
+        cart = insert(tx, "cart", user_id=user["user_id"])
+        expectations = {}
+        # 三種促銷：進行中、已結束、尚未開始；都 price=1000、promo=600、quantity=3
+        for label, (s, e) in {"active": (days(-1), days(1)), "ended": (days(-9), days(-5)),
+                              "future": (days(5), days(9))}.items():
+            tour = make_tour(tx, price=1000)
+            insert(tx, "notification", tour_id=tour["tour_id"], type="促銷",
+                   start_date=s, end_date=e, promo_price=600.0)
+            item = insert(tx, "cart_item", cart_id=cart["cart_id"], tour_id=tour["tour_id"], quantity=3)
+            expectations[item["cart_item_id"]] = label
+        plain = make_tour(tx, price=1000)
+        plain_item = insert(tx, "cart_item", cart_id=cart["cart_id"], tour_id=plain["tour_id"], quantity=3)
+        expectations[plain_item["cart_item_id"]] = "plain"
+        by_label = {expectations[r["cart_item_id"]]: r
+>                   for r in rows(tx, 'SELECT * FROM "user_cartList" WHERE cart_id = %s', (cart["cart_id"],))}
+
+tests/test_views_b.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6b890>
+query = 'SELECT * FROM "user_cartList" WHERE cart_id = %s'
+params = (UUID('f1a0657d-cb24-4644-a521-3e2680c6ce9a'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_cartList" does not exist
+E           LINE 1: SELECT * FROM "user_cartList" WHERE cart_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+______________________ test_hotel_booking_always_one_row _______________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed47e10>
+
+    def test_hotel_booking_always_one_row(tx):
+        user = make_user(tx)
+        tour = make_tour(tx)
+        other_tour = make_tour(tx)
+        make_hotel_room(tx, tour, "設計雙人房", 4)
+        # 房型拼錯：即使有同名 room_type 的訂單，仍然是 0／0
+        make_order_item(tx, user, tour, room_type="拼錯的房型", payment_status=1,
+                        start_date=days(10), end_date=days(12))
+        q = "SELECT * FROM hotel_booking(%s, %s, %s, %s)"
+>       assert rows(tx, q, ("拼錯的房型", days(10), days(12), tour["tour_id"])) == [
+            {"booking_count": 0, "room_count": 0}]
+
+tests/test_views_b.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6b590>
+query = 'SELECT * FROM hotel_booking(%s, %s, %s, %s)'
+params = ('拼錯的房型', datetime.datetime(2026, 11, 11, 2, 4, 30, 436112), datetime.datetime(2026, 11, 13, 2, 4, 30, 436125), UUID('dd2a0bc1-d57c-4d44-9f0c-688a26b50c16'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function hotel_booking(unknown, timestamp without time zone, timestamp without time zone, uuid) does not exist
+E           LINE 1: SELECT * FROM hotel_booking($1, $2, $3, $4)
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+_____________ test_hotel_booking_counts_only_open_payment_statuses _____________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed2fd10>
+
+    def test_hotel_booking_counts_only_open_payment_statuses(tx):
+        user = make_user(tx)
+        tour = make_tour(tx)
+        make_hotel_room(tx, tour, "房A", 9)
+        make_hotel_room(tx, tour, "房B", 9)
+        start, end = days(10), days(12)
+        for status in (-1, 0, 1, 2, 3, 4):
+            make_order_item(tx, user, tour, room_type="房A", payment_status=status,
+                            start_date=start, end_date=end)
+        # 其他房型、其他行程的訂單不計
+        make_order_item(tx, user, tour, room_type="房B", payment_status=1, start_date=start, end_date=end)
+        make_order_item(tx, user, make_tour(tx), room_type="房A", payment_status=1,
+                        start_date=start, end_date=end)
+>       (row,) = rows(tx, "SELECT * FROM hotel_booking(%s, %s, %s, %s)", ("房A", start, end, tour["tour_id"]))
+
+tests/test_views_b.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed699d0>
+query = 'SELECT * FROM hotel_booking(%s, %s, %s, %s)'
+params = ('房A', datetime.datetime(2026, 11, 11, 2, 4, 30, 475128), datetime.datetime(2026, 11, 13, 2, 4, 30, 475141), UUID('8008b1cf-5a94-4a14-b004-f8d37374380a'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function hotel_booking(unknown, timestamp without time zone, timestamp without time zone, uuid) does not exist
+E           LINE 1: SELECT * FROM hotel_booking($1, $2, $3, $4)
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+__________________ test_hotel_booking_date_range_is_half_open __________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e95ff00>
+
+    def test_hotel_booking_date_range_is_half_open(tx):
+        user = make_user(tx)
+        tour = make_tour(tx)
+        make_hotel_room(tx, tour, "房A", 5)
+        d = lambda n: datetime(2031, 6, 1) + timedelta(days=n)  # noqa: E731
+        make_order_item(tx, user, tour, room_type="房A", payment_status=1, start_date=d(2), end_date=d(5))
+        q = "SELECT booking_count FROM hotel_booking('房A', %s, %s, %s)"
+    
+        def count(a, b):
+            return rows(tx, q, (a, b, tour["tour_id"]))[0]["booking_count"]
+    
+>       assert count(d(5), d(7)) == 0, "既有訂單的退房日當天，下一位可入住"
+
+tests/test_views_b.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:157: in count
+    return rows(tx, q, (a, b, tour["tour_id"]))[0]["booking_count"]
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e96a390>
+query = "SELECT booking_count FROM hotel_booking('房A', %s, %s, %s)"
+params = (datetime.datetime(2031, 6, 6, 0, 0), datetime.datetime(2031, 6, 8, 0, 0), UUID('77ff8e71-aa0b-41c0-a36e-b72929f2fde8'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function hotel_booking(unknown, timestamp without time zone, timestamp without time zone, uuid) does not exist
+E           LINE 1: SELECT booking_count FROM hotel_booking('房A', $1, $2, $3)
+E                                             ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+______________ test_hotel_booking_room_count_from_the_right_tour _______________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e95d480>
+
+    def test_hotel_booking_room_count_from_the_right_tour(tx):
+        tour1, tour2 = make_tour(tx), make_tour(tx)
+        make_hotel_room(tx, tour1, "同名房", 2)
+        make_hotel_room(tx, tour2, "同名房", 7)
+        q = "SELECT room_count FROM hotel_booking('同名房', %s, %s, %s)"
+>       assert rows(tx, q, (days(1), days(2), tour1["tour_id"])) == [{"room_count": 2}]
+
+tests/test_views_b.py:173: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e968d10>
+query = "SELECT room_count FROM hotel_booking('同名房', %s, %s, %s)"
+params = (datetime.datetime(2026, 11, 2, 2, 4, 30, 584855), datetime.datetime(2026, 11, 3, 2, 4, 30, 584868), UUID('72075a97-ec64-407f-b47c-df94e0457ffa'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function hotel_booking(unknown, timestamp without time zone, timestamp without time zone, uuid) does not exist
+E           LINE 1: SELECT room_count FROM hotel_booking('同名房', $1, $2, $3)
+E                                          ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+___________________ test_restaurant_booking_counts_by_status ___________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3eda1950>
+
+    def test_restaurant_booking_counts_by_status(tx):
+        user = make_user(tx)
+        tour = make_tour(tx, item="food")
+        make_restaurant(tx, tour, limit=25)
+        # quantity 各不同，加總才分得出哪幾個狀態被算進去：-1,0,1 → 1+2+4 = 7
+        for status, qty in {-1: 1, 0: 2, 1: 4, 2: 8, 3: 16, 4: 32}.items():
+            make_order_item(tx, user, tour, payment_status=status, quantity=qty, total_price=100.0)
+        make_order_item(tx, user, make_tour(tx, item="food"), payment_status=1, quantity=64)  # 其他行程
+        q = "SELECT * FROM restaurant_booking(%s, %s)"
+>       (row,) = rows(tx, q, (days(3), tour["tour_id"]))
+
+tests/test_views_b.py:188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e96a750>
+query = 'SELECT * FROM restaurant_booking(%s, %s)'
+params = (datetime.datetime(2026, 11, 4, 2, 4, 30, 644225), UUID('4fb3ca81-4bc0-4f6c-9ebb-3d37e63983b1'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function restaurant_booking(timestamp without time zone, uuid) does not exist
+E           LINE 1: SELECT * FROM restaurant_booking($1, $2)
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+________________ test_restaurant_booking_ignores_time_parameter ________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3eda0b50>
+
+    def test_restaurant_booking_ignores_time_parameter(tx):
+        """#16：參數 1（controller 恆傳 NULL）被忽略，不分時段。"""
+        user = make_user(tx)
+        tour = make_tour(tx, item="food")
+        make_restaurant(tx, tour, limit=10)
+        make_order_item(tx, user, tour, payment_status=1, quantity=3, start_date=days(1))
+        make_order_item(tx, user, tour, payment_status=1, quantity=4, start_date=days(40))
+        q = "SELECT booking_count FROM restaurant_booking(%s, %s)"
+>       assert rows(tx, q, (None, tour["tour_id"])) == [{"booking_count": 7}]
+
+tests/test_views_b.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e968c50>
+query = 'SELECT booking_count FROM restaurant_booking(%s, %s)'
+params = (None, UUID('3ad50c93-2399-4f16-9464-ff97c5ccc979'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function restaurant_booking(unknown, uuid) does not exist
+E           LINE 1: SELECT booking_count FROM restaurant_booking($1, $2)
+E                                             ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+_____________ test_restaurant_booking_no_orders_and_no_restaurant ______________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9605f0>
+
+    def test_restaurant_booking_no_orders_and_no_restaurant(tx):
+        tour = make_tour(tx, item="food")
+        make_restaurant(tx, tour, limit=12)
+>       assert rows(tx, "SELECT * FROM restaurant_booking(NULL, %s)", (tour["tour_id"],)) == [
+            {"booking_count": 0, "reservation_limit": 12}]
+
+tests/test_views_b.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed699d0>
+query = 'SELECT * FROM restaurant_booking(NULL, %s)'
+params = (UUID('0fc9c55b-97b2-484d-bd38-5ea540295ebc'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function restaurant_booking(unknown, uuid) does not exist
+E           LINE 1: SELECT * FROM restaurant_booking(NULL, $1)
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+___________________ test_restaurant_isclosed_always_one_row ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9624e0>
+
+    def test_restaurant_isclosed_always_one_row(tx):
+        """#19：只看 restaurant_business 有無對應星期的列；預約時間 NULL／餐廳不存在 → false。"""
+        tour = make_tour(tx, item="food")
+        rest = make_restaurant(tx, tour)
+        open_day = datetime(2031, 6, 2, 12, 0)   # 星期一
+        closed_day = datetime(2031, 6, 3, 12, 0)  # 星期二：沒有營業列
+        insert(tx, "restaurant_business", restaurant_id=rest["restaurant_id"],
+               week=_weekday(open_day), business_hours="11:00~14:00")
+        q = "SELECT * FROM restaurant_isclosed(%s, %s)"
+>       assert rows(tx, q, (open_day, tour["tour_id"])) == [{"isclosed": False}]
+
+tests/test_views_b.py:229: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6b590>
+query = 'SELECT * FROM restaurant_isclosed(%s, %s)'
+params = (datetime.datetime(2031, 6, 2, 12, 0), UUID('bdcb6182-4f49-479f-9292-2677ddc99227'))
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedFunction: function restaurant_isclosed(timestamp without time zone, uuid) does not exist
+E           LINE 1: SELECT * FROM restaurant_isclosed($1, $2)
+E                                 ^
+E           HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedFunction
+______________________ test_business_hours_split_per_slot ______________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9614f0>
+
+    def test_business_hours_split_per_slot(tx):
+        tour = make_tour(tx, item="food")
+        rest = make_restaurant(tx, tour)
+        insert(tx, "restaurant_business", restaurant_id=rest["restaurant_id"], week="Monday",
+               business_hours="11:00~14:00, 17:00~21:00")
+        insert(tx, "restaurant_business", restaurant_id=rest["restaurant_id"], week="Tuesday",
+               business_hours="17:00~23:00")
+>       result = rows(tx, "SELECT * FROM restaurant_business_parsed WHERE tour_id = %s ORDER BY week, start_time",
+                      (tour["tour_id"],))
+
+tests/test_views_b.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e96a090>
+query = 'SELECT * FROM restaurant_business_parsed WHERE tour_id = %s ORDER BY week, start_time'
+params = (UUID('0bbc2a43-8fee-4d1b-8667-47708f6e9207'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "restaurant_business_parsed" does not exist
+E           LINE 1: SELECT * FROM restaurant_business_parsed WHERE tour_id = $1 ...
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+________________ test_business_hours_midnight_end_becomes_2359 _________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e963890>
+
+    def test_business_hours_midnight_end_becomes_2359(tx):
+        """#20：'17:00~00:00' 的 00:00 視為 24:00，end_time = 23:59:59。"""
+        tour = make_tour(tx, item="food")
+        rest = make_restaurant(tx, tour)
+        insert(tx, "restaurant_business", restaurant_id=rest["restaurant_id"], week="Friday",
+               business_hours="17:00~00:00")
+>       (row,) = rows(tx, "SELECT * FROM restaurant_business_parsed WHERE tour_id = %s", (tour["tour_id"],))
+
+tests/test_views_b.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e969190>
+query = 'SELECT * FROM restaurant_business_parsed WHERE tour_id = %s'
+params = (UUID('f8878498-57c5-406f-a8f6-497651f34ac9'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "restaurant_business_parsed" does not exist
+E           LINE 1: SELECT * FROM restaurant_business_parsed WHERE tour_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_______________ test_business_hours_unparsable_slots_are_ignored _______________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3eda6c60>
+
+    def test_business_hours_unparsable_slots_are_ignored(tx):
+        """#21：無法解析的時段由 view 忽略，不丟例外、也不影響同列其他時段。"""
+        tour = make_tour(tx, item="food")
+        rest = make_restaurant(tx, tour)
+        insert(tx, "restaurant_business", restaurant_id=rest["restaurant_id"], week="Monday",
+               business_hours="公休, 10:00~12:00, 99:00~25:00, abc")
+        insert(tx, "restaurant_business", restaurant_id=rest["restaurant_id"], week="Tuesday",
+               business_hours="全天營業")
+>       result = rows(tx, "SELECT * FROM restaurant_business_parsed WHERE tour_id = %s", (tour["tour_id"],))
+
+tests/test_views_b.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e96af90>
+query = 'SELECT * FROM restaurant_business_parsed WHERE tour_id = %s'
+params = (UUID('4c0a6d78-d237-4a19-ab49-605cfbe5fbae'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "restaurant_business_parsed" does not exist
+E           LINE 1: SELECT * FROM restaurant_business_parsed WHERE tour_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_________ test_business_parsed_has_no_row_for_tour_without_restaurant __________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9e0230>
+
+    def test_business_parsed_has_no_row_for_tour_without_restaurant(tx):
+        tour = make_tour(tx, item="food")
+>       assert rows(tx, "SELECT * FROM restaurant_business_parsed WHERE tour_id = %s", (tour["tour_id"],)) == []
+
+tests/test_views_b.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e96a2d0>
+query = 'SELECT * FROM restaurant_business_parsed WHERE tour_id = %s'
+params = (UUID('878efdd9-34f0-4de7-bc75-694598d44c67'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "restaurant_business_parsed" does not exist
+E           LINE 1: SELECT * FROM restaurant_business_parsed WHERE tour_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+____________________ test_couponlist_keeps_used_and_expired ____________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3eda6300>
+
+    def test_couponlist_keeps_used_and_expired(tx):
+        user = make_user(tx)
+        other = make_user(tx)
+        order = insert(tx, "orders", user_id=user["user_id"])
+        specs = {
+            "unused": dict(status=0, expire=days(10)),
+            "used": dict(status=1, expire=days(10)),
+            "previewing": dict(status=-1, expire=days(10), order_id=order["order_id"]),
+            "expired": dict(status=0, expire=days(-10)),
+        }
+        coupons = {}
+        for label, spec in specs.items():
+            c = insert(tx, "coupon", description=f"desc-{label}", discount=50.0, expire_date=spec["expire"])
+            extra = {"order_id": spec["order_id"]} if "order_id" in spec else {}
+            insert(tx, "user_coupon", user_id=user["user_id"], coupon_id=c["coupon_id"],
+                   status=spec["status"], **extra)
+            coupons[c["coupon_id"]] = (label, c)
+        insert(tx, "user_coupon", user_id=other["user_id"], coupon_id=next(iter(coupons)), status=0)
+>       result = rows(tx, 'SELECT * FROM "user_couponList" WHERE user_id = %s', (user["user_id"],))
+
+tests/test_views_b.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6b590>
+query = 'SELECT * FROM "user_couponList" WHERE user_id = %s'
+params = (UUID('268e3936-c99c-4c0b-8cda-a4f7d6eb1bee'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_couponList" does not exist
+E           LINE 1: SELECT * FROM "user_couponList" WHERE user_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+_________________ test_point_coupon_only_usable_and_keeps_user _________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9632f0>
+
+    def test_point_coupon_only_usable_and_keeps_user(tx):
+        user = make_user(tx)
+        insert(tx, "user_level", user_id=user["user_id"], level="Lv1", name="探險家",
+               badge_url="https://img.example.com/b.png", travel_point=1500)
+        usable = _bind(tx, user, 0, days(5), discount=70.0, description="可用")
+        on_boundary = _bind(tx, user, 0, datetime.now().replace(microsecond=0), description="邊界")
+        # 以 now()::timestamp 精確等於「現在」：到期時刻本身仍算未過期（controller：now > expire 才過期）
+        tx.execute("UPDATE coupon SET expire_date = now()::timestamp WHERE coupon_id = %s", (on_boundary["coupon_id"],))
+        _bind(tx, user, 1, days(5))                                    # 已使用
+        _bind(tx, user, -1, days(5))                                   # 預覽占用
+        _bind(tx, user, 0, days(-1))                                   # 已過期
+        just_expired = _bind(tx, user, 0, days(5))                     # 剛過期一秒
+        tx.execute("UPDATE coupon SET expire_date = now()::timestamp - interval '1 second' WHERE coupon_id = %s",
+                   (just_expired["coupon_id"],))
+>       result = rows(tx, 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s', (user["user_id"],))
+
+tests/test_views_b.py:341: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6b4d0>
+query = 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s'
+params = (UUID('998fcfbe-2383-46c5-886f-ee19799ddacf'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_level_point_coupon" does not exist
+E           LINE 1: SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = $...
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________ test_point_coupon_user_without_usable_coupon_keeps_one_row __________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e960140>
+
+    def test_point_coupon_user_without_usable_coupon_keeps_one_row(tx):
+        """#40：沒有可用優惠卷（含完全沒有綁定）的使用者仍有 1 列，優惠卷欄位全為 NULL。"""
+        only_used = make_user(tx)
+        insert(tx, "user_level", user_id=only_used["user_id"], travel_point=300)
+        _bind(tx, only_used, 1, days(5))
+        _bind(tx, only_used, 0, days(-5))
+        none_at_all = make_user(tx)
+        insert(tx, "user_level", user_id=none_at_all["user_id"], travel_point=800)
+        for user, point in ((only_used, 300), (none_at_all, 800)):
+>           (row,) = rows(tx, 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s', (user["user_id"],))
+
+tests/test_views_b.py:362: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e969c10>
+query = 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s'
+params = (UUID('4d4e9042-b181-4dba-91ea-4a0a0f6ee50a'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_level_point_coupon" does not exist
+E           LINE 1: SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = $...
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________ test_point_coupon_user_without_level_and_latest_level_wins __________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e962120>
+
+    def test_point_coupon_user_without_level_and_latest_level_wins(tx):
+        no_level = make_user(tx)
+>       (row,) = rows(tx, 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s', (no_level["user_id"],))
+
+tests/test_views_b.py:370: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e969a90>
+query = 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s'
+params = (UUID('ca7e6878-86b4-40b3-aed4-0d8825c7315b'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_level_point_coupon" does not exist
+E           LINE 1: SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = $...
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________ test_point_coupon_two_usable_coupons_two_rows_same_points ___________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9618b0>
+
+    def test_point_coupon_two_usable_coupons_two_rows_same_points(tx):
+        user = make_user(tx)
+        insert(tx, "user_level", user_id=user["user_id"], travel_point=42)
+        _bind(tx, user, 0, days(3))
+        _bind(tx, user, 0, days(4))
+>       result = rows(tx, 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s', (user["user_id"],))
+
+tests/test_views_b.py:386: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e969190>
+query = 'SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = %s'
+params = (UUID('e8914ef9-af7a-4bff-b9eb-767a5eea24b4'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_level_point_coupon" does not exist
+E           LINE 1: SELECT * FROM "user_level_point_coupon" WHERE 使用者編號 = $...
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________________ test_orderlist_total_count_and_unit_promo ___________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e9e0aa0>
+
+    def test_orderlist_total_count_and_unit_promo(tx):
+        user = make_user(tx)
+        tour_a = make_tour(tx, price=1000)
+        tour_b = make_tour(tx, price=500)
+        order1 = insert(tx, "orders", user_id=user["user_id"])
+        order2 = insert(tx, "orders", user_id=user["user_id"])
+        # order1 兩個項目（不同 payment_status，都要出現）：#13 的各種 discount_price
+        promo = make_order_item(tx, user, tour_a, order=order1, quantity=3, total_price=3000.0,
+                                discount_price=2400.0, payment_status=-1)
+        zero = make_order_item(tx, user, tour_b, order=order1, quantity=2, total_price=1000.0,
+                               discount_price=0.0, payment_status=2,
+                               room_type="雙人房", end_date=days(9))
+        single = make_order_item(tx, user, tour_a, order=order2, quantity=1, total_price=1000.0,
+                                 discount_price=None, payment_status=1)
+>       result = rows(tx, 'SELECT * FROM "user_orderList" WHERE order_id = ANY(%s)',
+                      ([order1["order_id"], order2["order_id"]],))
+
+tests/test_views_b.py:407: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e969d90>
+query = 'SELECT * FROM "user_orderList" WHERE order_id = ANY(%s)'
+params = ([UUID('627d36d4-3ceb-4afd-9392-90e34ac7941d'), UUID('341c5d59-fd54-4e80-87e2-cfcd5a07ba05')],)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_orderList" does not exist
+E           LINE 1: SELECT * FROM "user_orderList" WHERE order_id = ANY($1)
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+__________ test_orderlist_price_is_historical_not_current_tour_price ___________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e961c70>
+
+    def test_orderlist_price_is_historical_not_current_tour_price(tx):
+        """#13：價錢取下單當時（order_item），不是現在的 tour.price／促銷。"""
+        user = make_user(tx)
+        tour = make_tour(tx, price=9999)
+        insert(tx, "notification", tour_id=tour["tour_id"], type="促銷",
+               start_date=days(-1), end_date=days(1), promo_price=1.0)
+        item = make_order_item(tx, user, tour, quantity=2, total_price=2000.0, discount_price=1600.0)
+>       (row,) = rows(tx, 'SELECT * FROM "user_orderList" WHERE order_id = %s', (item["order_id"],))
+
+tests/test_views_b.py:433: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6b4d0>
+query = 'SELECT * FROM "user_orderList" WHERE order_id = %s'
+params = (UUID('04954d32-38e1-4199-89a8-f3313a5951f8'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_orderList" does not exist
+E           LINE 1: SELECT * FROM "user_orderList" WHERE order_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+________________ test_orderlist_zero_quantity_gives_null_prices ________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3e962030>
+
+    def test_orderlist_zero_quantity_gives_null_prices(tx):
+        user = make_user(tx)
+        tour = make_tour(tx)
+        item = make_order_item(tx, user, tour, quantity=0, total_price=0.0, discount_price=100.0)
+>       (row,) = rows(tx, 'SELECT * FROM "user_orderList" WHERE order_id = %s', (item["order_id"],))
+
+tests/test_views_b.py:441: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_views_b.py:16: in rows
+    cur.execute(query, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x77dc3ed6bad0>
+query = 'SELECT * FROM "user_orderList" WHERE order_id = %s'
+params = (UUID('985798c4-8470-4005-a3fc-8e9bbf8d30e7'),)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedTable: relation "user_orderList" does not exist
+E           LINE 1: SELECT * FROM "user_orderList" WHERE order_id = $1
+E                                 ^
+
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: UndefinedTable
+=========================== short test summary info ============================
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[hotel_booking]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_booking]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_business_parsed]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_isclosed]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_cartList]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_couponList]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_point_coupon]
+FAILED tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orderList]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[restaurant_business_parsed]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_cartList]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_couponList]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_level_point_coupon]
+FAILED tests/test_db_contract.py::test_view_columns_match_contract[user_orderList]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[hotel_booking]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_booking]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_isclosed]
+FAILED tests/test_views_b.py::test_cartlist_row_per_item_with_owner - psycopg...
+FAILED tests/test_views_b.py::test_cartlist_promo_price_only_in_period - psyc...
+FAILED tests/test_views_b.py::test_hotel_booking_always_one_row - psycopg.err...
+FAILED tests/test_views_b.py::test_hotel_booking_counts_only_open_payment_statuses
+FAILED tests/test_views_b.py::test_hotel_booking_date_range_is_half_open - ps...
+FAILED tests/test_views_b.py::test_hotel_booking_room_count_from_the_right_tour
+FAILED tests/test_views_b.py::test_restaurant_booking_counts_by_status - psyc...
+FAILED tests/test_views_b.py::test_restaurant_booking_ignores_time_parameter
+FAILED tests/test_views_b.py::test_restaurant_booking_no_orders_and_no_restaurant
+FAILED tests/test_views_b.py::test_restaurant_isclosed_always_one_row - psyco...
+FAILED tests/test_views_b.py::test_business_hours_split_per_slot - psycopg.er...
+FAILED tests/test_views_b.py::test_business_hours_midnight_end_becomes_2359
+FAILED tests/test_views_b.py::test_business_hours_unparsable_slots_are_ignored
+FAILED tests/test_views_b.py::test_business_parsed_has_no_row_for_tour_without_restaurant
+FAILED tests/test_views_b.py::test_couponlist_keeps_used_and_expired - psycop...
+FAILED tests/test_views_b.py::test_point_coupon_only_usable_and_keeps_user - ...
+FAILED tests/test_views_b.py::test_point_coupon_user_without_usable_coupon_keeps_one_row
+FAILED tests/test_views_b.py::test_point_coupon_user_without_level_and_latest_level_wins
+FAILED tests/test_views_b.py::test_point_coupon_two_usable_coupons_two_rows_same_points
+FAILED tests/test_views_b.py::test_orderlist_total_count_and_unit_promo - psy...
+FAILED tests/test_views_b.py::test_orderlist_price_is_historical_not_current_tour_price
+FAILED tests/test_views_b.py::test_orderlist_zero_quantity_gives_null_prices
+======================== 38 failed, 20 passed in 1.27s =========================
