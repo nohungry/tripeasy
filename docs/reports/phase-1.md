@@ -1,5 +1,5 @@
 # Phase 1：路由、seed、DB 契約、views／functions
-> 草稿（2026-11-03，待使用者審閱定稿） · backend tag `phase-1`（待 Task 9：`<sha>`） · frontend tag `phase-1`（待 Task 9：`<sha>`；P1 沒有改 frontend）
+> 草稿（2026-11-03，待使用者審閱定稿） · backend tag `phase-1`（待 Task 9：`<sha>`） · frontend 維持 `phase-0`（P1 沒有改 frontend，不打 tag，`FRONTEND_REF` 仍是 `phase-0`）
 >
 > P1 分兩段：P1a（路由修正、seed 改寫成 Flyway repeatable、DB 契約）與 P1b（seed 主鍵與資料量、21 個 view／function、三層測試、CI）。本報告涵蓋兩段。
 
@@ -13,7 +13,7 @@ P1 的目標：讓全新的本機環境 `docker compose up` 之後，seed 帳號
 | 紅燈 → 綠燈 | 路由 1 組、P1a seed 2 組、P1b seed 2 組、views／functions 3 組，共 8 個紅燈 commit，對應 8 個綠燈或修正 commit（細節見 §1）。P1b Task 7（API 冒煙）依計畫沒有紅燈 commit |
 | 新增物件 | 21 個 view／function（backend `migrations/R__views_functions.sql`，760 行）；seed 由 `db/seed-build/build_seed.py` 從 `db/seed-build/tripeasy_fakedata.sql` 加 `extra_seed.sql` 產生 `db/seed/R__seed.sql` |
 | 契約 | `docs/db-contract.md`：21 個物件的欄位、語意、邊界；§4.1 49 題語意確認、§4.2 a–i 與「不需決定」清單 |
-| CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯） |
+| CI 結果 | 本機 `scripts/ci.sh` 乾淨狀態（`down -v`）：195 passed, 2 xfailed，exit 0（2.78 秒）；保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（spec P1 完成標準：seed 連續 `up` 兩次不出錯；第二次 Flyway 看到 `R__` 檔 checksum 沒變，不會重跑，重跑安全性的證據見 §3.2） |
 | backend 變更 | 4 檔 +796 −23（`main..phase-1`） |
 | frontend 變更 | 無 |
 | 總覽 repo 變更 | 36 檔 +15254 −8（`main..a4182c1`，不含本報告與 CI 升級的 commit；含 seed、測試、契約、計畫與證據檔） |
@@ -21,7 +21,7 @@ P1 的目標：讓全新的本機環境 `docker compose up` 之後，seed 帳號
 
 Commit 範圍（`git log main..phase-1`）：
 
-- 總覽 repo：`0d98047`（開始 P1）→ `a4182c1`，共 48 個 commit（不含報告 commit）。
+- 總覽 repo：`0d98047`（開始 P1，含此 commit）→ `a4182c1`，共 48 個 commit（不含報告 commit）。
 - backend：`52e5034`（路由）、`8d08e0d` / `f1b561c`（A 組）、`46e6710`（B 組）、`4423756` / `b0fa46c`（C 組），共 6 個 commit。
 - 這兩段的 backend 都是**綠燈在 backend repo、紅燈在總覽 repo**（沿用 P0）：測試放總覽 repo，所以每個紅燈 commit 只有測試與證據，修正的程式碼在 backend。
 - 一個誠實的說明：`ba201e8`（seed 日期測試改以載入日為基準）是 review 後修正測試本身，**沒有獨立的紅燈 commit**——問題是測試的基準日寫錯，會在 2026-11-02 之後讓保留 volume 的環境變紅，不是 seed 資料壞掉，所以沒有「修之前真的是壞的」可以存證。
@@ -106,7 +106,7 @@ P1a 寫契約時發現（契約 §4.2 a、d2、d3），P1b 修正。
 
 ### 1.3 21 個 view／function（P1b Task 4–6）
 
-backend 的 controller 呼叫 12 個 view 與 9 個 function，V1／V2 都沒建。分三組，每組先在總覽 repo 寫契約測試（欄位名、型別、順序與行為）並存紅燈，再在 backend 寫 SQL：
+backend 的 controller 呼叫 12 個 view 與 9 個 function，V1／V2 都沒建。分三組，每組先在總覽 repo 寫契約測試（欄位名集合與個數、型別，不比欄位順序；以及行為）並存紅燈，再在 backend 寫 SQL：
 
 | 組 | 物件 | 紅燈 | 綠燈 |
 |---|---|---|---|
@@ -126,7 +126,7 @@ A 組（backend `f1b561c`）和 C 組（`b0fa46c`）的 SQL 在 review 後調整
 
 ### 1.4 API 冒煙（P1b Task 7）：走得通原本 500／400 的 API
 
-`tests/test_api_smoke.py`（25 個測試）用 seed 帳號打過去，驗證 P1a 之前會 500／400 的 API 現在能回正確的資料。**依計畫明示的例外，這個 Task 沒有紅燈 commit**（冒煙測試驗的是前面各 Task 已完成的成果，單獨拿掉任一個都會紅，沒有「修之前」的單一狀態可存證）。
+`tests/test_api_smoke.py`（25 個測試函式，`--collect-only` 共 35 個案例；其中首頁等測試有參數化）用 seed 帳號打過去，驗證 P1a 之前會 500／400 的 API 現在能回正確的資料。**依計畫明示的例外，這個 Task 沒有紅燈 commit**（冒煙測試驗的是前面各 Task 已完成的成果，單獨拿掉任一個都會紅，沒有「修之前」的單一狀態可存證）。
 
 發現兩個契約以外、也不在 P1 範圍的 controller bug，都已記錄在契約 §4.2「不需決定」清單：
 
@@ -170,7 +170,7 @@ P1 新增的做法：
 | P1b-5 B 組 | Approved（5 minor） | Approved（6 minor） | |
 | P1b-6 C 組 | Approved（4 minor） | Needs fixes（2 I：#22 最新 `user_level` 測試太弱、#45 ORDER BY 測試靠 heap 順序） | 只有 Opus 抓到，修正 `799b2a1` |
 | P1b-7 冒煙 | Needs fixes（1 I） | Needs fixes（1 I） | 兩邊獨立發現：優惠卷斷言形同虛設（alice 的優惠卷 `status = 1`，view 回全 NULL 佔位列，斷言永遠成立） |
-| P1b final | 待 final review（Task 9 前進行） | 待 final review（Task 9 前進行） | 尚未執行（待補） |
+| P1b final | With fixes（0 C／1 I／8 M） | With fixes（0 C／2 I／5 M） | 兩邊都是 0 Critical，修正全是文件（本報告與契約），沒有程式碼變更；遺留 minor 沒有必須在合併前處理的。Important 兩項：報告對保留 volume 重跑與契約測試的描述都寫過頭（Opus 兩項、Fable 一項，後者與前者重疊），已在 `docs: P1 報告與契約依 final review 修正` 修正 |
 
 觀察：雙 review 的互補價值在 P1 非常明顯——Task 6（契約 C）的提權與 P1b Task 4／6 的測試強度，都只有一邊抓到；而 #9、點數、kept-volume 重複、日期測試與優惠卷斷言這五個，則是兩邊獨立命中，等於交叉驗證。
 
@@ -194,7 +194,9 @@ P1 新增的做法：
 
 - `restaurant_business_parsed` 不處理 `24:00` 與非 `00:00` 結束的跨午夜時段（§4.2 i，選 A 維持現狀）。
 - `tour_hotel`／`tour_restaurant` 的 INNER JOIN 與 `status = 1` 篩選（§4.2 e、f，選 A）。
-- `parse_inserts` 會靜默丟掉非 INSERT 敘述（由 INSERT_COUNT 守）；紅燈存證過長。
+- `parse_inserts` 會靜默丟掉非 INSERT 敘述（由 INSERT_COUNT 守）；`VALUES` 內的 `--` 註解被丟掉（`emit` 由解析後的值重新產生，只影響產出檔的註解）；紅燈存證過長。
+- **「購買數 = `order_item` 列數」是 controller 裁決**（#4 只定「只算已付款」，沒定計數方式；兩種算法在 seed 名次相同）。**P3 商品開工前要變成使用者明確決定**（也記在契約 §4.2）。
+- final review 的建議（未採納，無須合併前處理）：seed 的 23 個行程 `created_at` 全是同一個 `CURRENT_TIMESTAMP`，管理者端 `ORDER BY 建立時間 DESC LIMIT/OFFSET` 分頁在並列時順序不穩（契約沒定這些欄位；之後調 seed 時可給新行程錯開時間）；`test_views_c.py` 的 `EXPLAIN` 測試綁定 PG 15 的計畫節點名稱、`test_points_level_carol_has_usable_coupon` 在 volume 超過約 133 天後會變紅、`test_db_contract.py` 的參數檢查只比型別不比名稱。
 
 ## 3. 測試方法
 
@@ -202,7 +204,7 @@ P1 新增的做法：
 
 | 層 | 內容 | 檔案 |
 |---|---|---|
-| 1. 契約測試 | 21 個物件存在、欄位名／型別／順序與 `docs/db-contract.md` 一致；契約抄錄成機器可讀的 `tests/db_contract.py`，`test_db_contract.py` 驗證抄錄本身的完整性 | `tests/db_contract.py`、`tests/test_db_contract.py`、`tests/test_migrations.py` |
+| 1. 契約測試 | 21 個物件存在且識別字正確；view 的欄位名集合與個數、function 的參數型別與順序，與機器可讀的 `tests/db_contract.py` 一致（不比 view 的欄位順序）。`db_contract.py` 是人工從 `docs/db-contract.md` 抄錄的，沒有測試比對兩者文字，只有 `test_contract_lists_all_21_objects` 檢查物件數量（21／12／9） | `tests/db_contract.py`、`tests/test_db_contract.py`、`tests/test_migrations.py` |
 | 2. 行為測試 | 在 transaction 內用 `tests/dbfactory.py` 插入情境資料，直接查 view／function，驗證 JOIN、`LEFT JOIN` 保留、期間邊界、`ORDER BY`、NULL 處理等 | `tests/test_views_a.py`、`test_views_b.py`、`test_views_c.py` |
 | 3. API 冒煙 | 用 seed 帳號從 HTTP 打 API，驗證原本會 500／400 的路徑現在走得通 | `tests/test_api_smoke.py`、`tests/test_product_routes.py`、`tests/test_seed.py` |
 
@@ -213,7 +215,7 @@ P1 新增的做法：
 ### 3.2 技巧
 
 - **`tx` fixture：不自動 commit 的連線，結束一律 rollback**（`tests/conftest.py`）。行為測試在 `tx` 裡插入情境資料再查 view，結束後什麼都不留，所以不需要 `delete_user` 的 FK 順序清理，也不會污染 seed 的 exact count 測試。
-- **契約抄錄成 `db_contract.py`**：契約的欄位表是給人讀的 Markdown；為了讓 view 的欄位能被測試比對，把它抄成 Python 資料結構（key 為 `pg_class.relname`／`pg_proc.proname`，所以 `restaurant_isClosed` 的 key 是小寫），`test_db_contract.py` 檢查抄錄與契約文字一致。
+- **契約抄錄成 `db_contract.py`**：契約的欄位表是給人讀的 Markdown；為了讓 view 的欄位能被測試比對，把它抄成 Python 資料結構（key 為 `pg_class.relname`／`pg_proc.proname`，所以 `restaurant_isClosed` 的 key 是小寫），抄錄是人工做的，每個 Task 的 review 以人工核對；`test_db_contract.py` 只檢查物件數量（21／12／9），不比對契約文字，所以 P2 起改 view 時要手動同步兩邊（見附錄 B）。
 - **突變驗證**：implementer 故意改壞 SQL 確認測試會失敗：B 組 29 個、C 組 16 個突變全數殺死（implementer 回報；A 組在 review 後補強欄位錯位、最新通知等突變偵測）。review 後補的測試也要求能區分「SUM 與 MAX」（5 vs 3）這類易混淆的實作。
 - **自然鍵 v4 id**：見 §1.2.5。`tests/test_build_seed.py` 驗證 id 決定性、跨表同一字面值不會被誤取代。
 - **repeatable migration**：seed 與 views／functions 都是 `R__` 檔（`db/seed/R__seed.sql`、backend `migrations/R__views_functions.sql`）。views／functions 以 `DROP … IF EXISTS` + `CREATE` 寫成，改內容後 Flyway 依 checksum 自動重跑，不必加 V3 版本號；seed 重跑靠 `ON CONFLICT DO NOTHING`，exact count 測試保證沒有加倍。
@@ -235,7 +237,7 @@ P1 新增的做法：
 本機驗證（Task 8 Step 2，使用者先執行 `docker compose down -v`）：
 
 - 乾淨狀態：195 passed, 2 xfailed，exit 0（2.78 秒）
-- 保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（Flyway 重跑 `R__seed.sql` 與 `R__views_functions.sql` 都不報錯，exact count 與 email 不重複測試通過）
+- 保留 volume 再跑一次：195 passed, 2 xfailed，exit 0（2.55 秒）（這證明的是在既有 volume 上啟動不報錯，exact count 與 email 不重複測試通過；Flyway 只在 `R__` 檔 checksum 改變時才重跑，所以這一次並沒有重跑它們。重跑安全性的證據是 `test_seed_is_rerunnable` 與 `test_views_functions_file_is_rerunnable`（在 transaction 內重複執行檔案），以及 Task 4–6 在既有 DB 上用 `docker compose run --rm flyway` 套用修改後的 SQL）
 - GitHub Actions：待 Task 9 push 後補上 run 連結（`.github/workflows/ci.yml` 已升級 action 版本：`actions/checkout@v7`（3 處）、`actions/upload-artifact@v7`、`astral-sh/setup-uv@v10`，這三個都是 2026-11-03 查證的最新 major；ci.yml 用到的 `with:` 輸入（`repository`／`ref`／`path`、`name`／`path`）在這幾個 major 之間沒有改名，`setup-uv` 沒有傳任何輸入）。
 
 ## 4. 操作指南
@@ -321,5 +323,8 @@ curl -s -X POST http://localhost:3000/api/v1/auth/userinfo/login/email \
 - 優惠卷代碼格式前後台不一致（後台不限格式，消費者只接受 `^[A-Z0-9]{6}$`）。
 - 是否補唯一約束（`notification`、`user_level`、`favorite`、`coupon.code`，§4.2 d4）；P1 選 A 不補。
 - 契約 §4.2 e–i（`tour_hotel`／`tour_restaurant` 的 `status = 1` 篩選與 INNER JOIN、促銷期間 `now()` 與 naive timestamp 的時區、B 組的 booking_count 算法、`24:00` 時段）：使用者 2026-11-01 全部選 A（維持現狀）。
+
+- **`R__views_functions.sql` 的 DROP 清單是寫死的（P2／P7）**：函式簽章若日後改變，必須同時保留舊簽章的 `DROP` 行，否則舊的 overload 會留在 DB（`test_object_exists_with_exact_identifier` 在保留 volume 上會抓到，CI 的全新 DB 抓不到）；DROP 用 `CASCADE`，P2 以後若有物件依賴這些 view，下次 migrate 會被默默一併刪除；P7 若用原專案的 DB 當基礎，裡面手工建立的同名物件（簽章或引號不同）這支檔不會清掉。
+- **`tests/db_contract.py` 與 `docs/db-contract.md` 沒有自動比對（P2 起）**：改 view 或 function 時，要同時更新兩邊（對應 spec 的重構規則）；可選的補強是寫一個小 parser 比對「輸出欄位」表。
 
 **P0 遺留**：`delete_user` 只清 3 張子表、未知 Origin 仍回 500、`provider_token VARCHAR(255)`（P2 改 `TEXT`）等，見 `docs/reports/phase-0.md` 附錄。

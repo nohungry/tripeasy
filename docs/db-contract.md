@@ -1136,7 +1136,7 @@
 - **邊界**：
   - 時段分隔用 `, `（逗號加空白），起訖用 `~`，格式來自 seed 與 V1 註解；程式碼本身沒有解析 `business_hours` 的位置。
   - `BETWEEN start_time AND end_time` 是閉區間，且不處理跨午夜。seed 有 `'17:00~00:00'`（行程「高雄夜市美食攻略」的星期五、星期六）。若 `end_time` 解析成 `00:00:00`，則 `start_time > end_time`，`BETWEEN` 永遠不成立，這兩天**所有**時間都會回「餐廳已關閉」。此判斷只在請求通過 uuid 驗證後才會執行；seed 行程用 POST 加入購物車在驗證階段就被擋下（見共通觀察），所以 seed 環境下實際走到本 view 的只有 PATCH 既有 `cart_item`。見待確認 2。【定案 #20】`00:00` 視為 `24:00`，`end_time = 23:59:59`，所以週五、週六 17:00 到 23:59:59 可預約。
-  - `week` 的比對是區分大小寫的字串比對：`TO_CHAR(..., 'FMDay')` 在 `lc_time` 為英文時回 `Monday` 這種首字大寫的英文名（`TRIM` 是因為沒有 `FM` 時會補空白）；若資料庫 `lc_time` 設成中文，會回中文而比對不到 seed 的英文 `week`。這是環境依賴，契約只記錄。
+  - `week` 的比對是區分大小寫的字串比對：`TO_CHAR(..., 'FMDay')` 回 `Monday` 這種首字大寫的英文名（`FM` 去掉補的空白，`TRIM` 是多餘但無害）。PostgreSQL 只有加 `TM` 前綴（`TMDay`）才會依 `lc_time` 翻譯星期名，`FMDay` 不加 `TM`，不受 `lc_time` 影響，所以這裡沒有環境依賴。
   - `options.start_date` 是帶時區的 ISO 字串時，`$2::timestamp` 會丟掉時區（以字串的牆上時間為準），所以時段以「使用者送出的牆上時間」判斷。
 - **信心**：欄位名稱與型別：確定（SQL 字串直接使用）。拆解 `business_hours` 的細節（分隔符、跨午夜）：推測，依據 seed 與 V1 註解。
 - **待確認**：
@@ -1743,4 +1743,5 @@
 - 優惠卷 `discount` 的運算（§4.1 #1 定案 B ＝ 折抵金額）：`controllers/discounts.js:38`、`controllers/checkout.js:155` 做 `total_price * discount`，在金額語意下會算出數百倍金額（例：`total_price` 3576.74 × `discount` 100.0 → 357,674）；要改成 `total_price - discount`（`orders.discount_price` 為折後應付金額，與點數路徑 `checkout.js:165` 同語意），屬 P4 結帳。P4 修好之前優惠卷結帳金額是錯的。V3 view 照金額語意輸出原值，不為了配合乘法而轉換數值。`coupon_Validator.js:45` 的 `> 0` 無上限與金額語意相容；是否加上限（例如不得超過訂單金額）只是 P4／P6 的觀察，不是決定。
 - 依 §4.1 與 §4.2 的決定，P1b 的 seed 需要調整：優惠卷只修 `TRAVEL10P` 的 `description`，讓它與折抵金額語意一致（`discount` 的 5 個值 100、50、10、300、20 保留不改，#1 定案 B）、促銷通知日期（#9）、`point_record` 與訂單的點數資料（#2、#3；#3 於 2026-10-23 決定調成與 1 點折 0.8 元、10% 回饋相符，來源檔的 `point_record` 與相關訂單）、`payment` 資料與各 `payment_status`（#4、#5、#6）、主鍵與代碼（(a)，2026-10-23 起含 `country` 主鍵與 `region.country_id`；(d2)）、購物車數量（(d3)）、收藏時間（#43）。
 - 展示環境（P7）：seed 管理者 `bob@example.com`（角色 `admin`）的密碼 `Tripeasy123` 公開在 `.env.example:1–3`，而計畫規定 seed 會在本機與展示環境載入。任何公開展示之前，要改成由環境變數注入展示管理者密碼，或展示環境不載入 seed 管理者；與 seed 圖片網址寫死的 `IMAGE_BASE`（`db/seed-build/build_seed.py:90`）併為同一個 P7 項目。
+- **待 P3（使用者決定）**：`tour_travel_popular` 的「購買數」＝`order_item` 列數、不乘 `quantity`，是 P1b Task 1 的 controller 裁決（§4.1 #4 只定「只算 `payment_status = 1`」，沒定計數方式；見 §1 `tour_travel_popular`）。兩種算法在 seed 的名次相同，所以 P1 沒有影響；P3 商品開工前要變成使用者的明確決定。
 - P1b 開工前待補的清單見 §0.1。
