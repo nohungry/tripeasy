@@ -334,8 +334,8 @@ def test_resetpw_page_opens_with_expired_token(page: Page, make_user):
     page.add_init_script(
         f"localStorage.setItem('authToken', '{login_token(user, exp_delta=EXPIRED)}')"
     )
-    with page.expect_response("**/login/status"):
-        page.goto(f"{FRONTEND_BASE}/#/admin/resetpw?token=x")
+    # resetpw 不在 authPages：守衛不再打 /login/status，直接等頁面內容
+    page.goto(f"{FRONTEND_BASE}/#/admin/resetpw?token=x")
     expect(page.get_by_role("heading", name="修改密碼")).to_be_visible()
     assert "#/admin/resetpw" in page.url
 
@@ -349,7 +349,10 @@ def test_register_and_forgotpw_pages_open_with_expired_token(page: Page, make_us
     page.add_init_script(
         f"localStorage.setItem('authToken', '{login_token(user, exp_delta=EXPIRED)}')"
     )
-    with page.expect_response("**/login/status"):
+    if path == "register":  # register 仍在 authPages，守衛會先打 /login/status；forgotpw 不會
+        with page.expect_response("**/login/status"):
+            page.goto(f"{FRONTEND_BASE}/#/admin/{path}")
+    else:
         page.goto(f"{FRONTEND_BASE}/#/admin/{path}")
     expect(page.get_by_role("heading", name=heading)).to_be_visible()
     assert f"#/admin/{path}" in page.url
