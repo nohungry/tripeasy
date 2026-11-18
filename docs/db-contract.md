@@ -1754,6 +1754,6 @@
 | # | 變更 | 理由（P2 spec） | 對應測試 |
 |---|---|---|---|
 | 1 | `"user".password` 改為可為 NULL（`ALTER COLUMN password DROP NOT NULL`） | §2.1：Google 新註冊不再共用預設密碼；NULL 讓寫漏時 `bcrypt.compare` 失敗而非放行，且 DB 層看得見「沒有密碼」。 | `tests/test_migrations.py::test_user_password_is_nullable` |
-| 2 | 唯一索引 `user_email_lower_key ON "user" (lower(email))` | §2.2：email 不分大小寫唯一，擋掉大小寫不同的重複帳號與併發註冊；撞到時（`23505`）回 409。 | `test_migrations.py::test_user_email_lower_unique_index`、`test_email_case_duplicate_rejected`；`test_member_auth.py::test_signup_normalizes_email`、`test_signup_duplicate_differs_by_case_is_409`、`test_signup_concurrent_same_email_only_one_succeeds`、`test_login_email_is_case_insensitive` |
+| 2 | 唯一索引 `user_email_lower_key ON "user" (lower(email))` | §2.2：email 不分大小寫唯一，擋掉大小寫不同的重複帳號與併發註冊；撞到時（`23505`）回 409。 | `test_migrations.py::test_user_email_lower_unique_index`、`test_email_case_duplicate_rejected`；`test_member_auth.py::test_signup_normalizes_email`、`test_signup_duplicate_differs_by_case_is_409`、`test_signup_concurrent_same_email_only_one_succeeds`、`test_login_email_is_case_insensitive`、`test_login_lowercase_matches_mixed_case_stored_email`、`test_forgetpw_matches_mixed_case_stored_email`、`test_signup_lowercase_conflicts_with_mixed_case_stored_email`、`test_checkout_preview_email_lookup_is_case_insensitive`（結帳預覽，backend `middlewares/checkout/index.js`） |
 
 V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applied_v1_to_v3` 檢查。V3 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變（`test_user_fk_tables_list_is_complete` 把關）。

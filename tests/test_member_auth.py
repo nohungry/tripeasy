@@ -145,7 +145,7 @@ def test_login_lowercase_matches_mixed_case_stored_email(api, make_user):
 def test_forgetpw_matches_mixed_case_stored_email(api, make_user):
     user = make_user(email=f"Mixed.{uuid.uuid4().hex[:8]}@Example.COM")
     r = api.post(FORGET, json={"email": user["email"].lower()})
-    assert r.status_code != 404, r.text
+    assert r.status_code == 200, r.text
 
 
 def test_signup_lowercase_conflicts_with_mixed_case_stored_email(api, make_user):
