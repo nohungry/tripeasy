@@ -20,6 +20,7 @@ _tests_conftest = _load_tests_conftest()
 
 # 明確匯出（pytest 以模組屬性收集 fixture）。mock_google_code 由 Task 10 補進。
 db = _tests_conftest.db
+mock_google_code = _tests_conftest.mock_google_code
 make_user = _tests_conftest.make_user
 delete_user = _tests_conftest.delete_user
 auth_header = _tests_conftest.auth_header

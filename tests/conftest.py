@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import hmac
 import importlib.util
+import json
 import os
 import time
 import uuid
@@ -191,3 +192,28 @@ def captcha_cookie(answer: str = "abcde", issued_at: int | None = None) -> str:
     key = os.environ["CAPTCHA_SECRET"].encode()
     sig = hmac.new(key, f"{answer.lower()}.{expires_ms}".encode(), hashlib.sha256).hexdigest()
     return f"{expires_ms}.{sig}"
+
+
+def mock_google_code(claims: dict) -> str:
+    """向 mock-oauth（interactiveLogin: true）取一個授權碼；該碼換到的 userinfo 等於 claims。
+
+    作法：POST 它的登入表單（欄位 username 與 claims JSON），取 302 Location 的 code。
+    注意：mock 對任何 code（含亂填、重複使用）都會簽發 token，驗證 code 是 Google 的責任，這一層測不到。
+    """
+    from urllib.parse import parse_qs, urlparse
+
+    r = requests.post(
+        f"{MOCK_OAUTH_BASE}/google/authorize",
+        params={
+            "client_id": os.environ["GOOGLE_CLIENT_ID"],
+            "redirect_uri": os.environ["GOOGLE_REDIRECT_URI"],
+            "response_type": "code",
+            "scope": "openid email profile",
+            "state": "p2",
+        },
+        data={"username": str(claims["sub"]), "claims": json.dumps(claims)},
+        allow_redirects=False,
+        timeout=DEFAULT_TIMEOUT,
+    )
+    assert r.status_code == 302, r.text
+    return parse_qs(urlparse(r.headers["Location"]).query)["code"][0]

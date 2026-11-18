@@ -43,12 +43,7 @@ services:
     ports:
       - '8090:8080'
     environment:
-      JSON_CONFIG: >-
-        {"interactiveLogin": false,
-         "tokenCallbacks": [{"issuerId": "google", "tokenExpiry": 3600,
-           "requestMappings": [{"requestParam": "grant_type", "match": "*",
-             "claims": {"sub": "mock-google-001", "email": "mock.user@example.com",
-                        "name": "Mock 使用者", "picture": "https://example.com/mock.png"}}]}]}
+      JSON_CONFIG: '{"interactiveLogin": true}'
 
   backend:
     build:

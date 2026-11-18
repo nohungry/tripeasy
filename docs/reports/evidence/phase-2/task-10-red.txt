@@ -1,0 +1,79 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- /home/nohungry/project/tripeasy/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 11 items
+
+tests/test_oauth_spike.py::test_mock_oauth_issues_google_like_claims PASSED [  9%]
+tests/test_oauth_spike.py::test_backend_google_login_via_mock FAILED     [ 18%]
+tests/test_google_login.py::test_google_new_user_has_null_password FAILED [ 27%]
+tests/test_google_login.py::test_google_unverified_email_rejected FAILED [ 36%]
+tests/test_google_login.py::test_google_email_case_matches_existing FAILED [ 45%]
+tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens FAILED [ 54%]
+tests/test_google_login.py::test_google_member_cannot_login_with_default_password FAILED [ 63%]
+tests/test_google_login.py::test_google_rebind_keeps_password FAILED     [ 72%]
+tests/test_google_login.py::test_google_login_response_token_works FAILED [ 81%]
+tests/test_google_login.py::test_google_login_missing_code_is_400 PASSED [ 90%]
+tests/test_google_login.py::test_google_login_bogus_code_rejected PASSED [100%]
+
+=================================== FAILURES ===================================
+______________________ test_backend_google_login_via_mock ______________________
+tests/test_oauth_spike.py:69: in test_backend_google_login_via_mock
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+____________________ test_google_new_user_has_null_password ____________________
+tests/test_google_login.py:61: in test_google_new_user_has_null_password
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+____________________ test_google_unverified_email_rejected _____________________
+tests/test_google_login.py:75: in test_google_unverified_email_rejected
+    assert 400 <= r.status_code < 500, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 < 500
+E    +  where 500 = <Response [500]>.status_code
+___________________ test_google_email_case_matches_existing ____________________
+tests/test_google_login.py:85: in test_google_email_case_matches_existing
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+____________ test_google_first_bind_clears_password_and_old_tokens _____________
+tests/test_google_login.py:105: in test_google_first_bind_clears_password_and_old_tokens
+    assert login(claims).status_code == 200
+E   AssertionError: assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+E    +    where <Response [500]> = <function google.<locals>.login at 0x7239e85fbec0>({'email': 'g.3e3e6c01@example.com', 'email_verified': True, 'name': 'Google 測試員', 'picture': 'https://example.com/g.png', ...})
+____________ test_google_member_cannot_login_with_default_password _____________
+tests/test_google_login.py:120: in test_google_member_cannot_login_with_default_password
+    assert login(claims).status_code == 200
+E   AssertionError: assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+E    +    where <Response [500]> = <function google.<locals>.login at 0x7239e8178040>({'email': 'g.079da7ea@example.com', 'email_verified': True, 'name': 'Google 測試員', 'picture': 'https://example.com/g.png', ...})
+______________________ test_google_rebind_keeps_password _______________________
+tests/test_google_login.py:135: in test_google_rebind_keeps_password
+    assert login(claims).status_code == 200
+E   AssertionError: assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+E    +    where <Response [500]> = <function google.<locals>.login at 0x7239e81787c0>({'email': 'g.7fcd887b@example.com', 'email_verified': True, 'name': 'Google 測試員', 'picture': 'https://example.com/g.png', ...})
+____________________ test_google_login_response_token_works ____________________
+tests/test_google_login.py:159: in test_google_login_response_token_works
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_oauth_spike.py::test_backend_google_login_via_mock - Assert...
+FAILED tests/test_google_login.py::test_google_new_user_has_null_password - A...
+FAILED tests/test_google_login.py::test_google_unverified_email_rejected - As...
+FAILED tests/test_google_login.py::test_google_email_case_matches_existing - ...
+FAILED tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens
+FAILED tests/test_google_login.py::test_google_member_cannot_login_with_default_password
+FAILED tests/test_google_login.py::test_google_rebind_keeps_password - Assert...
+FAILED tests/test_google_login.py::test_google_login_response_token_works - A...
+========================= 8 failed, 3 passed in 1.14s ==========================
