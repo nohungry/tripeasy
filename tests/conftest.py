@@ -78,6 +78,13 @@ def tx():
         conn.close()
 
 
+# 直接參照 "user" 的表（V1 全部），順序即刪除順序（orders、cart 放最後）；test_member_auth 會比對 pg_constraint
+USER_FK_TABLES = (
+    '"socialLogin"', "user_level", "point_record", "user_coupon", "payment", "review",
+    "hidden_play", "auto_setting", "favorite", "orders", "cart",
+)  # fmt: skip
+
+
 def delete_user(db, user_id: str) -> None:
     """依 FK 順序刪除使用者和它的附屬資料（涵蓋 V1 所有參照 "user" 的表，含 orders / cart 底下的間接相依）。"""
     # 先清掉依附在「該會員的 orders / cart」底下的子表
@@ -89,10 +96,7 @@ def delete_user(db, user_id: str) -> None:
     db.execute(f"DELETE FROM user_coupon WHERE order_id IN ({order_ids})", (user_id,))
     db.execute(f"DELETE FROM cart_item WHERE cart_id IN ({cart_ids})", (user_id,))
     # 再清直接參照 "user" 的表（orders、cart 放最後）
-    for table in (
-        '"socialLogin"', "user_level", "point_record", "user_coupon", "payment", "review",
-        "hidden_play", "auto_setting", "favorite", "orders", "cart",
-    ):  # fmt: skip
+    for table in USER_FK_TABLES:
         db.execute(f"DELETE FROM {table} WHERE user_id = %s", (user_id,))
     db.execute('DELETE FROM "user" WHERE user_id = %s', (user_id,))
 

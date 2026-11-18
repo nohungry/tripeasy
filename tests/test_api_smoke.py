@@ -287,7 +287,8 @@ def test_points_level_carol_has_usable_coupon(api, users, db):
         'JOIN "user" u ON u.user_id = uc.user_id '
         "WHERE u.email = 'carol@example.com' AND c.code = 'TRV010'"
     ).fetchone()
-    if expire is None or not expire[0]:
+    assert expire is not None, "seed 裡找不到 carol 的 TRV010 優惠卷（不是過期問題，seed 壞了）"
+    if not expire[0]:
         pytest.skip("seed 優惠卷已過期，需重建 seed：docker compose down -v 後重新 docker compose up -d --build（seed 日期以載入日為錨點）")
     # carol 的 TRV010 是 status = 0。注意：TRV010 的 expire_date 由 db/seed-build/build_seed.py 以載入日為錨點
     # （+133 天），到期後 view 的 expire_date >= now() 會把它濾掉，這支測試就要重載 seed（seed 日期維護點）。
@@ -422,6 +423,13 @@ def test_admin_product_list(api, bob_h):
         ["旅遊編號", "上下架狀態", "旅遊名稱", "旅遊描述", "所屬國家", "所屬地區", "建立時間", "價錢",
          "旅遊代表圖 Url"],
     )  # fmt: skip
+
+
+def test_admin_product_empty_result(api, bob_h):
+    r = api.get(f"{BASE}/admin/product", headers=bob_h, params={"page": 1, "limit": 20, "keyword": "不存在的關鍵字-zzzz"})
+    assert r.status_code == 200, r.text
+    # resStatus 在空結果時不會輸出 data 欄位
+    assert not r.json().get("data"), r.text
 
 
 # ------------------------------------------------------------------ 篩選：v4 驗證器（seed 國家）
