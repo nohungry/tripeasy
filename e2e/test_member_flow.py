@@ -1,4 +1,5 @@
 import datetime
+import json
 import re
 import time
 from pathlib import Path
@@ -381,3 +382,35 @@ def test_require_auth_network_error_keeps_token(page: Page, make_user):
     page.reload()
     page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
     expect(page.get_by_label("信箱")).to_have_value(user["email"])
+
+
+def test_google_login_via_mock(page: Page, new_email, db):
+    email = new_email()
+    sub = f"g-{email.split('@')[0]}"
+    claims = {
+        "sub": sub,
+        "email": email,
+        "email_verified": True,
+        "name": "Google 測試員",
+        "picture": "https://example.com/g.png",
+    }
+
+    page.goto(f"{FRONTEND_BASE}/#/admin/login")
+    page.locator(".icon-circle.google").click()
+
+    # 跨站到 mock-oauth 的登入表單（interactive 模式）
+    page.wait_for_url("**/google/authorize**", timeout=10_000)
+    page.get_by_placeholder("Enter any user/subject").fill(sub)
+    page.get_by_placeholder("Optional claims JSON value").fill(json.dumps(claims))
+    page.get_by_role("button", name="Sign-in").click()
+
+    # 回跳前端：main.js 把 ?code= 轉進 hash 路由，登入成功後進會員中心
+    page.wait_for_url("**/#/admin/userprofile", timeout=15_000)
+    expect(page.get_by_label("信箱")).to_have_value(email, timeout=10_000)
+    assert page.evaluate("localStorage.getItem('authToken')")
+
+    rows = db.execute(
+        'SELECT s.provider_method FROM "socialLogin" s JOIN "user" u ON u.user_id = s.user_id WHERE u.email = %s',
+        (email,),
+    ).fetchall()
+    assert [r[0] for r in rows] == ["google"]
