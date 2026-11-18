@@ -1627,6 +1627,7 @@
   - **JWT 與 DB 的角色分離**：`req.user.role` 來自簽發時的 token（`controllers/userinfo.js:96,208`），`PATCH` 只改 DB，所以 view 的 `角色` 立即變，但被改的人在重新登入前仍帶舊角色。
   - 其他寫入／讀取這個 view 底層欄位的位置（不是本 view）：
     - `user` 寫入：`controllers/userinfo.js:24`（註冊，`role = 'User'`）、`controllers/userinfo.js:84`（登入成功後 `login_attempts = 0`、`locked_datetime = null`、`login_method = 1`）、`:154`（Google 登入更新 `avatar_url`、`login_method`）、`:178`（Google 註冊）、`middlewares/userinfo/index.js:110`（`login_attempts`、`locked_datetime`）、`:291`、`:357`（`password`）、`controllers/userProfile.js:55`（`name`、偏好）、`:99`（`avatar_url`）、`controllers/admin.js:59`（`role`）。
+      - P2 新增（Task 10 實作）：Google 帳號綁定到已存在的 email 會員時，把 `password` 清成 NULL（P2 spec §2.3）。
     - `user_level` 寫入：只有 `controllers/userinfo.js:30`（註冊，`'Level 1'`、`'初心旅人'`、`travel_point = 0`）與 `:185`（Google 註冊）；同一交易另插入一筆 `point_record`（`controllers/userinfo.js:36`、`:189`，`type = '新增'`、`point = 0`）；`backend/src` 內沒有任何 `UPDATE user_level`，所以 `travel_point` 註冊後不會再變。
     - `user_level` 讀取：`controllers/userinfo.js:88,202,336`（`SELECT * FROM public."user_level" where user_id = $1`），並直接讀 `level.travel_point`（`:56,117,228,356`，輸出為 `points`）；另有 `user_user_level`、`user_level_point_coupon`（§1、§2）。
     - `user.role` 讀取：`middlewares/authorizeRoles.js:5`（來自 JWT，不查 DB）、`controllers/userProfile.js:140`（經 `user_level_point_coupon`）。
@@ -1745,3 +1746,14 @@
 - 展示環境（P7）：seed 管理者 `bob@example.com`（角色 `admin`）的密碼 `Tripeasy123` 公開在 `.env.example:1–3`，而計畫規定 seed 會在本機與展示環境載入。任何公開展示之前，要改成由環境變數注入展示管理者密碼，或展示環境不載入 seed 管理者；與 seed 圖片網址寫死的 `IMAGE_BASE`（`db/seed-build/build_seed.py:90`）併為同一個 P7 項目。
 - **待 P3（使用者決定）**：`tour_travel_popular` 的「購買數」＝`order_item` 列數、不乘 `quantity`，是 P1b Task 1 的 controller 裁決（§4.1 #4 只定「只算 `payment_status = 1`」，沒定計數方式；見 §1 `tour_travel_popular`）。兩種算法在 seed 的名次相同，所以 P1 沒有影響；P3 商品開工前要變成使用者的明確決定。
 - P1b 開工前待補的清單見 §0.1。
+
+## 5. P2 表格約束（V3）
+
+`backend/migrations/V3__p2_user_auth.sql` 對 `"user"` 做兩項變更。不改欄位型別、不回填資料（P2 spec §2.3），所以 `R__views_functions.sql` 的 view 與 §1–§3 的契約型別都不受影響。
+
+| # | 變更 | 理由（P2 spec） | 對應測試 |
+|---|---|---|---|
+| 1 | `"user".password` 改為可為 NULL（`ALTER COLUMN password DROP NOT NULL`） | §2.1：Google 新註冊不再共用預設密碼；NULL 讓寫漏時 `bcrypt.compare` 失敗而非放行，且 DB 層看得見「沒有密碼」。 | `tests/test_migrations.py::test_user_password_is_nullable` |
+| 2 | 唯一索引 `user_email_lower_key ON "user" (lower(email))` | §2.2：email 不分大小寫唯一，擋掉大小寫不同的重複帳號與併發註冊；撞到時（`23505`）回 409。 | `test_migrations.py::test_user_email_lower_unique_index`、`test_email_case_duplicate_rejected`；`test_member_auth.py::test_signup_normalizes_email`、`test_signup_duplicate_differs_by_case_is_409`、`test_signup_concurrent_same_email_only_one_succeeds`、`test_login_email_is_case_insensitive` |
+
+V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applied_v1_to_v3` 檢查。V3 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變（`test_user_fk_tables_list_is_complete` 把關）。
