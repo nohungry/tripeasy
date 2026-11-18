@@ -1,10 +1,11 @@
 import re
 import time
+from urllib.parse import urlparse
 
 import requests
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import FRONTEND_BASE, MAILPIT_BASE, TEST_PASSWORD, captcha_cookie
+from e2e.conftest import API_BASE, FRONTEND_BASE, MAILPIT_BASE, TEST_PASSWORD, captcha_cookie
 
 
 def test_signup_login_profile_main_flow(page: Page, new_email):
@@ -112,14 +113,18 @@ def _latest_reset_link(email: str) -> str:
     deadline = time.time() + 10
     messages = []
     while time.time() < deadline:
-        messages = requests.get(
+        search = requests.get(
             f"{MAILPIT_BASE}/api/v1/search", params={"query": f"to:{email}"}, timeout=10
-        ).json()["messages"]
+        )
+        search.raise_for_status()
+        messages = search.json()["messages"]
         if messages:
             break
         time.sleep(0.5)
     assert messages, "沒有收到重設信"
-    html = requests.get(f"{MAILPIT_BASE}/api/v1/message/{messages[0]['ID']}", timeout=10).json()["HTML"]
+    detail = requests.get(f"{MAILPIT_BASE}/api/v1/message/{messages[0]['ID']}", timeout=10)
+    detail.raise_for_status()
+    html = detail.json()["HTML"]
     match = re.search(r'href="([^"]*resetpw\?token=[^"]+)"', html)
     assert match, "信中找不到重設連結"
     return match.group(1)
@@ -132,20 +137,20 @@ def test_forgot_password_via_mailpit(page: Page, make_user):
     page.goto(f"{FRONTEND_BASE}/#/admin/forgotpw")
     page.get_by_placeholder("請輸入 Email").fill(user["email"])
     page.get_by_role("button", name="送出", exact=True).click()
-    swal = page.get_by_role("dialog")
-    expect(swal).to_contain_text("連結寄送成功")
-    swal.get_by_role("button", name="OK", exact=True).click()  # 模態對話框開著會讓頁面其餘內容從 a11y 樹消失
+    expect(page.get_by_role("dialog")).to_contain_text("連結寄送成功")
 
     link = _latest_reset_link(user["email"])
+    # 模擬使用者從信中點連結：新分頁整頁載入（舊分頁的成功 Swal 不會干擾）
+    reset_page = page.context.new_page()
     # 頁面載入時會打 GET /captcha，其 Set-Cookie 會蓋掉注入值，故等該回應完成後才注入
-    with page.expect_response(re.compile(r"/captcha$")):
-        page.goto(link)
+    with reset_page.expect_response(re.compile(r"/captcha$")):
+        reset_page.goto(link)
     page.context.add_cookies(
         [
             {
                 "name": "captcha",
                 "value": captcha_cookie("abcde"),
-                "domain": "localhost",
+                "domain": urlparse(API_BASE).hostname,
                 "path": "/",
                 "httpOnly": True,
                 "sameSite": "Lax",
@@ -153,11 +158,13 @@ def test_forgot_password_via_mailpit(page: Page, make_user):
         ]
     )
 
-    page.get_by_placeholder("請輸入新密碼", exact=True).fill(new_password)
-    page.get_by_placeholder("請再次輸入新密碼").fill(new_password)
-    page.get_by_placeholder("請輸入驗證碼").fill("abcde")
-    page.get_by_role("button", name="送出", exact=True).click()
+    expect(reset_page.get_by_role("heading", name="修改密碼")).to_be_visible()
+    reset_page.get_by_placeholder("請輸入新密碼", exact=True).fill(new_password)
+    reset_page.get_by_placeholder("請再次輸入新密碼").fill(new_password)
+    reset_page.get_by_placeholder("請輸入驗證碼").fill("abcde")
+    reset_page.get_by_role("button", name="送出", exact=True).click()
 
-    page.wait_for_url("**/#/admin/login", timeout=15_000)
-    _login_via_ui(page, user["email"], new_password)
-    page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
+    reset_page.wait_for_url("**/#/admin/login", timeout=15_000)
+    _login_via_ui(reset_page, user["email"], new_password)
+    reset_page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
+    expect(reset_page.get_by_label("信箱")).to_have_value(user["email"])

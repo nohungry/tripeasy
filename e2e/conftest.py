@@ -26,6 +26,7 @@ auth_header = _tests_conftest.auth_header
 login_token = _tests_conftest.login_token
 TEST_PASSWORD = _tests_conftest.TEST_PASSWORD
 captcha_cookie = _tests_conftest.captcha_cookie
+API_BASE = _tests_conftest.API_BASE
 FRONTEND_BASE = _tests_conftest.FRONTEND_BASE
 MAILPIT_BASE = _tests_conftest.MAILPIT_BASE
 

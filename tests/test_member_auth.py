@@ -513,6 +513,16 @@ def test_login_token_cannot_reset_password(api, db, make_user):
     assert _stored_password(db, user["user_id"]) == before
 
 
+def test_reset_password_old_password_rejected(api, make_user):
+    user = make_user()
+    token = _token_of(_reset_link(user["email"]))
+    assert _resetpw(api, token).status_code == 200
+    old = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+    assert old.status_code == 401, old.text
+    new = api.post(LOGIN, json={"email": user["email"], "password": NEW_PW})
+    assert new.status_code == 200, new.text
+
+
 def test_reset_token_is_single_use(api, make_user):
     user = make_user()
     token = _token_of(_reset_link(user["email"]))
