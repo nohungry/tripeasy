@@ -721,3 +721,34 @@ def test_captcha_cookie_attributes_from_env():
     assert "SameSite=Lax" in set_cookie
     assert "Secure" not in set_cookie
     assert "HttpOnly" in set_cookie
+
+
+def test_reset_token_concurrent_use_only_one_succeeds(db, make_user):
+    user = make_user()
+    token = reset_token(user)
+    passwords = [f"Concurrent{i}Pw123" for i in range(4)]
+
+    def hit(pw):
+        return requests.patch(
+            f"{API_BASE}{RESETPW}",
+            json={"token": token, "new_password": pw, "confirm_password": pw, "input": "abcde"},
+            cookies={"captcha": captcha_cookie("abcde")},
+            timeout=30,
+        )
+
+    with ThreadPoolExecutor(max_workers=len(passwords)) as pool:
+        results = list(pool.map(hit, passwords))
+
+    statuses = sorted(r.status_code for r in results)
+    assert statuses == [200] + [400] * (len(passwords) - 1), [(r.status_code, r.text) for r in results]
+    for r in results:
+        if r.status_code == 400:
+            assert r.json()["message"] == TOKEN_ERR_MSG, r.text
+    # DB 的密碼只對得上成功的那一個
+    winner = passwords[[r.status_code for r in results].index(200)]
+    logins = [
+        requests.post(f"{API_BASE}{LOGIN}", json={"email": user["email"], "password": pw}, timeout=10).status_code
+        for pw in passwords
+    ]
+    assert logins.count(200) == 1
+    assert logins[passwords.index(winner)] == 200
