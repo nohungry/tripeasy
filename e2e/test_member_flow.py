@@ -227,7 +227,9 @@ def test_avatar_upload(page: Page, make_user, db):
     sidebar_img = page.locator(".sidebar .headimg")
     old_src = sidebar_img.get_attribute("src")
     with page.expect_response(re.compile(r"/user/userinfo/avatar$")) as resp:
-        page.get_by_label("上傳頭像").set_input_files(str(AVATAR_FIXTURE))
+        with page.expect_file_chooser() as chooser:
+            sidebar_img.click()
+        chooser.value.set_files(str(AVATAR_FIXTURE))
     assert resp.value.status == 200
     new_url = resp.value.json()["data"]["avatar_url"]
 
@@ -237,12 +239,17 @@ def test_avatar_upload(page: Page, make_user, db):
     (db_url,) = db.execute('SELECT avatar_url FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
     assert db_url == new_url
 
+    page.reload()
+    expect(page.locator(".user-dropdown #userPicture")).to_have_attribute("src", new_url)
+    assert page.evaluate("localStorage.getItem('userPicture')") == new_url
+
 
 def test_change_password_redirects_to_login(page: Page, make_user):
     new_password = "Newpass123"
     user = make_user()
     _login_to_profile(page, user)
 
+    old_token = page.evaluate("localStorage.getItem('authToken')")
     page.get_by_placeholder("請輸入舊密碼").fill(TEST_PASSWORD)
     page.locator("#password .pw-edit-icon").nth(0).click()
     page.locator("#password .pw-edit-icon").nth(1).click()
@@ -252,6 +259,12 @@ def test_change_password_redirects_to_login(page: Page, make_user):
 
     page.wait_for_url("**/#/admin/login", timeout=10_000)
     assert page.evaluate("localStorage.getItem('authToken')") is None
+    stale = requests.get(
+        f"{API_BASE}/api/v1/user/userinfo/info",
+        headers={"Authorization": f"Bearer {old_token}"},
+        timeout=10,
+    )
+    assert stale.status_code == 401
     _login_via_ui(page, user["email"], new_password)
     page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
     expect(page.get_by_label("信箱")).to_have_value(user["email"])
@@ -280,11 +293,13 @@ def test_expired_token_redirects_to_login(page: Page, make_user):
 
     page.evaluate("t => localStorage.setItem('authToken', t)", login_token(user, exp_delta=EXPIRED))
     _edit_name(page, "過期後改名")
-    page.get_by_role("button", name="儲存設定").click()
+    with page.expect_response(re.compile(r"/user/userinfo/info$")) as resp:
+        page.get_by_role("button", name="儲存設定").click()
+    assert resp.value.status == 401
 
     page.wait_for_url("**/#/admin/login", timeout=10_000)
-    assert page.evaluate("localStorage.getItem('authToken')") is None
-    assert page.evaluate("localStorage.length") == 0
+    for key in ["authToken", "userName", "userPicture", "levelName"]:
+        assert page.evaluate("k => localStorage.getItem(k)", key) is None, key
 
 
 def test_profile_save_network_error_shows_message(page: Page, make_user):
@@ -304,6 +319,7 @@ def test_profile_save_network_error_shows_message(page: Page, make_user):
     page.get_by_role("button", name="儲存設定").click()
 
     expect(page.locator(".swal2-icon-error")).to_be_visible()
+    expect(page.get_by_role("dialog")).to_contain_text("無法連線到伺服器")
     assert not [e for e in page_errors if "Cannot read properties of undefined" in e], page_errors
 
 
@@ -340,6 +356,10 @@ def test_coming_soon_tabs(page: Page, make_user):
     for tab in ["個人偏好設定", "會員等級", "個人訂單查看"]:
         page.locator(".sidebar").get_by_text(tab, exact=True).click()
         expect(page.get_by_text("即將開放", exact=True)).to_be_visible()
+        expect(page.get_by_label("信箱")).not_to_be_visible()
+    page.locator(".sidebar").get_by_text("會員資訊", exact=True).click()
+    expect(page.get_by_label("信箱")).to_be_visible()
+    expect(page.get_by_text("即將開放", exact=True)).to_have_count(0)
 
 
 def test_require_auth_network_error_keeps_token(page: Page, make_user):
@@ -349,7 +369,15 @@ def test_require_auth_network_error_keeps_token(page: Page, make_user):
     page.route("**/login/status", lambda route: route.abort())
     # 先離開會員中心，確保接下來的 hash 跳轉會重新觸發 requireAuth
     page.goto(f"{FRONTEND_BASE}/#/")
+    page.wait_for_url("**/#/")
+    expect(page.locator(".header").first).to_be_visible()  # 首頁導覽完成後才進行下一步，避免競態
     page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
 
     page.wait_for_url("**/#/admin/login", timeout=10_000)
     assert page.evaluate("localStorage.getItem('authToken')") is not None
+
+    # 保留下來的 token 仍可用：解除攔截後可進入會員中心
+    page.unroute("**/login/status")
+    page.reload()
+    page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+    expect(page.get_by_label("信箱")).to_have_value(user["email"])

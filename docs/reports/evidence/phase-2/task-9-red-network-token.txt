@@ -1,0 +1,11 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_require_auth_network_error_keeps_token[chromium] _____________
+e2e/test_member_flow.py:377: in test_require_auth_network_error_keeps_token
+    assert page.evaluate("localStorage.getItem('authToken')") is not None
+E   assert None is not None
+E    +  where None = evaluate("localStorage.getItem('authToken')")
+E    +    where evaluate = <Page url='http://localhost:5173/#/admin/login'>.evaluate
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_require_auth_network_error_keeps_token[chromium]
+1 failed in 4.39s
