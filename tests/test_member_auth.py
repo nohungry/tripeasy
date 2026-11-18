@@ -643,3 +643,16 @@ def test_invalid_tokens_are_401(api, make_user, kind, path):
     token = _bad_tokens(user)[kind]
     r = api.get(path, headers=_bearer(token))
     assert r.status_code == 401, r.text
+
+
+def test_demoted_admin_old_token_loses_admin(api, db, make_user):
+    admin = make_user(role="admin")
+    target = make_user()
+    headers = auth_header(admin)
+    body = {"user_ids": [target["user_id"]], "role": "admin"}
+    r = api.patch(ROLES, headers=headers, json=body)
+    assert r.status_code == 200, r.text
+
+    db.execute('UPDATE "user" SET role = %s WHERE user_id = %s', ("User", admin["user_id"]))
+    r = api.patch(ROLES, headers=headers, json=body)
+    assert r.status_code == 403, r.text
