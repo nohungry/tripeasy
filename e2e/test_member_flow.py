@@ -112,9 +112,13 @@ def test_search_page_single_header(page: Page):
 def test_invalid_token_redirects_and_clears_state(page: Page):
     page.goto(f"{FRONTEND_BASE}/#/admin/login")
     page.evaluate("localStorage.setItem('authToken', 'garbage-token')")
-    page.reload()  # 讓 userStore 載入時讀到 token，先進入「已登入」狀態
+    with page.expect_response("**/login/status"):
+        page.reload()  # 讓 userStore 載入時讀到 token；等初始導航的 /login/status 結束，避免後續 hash 跳轉被吞掉
+    expect(page.get_by_role("heading", name="會員登入")).to_be_visible()
     expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_have_count(0)
-    page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+    with page.expect_response("**/login/status") as status:
+        page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+    assert status.value.status == 401
     page.wait_for_url("**/#/admin/login")
     assert page.evaluate("localStorage.getItem('authToken')") is None
     expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_be_visible()
@@ -379,8 +383,9 @@ def test_require_auth_network_error_keeps_token(page: Page, make_user):
 
     # 保留下來的 token 仍可用：解除攔截後可進入會員中心
     page.unroute("**/login/status")
-    page.reload()
-    page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+    with page.expect_response("**/login/status"):
+        page.reload()  # 目前在登入頁且 token 有效：守衛會自動導到會員中心，不需再 goto（同 hash 不會再發請求）
+    page.wait_for_url("**/#/admin/userprofile")
     expect(page.get_by_label("信箱")).to_have_value(user["email"])
 
 
