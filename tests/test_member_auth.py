@@ -394,3 +394,15 @@ def test_patch_profile_info_preference_only(api, db, make_user):
     assert r.status_code == 200, r.text
     (after,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
     assert after == before
+
+
+def test_patch_profile_info_releases_db_connection(api, make_user):
+    """PATCH /info 每次都要把 DB 連線還給 pool（pool 預設 max 10），否則之後的請求會卡住。"""
+    user = make_user()
+    h = auth_header(user)
+    prefs = ["探索冒險", "放鬆療癒", "文化體驗"]
+    for i in range(12):  # pool max 10 + 2
+        r = api.patch(PROFILE_INFO, headers=h, json={"name": "連線測試", "preference": prefs}, timeout=5)
+        assert r.status_code == 200, f"第 {i + 1} 次：{r.text}"
+    r = api.get(PROFILE_INFO, headers=h, timeout=5)
+    assert r.status_code == 200, r.text
