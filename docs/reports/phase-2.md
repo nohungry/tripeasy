@@ -26,7 +26,7 @@ P2 的目標：讓「註冊 → 登入 → 會員中心」這條主線能從前�
 Commit 範圍：
 
 - 總覽 repo：`06d86ee`（P2 spec）→ `b8141d4`，共 50 個 commit（`git log main..phase-2`，不含本報告與 `84189ac`）。
-- backend：`f012cdc` → `ec2394e`，14 個 commit。
+- backend：`f012cdc` → `ec2394e`，14 個 commit（初稿之後另補 `124e85c`，backend `.env.example`）。
 - frontend：`020842d` → `a9a68b5`，8 個 commit。
 - 與 P0／P1 相同：**紅燈在總覽 repo、綠燈在 backend／frontend repo**（測試放總覽 repo）。每個紅燈 commit 只有測試與 evidence。
 
@@ -302,14 +302,20 @@ P2 新增的做法：
 | 忘記密碼保留，對 Google 會員等於「設定密碼」入口 | P2 spec §2.1 |
 | 會員中心縮小版（只做「會員資訊」，其他三分頁標示「即將開放」，2026-11-12 選 (b)） | P2 spec §4.2 |
 | Google 登入放在 P2 最後實作 | P2 spec §3.5 |
-| 每個 Task 都雙審（2026-11-18） | 進度帳第 5 行 |
-| 使用者下令 commit spec 與 plan | 進度帳第 10 行 |
+| spec 與計畫定案（2026-11-18，AskUserQuestion） | 主對話證實 |
+| 每個 Task 都由 Fable 與 Opus 雙審（2026-11-18，AskUserQuestion） | 進度帳第 5 行、主對話證實 |
+| 先補計畫再開工（2026-11-18，AskUserQuestion） | 主對話證實 |
+| `api.js:302` 沒有 response 時的 TypeError 併入 Task 9（2026-11-18，AskUserQuestion） | 主對話證實 |
+| 授權 Task 12 Step 1 的 `docker compose down -v`，並親自執行 | 主對話證實 |
+| 使用者下令 commit 計畫（commit `8c27324`） | 進度帳第 10 行 |
 
 **【Claude 定】但使用者未反對、可在審閱時推翻**：reset token 的用途標記與密碼指紋、驗證碼 HMAC cookie、不隱藏帳號是否存在、`provider_token` 寫 NULL、不回填既有資料、hash 路由下的外部回跳網址形狀（P2 spec §2.3、§2.4、§3.1、§3.2、§3.4、§4.1）。
 
+**開工前，使用者透過 AskUserQuestion 親自決定（2026-11-18）**：(1) spec 與計畫定案；(2) 每個 Task 都由 Fable 與 Opus 雙審；(3) 先補計畫再開工；(4) `api.js:302` 沒有 response 時的 TypeError 併入 Task 9。另外：使用者下令 commit 計畫（commit `8c27324`）；使用者授權 Task 12 Step 1 的 `docker compose down -v`，並親自執行。
+
 **P2 spec 本身經過 builder check，問題已併入**（P2 spec 檔頭狀態列）。builder check 抓到什麼：**查不到逐項紀錄**。我比對了 spec 從 `06d86ee` 到 `8c27324` 的差異（`git diff 06d86ee 8c27324 -- docs/superpowers/specs/`），只有 4 處小改：狀態列改「已定案（2026-11-18 使用者確認）」、兩處行號校正（`controllers/userinfo.js:113`→`:112`、`test_oauth_spike.py:67`→`:68`）、模型分工補「每個 Task 由 Fable + Opus 平行 review」；builder check 本身的發現在 `06d86ee` 之前就已併入、不在 git 內，所以**未查證**。
 
-**計畫審查（4 輪 reviewer-opus）併入計畫的問題**，以計畫內容為證（每一項的審查輪次與提出者：未查證）：
+**計畫審查（4 輪 reviewer-opus）併入計畫的問題**，以計畫內容為證（每一項的審查輪次與提出者：進度帳沒有逐輪紀錄）：
 
 | 問題 | 計畫中的處理 | 出處 |
 |---|---|---|
@@ -320,7 +326,7 @@ P2 新增的做法：
 | helper 放哪裡：搬到 `tests/helpers.py` 屬於重構（違反 GC4） | 只用 importlib 方案 | 進度帳 Ruling（第 8 行） |
 | `captcha_cookie()` helper 要放紅燈 commit，否則紅燈只會是 `NameError`；`.env` 既有檔要手動補 `CAPTCHA_SECRET` | 寫入 Task 5 步驟 | plan Task 5，約 `:226–228` |
 
-**執行中才發現的計畫缺陷**（這些就是 §2.4 表內 Ruling 的來源）：Task 7 的 `/search`「保留 `:75`」前提錯（§1.22 g）；Task 11 的「mount 前 `replaceState`」實測無效（§1.16 b）；Task 10 的 mock 對任何 code 都簽發 token（附錄 B）；Task 9 的 interceptor 與 requireAuth 網路錯誤要併入（§1.22 h）；Task 6 的 `ci.sh --with-deps` 在本機需 sudo（§4.5）。「`api.js` bug 併入 Task 9」：plan 把 `throw err` 放 Task 7 Step 3，把 `patch_user_Profile` 無 response 的 TypeError 放 Task 9 Step 3（plan `:274`、`:313`）；**這個分派由誰在何時決定：未查證**（已列入待確認）。
+**執行中才發現的計畫缺陷**（這些就是 §2.4 表內 Ruling 的來源）：Task 7 的 `/search`「保留 `:75`」前提錯（§1.22 g）；Task 11 的「mount 前 `replaceState`」實測無效（§1.16 b）；Task 10 的 mock 對任何 code 都簽發 token（附錄 B）；Task 9 的 interceptor 與 requireAuth 網路錯誤要併入（§1.22 h）；Task 6 的 `ci.sh --with-deps` 在本機需 sudo（§4.5）。「`api.js` bug 併入 Task 9」：plan 把 `throw err` 放 Task 7 Step 3，把 `patch_user_Profile` 無 response 的 TypeError 放 Task 9 Step 3（plan `:274`、`:313`）；**這個分派是使用者在開工前（2026-11-18）透過 AskUserQuestion 親自決定的：`api.js:302` 沒有 response 時的 TypeError 併入 Task 9**。
 
 ### 2.3 Fable vs Opus review 對照
 
@@ -339,7 +345,7 @@ P2 新增的做法：
 | 9 | 退回（另指出兩個 `goto` 間無等待可能 race） | 退回 | 必須修正一致：network_error 測試的紅燈 evidence 原因不符（應死在 token 斷言）。race 只有 Fable 提到；implementer 回報「原死在 `wait_for_url` 的原因未明、競態僅為推測」（Task 9 report） |
 | 10 | 退回 | 退回 | **兩邊一致**：紅燈全卡同一個 500 無分辨力（需 mutation 證據）、首次綁定後新 token 可用無測試、既有會員＋未驗證信箱無測試。進度帳記載 Fable 複審通過；**task 指示把 Task 10 列為分歧例子，與進度帳「兩邊一致」不符，以進度帳為準，已列入待確認** |
 | 11 | 通過 | 通過 | 建議一致：清 code 無斷言、`replaceState({})` 跳過 router 初始化、註解根因錯、`.env.example` 半套 |
-| 最終（整支分支） | 需先修 M1 | 可進 Task 12（修 M1） | M1（`test_invalid_token_redirects_and_clears_state` 的 flake）兩者根因一致且皆重現；最終修正波見 §1.22 j、k 與 §3.3；Opus 複審「全 ADDRESSED」。進度帳記載 S1、S2、S3、S5，**沒有 S4（未查證）** |
+| 最終（整支分支） | 需先修 M1 | 可進 Task 12（修 M1） | M1（`test_invalid_token_redirects_and_clears_state` 的 flake）兩者根因一致且皆重現；最終修正波見 §1.22 j、k 與 §3.3；Opus 複審「全 ADDRESSED」。最終審查的項目為 S1、S2、S3、S5；**S4 是「測試碼品質」**（例如寫死環境值、依賴版面的選擇器），被分到已知限制或可忽略，沒有修（主對話證實） |
 
 觀察：P2 與 P1 一樣，雙審的互補價值明顯：Task 5 的約定值與 `clearCookie`、Task 7 的 `/search` 只有 Opus（有做實機測試）抓到，Fable 都漏掉；Task 1 的嚴重度判斷與 Task 2 的兩個缺口則是兩邊各抓一半。Task 3 的連線洩漏、Task 6 的 `collection` 雙重回應（§3.2、附錄 B）都是 implementer 在實測中發現，不是 reviewer。
 
@@ -374,7 +380,9 @@ P2 新增的做法：
 | 23 | Google 新會員撞 23505 在 P2 修為 409（紅綠） | spec §2.2 明文，註冊已有現成寫法 | 多數行後端 |
 | 24 | sub 不同、email 相同的現行行為用測試釘住並列已知限制（P7 接真 Google 前決定） | （進度帳未寫理由） | （進度帳未寫） |
 | 25 | 新增 `frontend/src/oauthRedirect.js`（side-effect 模組，`main.js` 首行 import）；根因更正：history 建立時即從 hash 讀位置，search 永遠殘留 | ES module import 先於 `main.js` 本體執行，brief 的「mount 前 replaceState」實測無效 | 多一個小檔 |
-| 26 | 最終修正波納入 M1 flake（兩處同步點）、S1 authPages 縮為 login／register、S2 Google 登入不覆寫既有頭像、S3 契約過時敘述與行號、刪 `requireAuth` 的 `console.log(res)` | 皆小且影響 P2 主流程或作品集文件正確性 | 多數行前端／後端 |
+| 26 | （最終審查之後）最終修正波納入 M1 flake（兩處同步點）、S1 authPages 縮為 login／register、S2 Google 登入不覆寫既有頭像、S3 契約過時敘述與行號、刪 `requireAuth` 的 `console.log(res)` | 皆小且影響 P2 主流程或作品集文件正確性 | 多數行前端／後端 |
+| 27 | 更正 `oauthRedirect` 的根因：history 建立時即從 hash 讀位置、之後只寫 `#` 相對網址，search 永遠殘留（非「讀 search 當 base」）；註解與說明同步改 | 原說法不符實測，註解會誤導後人 | 註解與根因說明錯誤留在程式碼 |
+| 28 | 補 backend `.env.example` 的 `CAPTCHA_SECRET`、`COOKIE_SAMESITE`、`COOKIE_SECURE`、`CORS_CREDENTIALS`（值與註解同總覽 repo；backend `124e85c`，報告初稿之後） | 只 clone backend 時範本缺變數，`CAPTCHA_SECRET` 空值會 fail closed | 只改文件範本；補錯不影響執行 |
 
 ### 2.5 AI 出錯 / 人介入紀錄
 
@@ -389,7 +397,7 @@ P2 新增的做法：
 - **紅燈 commit 被 amend**：`c500f66`（Task 8）；因為尚未 push，Task 8 report 有註明。
 - **測試中斷後殘留資料讓下一次 ci.sh 紅**：Task 1（紅燈失敗殘留 2 組資料，`test_seed` 14 項失敗）、Task 10（指令逾時被中斷，殘留 `e2e-` 會員，`test_seed` 計數 user 4 對 3）、最終修正波（逾時中斷的 e2e 留下 1 個 `p0-` 會員）都發生過；都用 `delete_user` 手動清除後重跑才綠。**操作指南 §4.4 記載了處理方式。**
 - **flake**：Task 11 時 `test_invalid_token_redirects_and_clears_state` 在 ci.sh 失敗 1 次（`authToken` 仍為 `garbage-token`），最終審查兩位 reviewer 都重現，根因是兩處同步點（`reload` 與 `goto` 沒有等 `/login/status` 回應）；最終修正波 `c82e801` 修，臨時腳本讓 `/login/status` 延遲 1.5 秒：舊寫法紅、新寫法綠；10 次連跑第一版 12 次中 2 次在 `network_error_keeps_token` 逾時，改用 `wait_for_url` 後連跑 15 次全綠。
-- **人工確認節奏**：每個 Task 完成後主對話向使用者回報；使用者逐步確認的細節（除 2.2 表內已列者）：未查證。
+- **人工確認節奏**：每個 Task 完成後主對話向使用者回報；使用者在開工前（2026-11-18）透過 AskUserQuestion 親自決定的事項見 §2.2 表。
 - **環境**：Task 1 之前，WSL 內沒有 docker 指令，要使用者開啟 Docker Desktop WSL integration（進度帳 Blocker）。
 
 ## 3. 測試方法
@@ -497,7 +505,7 @@ scripts/ci.sh        # 啟動全部服務並跑測試
   CORS_CREDENTIALS=true
   ```
   `CAPTCHA_SECRET` 沒設或空字串，後端會 **fail closed**（丟出「CAPTCHA_SECRET 未設定」）；測試端的 `captcha_cookie()` 也直接讀 `os.environ["CAPTCHA_SECRET"]`，缺少會 `KeyError`。`DEFAULT_OAUTH_PASSWORD` 已移除，可從 `.env` 刪掉。部署跨網域時改 `COOKIE_SAMESITE=None`、`COOKIE_SECURE=true`（P7）。
-- **backend repo 自己的 `.env.example`（`backend/.env.example`）也缺這幾個變數**：我以 `grep -n "CAPTCHA\|COOKIE\|CORS_CRED\|DEFAULT_OAUTH\|GOOGLE" backend/.env.example` 驗證，只有三個空值的 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET`／`GOOGLE_REDIRECT_URI`，沒有 `CAPTCHA_SECRET`、`COOKIE_SAMESITE`、`COOKIE_SECURE`、`CORS_CREDENTIALS`。P2 只更新了總覽 repo 的 `.env.example`（overview `65cf8f9`）。
+- **backend repo 自己的 `.env.example` 原本也缺這幾個變數，已補**（backend `124e85c chore: .env.example 補 P2 新增的驗證碼與 cookie 變數`，值與註解和總覽 repo 一致；只改文件範本，未跑 ci.sh）。補之前我以 `grep -n "CAPTCHA\|COOKIE\|CORS_CRED\|DEFAULT_OAUTH\|GOOGLE" backend/.env.example` 驗證，只有三個空值的 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET`／`GOOGLE_REDIRECT_URI`，沒有 `CAPTCHA_SECRET`、`COOKIE_SAMESITE`、`COOKIE_SECURE`、`CORS_CREDENTIALS`。當時 P2 只更新了總覽 repo 的 `.env.example`（overview `65cf8f9`）。
 - **前端的 env**：`frontend/.env.example` 已改成本機指向 mock（`VITE_Redirect_BASE=http://localhost:5173/`、`VITE_GOOGLE_CLIENT_ID=tripeasy-local`、`VITE_GOOGLE_AUTH_URL=http://localhost:8090/google/authorize`，frontend `df6842e`）；`frontend/.env.development` 沒有改動（本來就指向 mock）。
 - **為什麼本機 `ci.sh` 不帶 `--with-deps`**：`uv run playwright install --with-deps chromium` 要安裝系統套件，需要 sudo 密碼；本機非互動執行會卡在 `sudo`（Task 6 report：`"a terminal is required"`）。本機 chromium 已可啟動，所以 `scripts/ci.sh` 只在 `CI` 環境變數非空時才帶 `--with-deps`（overview `81c94d3`；Ruling 17）。限制：判斷是「非空」，所以 `CI=false` 也會被當作 CI（進度帳 Task 6 minor）。
 
