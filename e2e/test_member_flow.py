@@ -369,8 +369,8 @@ def test_require_auth_network_error_keeps_token(page: Page, make_user):
     page.route("**/login/status", lambda route: route.abort())
     # 先離開會員中心，確保接下來的 hash 跳轉會重新觸發 requireAuth
     page.goto(f"{FRONTEND_BASE}/#/")
-    page.wait_for_url("**/#/")
-    expect(page.locator(".header").first).to_be_visible()  # 首頁導覽完成後才進行下一步，避免競態
+    # 等首頁專屬的標題出現（header 各頁都有，不能用來判斷），確認已離開會員中心
+    expect(page.get_by_role("heading", name="矚目功能")).to_be_visible()
     page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
 
     page.wait_for_url("**/#/admin/login", timeout=10_000)

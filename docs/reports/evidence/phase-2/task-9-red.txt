@@ -399,6 +399,7 @@ E   - text: Hi! 需要幫忙嗎？
 E   - img "客服按鈕"
 E   - img
 E   - img
+[更正註記] 此段失敗原因有誤，已更正，見 task-9-red-network-token.txt（72ddcd6）
 ____________ test_require_auth_network_error_keeps_token[chromium] _____________
 e2e/test_member_flow.py:354: in test_require_auth_network_error_keeps_token
     page.wait_for_url("**/#/admin/login", timeout=10_000)
