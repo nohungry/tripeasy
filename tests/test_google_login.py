@@ -267,3 +267,55 @@ def test_google_new_user_concurrent_same_email_not_500(api, db, google):
     assert set(statuses) <= {200, 409}, statuses
     assert 200 in statuses, statuses
     assert len(_user_row(db, claims["email"])) == 1
+
+
+AVATAR = "/api/v1/user/userinfo/avatar"
+PNG_1PX = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+    "0000000d49444154789c6360f8cfc0f01f0005000201a5f645400000000049454e44ae426082"
+)
+
+
+def _avatar_of(db, email: str):
+    return db.execute('SELECT avatar_url FROM "user" WHERE lower(email) = lower(%s)', (email,)).fetchone()[0]
+
+
+def test_google_login_keeps_uploaded_avatar(api, db, google):
+    """已上傳自己的頭像後，再用 Google 登入不得被 Google 的 picture 蓋掉。"""
+    new_claims, login = google
+    claims = new_claims()
+    r = login(claims)
+    assert r.status_code == 200, r.text
+    assert _avatar_of(db, claims["email"]) == claims["picture"]  # 新會員寫入 picture
+
+    token = r.json()["data"]["token"]
+    up = api.patch(AVATAR, headers={"Authorization": f"Bearer {token}"}, files={"image": ("a.png", PNG_1PX, "image/png")})
+    assert up.status_code == 200, up.text
+    uploaded = up.json()["data"]["avatar_url"]
+    assert uploaded != claims["picture"]
+    assert _avatar_of(db, claims["email"]) == uploaded
+
+    assert login(claims).status_code == 200  # 已綁定路徑
+    assert _avatar_of(db, claims["email"]) == uploaded
+
+
+def test_google_first_bind_keeps_existing_avatar(api, db, google, make_user):
+    """既有會員（首次綁定）已有頭像時不被覆寫；之後的已綁定登入亦同。"""
+    new_claims, login = google
+    existing = "https://example.com/mine.png"
+    user = make_user()
+    db.execute('UPDATE "user" SET avatar_url = %s WHERE user_id = %s', (existing, user["user_id"]))
+    claims = new_claims(email=user["email"])
+    assert login(claims).status_code == 200
+    assert _avatar_of(db, user["email"]) == existing
+    assert login(claims).status_code == 200
+    assert _avatar_of(db, user["email"]) == existing
+
+
+def test_google_first_bind_fills_null_avatar(api, db, google, make_user):
+    """既有會員沒有頭像時，才用 Google 的 picture 補上。"""
+    new_claims, login = google
+    user = make_user()
+    claims = new_claims(email=user["email"])
+    assert login(claims).status_code == 200
+    assert _avatar_of(db, user["email"]) == claims["picture"]

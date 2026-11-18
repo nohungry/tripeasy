@@ -389,6 +389,27 @@ def test_require_auth_network_error_keeps_token(page: Page, make_user):
     expect(page.get_by_label("信箱")).to_have_value(user["email"])
 
 
+def test_logged_in_user_can_open_forgotpw_and_resetpw(page: Page, make_user):
+    """spec §2.1：Google 會員要靠忘記密碼設定密碼；已登入點信中重設連結也要能開。登入頁仍導向會員中心（§0.2）。"""
+    user = make_user()
+    page.goto(f"{FRONTEND_BASE}/#/admin/login")
+    page.evaluate("t => localStorage.setItem('authToken', t)", login_token(user))
+    with page.expect_response("**/login/status"):
+        page.reload()  # 讓 userStore 載入時讀到 token；登入頁會被導向會員中心
+    page.wait_for_url("**/#/admin/userprofile")
+
+    page.goto(f"{FRONTEND_BASE}/#/admin/forgotpw")
+    expect(page.get_by_role("heading", name="忘記密碼")).to_be_visible()
+    assert "#/admin/forgotpw" in page.url
+
+    page.goto(f"{FRONTEND_BASE}/#/admin/resetpw?token=x")
+    expect(page.get_by_role("heading", name="修改密碼")).to_be_visible()
+    assert "#/admin/resetpw" in page.url
+
+    page.goto(f"{FRONTEND_BASE}/#/admin/login")
+    page.wait_for_url("**/#/admin/userprofile")
+
+
 def test_google_login_via_mock(page: Page, new_email, db):
     email = new_email()
     sub = f"g-{email.split('@')[0]}"

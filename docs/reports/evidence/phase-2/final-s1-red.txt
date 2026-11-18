@@ -1,0 +1,200 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collected 1 item
+
+e2e/test_member_flow.py F                                                [100%]
+
+=================================== FAILURES ===================================
+_________ test_logged_in_user_can_open_forgotpw_and_resetpw[chromium] __________
+e2e/test_member_flow.py:402: in test_logged_in_user_can_open_forgotpw_and_resetpw
+    expect(page.get_by_role("heading", name="忘記密碼")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="忘記密碼") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="忘記密碼")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/admin/userprofile#"
+E   - link "登出":
+E     - /url: "#"
+E   - img "頭像"
+E   - text: P0 測試  會員資訊  會員等級  個人偏好設定  個人訂單查看  會員中心  會員資訊 姓名
+E   - textbox "姓名" [disabled]: P0 測試
+E   - text:  信箱
+E   - textbox "信箱" [disabled]: p0-43dd597d@example.com
+E   - text: 個人偏好
+E   - combobox "個人偏好":
+E     - option "探索冒險" [selected]
+E     - option "放鬆療癒" [disabled]
+E     - option "文化體驗" [disabled]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: 次要偏好
+E   - combobox "次要偏好":
+E     - option "探索冒險" [disabled]
+E     - option "放鬆療癒" [selected]
+E     - option "文化體驗" [disabled]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: 第三偏好
+E   - combobox "第三偏好":
+E     - option "探索冒險" [disabled]
+E     - option "放鬆療癒" [disabled]
+E     - option "文化體驗" [selected]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - button " 儲存設定"
+E   - text:  密碼管理
+E   - textbox "請輸入舊密碼"
+E   - textbox "請輸入新密碼" [disabled]
+E   - text:  
+E   - textbox "再次輸入新密碼" [disabled]
+E   - text:  
+E   - button " 更新密碼"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_logged_in_user_can_open_forgotpw_and_resetpw[chromium]
+============================== 1 failed in 6.05s ===============================
