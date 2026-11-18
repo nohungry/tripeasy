@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import importlib.util
 import os
+import time
 import uuid
 from pathlib import Path
 
@@ -172,3 +173,21 @@ def reset_token(user: dict) -> str:
 def auth_header(user: dict) -> dict:
     """跟 backend 登入時簽發的登入 token 一樣（帶 pwv）。"""
     return {"Authorization": f"Bearer {login_token(user)}"}
+
+
+CAPTCHA_TTL_MS = 5 * 60 * 1000
+
+
+def captcha_cookie(answer: str = "abcde", issued_at: int | None = None) -> str:
+    """合法的驗證碼 cookie 值：'<expiresMs>.<hex64>'。
+
+    issued_at 為簽發時間（epoch 毫秒，預設現在），expiresMs = issued_at + 5 分鐘；
+    簽章 = HMAC-SHA256(key = CAPTCHA_SECRET, msg = f"{answer.lower()}.{expiresMs}")。
+    金鑰在呼叫時才讀，缺少就 KeyError（不設預設值，避免與後端悄悄不一致）。
+    """
+    if issued_at is None:
+        issued_at = int(time.time() * 1000)
+    expires_ms = issued_at + CAPTCHA_TTL_MS
+    key = os.environ["CAPTCHA_SECRET"].encode()
+    sig = hmac.new(key, f"{answer.lower()}.{expires_ms}".encode(), hashlib.sha256).hexdigest()
+    return f"{expires_ms}.{sig}"

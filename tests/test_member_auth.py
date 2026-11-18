@@ -16,6 +16,7 @@ from conftest import (
     TEST_PASSWORD,
     USER_FK_TABLES,
     auth_header,
+    captcha_cookie,
     current_pwv,
     delete_user,
     login_token,
@@ -672,3 +673,53 @@ def test_change_role_to_user_keeps_member_access(api, db, make_user):
     token = _login_token_via_api(api, b)
     status = _info_status(api, token)
     assert status == 200
+
+
+# ---------------------------------------------------------------------------
+# Task 5：驗證碼 HMAC 簽章 cookie（P2 spec §3.2）與 /resetpw 原子化
+# ---------------------------------------------------------------------------
+CAPTCHA = "/api/v1/auth/userinfo/captcha"
+
+
+def _resetpw_with_cookie(api, user, cookie: str, input_: str = "abcde", new_password: str = NEW_PW):
+    body = {
+        "token": reset_token(user),
+        "new_password": new_password,
+        "confirm_password": new_password,
+        "input": input_,
+    }
+    return api.patch(RESETPW, json=body, cookies={"captcha": cookie})
+
+
+def test_captcha_cookie_is_not_plaintext(api):
+    r = requests.get(f"{API_BASE}{CAPTCHA}", timeout=10)
+    assert r.status_code == 200, r.text
+    value = r.cookies.get("captcha")
+    assert value and re.fullmatch(r"\d+\.[0-9a-f]{64}", value)
+
+
+def test_forged_plaintext_captcha_cookie_rejected(api, make_user):
+    user = make_user()
+    r = _resetpw_with_cookie(api, user, "abcde", "abcde")
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼錯誤", r.text
+
+
+def test_signed_captcha_cookie_accepted(api, make_user):
+    user = make_user()
+    r = _resetpw_with_cookie(api, user, captcha_cookie("abcde"), "ABCDE")
+    assert r.status_code == 200, r.text
+
+
+def test_expired_captcha_cookie_rejected(api, make_user):
+    user = make_user()
+    six_min_ago = int((time.time() - 6 * 60) * 1000)
+    r = _resetpw_with_cookie(api, user, captcha_cookie("abcde", issued_at=six_min_ago))
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼已過期", r.text
+
+
+def test_captcha_cookie_attributes_from_env():
+    r = requests.get(f"{API_BASE}{CAPTCHA}", timeout=10)
+    set_cookie = r.headers["Set-Cookie"]
+    assert "SameSite=Lax" in set_cookie
+    assert "Secure" not in set_cookie
+    assert "HttpOnly" in set_cookie
