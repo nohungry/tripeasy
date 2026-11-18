@@ -28,5 +28,9 @@ wait_for mailpit    http://localhost:8025/api/v1/info
 wait_for mock-oauth http://localhost:8090/google/.well-known/openid-configuration
 
 uv sync --frozen
-uv run playwright install --with-deps chromium
+if [ -n "${CI:-}" ]; then
+  uv run playwright install --with-deps chromium
+else
+  uv run playwright install chromium
+fi
 uv run pytest -v
