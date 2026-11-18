@@ -227,3 +227,135 @@ def test_checkout_preview_email_lookup_is_case_insensitive(api, make_user):
     )
     assert r.status_code == 404, r.text
     assert r.json()["message"] == "查無此訂單項目"
+
+
+# ---- Task 3：沒有密碼的帳號、登入回應頭像 ----
+
+LOGIN = "/api/v1/auth/userinfo/login/email"
+LOGIN_STATUS = "/api/v1/auth/userinfo/login/status"
+PROFILE_INFO = "/api/v1/user/userinfo/info"
+PROFILE_AVATAR = "/api/v1/user/userinfo/avatar"
+PROFILE_POINTS = "/api/v1/user/userinfo/pointslevel"
+PROFILE_RESET_PW = "/api/v1/auth/userinfo/resetprofilepw"
+
+NULL_PW_LOGIN_MSG = "此帳號使用 Google 登入，請改用 Google 登入，或透過忘記密碼設定密碼。"
+NULL_PW_PROFILE_MSG = "此帳號尚未設定密碼，請透過忘記密碼設定。"
+
+
+def test_login_null_password_is_rejected_without_lock(api, db, make_user):
+    user = make_user(password=None)
+    for _ in range(4):
+        r = api.post(LOGIN, json={"email": user["email"], "password": "Wrongpass123"})
+        assert r.status_code == 401, r.text
+        assert r.json()["message"] == NULL_PW_LOGIN_MSG
+    attempts, locked = db.execute(
+        'SELECT login_attempts, locked_datetime FROM "user" WHERE user_id = %s', (user["user_id"],)
+    ).fetchone()
+    assert not attempts
+    assert locked is None
+
+
+def test_profile_change_password_null_password(api, make_user):
+    user = make_user(password=None)
+    r = api.patch(
+        PROFILE_RESET_PW,
+        headers=auth_header(user),
+        json={"password": "Wrongpass123", "new_password": "Newpass12345", "confirm_password": "Newpass12345"},
+    )
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == NULL_PW_PROFILE_MSG
+
+
+# 既有行為的回歸測試（P2 spec §5）：一開始就綠。
+@pytest.mark.parametrize(
+    "method, path",
+    [
+        ("GET", PROFILE_INFO),
+        ("PATCH", PROFILE_INFO),
+        ("PATCH", PROFILE_AVATAR),
+        ("GET", PROFILE_POINTS),
+        ("PATCH", PROFILE_RESET_PW),
+        ("GET", LOGIN_STATUS),
+    ],
+)
+def test_member_apis_require_login(api, method, path):
+    r = api.request(method, path)
+    assert r.status_code == 401, r.text
+
+
+@pytest.mark.parametrize(
+    "method, path",
+    [("GET", PROFILE_INFO), ("PATCH", PROFILE_INFO), ("PATCH", PROFILE_AVATAR), ("GET", PROFILE_POINTS)],
+)
+def test_user_only_apis_reject_admin_role(api, make_user, method, path):
+    admin = make_user(role="admin")
+    r = api.request(method, path, headers=auth_header(admin))
+    assert r.status_code == 403, r.text
+
+
+def test_get_profile_info_ok(api, db, make_user):
+    user = make_user()
+    r = api.get(PROFILE_INFO, headers=auth_header(user))
+    assert r.status_code == 200, r.text
+    got = r.json()["data"]["user"]
+    assert got["name"] == "P0 測試"
+    assert got["email"] == user["email"]
+
+
+def test_patch_profile_info_ok_and_validation(api, db, make_user):
+    user = make_user()
+    h = auth_header(user)
+    prefs = ["探索冒險", "放鬆療癒", "文化體驗"]
+
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": ["美食探索", "都市感官", "自然療癒"]})
+    assert r.status_code == 200, r.text
+    row = db.execute(
+        'SELECT name, preference1, preference2, preference3 FROM "user" WHERE user_id = %s', (user["user_id"],)
+    ).fetchone()
+    assert tuple(row) == ("新名字", 4, 5, 6)
+
+    r = api.patch(PROFILE_INFO, headers=h, json={})
+    assert r.status_code == 400 and "請至少填寫" in r.json()["message"], r.text
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "a!b", "preference": prefs})
+    assert r.status_code == 400, r.text
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": prefs[:2]})
+    assert r.status_code == 400, r.text
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": ["探索冒險", "放鬆療癒", "不存在"]})
+    assert r.status_code == 409, r.text
+
+
+def test_avatar_upload_validation(api, make_user):
+    h = auth_header(make_user())
+    r = api.patch(PROFILE_AVATAR, headers=h, files={"image": ("a.txt", b"hello", "text/plain")})
+    assert r.status_code == 400, r.text
+    r = api.patch(PROFILE_AVATAR, headers=h)
+    assert r.status_code == 400 and "請提供圖片" in r.json()["message"], r.text
+    big = b"\x89PNG\r\n\x1a\n" + b"0" * (2 * 1024 * 1024 + 1)
+    r = api.patch(PROFILE_AVATAR, headers=h, files={"image": ("big.png", big, "image/png")})
+    assert r.status_code == 400 and "圖片太大，請小於 2MB" in r.json()["message"], r.text
+
+
+def test_profile_change_password_validation(api, make_user):
+    h = auth_header(make_user())
+    new = "Newpass12345"
+
+    r = api.patch(PROFILE_RESET_PW, headers=h, json={"password": "Wrongpass123", "new_password": new, "confirm_password": new})
+    assert r.status_code == 400 and "舊密碼輸入錯誤" in r.json()["message"], r.text
+    r = api.patch(PROFILE_RESET_PW, headers=h, json={"password": TEST_PASSWORD, "new_password": TEST_PASSWORD, "confirm_password": TEST_PASSWORD})
+    assert r.status_code == 400, r.text
+    r = api.patch(PROFILE_RESET_PW, headers=h, json={"password": TEST_PASSWORD, "new_password": new, "confirm_password": "Other12345"})
+    assert r.status_code == 400 and "新密碼與驗證密碼不一致" in r.json()["message"], r.text
+
+
+def test_login_response_has_avatar_url(api, db, make_user):
+    user = make_user()
+    url = "https://example.com/a.png"
+    db.execute('UPDATE "user" SET avatar_url = %s WHERE user_id = %s', (url, user["user_id"]))
+
+    r = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["user"]["avatar_url"] == url
+
+    r = api.get(LOGIN_STATUS, headers=auth_header(user))
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["user"]["avatar_url"] == url
