@@ -95,6 +95,8 @@ def test_search_page_single_header(page: Page):
 def test_invalid_token_redirects_and_clears_state(page: Page):
     page.goto(f"{FRONTEND_BASE}/#/admin/login")
     page.evaluate("localStorage.setItem('authToken', 'garbage-token')")
+    page.reload()  # 讓 userStore 載入時讀到 token，先進入「已登入」狀態
+    expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_have_count(0)
     page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
     page.wait_for_url("**/#/admin/login")
     assert page.evaluate("localStorage.getItem('authToken')") is None
