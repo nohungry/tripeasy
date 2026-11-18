@@ -9,7 +9,7 @@
 
 ## 快速開始
 
-需要 Docker（含 Compose v2）和 [uv](https://docs.astral.sh/uv/)。第一次執行時，uv 會依照 `.python-version` 自動下載 Python 3.13。
+需要 Docker（含 Compose v2）和 [uv](https://docs.astral.sh/uv/)。若系統沒有 Python 3.13，uv 會依 `.python-version` 自動下載。
 
 ```bash
 git clone https://github.com/nohungry/tripeasy.git && cd tripeasy

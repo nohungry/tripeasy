@@ -453,7 +453,7 @@ P2 新增的做法：
 
 兩次的 xfail 都是 `tests/test_member_auth.py::test_patch_profile_info_name_only`、`::test_patch_profile_info_preference_only`（見 §0 與附錄 B）。第 1 次的 `curl: (52) Empty reply from server` 是 `ci.sh` 的 `wait_for frontend` 在 vite 啟動前的重試輸出，最後 `✅ frontend`。**跑完兩次之後**，只改了 `docs/db-contract.md` 與 `e2e/test_member_flow.py` 的 docstring（`84189ac`）；改完後重跑受影響的 5 個 E2E 案例（`-k "expired_token or logged_in_user_can_open"`）皆通過、`--collect-only` 收集數為 331（329＋2 xfail），與 ci.sh 的總數一致。
 
-**GitHub Actions**：綠燈 run [44323636173](https://github.com/nohungry/tripeasy/actions/runs/44323636173)（`e1901f9`，main）；結果：**329 passed, 2 xfailed**，Using CPython 3.13.18，耗時 74.13 秒。注意本機 `ci.sh` **不跑** `--with-deps`（見 §4.5），所以 CI 上 `CI=true` 才會走的 `playwright install --with-deps chromium` 這條分支，在首次 push 之前沒有被實際驗證過（進度帳 Task 6 minor）。
+**GitHub Actions**：綠燈 run [44323636173](https://github.com/nohungry/tripeasy/actions/runs/44323636173)（`e1901f9`，main）；結果：**329 passed, 2 xfailed**，Using CPython 3.13.18，耗時 74.13 秒。注意本機 `ci.sh` **不跑** `--with-deps`（見 §4.5），所以 CI 上 `CI=true` 才會走的 `playwright install --with-deps chromium` 這條分支，在首次 push 之前沒有被實際驗證過（進度帳 Task 6 minor）。**已解決**：tag 時點的兩個失敗 run 都在 `uv sync` 就失敗，沒跑到這一步；這條分支是在綠燈 run 44323636173 第一次實際跑到並通過。
 
 #### CI 在 tag 時點失敗：runner 映像改版
 
@@ -463,7 +463,7 @@ P2 新增的做法：
 - **決定：`phase-2` tag 不移動**。tag 指向的 commit 仍是 `e06ee26`，所以 tag 那次的 run（44289947855）會一直是紅燈；P2 的程式內容沒有變，CI 結果以上面的綠燈 run 為準。
 - **留給 P3 的後續項目**：
   - (a) `requires-python` 加上 `<3.14` 上限，或升級 psycopg 到有 cp314 wheel 的版本。
-  - (b) 鎖定 uv 版本；目前 `setup-uv` 用的是 latest，同樣會隨時間漂移。
+  - (b) 鎖定 uv 版本；`setup-uv` action 本身固定在 v10.3.3，但沒有指定 `version` input，所以安裝的 uv 是最新版（這次是 0.13.9），同樣會隨時間漂移。
 
 ## 4. 操作指南
 
@@ -476,7 +476,7 @@ git clone -b "$(grep FRONTEND_REF refs.env | cut -d= -f2)" https://github.com/no
 scripts/ci.sh        # 啟動全部服務並跑測試
 ```
 
-需要 Docker（含 Compose v2）與 [uv](https://docs.astral.sh/uv/)；服務網址同 `docs/reports/phase-0.md` §4.1。**目前（初稿）`refs.env` 是 `BACKEND_REF=phase-2`、`FRONTEND_REF=phase-2`，指的是分支名稱，三個 repo 都還沒 push**；Task 12 Step 5 之後會改成 tag 並 push，clone 指令才能用（待定）。
+需要 Docker（含 Compose v2）與 [uv](https://docs.astral.sh/uv/)；服務網址同 `docs/reports/phase-0.md` §4.1。**`refs.env` 是 `BACKEND_REF=phase-2`、`FRONTEND_REF=phase-2`，現在指的是 tag**；三個 repo 的 `phase-2` tag 都已 push（總覽 `e06ee26`、backend `3d835a6`、frontend `71a2171`），README 的 clone 指令現在可以直接使用。
 
 ### 4.2 測試帳號
 
@@ -579,7 +579,9 @@ scripts/ci.sh        # 啟動全部服務並跑測試
 
 #### B.4 測試基礎設施
 
-- `base_url` fixture 未被使用；`CI=false` 也算 CI；`81c94d3` 的 commit 訊息前綴（`test:` 但改的是 `scripts/ci.sh`）；CI 分支 `--with-deps` 首次 push 才驗證。
+- `base_url` fixture 未被使用；`CI=false` 也算 CI；`81c94d3` 的 commit 訊息前綴（`test:` 但改的是 `scripts/ci.sh`）；CI 分支 `--with-deps` 原本首次 push 才驗證，已於綠燈 run 44323636173 實際跑到並通過（已解決，見 §3.3）。
+- **P3 後續（CI）**：`requires-python` 加上 `<3.14` 上限，或升級 psycopg 到有 cp314 wheel 的版本（對應 §3.3 (a)）。
+- **P3 後續（CI）**：鎖定 uv 版本，`setup-uv` 補上 `version` input（對應 §3.3 (b)）。
 - `delete_user` 中途失敗留半刪狀態（需 docstring）；`conftest.py:86-88` 依 `order_id` 刪除對同會員多餘；`test_delete_user_clears_all_fk_tables` 失敗時 `finally` 內 `delete_user` 同樣失敗而殘留，可改巢狀 try。
 - 測試前綴殘留會讓 seed 筆數斷言持續紅（P3 測試基礎設施）；洩漏測試 `range(12)` 與 pool max 耦合。
 - mutation (e) 預期文字對齊、各組無 diff；bogus code 範圍筆數比對。
