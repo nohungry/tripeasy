@@ -619,9 +619,10 @@ def test_null_password_user_can_set_password_via_reset(api, make_user):
 
 # 以下為 Task 4 安全測試補強：一開始就綠（既有／新實作已涵蓋的分支）。
 def test_auth_not_mandatory_without_header_is_not_401(api):
-    r = api.get(HOME_PRODUCTS)
-    # 缺必填 page 才回 400，證明請求通過 auth_not_mandatory、進到下一層驗證
-    assert r.status_code == 400 and "page" in r.json()["message"], r.text
+    # 帶齊 type、item、page、limit、lang（同 test_api_smoke 的 test_home_products_guest）
+    params = {"type": "tourgroup", "item": "popular", "page": 1, "limit": 20, "lang": "zh-TW"}
+    r = api.get(HOME_PRODUCTS, params=params)
+    assert r.status_code == 200, r.text
 
 
 def _bad_tokens(user: dict) -> dict:
