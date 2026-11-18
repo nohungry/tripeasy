@@ -8,11 +8,12 @@ dependencies = [
   "psycopg[binary]==3.2.3",
   "PyJWT==2.9.0",
   "python-dotenv==1.0.1",
+  "pytest-playwright==0.5.2",
 ]
 
 [tool.uv]
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "e2e"]
 addopts = "-ra"
