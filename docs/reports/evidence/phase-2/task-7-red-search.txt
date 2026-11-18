@@ -1,0 +1,19 @@
+e2e/test_member_flow.py::test_signup_login_profile_main_flow[chromium] PASSED [ 12%]
+e2e/test_member_flow.py::test_profile_requires_login[chromium] PASSED    [ 25%]
+e2e/test_member_flow.py::test_unknown_route_shows_404[chromium] PASSED   [ 37%]
+e2e/test_member_flow.py::test_logout_stays_in_spa[chromium] PASSED       [ 50%]
+e2e/test_member_flow.py::test_facebook_login_not_offered[chromium] PASSED [ 62%]
+e2e/test_member_flow.py::test_login_lockout_message[chromium] PASSED     [ 75%]
+e2e/test_member_flow.py::test_search_page_single_header[chromium] FAILED [ 87%]
+e2e/test_member_flow.py::test_invalid_token_redirects_and_clears_state[chromium] FAILED [100%]
+___________________ test_search_page_single_header[chromium] ___________________
+e2e/test_member_flow.py:91: in test_search_page_single_header
+E   AssertionError: Locator expected to have count '1'
+E   Actual value: 2 
+E   Call log:
+___________ test_invalid_token_redirects_and_clears_state[chromium] ____________
+e2e/test_member_flow.py:100: in test_invalid_token_redirects_and_clears_state
+E   assert 'garbage-token' is None
+FAILED e2e/test_member_flow.py::test_search_page_single_header[chromium] - As...
+FAILED e2e/test_member_flow.py::test_invalid_token_redirects_and_clears_state[chromium]
+========================= 2 failed, 6 passed in 21.74s =========================

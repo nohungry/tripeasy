@@ -35,6 +35,7 @@ def _login_via_ui(page: Page, email: str, password: str) -> None:
 def test_profile_requires_login(page: Page):
     page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
     page.wait_for_url("**/#/admin/login")
+    expect(page.get_by_role("heading", name="會員登入")).to_be_visible()
 
 
 def test_unknown_route_shows_404(page: Page):
@@ -49,23 +50,28 @@ def test_logout_stays_in_spa(page: Page, make_user):
     page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
 
     page.evaluate("window.__spa_marker = 'alive'")
-    page.get_by_text("嗨！", exact=False).first.click()
-    page.locator(".custom-dropdown-menu").get_by_role("link", name="登出", exact=True).click()
+    # 桌機與手機選單的「嗨！」「登出」同時都是 visible，限定桌機的 .user-dropdown
+    desktop_menu = page.locator(".user-dropdown")
+    desktop_menu.get_by_text("嗨！").click()
+    desktop_menu.get_by_role("link", name="登出", exact=True).click()
 
     page.wait_for_url("**/#/")
     assert page.evaluate("window.__spa_marker") == "alive"
+    assert page.evaluate("localStorage.getItem('authToken')") is None
+    # 首頁本身另帶一個 header（既有重複，P3 以後），故有兩個可見的「註冊/登入」，取第一個
+    expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True).first).to_be_visible()
 
 
 def test_facebook_login_not_offered(page: Page):
     page.goto(f"{FRONTEND_BASE}/#/admin/login")
     expect(page.get_by_role("heading", name="會員登入")).to_be_visible()
-    assert page.locator(".fa-facebook-f").count() == 0 or page.get_by_text("未開放").count() > 0
+    expect(page.locator(".fa-facebook-f")).to_have_count(0)
 
 
 def test_login_lockout_message(page: Page, make_user):
     user = make_user()
     page.goto(f"{FRONTEND_BASE}/#/admin/login")
-    swal = page.locator("#swal2-html-container")
+    swal = page.get_by_role("dialog")
 
     for attempt in range(3):
         _login_via_ui(page, user["email"], "WrongPass123")
@@ -77,3 +83,19 @@ def test_login_lockout_message(page: Page, make_user):
 
     _login_via_ui(page, user["email"], TEST_PASSWORD)
     expect(swal).to_contain_text("帳號鎖定中")
+
+
+def test_search_page_single_header(page: Page):
+    page.goto(f"{FRONTEND_BASE}/#/search", wait_until="domcontentloaded")
+    expect(page.get_by_role("heading", name="購物專區")).to_be_visible()
+    expect(page.locator(".header")).to_have_count(1)
+    expect(page.get_by_text("找不到頁面")).to_have_count(0)
+
+
+def test_invalid_token_redirects_and_clears_state(page: Page):
+    page.goto(f"{FRONTEND_BASE}/#/admin/login")
+    page.evaluate("localStorage.setItem('authToken', 'garbage-token')")
+    page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+    page.wait_for_url("**/#/admin/login")
+    assert page.evaluate("localStorage.getItem('authToken')") is None
+    expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_be_visible()
