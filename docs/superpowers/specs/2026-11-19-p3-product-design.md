@@ -49,7 +49,7 @@
 
 1. **沿用 P2 的流程**【使用者定】：backend 從 `main`、frontend 從 `dev`、總覽 repo 從 `main` 各開 `phase-3` 分支；每個 Task 紅燈與綠燈分開 commit 並留 evidence；最後一個 Task 寫報告、更新 `refs.env` 與 README 階段表、跑 `scripts/ci.sh` 全綠；合併、打 tag、push 每一步先問使用者。
 2. **購買數的計算**【使用者定，2026-11-19 同意沿用契約 `docs/db-contract.md:130` 的裁決】：「購買數」＝ 該行程 `order_item.payment_status = 1` 的**列數**，不乘 `quantity`。P3 任何計數（含測試）都照這條。**P1 報告 `docs/reports/phase-1.md:199` 的待決事項（「P3 商品開工前要變成使用者明確決定」）由此結案**；契約 `:557` 與 `:1747` 兩處由計畫 Task 5 改成「使用者 2026-11-19 確認」。P3 的「購買過」用 `EXISTS` 判斷（§4.2），與計數方式無關，但沿用同一個「已付款」定義。
-3. **結帳在 P4**【使用者定】：P3 的測試用 fixture 直接寫入 `orders`／`order_item`；seed 帳號（alice／bob／carol）**只能讀**，不能拿來寫評論或改它們的資料（`tests/test_seed.py:16–24` 的 `SEED_COUNTS` 對 `user`＝3、`review`＝13、`hidden_play`＝6 等做精確計數，寫入就會讓它變紅）。手動示範的帳號與步驟寫死在計畫 Task 13 Step 4。
+3. **結帳在 P4**【使用者定】：P3 的測試用 fixture 直接寫入 `orders`／`order_item`；seed 帳號（alice／bob／carol）**只能讀**，不能拿來寫評論或改它們的資料（`tests/test_seed.py:16–22` 的 `SEED_COUNTS` 對 `user`＝3、`review`＝13、`hidden_play`＝6 等做精確計數，寫入就會讓它變紅）。手動示範的帳號與步驟寫死在計畫 Task 13 Step 4。
 4. **對 P4 的依賴（寫進契約與 P3 報告）**：現行付款流程到不了「已付款」：`controllers/newebpay.js:82,213` 對 `order_item` 寫不存在的 `payment` 欄位而 ROLLBACK（契約 §4.2）；`:203–206` 只更新 `orders.payment_status`。P3 的資格判斷看 `order_item.payment_status`（§4.2），所以 **P4 必須在付款成功時把 `order_item.payment_status` 設成 1**，否則真實買家永遠不能評論。這條列入 §8 延後表（N10），由 P4 的 spec 承接。
 5. 重構規則（總 spec §0）：本設計中屬於重構的只有「刪除已不被路由引用的假頁面檔案」（§6.3），計畫中獨立 step、獨立 `refactor:` commit。
 6. 不新增 npm 或 Python 套件。
@@ -119,7 +119,7 @@ EXISTS (SELECT 1 FROM order_item oi JOIN orders o ON o.order_id = oi.order_id
 - **不要求「行程已結束」**：住宿、餐廳類商品沒有結束日，`order_item.end_date` 可為 NULL；若錯：加 `end_date < now()` 條件，P4 之後再議。
 - **一人一行程一則評論**，不是一單一則：重複購買同一行程也只能評論一次（§4.1 #1）；`EXISTS` 不受同一行程多張已付款訂單影響。
 - **只有 `User` 角色能寫**：沿用總 spec §4「admin 不結帳」；admin 打寫入 API 回 403（`authRole('User')`）。
-- seed 對照（已實測，唯讀）：alice 已購買**且已評論**北海道（#1），所以 alice＋北海道為 `{ can_write: true, has_reviewed: true }`（顯示「你已評論過此行程」，玩法表單仍在）；alice 對義大利只有 `payment_status = -1`（#16），為 `{ can_write: false, has_reviewed: false }`；carol 已購買北海道（#3）且沒有評論，為 `{ can_write: true, has_reviewed: false }`。可寫評論的 seed 組合（已實測）：alice 的沖繩海景度假旅店、馬爾地夫蜜月天堂 6 日、高雄夜市美食攻略；carol 的北海道雪景 5 日深度遊、首爾咖啡文青小旅行——但 seed 帳號只能讀（§2.3），這些組合只用於唯讀的資格查詢，不用於寫入。
+- seed 對照（已實測，唯讀）：alice 已購買**且已評論**北海道（#1），所以 alice＋北海道為 `{ can_write: true, has_reviewed: true }`（顯示「你已評論過此行程」，玩法表單仍在）；alice 對義大利只有 `payment_status = -1`（#16），為 `{ can_write: false, has_reviewed: false }`；carol 已購買北海道（#3）且沒有評論，為 `{ can_write: true, has_reviewed: false }`。可寫評論的 seed 組合（已實測）：alice 的沖繩海景度假旅店、馬爾地夫蜜月天堂 6 日、高雄夜市美食攻略；carol 的北海道雪景 5 日深度遊、首爾咖啡文青小旅行、曼谷設計旅店探索、馬爾地夫蜜月天堂 6 日（後兩者已付款，她只分享過玩法、沒寫過評論）——但 seed 帳號只能讀（§2.3），這些組合只用於唯讀的資格查詢，不用於寫入。
 
 ## 5. API 契約
 
@@ -134,7 +134,7 @@ EXISTS (SELECT 1 FROM order_item oi JOIN orders o ON o.order_id = oi.order_id
 | `GET /:tour_id`（詳情，`:172`） | **已下架回 500**（已實測：清邁自然旅宿體驗 `status=2`）；行程沒有子表資料時 `:209` 對 `rows[0]` 讀欄位 TypeError → 500（契約 §4.2）。只有 `tour_hotel`（`JOIN hotel`）、`tour_restaurant` 會回 0 列；`tour_tour_detail` 對 `tour_detail` 是 `LEFT JOIN LATERAL`（`R__views_functions.sql` 的 `tour_tour_detail`），travel／spot 沒有 `tour_detail` 時回 200、特色欄位為 null，維持現狀 | `tourRepo.rowCount === 0`（不存在或非上架）→ 404 `查無此旅遊項目`；`tourDetailsRepo.rowCount === 0` → 404，兩個檢查都在計算 `preferences`（`:208`）之前 |
 | 同上（food） | `menu[]` 與 `opening[]` 共用 `rows`，各自含 `name: null`／`week: null` 的空項（契約 #34 選 B，「完整修正需改 controller（P3 商品）」） | `menu` 只取 `菜單名稱 IS NOT NULL` 的列，`opening` 只取 `營業星期 IS NOT NULL` 的列 |
 | `GET /:tour_id/hidden-shares`（`:540`） | 回應沒有 `title`：`:574` 寫 `row.type`（P1 報告附錄 B） | 改 `row.title` |
-| `GET /api/v1/user/home/search/products?item=promotion`（`controllers/home.js:31–46`） | 契約 #7、#9 留給 P3 的兩個缺口：未登入版直接查 `tour_base`，會列出**已下架**行程；兩個版本都沒有促銷**期間**條件 | 兩個查詢都加 `now() BETWEEN 促銷開始日期 AND 促銷結束日期`；未登入版另加 `上下架狀態 = 1`；排序加次要鍵 `旅遊編號 ASC`。**測試自建促銷**（`make_tour()` 加一筆期間為 `now() ± 1 day` 的促銷通知），不依賴 seed 的有效期；seed 的促銷日期在載入時就算好（2026-11-18 載入，最早 11-25、最晚 12-18 全部到期），到期只影響首頁展示，屬已知限制（放寬 seed 期間超出 P3 範圍） |
+| `GET /api/v1/user/home/search/products?item=promotion`（`controllers/home.js:31–46`） | 契約 #7、#9 留給 P3 的兩個缺口：未登入版直接查 `tour_base`，會列出**已下架**行程；兩個版本都沒有促銷**期間**條件 | 兩個查詢都加 `now() BETWEEN 促銷開始日期 AND 促銷結束日期`；未登入版另加 `上下架狀態 = 1`；排序加次要鍵 `旅遊編號 ASC`。**測試自建促銷**（`make_tour()` 加一筆期間為 `now() ± 1 day` 的促銷通知），不依賴 seed 的有效期；seed 的促銷日期在載入時就算好（2026-11-18 載入）：tourgroup 的 5 筆促銷最早 11-25、最晚 12-18 到期；backpacker 的 2 筆，京都古寺散步 11-08 已到期、台南小吃巡禮到 12-28，到期只影響首頁展示，屬已知限制（放寬 seed 期間超出 P3 範圍） |
 
 `GET /:tour_id/reviews`（`:473`）不改。評論與隱藏玩法的讀取對已下架行程仍回 200（已實測），維持現狀【Claude 定】— 前端只從詳情頁進入，下架行程的詳情已是 404，讀不到 — 若錯：多一個 404 判斷。
 
@@ -292,9 +292,9 @@ EXISTS (SELECT 1 FROM order_item oi JOIN orders o ON o.order_id = oi.order_id
 | N8 | 首頁「好評專區」寫死（網站好評） | **延後（未排定，P6 前再議）** — 是網站好評，不是商品評論；寫入網站好評的功能也不存在 — 若錯：首頁好評仍是假資料，報告列已知限制 |
 | N9 | 首頁未帶 `type` 時 500（契約 §4.2） | **延後** — 前端一律帶 `type` 與 `item`，P3 碰不到 — 若錯：直接打 API 的人會看到 500 |
 | N10 | 付款成功沒有把 `order_item.payment_status` 設成 1（`newebpay.js:82,213,203–206`） | **延後到 P4，列為 P4 必做**（§2.4） — 結帳屬 P4 — 若錯（P4 沒做）：真實買家無法評論 |
-| N12 | seed 本身就有「沒買過的人」寫的評論與隱藏玩法（已實測）：評論 bob→馬爾地夫（無訂單）、carol→紐西蘭（訂單 `payment_status = 2`）、carol→義大利（無訂單）、alice→巴黎（無訂單）；玩法 alice→紐西蘭（`payment_status = 4`）、alice→大阪（無訂單） | **不追溯既有資料，列已知限制** — 規則只約束新寫入；改 seed 會牽動 `SEED_COUNTS` 與契約 §0.1 — 若錯：展示時看得到「沒買過的人的評論」，可在重建 seed 時一併修 |
-| N13 | seed 有 5 則 `review.type` 與 `tour.item` 不一致（§5.2 (b)） | **列已知限制，不修** — 只影響 `review_type` 欄位的顯示，P3 頁面不顯示它 — 若錯：重建 seed 時修正 |
 | N11 | 其他 `pool.connect` 疑似漏 release（`cart.js`、`checkout.js`、`newebpay.js`）、`product.js:609` 的新增商品 | **延後到 P4／P6** — 不在 P3 會呼叫的路徑上（P2 Ruling 10） — 若錯：重複呼叫這些 API 會耗盡 pool |
+| N12 | seed 本身就有「沒買過的人」寫的評論與隱藏玩法（已實測）：評論 bob→馬爾地夫（無訂單）、carol→紐西蘭（訂單 `payment_status = 2`）、carol→義大利（無訂單）、alice→巴黎（無訂單）；玩法 alice→紐西蘭（`payment_status = 4`）、alice→大阪（無訂單）；另有 admin（bob，`authRole('User')` 下不能寫）寫的內容：評論 bob→曼谷設計旅店探索、玩法 bob→北海道、bob→巴黎（這三筆他有已付款訂單，但角色是 admin） | **不追溯既有資料，列已知限制** — 規則只約束新寫入；改 seed 會牽動 `SEED_COUNTS` 與契約 §0.1 — 若錯：展示時看得到「沒買過的人的評論」，可在重建 seed 時一併修 |
+| N13 | seed 有 5 則 `review.type` 與 `tour.item` 不一致（§5.2 (b)） | **列已知限制，不修** — 只影響 `review_type` 欄位的顯示，P3 頁面不顯示它 — 若錯：重建 seed 時修正 |
 
 ## 9. 流程與約束（沿用總 spec 與 P2）
 
