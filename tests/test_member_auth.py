@@ -1,5 +1,10 @@
 """P2 會員：權限與資料清理。後續 Task 的會員測試加在這裡。"""
-from conftest import USER_FK_TABLES, auth_header, delete_user
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+
+import pytest
+
+from conftest import TEST_PASSWORD, USER_FK_TABLES, auth_header, delete_user
 from dbfactory import insert
 
 ROLES = "/api/v1/admin/members/roles"
@@ -64,3 +69,126 @@ def test_delete_user_clears_all_fk_tables(make_user, tx):
         assert n == 0, table
     (n,) = tx.execute('SELECT count(*) FROM "user" WHERE user_id = %s', (uid,)).fetchone()
     assert n == 0
+
+
+SIGNUP = "/api/v1/auth/userinfo/signup"
+LOGIN = "/api/v1/auth/userinfo/login/email"
+FORGET = "/api/v1/auth/userinfo/forgetpw"
+PREFS = ["探索冒險", "放鬆療癒", "文化體驗"]
+
+
+@pytest.fixture
+def cleanup_email(db):
+    """收集測試註冊用的 email，結束時依 email 查 user_id 並刪除。"""
+    emails: list[str] = []
+    yield emails.append
+    for email in emails:
+        for (user_id,) in db.execute(
+            'SELECT user_id FROM "user" WHERE lower(email) = lower(%s)', (email,)
+        ).fetchall():
+            delete_user(db, str(user_id))
+
+
+def _signup_body(default_email: str, **override) -> dict:
+    """override 的值為 None 代表移除該欄位。"""
+    body = {"name": "測試員", "email": default_email, "password": TEST_PASSWORD, "preference": PREFS, **override}
+    return {k: v for k, v in body.items() if v is not None}
+
+
+def _count_email(db, email: str) -> int:
+    return db.execute(
+        'SELECT count(*) FROM "user" WHERE lower(email) = lower(%s)', (email,)
+    ).fetchone()[0]
+
+
+def test_signup_normalizes_email(api, db, cleanup_email):
+    email = f"Mixed.{uuid.uuid4().hex[:8]}@Example.COM"
+    cleanup_email(email)
+    r = api.post(SIGNUP, json=_signup_body(email))
+    assert r.status_code == 201, r.text
+    rows = db.execute('SELECT email FROM "user" WHERE lower(email) = lower(%s)', (email,)).fetchall()
+    assert rows == [(email.lower(),)]
+
+
+def test_signup_duplicate_differs_by_case_is_409(api, db, cleanup_email):
+    email = f"dup.{uuid.uuid4().hex[:8]}@example.com"
+    cleanup_email(email)
+    assert api.post(SIGNUP, json=_signup_body(email)).status_code == 201
+    r = api.post(SIGNUP, json=_signup_body(email.upper()))
+    assert r.status_code == 409, r.text
+    assert r.json()["message"] == "Email已被使用"
+    assert _count_email(db, email) == 1
+
+
+def test_signup_concurrent_same_email_only_one_succeeds(api, db, cleanup_email):
+    email = f"race.{uuid.uuid4().hex[:8]}@example.com"
+    cleanup_email(email)
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        codes = list(pool.map(lambda _: api.post(SIGNUP, json=_signup_body(email)).status_code, range(5)))
+    assert sorted(codes) == [201, 409, 409, 409, 409], codes
+    assert _count_email(db, email) == 1
+
+
+def test_login_email_is_case_insensitive(api, make_user):
+    user = make_user(email=f"lower.{uuid.uuid4().hex[:8]}@example.com")
+    r = api.post(LOGIN, json={"email": user["email"].upper(), "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+
+
+# 以下為既有行為的回歸測試，一開始就綠。
+@pytest.mark.parametrize(
+    "override, message",
+    [
+        ({"email": "not-an-email"}, "Email不符合規則"),
+        ({"password": "short"}, "密碼不符合規則"),
+        ({"name": "六個字的名字喔"}, "使用者名稱不符合規則"),
+        ({"preference": PREFS[:2]}, "個人偏好需選擇 3 項內容"),
+        ({"password": None}, "「密碼」為必填欄位"),
+    ],
+    ids=["bad-email", "bad-password", "name-too-long", "preference-too-few", "missing-password"],
+)
+def test_signup_validation_errors(api, db, cleanup_email, override, message):
+    email = f"val.{uuid.uuid4().hex[:8]}@example.com"
+    cleanup_email(email)
+    r = api.post(SIGNUP, json=_signup_body(email, **override))
+    assert r.status_code == 400, r.text
+    assert message in r.json()["message"]
+    assert _count_email(db, email) == 0
+    if "email" in override:
+        assert _count_email(db, override["email"]) == 0
+
+
+def test_signup_unknown_preference_is_409(api, db, cleanup_email):
+    email = f"pref.{uuid.uuid4().hex[:8]}@example.com"
+    cleanup_email(email)
+    r = api.post(SIGNUP, json=_signup_body(email, preference=["探索冒險", "放鬆療癒", "不存在的偏好"]))
+    assert r.status_code == 409, r.text
+    assert r.json()["message"] == "包含無效的偏好名稱"
+    assert _count_email(db, email) == 0
+
+
+@pytest.mark.parametrize(
+    "body",
+    [{"email": "not-an-email", "password": TEST_PASSWORD}, {"email": "a@example.com"}],
+    ids=["bad-email", "missing-password"],
+)
+def test_login_email_validation_errors(api, body):
+    assert api.post(LOGIN, json=body).status_code == 400
+
+
+def test_login_unknown_email_is_404(api):
+    r = api.post(LOGIN, json={"email": f"nobody.{uuid.uuid4().hex[:8]}@example.com", "password": TEST_PASSWORD})
+    assert r.status_code == 404, r.text
+
+
+def test_login_wrong_password_is_401(api, make_user):
+    user = make_user()
+    r = api.post(LOGIN, json={"email": user["email"], "password": "Wrongpass123"})
+    assert r.status_code == 401, r.text
+    assert "(已錯誤 1 次)" in r.json()["message"]
+
+
+def test_forgetpw_validation_and_unknown_email(api):
+    assert api.post(FORGET, json={"email": "not-an-email"}).status_code == 400
+    r = api.post(FORGET, json={"email": f"nobody.{uuid.uuid4().hex[:8]}@example.com"})
+    assert r.status_code == 404, r.text

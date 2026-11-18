@@ -101,16 +101,25 @@ def delete_user(db, user_id: str) -> None:
     db.execute('DELETE FROM "user" WHERE user_id = %s', (user_id,))
 
 
+TEST_PASSWORD = "Tripeasy123"
+# TEST_PASSWORD 的 bcrypt（cost 10，用 backend 容器的 bcrypt 產生；測試環境沒有 Python bcrypt 套件）
+TEST_PASSWORD_HASH = "$2b$10$Gv8aWHvXWoOcP9b.gyVTl.vEznO/bXW1hLig..ZaTtEgRMmJGuIlG"
+_DEFAULT = object()
+
+
 @pytest.fixture
 def make_user(db):
     created: list[str] = []
 
-    def _make(role: str = "User", email: str | None = None) -> dict:
+    def _make(role: str = "User", email: str | None = None, password=_DEFAULT) -> dict:
+        """password 預設存 TEST_PASSWORD 的 bcrypt；傳 None 存 NULL。"""
+        if password is _DEFAULT:
+            password = TEST_PASSWORD_HASH
         email = email or f"p0-{uuid.uuid4().hex[:8]}@example.com"
         (user_id,) = db.execute(
             'INSERT INTO "user" (name, email, role, password, preference1, preference2, preference3) '
             "VALUES (%s, %s, %s, %s, 1, 2, 3) RETURNING user_id",
-            ("P0 測試", email, role, "not-a-real-hash"),
+            ("P0 測試", email, role, password),
         ).fetchone()
         created.append(str(user_id))
         return {"user_id": str(user_id), "email": email, "role": role}

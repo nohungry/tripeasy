@@ -1,0 +1,178 @@
+....FFFF...........F..FFFF                                               [100%]
+=================================== FAILURES ===================================
+_________________________ test_signup_normalizes_email _________________________
+
+api = <conftest.Api object at 0x7c26effd8590>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+cleanup_email = <built-in method append of list object at 0x7c26effb2140>
+
+    def test_signup_normalizes_email(api, db, cleanup_email):
+        email = f"Mixed.{uuid.uuid4().hex[:8]}@Example.COM"
+        cleanup_email(email)
+        r = api.post(SIGNUP, json=_signup_body(email))
+        assert r.status_code == 201, r.text
+        rows = db.execute('SELECT email FROM "user" WHERE lower(email) = lower(%s)', (email,)).fetchall()
+>       assert rows == [(email.lower(),)]
+E       AssertionError: assert [('Mixed.c00b...xample.COM',)] == [('mixed.c00b...xample.com',)]
+E         
+E         At index 0 diff: ('Mixed.c00b813a@Example.COM',) != ('mixed.c00b813a@example.com',)
+E         Use -v to get more diff
+
+tests/test_member_auth.py:110: AssertionError
+_________________ test_signup_duplicate_differs_by_case_is_409 _________________
+
+api = <conftest.Api object at 0x7c26effd8590>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+cleanup_email = <built-in method append of list object at 0x7c26efb29600>
+
+    def test_signup_duplicate_differs_by_case_is_409(api, db, cleanup_email):
+        email = f"dup.{uuid.uuid4().hex[:8]}@example.com"
+        cleanup_email(email)
+        assert api.post(SIGNUP, json=_signup_body(email)).status_code == 201
+        r = api.post(SIGNUP, json=_signup_body(email.upper()))
+>       assert r.status_code == 409, r.text
+E       AssertionError: {"status":"success","message":"註冊成功","data":{"user":{"id":"cb206f89-a21e-47e6-93e9-9de6c37234a5","name":"測試員","role":"User"},"level":{"level":"Level 1","name":"初心旅人","points":0}}}
+E       assert 201 == 409
+E        +  where 201 = <Response [201]>.status_code
+
+tests/test_member_auth.py:118: AssertionError
+_____________ test_signup_concurrent_same_email_only_one_succeeds ______________
+
+api = <conftest.Api object at 0x7c26effd8590>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+cleanup_email = <built-in method append of list object at 0x7c26efbba780>
+
+    def test_signup_concurrent_same_email_only_one_succeeds(api, db, cleanup_email):
+        email = f"race.{uuid.uuid4().hex[:8]}@example.com"
+        cleanup_email(email)
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            codes = list(pool.map(lambda _: api.post(SIGNUP, json=_signup_body(email)).status_code, range(5)))
+>       assert sorted(codes) == [201, 409, 409, 409, 409], codes
+E       AssertionError: [201, 201, 201, 201, 201]
+E       assert [201, 201, 201, 201, 201] == [201, 409, 409, 409, 409]
+E         
+E         At index 1 diff: 201 != 409
+E         Use -v to get more diff
+
+tests/test_member_auth.py:128: AssertionError
+_____________________ test_login_email_is_case_insensitive _____________________
+
+api = <conftest.Api object at 0x7c26effd8590>
+make_user = <function make_user.<locals>._make at 0x7c26efb54900>
+
+    def test_login_email_is_case_insensitive(api, make_user):
+        user = make_user(email=f"lower.{uuid.uuid4().hex[:8]}@example.com")
+        r = api.post(LOGIN, json={"email": user["email"].upper(), "password": TEST_PASSWORD})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"false","message":"帳號密碼不存在。"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404]>.status_code
+
+tests/test_member_auth.py:135: AssertionError
+_________________________ test_flyway_applied_v1_to_v3 _________________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+
+    def test_flyway_applied_v1_to_v3(db):
+        rows = db.execute(
+            "SELECT version, success FROM flyway_schema_history "
+            "WHERE version IS NOT NULL ORDER BY installed_rank"
+        ).fetchall()
+>       assert rows == [("1", True), ("2", True), ("3", True)]
+E       AssertionError: assert [('1', True), ('2', True)] == [('1', True),..., ('3', True)]
+E         
+E         Right contains one more item: ('3', True)
+E         Use -v to get more diff
+
+tests/test_migrations.py:19: AssertionError
+_______________________________ test_v3_applied ________________________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+
+    def test_v3_applied(db):
+        row = db.execute(
+            "SELECT success FROM flyway_schema_history WHERE version = '3'"
+        ).fetchone()
+>       assert row == (True,)
+E       assert None == (True,)
+
+tests/test_migrations.py:46: AssertionError
+________________________ test_user_password_is_nullable ________________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+
+    def test_user_password_is_nullable(db):
+        row = db.execute(
+            "SELECT is_nullable FROM information_schema.columns "
+            "WHERE table_name = 'user' AND column_name = 'password'"
+        ).fetchone()
+>       assert row == ("YES",)
+E       AssertionError: assert ('NO',) == ('YES',)
+E         
+E         At index 0 diff: 'NO' != 'YES'
+E         Use -v to get more diff
+
+tests/test_migrations.py:54: AssertionError
+______________________ test_user_email_lower_unique_index ______________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26effd9160>
+
+    def test_user_email_lower_unique_index(db):
+        row = db.execute(
+            "SELECT indexdef FROM pg_indexes WHERE indexname = 'user_email_lower_key'"
+        ).fetchone()
+>       assert row is not None, "缺少 user_email_lower_key"
+E       AssertionError: 缺少 user_email_lower_key
+E       assert None is not None
+
+tests/test_migrations.py:61: AssertionError
+______________________ test_email_case_duplicate_rejected ______________________
+
+tx = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26efbc9bd0>
+
+    def test_email_case_duplicate_rejected(tx):
+        sql = (
+            'INSERT INTO "user" (name, email, role, password, preference1, preference2, preference3) '
+            "VALUES ('P2 測試', %s, 'User', NULL, 1, 2, 3)"
+        )
+>       tx.execute(sql, ("Case@Example.com",))
+
+tests/test_migrations.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [INERROR] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7c26efbc9bd0>
+query = 'INSERT INTO "user" (name, email, role, password, preference1, preference2, preference3) VALUES (\'P2 測試\', %s, \'User\', NULL, 1, 2, 3)'
+params = ('Case@Example.com',)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.NotNullViolation: null value in column "password" of relation "user" violates not-null constraint
+E           DETAIL:  Failing row contains (7f43b68e-d712-4cb3-b14f-251695f127c4, P2 測試, Case@Example.com, User, null, null, null, null, 1, 2, 3, null, 2026-11-18 05:27:17.249979+00, 2026-11-18 05:27:17.249979+00).
+
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: NotNullViolation
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_signup_normalizes_email - AssertionErr...
+FAILED tests/test_member_auth.py::test_signup_duplicate_differs_by_case_is_409
+FAILED tests/test_member_auth.py::test_signup_concurrent_same_email_only_one_succeeds
+FAILED tests/test_member_auth.py::test_login_email_is_case_insensitive - Asse...
+FAILED tests/test_migrations.py::test_flyway_applied_v1_to_v3 - AssertionErro...
+FAILED tests/test_migrations.py::test_v3_applied - assert None == (True,)
+FAILED tests/test_migrations.py::test_user_password_is_nullable - AssertionEr...
+FAILED tests/test_migrations.py::test_user_email_lower_unique_index - Asserti...
+FAILED tests/test_migrations.py::test_email_case_duplicate_rejected - psycopg...
+9 failed, 17 passed in 0.74s
