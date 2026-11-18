@@ -433,8 +433,6 @@ RESETPW = "/api/v1/auth/userinfo/resetpw"
 NEW_PW = "Newpass12345"
 TOKEN_ERR_MSG = "Token 資料錯誤、無效或過期"
 HOME_PRODUCTS = "/api/v1/user/home/search/products"  # 只掛 auth_not_mandatory
-# Task 5 Step 3 才統一改用 captcha_cookie()；此 Task 先用現行明文 cookie
-PLAIN_CAPTCHA = {"captcha": "abcde"}
 
 
 def _reset_link(email: str) -> str:
@@ -469,7 +467,7 @@ def _resetpw(api, token: str, new_password: str = NEW_PW, **override):
         "input": "abcde",
         **override,
     }
-    return api.patch(RESETPW, json=body, cookies=PLAIN_CAPTCHA)
+    return api.patch(RESETPW, json=body, cookies={"captcha": captcha_cookie("abcde")})
 
 
 def _stored_password(db, user_id: str):

@@ -42,6 +42,8 @@ class Api(requests.Session):
 
     def request(self, method, url, *args, **kwargs):
         kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
+        # 測試要明確帶 cookie；不讓前一個請求（如 GET /captcha）的 Set-Cookie 殘留在 session 裡
+        self.cookies.clear()
         if url.startswith("/"):
             url = self.base + url
         return super().request(method, url, *args, **kwargs)
