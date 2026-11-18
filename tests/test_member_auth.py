@@ -758,3 +758,13 @@ def test_reset_token_concurrent_use_only_one_succeeds(make_user, initial_passwor
 
     assert login_status(passwords[winner_idx]) == 200
     assert login_status(passwords[loser_idx]) == 401
+
+
+def test_resetpw_success_clears_captcha_cookie(api, make_user):
+    user = make_user()
+    r = _resetpw_with_cookie(api, user, captcha_cookie("abcde"), "abcde")
+    assert r.status_code == 200, r.text
+    set_cookie = r.headers.get("Set-Cookie", "")
+    assert set_cookie.startswith("captcha=;"), set_cookie
+    assert "Expires=Thu, 01 Jan 1970" in set_cookie or "Max-Age=0" in set_cookie, set_cookie
+    assert "Max-Age=300" not in set_cookie, set_cookie

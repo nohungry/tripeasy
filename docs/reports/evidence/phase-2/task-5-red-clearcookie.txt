@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_resetpw_success_clears_captcha_cookie __________________
+tests/test_member_auth.py:769: in test_resetpw_success_clears_captcha_cookie
+    assert "Expires=Thu, 01 Jan 1970" in set_cookie or "Max-Age=0" in set_cookie, set_cookie
+E   AssertionError: captcha=; Max-Age=300; Path=/; Expires=Wed, 18 Nov 2026 06:22:06 GMT; HttpOnly; SameSite=Lax
+E   assert ('Expires=Thu, 01 Jan 1970' in 'captcha=; Max-Age=300; Path=/; Expires=Wed, 18 Nov 2026 06:22:06 GMT; HttpOnly; SameSite=Lax' or 'Max-Age=0' in 'captcha=; Max-Age=300; Path=/; Expires=Wed, 18 Nov 2026 06:22:06 GMT; HttpOnly; SameSite=Lax')
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_resetpw_success_clears_captcha_cookie
+1 failed, 76 deselected in 0.14s
