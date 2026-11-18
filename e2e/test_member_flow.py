@@ -50,7 +50,7 @@ def test_logout_stays_in_spa(page: Page, make_user):
 
     page.evaluate("window.__spa_marker = 'alive'")
     page.get_by_text("嗨！", exact=False).first.click()
-    page.get_by_role("link", name="登出", exact=True).click()
+    page.locator(".custom-dropdown-menu").get_by_role("link", name="登出", exact=True).click()
 
     page.wait_for_url("**/#/")
     assert page.evaluate("window.__spa_marker") == "alive"
