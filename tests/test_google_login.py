@@ -120,7 +120,7 @@ def test_google_member_cannot_login_with_default_password(api, db, google):
     assert login(claims).status_code == 200
     ((_, password, _, _),) = _user_row(db, claims["email"])
     assert password is None
-    for pw in ("Wrongpass123", "DefaultPassword123"):
+    for pw in ("Wrongpass123", "Default12345"):
         r = api.post(LOGIN, json={"email": claims["email"], "password": pw})
         assert r.status_code == 401, r.text
         assert r.json()["message"] == NULL_PW_LOGIN_MSG
