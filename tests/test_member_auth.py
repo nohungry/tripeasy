@@ -298,7 +298,8 @@ def test_get_profile_info_ok(api, db, make_user):
     r = api.get(PROFILE_INFO, headers=auth_header(user))
     assert r.status_code == 200, r.text
     got = r.json()["data"]["user"]
-    assert got["name"] == "P0 測試"
+    (db_name,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
+    assert got["name"] == db_name
     assert got["email"] == user["email"]
 
 
@@ -309,25 +310,34 @@ def test_patch_profile_info_ok_and_validation(api, db, make_user):
 
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": ["美食探索", "都市感官", "自然療癒"]})
     assert r.status_code == 200, r.text
-    row = db.execute(
-        'SELECT name, preference1, preference2, preference3 FROM "user" WHERE user_id = %s', (user["user_id"],)
-    ).fetchone()
-    assert tuple(row) == ("新名字", 4, 5, 6)
+    got = r.json()["data"]["user"]
+    assert got["name"] == "新名字"
+    assert got["preferences"] == ["美食探索", "都市感官", "自然療癒"]
+
+    def _stored():
+        row = db.execute(
+            'SELECT name, preference1, preference2, preference3 FROM "user" WHERE user_id = %s', (user["user_id"],)
+        ).fetchone()
+        return tuple(row)
+
+    assert _stored() == ("新名字", 4, 5, 6)
 
     r = api.patch(PROFILE_INFO, headers=h, json={})
     assert r.status_code == 400 and "請至少填寫" in r.json()["message"], r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "a!b", "preference": prefs})
-    assert r.status_code == 400, r.text
+    assert r.status_code == 400 and "特殊字元" in r.json()["message"], r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": prefs[:2]})
-    assert r.status_code == 400, r.text
+    assert r.status_code == 400 and "需包含 3 個項目" in r.json()["message"], r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": ["探索冒險", "放鬆療癒", "不存在"]})
-    assert r.status_code == 409, r.text
+    assert r.status_code == 409 and "包含無效的偏好名稱" in r.json()["message"], r.text
+    # 被拒絕的請求不得改到資料
+    assert _stored() == ("新名字", 4, 5, 6)
 
 
 def test_avatar_upload_validation(api, make_user):
     h = auth_header(make_user())
     r = api.patch(PROFILE_AVATAR, headers=h, files={"image": ("a.txt", b"hello", "text/plain")})
-    assert r.status_code == 400, r.text
+    assert r.status_code == 400 and "只允許上傳圖片格式" in r.json()["message"], r.text
     r = api.patch(PROFILE_AVATAR, headers=h)
     assert r.status_code == 400 and "請提供圖片" in r.json()["message"], r.text
     big = b"\x89PNG\r\n\x1a\n" + b"0" * (2 * 1024 * 1024 + 1)
@@ -336,15 +346,21 @@ def test_avatar_upload_validation(api, make_user):
 
 
 def test_profile_change_password_validation(api, make_user):
-    h = auth_header(make_user())
+    user = make_user()
+    h = auth_header(user)
     new = "Newpass12345"
 
     r = api.patch(PROFILE_RESET_PW, headers=h, json={"password": "Wrongpass123", "new_password": new, "confirm_password": new})
     assert r.status_code == 400 and "舊密碼輸入錯誤" in r.json()["message"], r.text
     r = api.patch(PROFILE_RESET_PW, headers=h, json={"password": TEST_PASSWORD, "new_password": TEST_PASSWORD, "confirm_password": TEST_PASSWORD})
-    assert r.status_code == 400, r.text
+    assert r.status_code == 400 and "新密碼與舊密碼相同" in r.json()["message"], r.text
     r = api.patch(PROFILE_RESET_PW, headers=h, json={"password": TEST_PASSWORD, "new_password": new, "confirm_password": "Other12345"})
     assert r.status_code == 400 and "新密碼與驗證密碼不一致" in r.json()["message"], r.text
+    # 三個都被拒：原密碼仍能登入，新密碼不能
+    r = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    r = api.post(LOGIN, json={"email": user["email"], "password": new})
+    assert r.status_code == 401, r.text
 
 
 def test_login_response_has_avatar_url(api, db, make_user):
@@ -359,3 +375,22 @@ def test_login_response_has_avatar_url(api, db, make_user):
     r = api.get(LOGIN_STATUS, headers=auth_header(user))
     assert r.status_code == 200, r.text
     assert r.json()["data"]["user"]["avatar_url"] == url
+
+
+@pytest.mark.xfail(strict=True, reason="P3：PATCH /info 部分更新（只給 name）會 500；中介層假設 preference 必有")
+def test_patch_profile_info_name_only(api, db, make_user):
+    user = make_user()
+    r = api.patch(PROFILE_INFO, headers=auth_header(user), json={"name": "新名字"})
+    assert r.status_code == 200, r.text
+    (name,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
+    assert name == "新名字"
+
+
+@pytest.mark.xfail(strict=True, reason="P3：PATCH /info 部分更新（只給 preference）會 500；controller 一律寫入 name")
+def test_patch_profile_info_preference_only(api, db, make_user):
+    user = make_user()
+    (before,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
+    r = api.patch(PROFILE_INFO, headers=auth_header(user), json={"preference": ["美食探索", "都市感官", "自然療癒"]})
+    assert r.status_code == 200, r.text
+    (after,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
+    assert after == before
