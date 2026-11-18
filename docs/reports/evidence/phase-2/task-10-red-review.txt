@@ -1,0 +1,40 @@
+# 舊實作（尚未轉 409）：完整檔案單次跑 19 passed（併發案例該次剛好綠）；單跑併發案例 10 次：紅 8 次、綠 2 次（見檔尾）
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- /home/nohungry/project/tripeasy/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 19 items
+
+tests/test_google_login.py::test_google_new_user_has_null_password PASSED [  5%]
+tests/test_google_login.py::test_google_unverified_email_rejected[false] PASSED [ 10%]
+tests/test_google_login.py::test_google_unverified_email_rejected[missing] PASSED [ 15%]
+tests/test_google_login.py::test_google_unverified_email_rejected[string-true] PASSED [ 21%]
+tests/test_google_login.py::test_google_unverified_email_rejected[int-1] PASSED [ 26%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[false] PASSED [ 31%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[missing] PASSED [ 36%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[string-true] PASSED [ 42%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[int-1] PASSED [ 47%]
+tests/test_google_login.py::test_google_email_case_matches_existing PASSED [ 52%]
+tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens PASSED [ 57%]
+tests/test_google_login.py::test_google_member_cannot_login_with_default_password PASSED [ 63%]
+tests/test_google_login.py::test_google_rebind_keeps_password PASSED     [ 68%]
+tests/test_google_login.py::test_google_login_response_token_works PASSED [ 73%]
+tests/test_google_login.py::test_google_login_missing_code_is_400 PASSED [ 78%]
+tests/test_google_login.py::test_google_login_bogus_code_rejected PASSED [ 84%]
+tests/test_google_login.py::test_google_new_user_email_stored_lowercase PASSED [ 89%]
+tests/test_google_login.py::test_google_rebind_different_sub_same_email_current_behavior PASSED [ 94%]
+tests/test_google_login.py::test_google_new_user_concurrent_same_email_not_500 PASSED [100%]
+
+============================== 19 passed in 1.89s ==============================
+1 failed, 18 deselected in 0.12s
+1 failed, 18 deselected in 0.12s
+1 failed, 18 deselected in 0.12s
+1 failed, 18 deselected in 0.13s
+1 passed, 18 deselected in 0.13s
+1 failed, 18 deselected in 0.12s
+1 failed, 18 deselected in 0.13s
+1 failed, 18 deselected in 0.13s
+1 failed, 18 deselected in 0.12s
+1 passed, 18 deselected in 0.12s
