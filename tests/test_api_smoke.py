@@ -358,7 +358,13 @@ def test_checkout_summary_unpaid_order(api, db, alice, alice_h):
 
 def test_favorite_list(api, alice_h, alice):
     # 這支 API 會送兩次回應（契約 §4.2 已記錄）；第一次回應是完整資料，足以驗證 view
-    r = api.get(f"{BASE}/user/collection/info/all", headers=alice_h, params=PAGING)
+    # Connection: close — 雙重回應會讓 Express destroy socket，下一個請求若重用連線會間歇 ConnectionError
+    # （已知 bug，docs/reports/phase-1.md:323）；backend 修好後移除這個 header
+    r = api.get(
+        f"{BASE}/user/collection/info/all",
+        headers={**alice_h, "Connection": "close"},
+        params=PAGING,
+    )
     rows = data_rows(r)
     assert_has_keys(rows[0], contract_cols("user_favorite", replace_preference=True))
     assert {row["收藏人員編號"] for row in rows} == {alice["user_id"]}
