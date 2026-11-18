@@ -395,6 +395,12 @@ def test_google_login_via_mock(page: Page, new_email, db):
         "picture": "https://example.com/g.png",
     }
 
+    google_posts: list[str] = []
+    page.on(
+        "request",
+        lambda r: google_posts.append(r.url) if r.method == "POST" and r.url.endswith("/login/google") else None,
+    )
+
     page.goto(f"{FRONTEND_BASE}/#/admin/login")
     page.locator(".icon-circle.google").click()
 
@@ -404,8 +410,12 @@ def test_google_login_via_mock(page: Page, new_email, db):
     page.get_by_placeholder("Optional claims JSON value").fill(json.dumps(claims))
     page.get_by_role("button", name="Sign-in").click()
 
-    # 回跳前端：main.js 把 ?code= 轉進 hash 路由，登入成功後進會員中心
+    # 回跳前端：oauthRedirect.js 把 ?code= 轉進 hash 路由，loginPage 處理後清掉 code，登入成功後進會員中心
+    page.wait_for_url(re.compile(r"/#/admin/login$"), timeout=10_000)
+    assert "code=" not in page.url
     page.wait_for_url("**/#/admin/userprofile", timeout=15_000)
+    assert "code=" not in page.url
+    assert len(google_posts) == 1, google_posts
     expect(page.get_by_label("信箱")).to_have_value(email, timeout=10_000)
     assert page.evaluate("localStorage.getItem('authToken')")
 
