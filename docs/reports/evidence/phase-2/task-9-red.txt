@@ -1,0 +1,437 @@
+..........FF.FF...FF                                                     [100%]
+=================================== FAILURES ===================================
+_________________________ test_avatar_upload[chromium] _________________________
+e2e/test_member_flow.py:230: in test_avatar_upload
+    page.get_by_label("上傳頭像").set_input_files(str(AVATAR_FIXTURE))
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:13376: in set_input_files
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:841: in set_input_files
+    return await self._frame.set_input_files(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:1072: in set_input_files
+    await self._channel.setInputFiles(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.set_input_files: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_label("上傳頭像")
+______________ test_change_password_redirects_to_login[chromium] _______________
+e2e/test_member_flow.py:253: in test_change_password_redirects_to_login
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:21479: in wait_for_url
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:713: in wait_for_url
+    return await self._main_frame.wait_for_url(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:356: in wait_for_url
+    await self.wait_for_navigation(url=url, wait_until=wait_until, timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:285: in rest
+    navigated_event: "channels.FrameNavigatedEvent" = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 10000ms exceeded.
+E   =========================== logs ===========================
+E   waiting for navigation to "**/#/admin/login" until "load"
+E   ============================================================
+_______________ test_expired_token_redirects_to_login[chromium] ________________
+e2e/test_member_flow.py:285: in test_expired_token_redirects_to_login
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:21479: in wait_for_url
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:713: in wait_for_url
+    return await self._main_frame.wait_for_url(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:356: in wait_for_url
+    await self.wait_for_navigation(url=url, wait_until=wait_until, timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:285: in rest
+    navigated_event: "channels.FrameNavigatedEvent" = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 10000ms exceeded.
+E   =========================== logs ===========================
+E   waiting for navigation to "**/#/admin/login" until "load"
+E   ============================================================
+___________ test_profile_save_network_error_shows_message[chromium] ____________
+e2e/test_member_flow.py:306: in test_profile_save_network_error_shows_message
+    expect(page.locator(".swal2-icon-error")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" locator(".swal2-icon-error") with timeout 5000ms
+E     - waiting for locator(".swal2-icon-error")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/admin/userprofile#"
+E   - link "登出":
+E     - /url: "#"
+E   - img "頭像"
+E   - text: 斷線改名  會員資訊  會員等級  個人偏好設定  個人訂單查看  會員中心  會員資訊 姓名
+E   - textbox "姓名": 斷線改名
+E   - text:  信箱
+E   - textbox "信箱" [disabled]: p0-7190b244@example.com
+E   - text: 個人偏好
+E   - combobox "個人偏好":
+E     - option "探索冒險" [selected]
+E     - option "放鬆療癒" [disabled]
+E     - option "文化體驗" [disabled]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: 次要偏好
+E   - combobox "次要偏好":
+E     - option "探索冒險" [disabled]
+E     - option "放鬆療癒" [selected]
+E     - option "文化體驗" [disabled]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: 第三偏好
+E   - combobox "第三偏好":
+E     - option "探索冒險" [disabled]
+E     - option "放鬆療癒" [disabled]
+E     - option "文化體驗" [selected]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - button " 儲存設定"
+E   - text:  密碼管理
+E   - textbox "請輸入舊密碼"
+E   - textbox "請輸入新密碼" [disabled]
+E   - text:  
+E   - textbox "再次輸入新密碼" [disabled]
+E   - text:  
+E   - button " 更新密碼"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+_______________________ test_coming_soon_tabs[chromium] ________________________
+e2e/test_member_flow.py:342: in test_coming_soon_tabs
+    expect(page.get_by_text("即將開放", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("即將開放", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("即將開放", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/admin/userprofile#"
+E   - link "登出":
+E     - /url: "#"
+E   - img "頭像"
+E   - text: P0 測試  會員資訊  會員等級  個人偏好設定  個人訂單查看  會員中心
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________ test_require_auth_network_error_keeps_token[chromium] _____________
+e2e/test_member_flow.py:354: in test_require_auth_network_error_keeps_token
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:21479: in wait_for_url
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:713: in wait_for_url
+    return await self._main_frame.wait_for_url(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:356: in wait_for_url
+    await self.wait_for_navigation(url=url, wait_until=wait_until, timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:285: in rest
+    navigated_event: "channels.FrameNavigatedEvent" = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 10000ms exceeded.
+E   =========================== logs ===========================
+E   waiting for navigation to "**/#/admin/login" until "load"
+E     navigated to "http://localhost:5173/#/admin/userprofile"
+E   ============================================================
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_avatar_upload[chromium] - playwright._im...
+FAILED e2e/test_member_flow.py::test_change_password_redirects_to_login[chromium]
+FAILED e2e/test_member_flow.py::test_expired_token_redirects_to_login[chromium]
+FAILED e2e/test_member_flow.py::test_profile_save_network_error_shows_message[chromium]
+FAILED e2e/test_member_flow.py::test_coming_soon_tabs[chromium] - AssertionEr...
+FAILED e2e/test_member_flow.py::test_require_auth_network_error_keeps_token[chromium]
+6 failed, 14 passed in 122.40s (0:02:02)

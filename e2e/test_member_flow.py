@@ -1,11 +1,22 @@
+import datetime
 import re
 import time
+from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import API_BASE, FRONTEND_BASE, MAILPIT_BASE, TEST_PASSWORD, captcha_cookie
+from e2e.conftest import (
+    API_BASE,
+    FRONTEND_BASE,
+    MAILPIT_BASE,
+    TEST_PASSWORD,
+    auth_header,
+    captcha_cookie,
+    login_token,
+)
 
 
 def test_signup_login_profile_main_flow(page: Page, new_email):
@@ -168,3 +179,177 @@ def test_forgot_password_via_mailpit(page: Page, make_user):
     _login_via_ui(reset_page, user["email"], new_password)
     reset_page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
     expect(reset_page.get_by_label("信箱")).to_have_value(user["email"])
+
+
+# ---- Task 9：會員中心 ----
+
+AVATAR_FIXTURE = Path(__file__).parent / "fixtures" / "avatar.png"
+EXPIRED = datetime.timedelta(seconds=-60)
+
+
+def _login_to_profile(page: Page, user: dict) -> None:
+    page.goto(f"{FRONTEND_BASE}/#/admin/login")
+    _login_via_ui(page, user["email"], TEST_PASSWORD)
+    page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
+    expect(page.get_by_label("信箱")).to_have_value(user["email"])
+
+
+# 註：「儲存設定」「更新密碼」按鈕內有 bootstrap-icons 字型圖示，圖示字元會進入 accessible name，
+# 無法用 exact=True，改用子字串比對。
+
+
+def _edit_name(page: Page, new_name: str) -> None:
+    # 姓名欄預設 disabled，要先按旁邊的編輯圖示
+    page.locator("#userinfo .form-group").filter(has=page.locator("#name")).locator(".edit-icon").click()
+    page.get_by_label("姓名").fill(new_name)
+
+
+def test_profile_edit_name_and_preferences(page: Page, make_user):
+    user = make_user()
+    _login_to_profile(page, user)
+
+    _edit_name(page, "新名字")
+    page.get_by_label("個人偏好", exact=True).select_option("懶人輕鬆")
+    with page.expect_response(re.compile(r"/user/userinfo/info$")) as resp:
+        page.get_by_role("button", name="儲存設定").click()
+    assert resp.value.status == 200
+
+    page.reload()
+    expect(page).to_have_url(re.compile(r"#/admin/userprofile$"))
+    expect(page.get_by_label("姓名")).to_have_value("新名字")
+    expect(page.get_by_label("個人偏好", exact=True)).to_have_value("懶人輕鬆")
+
+
+def test_avatar_upload(page: Page, make_user, db):
+    user = make_user()
+    _login_to_profile(page, user)
+
+    sidebar_img = page.locator(".sidebar .headimg")
+    old_src = sidebar_img.get_attribute("src")
+    with page.expect_response(re.compile(r"/user/userinfo/avatar$")) as resp:
+        page.get_by_label("上傳頭像").set_input_files(str(AVATAR_FIXTURE))
+    assert resp.value.status == 200
+    new_url = resp.value.json()["data"]["avatar_url"]
+
+    assert new_url != old_src
+    expect(sidebar_img).to_have_attribute("src", new_url)
+    expect(page.locator(".user-dropdown #userPicture")).to_have_attribute("src", new_url)
+    (db_url,) = db.execute('SELECT avatar_url FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
+    assert db_url == new_url
+
+
+def test_change_password_redirects_to_login(page: Page, make_user):
+    new_password = "Newpass123"
+    user = make_user()
+    _login_to_profile(page, user)
+
+    page.get_by_placeholder("請輸入舊密碼").fill(TEST_PASSWORD)
+    page.locator("#password .pw-edit-icon").nth(0).click()
+    page.locator("#password .pw-edit-icon").nth(1).click()
+    page.get_by_placeholder("請輸入新密碼").fill(new_password)
+    page.get_by_placeholder("再次輸入新密碼").fill(new_password)
+    page.get_by_role("button", name="更新密碼").click()
+
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+    assert page.evaluate("localStorage.getItem('authToken')") is None
+    _login_via_ui(page, user["email"], new_password)
+    page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
+    expect(page.get_by_label("信箱")).to_have_value(user["email"])
+
+
+def test_null_password_user_sees_set_password_hint(page: Page, make_user):
+    user = make_user(password=None)
+    token = auth_header(user)["Authorization"].removeprefix("Bearer ")
+    page.add_init_script(f"localStorage.setItem('authToken', '{token}')")
+    page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+    expect(page.get_by_label("信箱")).to_have_value(user["email"])
+
+    page.get_by_placeholder("請輸入舊密碼").fill("Whatever123")
+    page.locator("#password .pw-edit-icon").nth(0).click()
+    page.locator("#password .pw-edit-icon").nth(1).click()
+    page.get_by_placeholder("請輸入新密碼").fill("Newpass123")
+    page.get_by_placeholder("再次輸入新密碼").fill("Newpass123")
+    page.get_by_role("button", name="更新密碼").click()
+
+    expect(page.get_by_role("dialog")).to_contain_text("此帳號尚未設定密碼，請透過忘記密碼設定。")
+
+
+def test_expired_token_redirects_to_login(page: Page, make_user):
+    user = make_user()
+    _login_to_profile(page, user)
+
+    page.evaluate("t => localStorage.setItem('authToken', t)", login_token(user, exp_delta=EXPIRED))
+    _edit_name(page, "過期後改名")
+    page.get_by_role("button", name="儲存設定").click()
+
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+    assert page.evaluate("localStorage.getItem('authToken')") is None
+    assert page.evaluate("localStorage.length") == 0
+
+
+def test_profile_save_network_error_shows_message(page: Page, make_user):
+    user = make_user()
+    page_errors: list[str] = []
+    page.on("pageerror", lambda err: page_errors.append(str(err)))
+    _login_to_profile(page, user)
+
+    def handler(route):
+        if route.request.method == "PATCH":
+            route.abort()
+        else:
+            route.continue_()
+
+    page.route("**/api/v1/user/userinfo/info", handler)
+    _edit_name(page, "斷線改名")
+    page.get_by_role("button", name="儲存設定").click()
+
+    expect(page.locator(".swal2-icon-error")).to_be_visible()
+    assert not [e for e in page_errors if "Cannot read properties of undefined" in e], page_errors
+
+
+def test_resetpw_page_opens_with_expired_token(page: Page, make_user):
+    """既有行為的回歸測試：過期 token 不得讓重設密碼頁被導走（一開始就綠）。"""
+    user = make_user()
+    page.add_init_script(
+        f"localStorage.setItem('authToken', '{login_token(user, exp_delta=EXPIRED)}')"
+    )
+    with page.expect_response("**/login/status"):
+        page.goto(f"{FRONTEND_BASE}/#/admin/resetpw?token=x")
+    expect(page.get_by_role("heading", name="修改密碼")).to_be_visible()
+    assert "#/admin/resetpw" in page.url
+
+
+@pytest.mark.parametrize(
+    "path,heading", [("register", "會員註冊"), ("forgotpw", "忘記密碼")]
+)
+def test_register_and_forgotpw_pages_open_with_expired_token(page: Page, make_user, path, heading):
+    """既有行為的回歸測試（一開始就綠）。"""
+    user = make_user()
+    page.add_init_script(
+        f"localStorage.setItem('authToken', '{login_token(user, exp_delta=EXPIRED)}')"
+    )
+    with page.expect_response("**/login/status"):
+        page.goto(f"{FRONTEND_BASE}/#/admin/{path}")
+    expect(page.get_by_role("heading", name=heading)).to_be_visible()
+    assert f"#/admin/{path}" in page.url
+
+
+def test_coming_soon_tabs(page: Page, make_user):
+    user = make_user()
+    _login_to_profile(page, user)
+    for tab in ["個人偏好設定", "會員等級", "個人訂單查看"]:
+        page.locator(".sidebar").get_by_text(tab, exact=True).click()
+        expect(page.get_by_text("即將開放", exact=True)).to_be_visible()
+
+
+def test_require_auth_network_error_keeps_token(page: Page, make_user):
+    user = make_user()
+    _login_to_profile(page, user)
+
+    page.route("**/login/status", lambda route: route.abort())
+    # 先離開會員中心，確保接下來的 hash 跳轉會重新觸發 requireAuth
+    page.goto(f"{FRONTEND_BASE}/#/")
+    page.goto(f"{FRONTEND_BASE}/#/admin/userprofile")
+
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+    assert page.evaluate("localStorage.getItem('authToken')") is not None
