@@ -620,7 +620,8 @@ def test_null_password_user_can_set_password_via_reset(api, make_user):
 # 以下為 Task 4 安全測試補強：一開始就綠（既有／新實作已涵蓋的分支）。
 def test_auth_not_mandatory_without_header_is_not_401(api):
     r = api.get(HOME_PRODUCTS)
-    assert r.status_code != 401, r.text
+    # 缺必填 page 才回 400，證明請求通過 auth_not_mandatory、進到下一層驗證
+    assert r.status_code == 400 and "page" in r.json()["message"], r.text
 
 
 def _bad_tokens(user: dict) -> dict:
@@ -656,6 +657,9 @@ def test_demoted_admin_old_token_loses_admin(api, db, make_user):
     db.execute('UPDATE "user" SET role = %s WHERE user_id = %s', ("User", admin["user_id"]))
     r = api.patch(ROLES, headers=headers, json=body)
     assert r.status_code == 403, r.text
+    # role 是換成 DB 的值，而不是一律拒絕：同一個舊 token 仍可用會員 API
+    status = _info_status(api, headers["Authorization"].split(" ")[1])
+    assert status == 200
 
 
 def test_change_role_to_user_keeps_member_access(api, db, make_user):
