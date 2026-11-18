@@ -1,0 +1,43 @@
+e2e/test_member_flow.py::test_signup_login_profile_main_flow[chromium] FAILED [ 16%]
+e2e/test_member_flow.py::test_profile_requires_login[chromium] FAILED    [ 33%]
+e2e/test_member_flow.py::test_unknown_route_shows_404[chromium] FAILED   [ 50%]
+e2e/test_member_flow.py::test_logout_stays_in_spa[chromium] FAILED       [ 66%]
+e2e/test_member_flow.py::test_facebook_login_not_offered[chromium] FAILED [ 83%]
+e2e/test_member_flow.py::test_login_lockout_message[chromium] PASSED     [100%]
+________________ test_signup_login_profile_main_flow[chromium] _________________
+e2e/test_member_flow.py:19: in test_signup_login_profile_main_flow
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 10000ms exceeded.
+E   waiting for navigation to "**/#/admin/login" until "load"
+E     navigated to "http://localhost:5173/#/admin/register"
+E     navigated to "http://localhost:5173/admin/login"
+E     navigated to "http://localhost:5173/admin/login#/"
+E     navigated to "http://localhost:5173/admin/login#/"
+____________________ test_profile_requires_login[chromium] _____________________
+e2e/test_member_flow.py:37: in test_profile_requires_login
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 30000ms exceeded.
+E   waiting for navigation to "**/#/admin/login" until "load"
+____________________ test_unknown_route_shows_404[chromium] ____________________
+e2e/test_member_flow.py:42: in test_unknown_route_shows_404
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E   Aria snapshot:
+______________________ test_logout_stays_in_spa[chromium] ______________________
+e2e/test_member_flow.py:49: in test_logout_stays_in_spa
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 10000ms exceeded.
+E   waiting for navigation to "**/#/admin/userprofile" until "load"
+E     navigated to "http://localhost:5173/#/admin/login"
+E     navigated to "http://localhost:5173/admin/userprofile"
+E     navigated to "http://localhost:5173/admin/userprofile#/"
+E     navigated to "http://localhost:5173/admin/userprofile#/"
+__________________ test_facebook_login_not_offered[chromium] ___________________
+e2e/test_member_flow.py:62: in test_facebook_login_not_offered
+E   assert (1 == 0 or 0 > 0)
+E    +  where 1 = count()
+FAILED e2e/test_member_flow.py::test_signup_login_profile_main_flow[chromium]
+FAILED e2e/test_member_flow.py::test_profile_requires_login[chromium] - playw...
+FAILED e2e/test_member_flow.py::test_unknown_route_shows_404[chromium] - Asse...
+FAILED e2e/test_member_flow.py::test_logout_stays_in_spa[chromium] - playwrig...
+FAILED e2e/test_member_flow.py::test_facebook_login_not_offered[chromium] - a...
+==================== 5 failed, 1 passed in 60.32s (0:01:00) ====================
