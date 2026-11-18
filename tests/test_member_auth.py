@@ -212,3 +212,18 @@ def test_forgetpw_validation_and_unknown_email(api):
     assert api.post(FORGET, json={"email": "not-an-email"}).status_code == 400
     r = api.post(FORGET, json={"email": f"nobody.{uuid.uuid4().hex[:8]}@example.com"})
     assert r.status_code == 404, r.text
+
+
+def test_checkout_preview_email_lookup_is_case_insensitive(api, make_user):
+    """結帳預覽以 body 的 email 查會員；大寫 email 不得回「查無此使用者」（用不存在的 order_id，預期走到「查無此訂單項目」）。"""
+    user = make_user(email=f"co.{uuid.uuid4().hex[:8]}@example.com")
+    body = {
+        "user": {"name": "測試員", "email": user["email"].upper(), "address": "台北市", "phone_number": "0912345678"},
+        "payment_method": "atm",
+        "discount": {},
+    }
+    r = api.patch(
+        f"/api/v1/user/checkout/preview/{uuid.uuid4()}", headers=auth_header(user), json=body
+    )
+    assert r.status_code == 404, r.text
+    assert r.json()["message"] == "查無此訂單項目"
