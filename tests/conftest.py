@@ -79,8 +79,20 @@ def tx():
 
 
 def delete_user(db, user_id: str) -> None:
-    """依 FK 順序刪除使用者和它的附屬資料。"""
-    for table in ('"socialLogin"', "point_record", "user_level"):
+    """依 FK 順序刪除使用者和它的附屬資料（涵蓋 V1 所有參照 "user" 的表，含 orders / cart 底下的間接相依）。"""
+    # 先清掉依附在「該會員的 orders / cart」底下的子表
+    order_ids = "SELECT order_id FROM orders WHERE user_id = %s"
+    cart_ids = "SELECT cart_id FROM cart WHERE user_id = %s"
+    db.execute(f"DELETE FROM order_item WHERE order_id IN ({order_ids})", (user_id,))
+    db.execute(f"DELETE FROM payment WHERE order_id IN ({order_ids})", (user_id,))
+    db.execute(f"DELETE FROM point_record WHERE order_id IN ({order_ids})", (user_id,))
+    db.execute(f"DELETE FROM user_coupon WHERE order_id IN ({order_ids})", (user_id,))
+    db.execute(f"DELETE FROM cart_item WHERE cart_id IN ({cart_ids})", (user_id,))
+    # 再清直接參照 "user" 的表（orders、cart 放最後）
+    for table in (
+        '"socialLogin"', "user_level", "point_record", "user_coupon", "payment", "review",
+        "hidden_play", "auto_setting", "favorite", "orders", "cart",
+    ):  # fmt: skip
         db.execute(f"DELETE FROM {table} WHERE user_id = %s", (user_id,))
     db.execute('DELETE FROM "user" WHERE user_id = %s', (user_id,))
 

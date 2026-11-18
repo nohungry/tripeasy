@@ -280,7 +280,15 @@ def test_points_level_alice_has_null_coupon_placeholder(api, alice_h, alice):
     assert me["coupon"] == [dict.fromkeys(COUPON_KEYS)]
 
 
-def test_points_level_carol_has_usable_coupon(api, users):
+def test_points_level_carol_has_usable_coupon(api, users, db):
+    # 有效期限是以 seed 載入日為錨點，過期就 skip 而不是紅燈
+    expire = db.execute(
+        "SELECT c.expire_date >= now() FROM user_coupon uc JOIN coupon c USING (coupon_id) "
+        'JOIN "user" u ON u.user_id = uc.user_id '
+        "WHERE u.email = 'carol@example.com' AND c.code = 'TRV010'"
+    ).fetchone()
+    if expire is None or not expire[0]:
+        pytest.skip("seed 優惠卷已過期，需重建 seed：docker compose down -v 後重新 docker compose up -d --build（seed 日期以載入日為錨點）")
     # carol 的 TRV010 是 status = 0。注意：TRV010 的 expire_date 由 db/seed-build/build_seed.py 以載入日為錨點
     # （+133 天），到期後 view 的 expire_date >= now() 會把它濾掉，這支測試就要重載 seed（seed 日期維護點）。
     carol = users["carol@example.com"]
@@ -405,16 +413,9 @@ def test_admin_change_info(api, bob_h):
     )  # fmt: skip
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="契約 §4.2：GET /admin/product 一律 500，兩個獨立 bug 都要修——"
-    "middlewares/product/index.js:296 讀 req.user.tour_ids，JWT 只有 {id, role} 所以是 undefined；"
-    "index.js:312–315 對 map 回傳的 Promise 陣列讀 .rows。controller 不在 P1 範圍，P2 處理",
-)
 def test_admin_product_list(api, bob_h):
     r = api.get(f"{BASE}/admin/product", headers=bob_h, params={"page": 1, "limit": 20})
-    assert r.status_code == 200, r.text  # 目前是 500 → AssertionError → xfail
+    assert r.status_code == 200, r.text
     rows = data_rows(r)
     assert_has_keys(
         rows[0],
