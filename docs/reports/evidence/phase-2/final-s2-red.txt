@@ -1,0 +1,30 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collected 23 items / 20 deselected / 3 selected
+
+tests/test_google_login.py FF.                                           [100%]
+
+=================================== FAILURES ===================================
+___________________ test_google_login_keeps_uploaded_avatar ____________________
+tests/test_google_login.py:299: in test_google_login_keeps_uploaded_avatar
+    assert _avatar_of(db, claims["email"]) == uploaded
+E   AssertionError: assert 'https://example.com/g.png' == 'http://local...34.677Z-a.png'
+E     
+E     - http://localhost:3000/uploads/userProfile/2026-11-18T08_45_34.677Z-a.png
+E     + https://example.com/g.png
+_________________ test_google_first_bind_keeps_existing_avatar _________________
+tests/test_google_login.py:310: in test_google_first_bind_keeps_existing_avatar
+    assert _avatar_of(db, user["email"]) == existing
+E   AssertionError: assert 'https://example.com/g.png' == 'https://example.com/mine.png'
+E     
+E     - https://example.com/mine.png
+E     ?                     ^^^^
+E     + https://example.com/g.png
+E     ?                     ^
+=========================== short test summary info ============================
+FAILED tests/test_google_login.py::test_google_login_keeps_uploaded_avatar - ...
+FAILED tests/test_google_login.py::test_google_first_bind_keeps_existing_avatar
+================== 2 failed, 1 passed, 20 deselected in 0.37s ==================

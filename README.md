@@ -31,6 +31,7 @@ scripts/ci.sh        # 啟動全部服務並跑測試
 |---|---|---|---|
 | P0 地基 | `phase-0` | `phase-0` | [phase-0.md](docs/reports/phase-0.md) |
 | P1 路由、seed、DB 契約 | `phase-1` | `phase-0` | [phase-1.md](docs/reports/phase-1.md) |
+| P2 會員 | `phase-2` | `phase-2` | [phase-2.md](docs/reports/phase-2.md) |
 
 ## 文件
 

@@ -1,0 +1,58 @@
+.FFFFFF..FF.                                                             [100%]
+=================================== FAILURES ===================================
+__________________ test_reset_token_cannot_access_member_api ___________________
+tests/test_member_auth.py:496: in test_reset_token_cannot_access_member_api
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"failed","message":"您沒有權限進行此操作"}
+E   assert 403 == 401
+E    +  where 403 = <Response [403]>.status_code
+____________________________ test_reset_link_shape _____________________________
+tests/test_member_auth.py:503: in test_reset_link_shape
+    assert prefix == f"{FRONTEND_PATH}/#/admin/resetpw?token="
+E   AssertionError: assert 'http://local...esetpw?token=' == 'http://local...esetpw?token='
+E     
+E     - http://localhost:5173/#/admin/resetpw?token=
+E     ?                       --
+E     + http://localhost:5173/admin/resetpw?token=
+____________________ test_login_token_cannot_reset_password ____________________
+tests/test_member_auth.py:510: in test_login_token_cannot_reset_password
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"密碼修改成功"}
+E   assert 200 == 400
+E    +  where 200 = <Response [200]>.status_code
+________________________ test_reset_token_is_single_use ________________________
+tests/test_member_auth.py:520: in test_reset_token_is_single_use
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"密碼修改成功"}
+E   assert 200 == 400
+E    +  where 200 = <Response [200]>.status_code
+___________________ test_old_login_token_invalid_after_reset ___________________
+tests/test_member_auth.py:533: in test_old_login_token_invalid_after_reset
+    assert status == 401
+E   assert 200 == 401
+______________ test_old_login_token_invalid_after_profile_change _______________
+tests/test_member_auth.py:551: in test_old_login_token_invalid_after_profile_change
+    assert status == 401
+E   assert 200 == 401
+_____________________ test_forged_token_without_pwv_is_401 _____________________
+tests/test_member_auth.py:593: in test_forged_token_without_pwv_is_401
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"success","message":"查詢成功","data":{"user":{"user_id":"342b1afb-3956-4b0d-89ee-1163b1853a3f","name":"P0 測試","email":"p0-613519a3@example.com","avatar_url":null,"preferences":["探索冒險","放鬆療癒","文化體驗"]}}}
+E   assert 200 == 401
+E    +  where 200 = <Response [200]>.status_code
+______________________ test_token_of_deleted_user_is_401 _______________________
+tests/test_member_auth.py:601: in test_token_of_deleted_user_is_401
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 401
+E    +  where 500 = <Response [500]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_reset_token_cannot_access_member_api
+FAILED tests/test_member_auth.py::test_reset_link_shape - AssertionError: ass...
+FAILED tests/test_member_auth.py::test_login_token_cannot_reset_password - As...
+FAILED tests/test_member_auth.py::test_reset_token_is_single_use - AssertionE...
+FAILED tests/test_member_auth.py::test_old_login_token_invalid_after_reset - ...
+FAILED tests/test_member_auth.py::test_old_login_token_invalid_after_profile_change
+FAILED tests/test_member_auth.py::test_forged_token_without_pwv_is_401 - Asse...
+FAILED tests/test_member_auth.py::test_token_of_deleted_user_is_401 - Asserti...
+8 failed, 4 passed, 42 deselected in 1.31s

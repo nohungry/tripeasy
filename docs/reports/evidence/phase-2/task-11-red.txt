@@ -1,0 +1,42 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collected 1 item
+
+e2e/test_member_flow.py F                                                [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_google_login_via_mock[chromium] _____________________
+e2e/test_member_flow.py:408: in test_google_login_via_mock
+    page.wait_for_url("**/#/admin/userprofile", timeout=15_000)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:21479: in wait_for_url
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:713: in wait_for_url
+    return await self._main_frame.wait_for_url(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:356: in wait_for_url
+    await self.wait_for_navigation(url=url, wait_until=wait_until, timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:285: in rest
+    navigated_event: "channels.FrameNavigatedEvent" = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 15000ms exceeded.
+E   =========================== logs ===========================
+E   waiting for navigation to "**/#/admin/userprofile" until "load"
+E     navigated to "http://localhost:5173/?code=42Xzl556aFYycQFnnyVRjR9JmmPQH5xuZkN-1vT5gG8#/"
+E     navigated to "http://localhost:5173/?code=42Xzl556aFYycQFnnyVRjR9JmmPQH5xuZkN-1vT5gG8#/"
+E   ============================================================
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_google_login_via_mock[chromium] - playwr...
+============================== 1 failed in 16.21s ==============================

@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collected 9 items / 8 deselected / 1 selected
+
+e2e/test_member_flow.py F                                                [100%]
+
+=================================== FAILURES ===================================
+__________________ test_forgot_password_via_mailpit[chromium] __________________
+e2e/test_member_flow.py:156: in test_forgot_password_via_mailpit
+    page.get_by_placeholder("請輸入新密碼", exact=True).fill(new_password)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11664: in fill
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:352: in fill
+    return await self._frame.fill(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:736: in fill
+    return await self._channel.fill(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_placeholder("請輸入新密碼", exact=True)
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_forgot_password_via_mailpit[chromium] - ...
+======================= 1 failed, 8 deselected in 31.52s =======================

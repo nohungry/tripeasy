@@ -1,0 +1,11 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_demoted_admin_old_token_loses_admin ___________________
+tests/test_member_auth.py:658: in test_demoted_admin_old_token_loses_admin
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"success","message":"權限修改成功","data":[{"user_id":"98d6560c-c517-4d75-995f-f31301bd5237","name":"P0 測試","email":"p0-b0b1dae1@example.com"}]}
+E   assert 200 == 403
+E    +  where 200 = <Response [200]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_demoted_admin_old_token_loses_admin - ...
+1 failed, 67 deselected in 0.15s

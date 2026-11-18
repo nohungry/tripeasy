@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_reset_token_concurrent_use_only_one_succeeds _______________
+tests/test_member_auth.py:743: in test_reset_token_concurrent_use_only_one_succeeds
+    assert statuses == [200] + [400] * (len(passwords) - 1), [(r.status_code, r.text) for r in results]
+E   AssertionError: [(200, '{"status":"success","message":"密碼修改成功"}'), (200, '{"status":"success","message":"密碼修改成功"}'), (200, '{"status":"success","message":"密碼修改成功"}'), (200, '{"status":"success","message":"密碼修改成功"}')]
+E   assert [200, 200, 200, 200] == [200, 400, 400, 400]
+E     
+E     At index 1 diff: 200 != 400
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_reset_token_concurrent_use_only_one_succeeds
+1 failed in 0.14s
+10 次執行中紅燈 10 次

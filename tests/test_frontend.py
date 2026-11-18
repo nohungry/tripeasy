@@ -35,3 +35,8 @@ def test_cors_rejects_unknown_origin(api):
     r = api.get("/api/v1/health", headers={"Origin": "http://evil.example.com"})
     assert "Access-Control-Allow-Origin" not in r.headers
     assert api.get("/api/v1/health").status_code == 200
+
+
+def test_cors_credentials_still_true(api):
+    r = api.get("/api/v1/health", headers={"Origin": FRONTEND_BASE})
+    assert r.headers["Access-Control-Allow-Credentials"] == "true"

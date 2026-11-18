@@ -1,0 +1,58 @@
+.......................FF..............F                                 [100%]
+=================================== FAILURES ===================================
+______________ test_login_null_password_is_rejected_without_lock _______________
+
+api = <conftest.Api object at 0x76578e7d0440>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x76578e7d0ec0>
+make_user = <function make_user.<locals>._make at 0x76578e3307c0>
+
+    def test_login_null_password_is_rejected_without_lock(api, db, make_user):
+        user = make_user(password=None)
+        for _ in range(4):
+            r = api.post(LOGIN, json={"email": user["email"], "password": "Wrongpass123"})
+>           assert r.status_code == 401, r.text
+E           AssertionError: {"status":"error","message":"伺服器錯誤"}
+E           assert 500 == 401
+E            +  where 500 = <Response [500]>.status_code
+
+tests/test_member_auth.py:249: AssertionError
+__________________ test_profile_change_password_null_password __________________
+
+api = <conftest.Api object at 0x76578e7d0440>
+make_user = <function make_user.<locals>._make at 0x76578e3653a0>
+
+    def test_profile_change_password_null_password(api, make_user):
+        user = make_user(password=None)
+        r = api.patch(
+            PROFILE_RESET_PW,
+            headers=auth_header(user),
+            json={"password": "Wrongpass123", "new_password": "Newpass12345", "confirm_password": "Newpass12345"},
+        )
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"status":"error","message":"伺服器錯誤"}
+E       assert 500 == 400
+E        +  where 500 = <Response [500]>.status_code
+
+tests/test_member_auth.py:265: AssertionError
+______________________ test_login_response_has_avatar_url ______________________
+
+api = <conftest.Api object at 0x76578e7d0440>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x76578e7d0ec0>
+make_user = <function make_user.<locals>._make at 0x76578e365580>
+
+    def test_login_response_has_avatar_url(api, db, make_user):
+        user = make_user()
+        url = "https://example.com/a.png"
+        db.execute('UPDATE "user" SET avatar_url = %s WHERE user_id = %s', (url, user["user_id"]))
+    
+        r = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+        assert r.status_code == 200, r.text
+>       assert r.json()["data"]["user"]["avatar_url"] == url
+E       KeyError: 'avatar_url'
+
+tests/test_member_auth.py:357: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_login_null_password_is_rejected_without_lock
+FAILED tests/test_member_auth.py::test_profile_change_password_null_password
+FAILED tests/test_member_auth.py::test_login_response_has_avatar_url - KeyErr...
+3 failed, 37 passed in 1.44s

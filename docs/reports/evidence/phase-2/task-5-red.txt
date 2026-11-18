@@ -1,0 +1,40 @@
+FFFFF...                                                                 [100%]
+=================================== FAILURES ===================================
+_____________________ test_captcha_cookie_is_not_plaintext _____________________
+tests/test_member_auth.py:698: in test_captcha_cookie_is_not_plaintext
+    assert value and re.fullmatch(r"\d+\.[0-9a-f]{64}", value)
+E   AssertionError: assert ('ybYp1' and None)
+E    +  where None = <function fullmatch at 0x771a3dd947c0>('\\d+\\.[0-9a-f]{64}', 'ybYp1')
+E    +    where <function fullmatch at 0x771a3dd947c0> = re.fullmatch
+________________ test_forged_plaintext_captcha_cookie_rejected _________________
+tests/test_member_auth.py:704: in test_forged_plaintext_captcha_cookie_rejected
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼錯誤", r.text
+E   AssertionError: {"status":"success","message":"密碼修改成功"}
+E   assert (200 == 400)
+E    +  where 200 = <Response [200]>.status_code
+_____________________ test_signed_captcha_cookie_accepted ______________________
+tests/test_member_auth.py:710: in test_signed_captcha_cookie_accepted
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"驗證碼錯誤"}
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+_____________________ test_expired_captcha_cookie_rejected _____________________
+tests/test_member_auth.py:717: in test_expired_captcha_cookie_rejected
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼已過期", r.text
+E   AssertionError: {"status":"failed","message":"驗證碼錯誤"}
+E   assert (400 == 400 and '驗證碼錯誤' == '驗證碼已過期'
+E    +  where 400 = <Response [400]>.status_code
+E     
+E     - 驗證碼已過期
+E     + 驗證碼錯誤)
+___________________ test_captcha_cookie_attributes_from_env ____________________
+tests/test_member_auth.py:723: in test_captcha_cookie_attributes_from_env
+    assert "SameSite=Lax" in set_cookie
+E   AssertionError: assert 'SameSite=Lax' in 'captcha=vJPH1; Max-Age=300; Path=/; Expires=Wed, 18 Nov 2026 06:12:38 GMT; HttpOnly; Secure; SameSite=None'
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_captcha_cookie_is_not_plaintext - Asse...
+FAILED tests/test_member_auth.py::test_forged_plaintext_captcha_cookie_rejected
+FAILED tests/test_member_auth.py::test_signed_captcha_cookie_accepted - Asser...
+FAILED tests/test_member_auth.py::test_expired_captcha_cookie_rejected - Asse...
+FAILED tests/test_member_auth.py::test_captcha_cookie_attributes_from_env - A...
+5 failed, 3 passed, 71 deselected in 0.26s
