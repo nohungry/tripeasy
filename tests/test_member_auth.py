@@ -430,6 +430,8 @@ def test_patch_profile_info_releases_db_connection(api, make_user):
 FRONTEND_PATH = os.getenv("FRONTEND_PATH", "http://localhost:5173")
 RESETPW = "/api/v1/auth/userinfo/resetpw"
 NEW_PW = "Newpass12345"
+TOKEN_ERR_MSG = "Token 資料錯誤、無效或過期"
+HOME_PRODUCTS = "/api/v1/user/home/search/products"  # 只掛 auth_not_mandatory
 # Task 5 Step 3 才統一改用 captcha_cookie()；此 Task 先用現行明文 cookie
 PLAIN_CAPTCHA = {"captcha": "abcde"}
 
@@ -489,10 +491,11 @@ def _info_status(api, token: str) -> int:
     return status
 
 
-def test_reset_token_cannot_access_member_api(api, make_user):
+@pytest.mark.parametrize("path", [PROFILE_INFO, LOGIN_STATUS, HOME_PRODUCTS])
+def test_reset_token_cannot_access_member_api(api, make_user, path):
     user = make_user()
     token = _token_of(_reset_link(user["email"]))
-    r = api.get(PROFILE_INFO, headers=_bearer(token))
+    r = api.get(path, headers=_bearer(token))
     assert r.status_code == 401, r.text
 
 
@@ -507,7 +510,7 @@ def test_login_token_cannot_reset_password(api, db, make_user):
     user = make_user()
     before = _stored_password(db, user["user_id"])
     r = _resetpw(api, auth_header(user)["Authorization"].split(" ")[1])
-    assert r.status_code == 400, r.text
+    assert r.status_code == 400 and r.json()["message"] == TOKEN_ERR_MSG, r.text
     assert _stored_password(db, user["user_id"]) == before
 
 
@@ -517,7 +520,12 @@ def test_reset_token_is_single_use(api, make_user):
     r = _resetpw(api, token)
     assert r.status_code == 200, r.text
     r = _resetpw(api, token, "Another12345")
-    assert r.status_code == 400, r.text
+    assert r.status_code == 400 and r.json()["message"] == TOKEN_ERR_MSG, r.text
+    # 密碼仍是第一次設定的值
+    r = api.post(LOGIN, json={"email": user["email"], "password": NEW_PW})
+    assert r.status_code == 200, r.text
+    r = api.post(LOGIN, json={"email": user["email"], "password": "Another12345"})
+    assert r.status_code == 401, r.text
 
 
 def test_old_login_token_invalid_after_reset(api, make_user):
@@ -607,3 +615,31 @@ def test_null_password_user_can_set_password_via_reset(api, make_user):
     assert r.status_code == 200, r.text
     r = api.post(LOGIN, json={"email": user["email"], "password": NEW_PW})
     assert r.status_code == 200, r.text
+
+
+# 以下為 Task 4 安全測試補強：一開始就綠（既有／新實作已涵蓋的分支）。
+def test_auth_not_mandatory_without_header_is_not_401(api):
+    r = api.get(HOME_PRODUCTS)
+    assert r.status_code != 401, r.text
+
+
+def _bad_tokens(user: dict) -> dict:
+    secret = os.environ["JWT_SECRET"]
+    exp = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10)
+    base = {"id": user["user_id"], "role": user["role"], "exp": exp}
+    return {
+        "reset": reset_token(user),
+        "legacy": jwt.encode({"id": user["user_id"], "role": user["role"]}, secret, algorithm="HS256"),
+        "wrong_pwv": jwt.encode({**base, "typ": "login", "pwv": "0" * 16}, secret, algorithm="HS256"),
+        "missing_pwv": jwt.encode({**base, "typ": "login"}, secret, algorithm="HS256"),
+        "alg_none": jwt.encode({**base, "typ": "login", "pwv": current_pwv(user)}, None, algorithm="none"),
+    }
+
+
+@pytest.mark.parametrize("kind", ["reset", "legacy", "wrong_pwv", "missing_pwv", "alg_none"])
+@pytest.mark.parametrize("path", [PROFILE_INFO, HOME_PRODUCTS])
+def test_invalid_tokens_are_401(api, make_user, kind, path):
+    user = make_user()
+    token = _bad_tokens(user)[kind]
+    r = api.get(path, headers=_bearer(token))
+    assert r.status_code == 401, r.text
