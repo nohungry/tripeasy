@@ -20,7 +20,7 @@ P2 的目標：讓「註冊 → 登入 → 會員中心」這條主線能從前�
 | frontend 變更 | 11 檔 +168 −201（`git -C frontend diff --stat dev..phase-2`）、8 個 commit；`−201` 大多是刪除整段註解掉的舊路由表（`9e264b8`，−173 行） |
 | 總覽 repo 變更 | 43 檔 +4751 −81（`git diff --stat main..phase-2`，統計到 `b8141d4`，不含本報告、README 與 `84189ac`）、50 個 commit（同範圍） |
 | E2E | 新增 Playwright Python 測試 `e2e/test_member_flow.py`（22 個案例，ci.sh 內執行） |
-| CI 結果 | 本機 `scripts/ci.sh` 兩次皆 329 passed, 2 xfailed（第 1 次乾淨、第 2 次保留 volume）；GitHub Actions run：**待 Task 12 Step 5 之後補**（`<run id placeholder>`） |
+| CI 結果 | 本機 `scripts/ci.sh` 兩次皆 329 passed, 2 xfailed（第 1 次乾淨、第 2 次保留 volume）；GitHub Actions run：[44323636173](https://github.com/nohungry/tripeasy/actions/runs/44323636173)（綠燈，329 passed, 2 xfailed；`phase-2` tag 當時的 run 是紅燈，原因與處理見 §3.3） |
 | 升級 Opus 實作 | 進度帳沒有「升級 Opus 實作」的紀錄；所有 Task 的 fix round 皆為 implementer 完成（未逐一查證） |
 
 Commit 範圍：
@@ -453,7 +453,17 @@ P2 新增的做法：
 
 兩次的 xfail 都是 `tests/test_member_auth.py::test_patch_profile_info_name_only`、`::test_patch_profile_info_preference_only`（見 §0 與附錄 B）。第 1 次的 `curl: (52) Empty reply from server` 是 `ci.sh` 的 `wait_for frontend` 在 vite 啟動前的重試輸出，最後 `✅ frontend`。**跑完兩次之後**，只改了 `docs/db-contract.md` 與 `e2e/test_member_flow.py` 的 docstring（`84189ac`）；改完後重跑受影響的 5 個 E2E 案例（`-k "expired_token or logged_in_user_can_open"`）皆通過、`--collect-only` 收集數為 331（329＋2 xfail），與 ci.sh 的總數一致。
 
-**GitHub Actions**：待 Task 12 Step 5 push 之後補。run id：`<placeholder>`；結果：`<placeholder>`。注意本機 `ci.sh` **不跑** `--with-deps`（見 §4.5），所以 CI 上 `CI=true` 才會走的 `playwright install --with-deps chromium` 這條分支，在首次 push 之前沒有被實際驗證過（進度帳 Task 6 minor）。
+**GitHub Actions**：綠燈 run [44323636173](https://github.com/nohungry/tripeasy/actions/runs/44323636173)（`e1901f9`，main）；結果：**329 passed, 2 xfailed**，Using CPython 3.13.18，耗時 74.13 秒。注意本機 `ci.sh` **不跑** `--with-deps`（見 §4.5），所以 CI 上 `CI=true` 才會走的 `playwright install --with-deps chromium` 這條分支，在首次 push 之前沒有被實際驗證過（進度帳 Task 6 minor）。
+
+#### CI 在 tag 時點失敗：runner 映像改版
+
+- **現象**：`phase-2` tag（merge commit `e06ee26`）push 之後，tag 那次的 run 44289947855 與 main 那次的 run 44289947877 都失敗。
+- **原因**：GitHub 的 `ubuntu-latest` 換成 ubuntu-26.04 映像，系統 Python 變成 3.14.4；`psycopg-binary` 3.2.3 沒有 cp314 wheel，`uv sync` 因此失敗。
+- **修正**：`e1901f9` 新增 `.python-version`（3.13），並把 `runs-on` 固定為 `ubuntu-24.04`。修正後 main 的 run 44323636173 綠燈。
+- **決定：`phase-2` tag 不移動**。tag 指向的 commit 仍是 `e06ee26`，所以 tag 那次的 run（44289947855）會一直是紅燈；P2 的程式內容沒有變，CI 結果以上面的綠燈 run 為準。
+- **留給 P3 的後續項目**：
+  - (a) `requires-python` 加上 `<3.14` 上限，或升級 psycopg 到有 cp314 wheel 的版本。
+  - (b) 鎖定 uv 版本；目前 `setup-uv` 用的是 latest，同樣會隨時間漂移。
 
 ## 4. 操作指南
 

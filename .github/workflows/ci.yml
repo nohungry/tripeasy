@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    # 固定 runner 版本：ubuntu-latest 映像改版會讓系統套件與 Python 跟著漂移（見 docs/reports/phase-2.md §3.3）
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
