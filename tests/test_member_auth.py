@@ -768,3 +768,32 @@ def test_resetpw_success_clears_captcha_cookie(api, make_user):
     assert set_cookie.startswith("captcha=;"), set_cookie
     assert "Expires=Thu, 01 Jan 1970" in set_cookie or "Max-Age=0" in set_cookie, set_cookie
     assert "Max-Age=300" not in set_cookie, set_cookie
+
+
+def test_valid_signature_wrong_answer_rejected(api, make_user):
+    user = make_user()
+    r = _resetpw_with_cookie(api, user, captcha_cookie("abcde"), "zzzzz")
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼錯誤", r.text
+
+
+def test_missing_captcha_cookie_is_expired(api, make_user):
+    user = make_user()
+    body = {"token": reset_token(user), "new_password": NEW_PW, "confirm_password": NEW_PW, "input": "abcde"}
+    r = api.patch(RESETPW, json=body)
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼已過期", r.text
+
+
+def test_tampered_expiry_captcha_cookie_rejected(api, make_user):
+    user = make_user()
+    old_issue = int((time.time() - 6 * 60) * 1000)  # 已過期的合法 cookie
+    expires, sig = captcha_cookie("abcde", issued_at=old_issue).split(".")
+    forged = f"{int(expires) + 3_600_000}.{sig}"  # 把到期時間改大、沿用舊簽章
+    r = _resetpw_with_cookie(api, user, forged)
+    assert r.status_code == 400 and r.json()["message"] == "驗證碼錯誤", r.text
+
+
+@pytest.mark.parametrize("bad_input", [12345, ["abcde"]], ids=["number", "array"])
+def test_non_string_captcha_input_is_400(api, make_user, bad_input):
+    user = make_user()
+    r = _resetpw_with_cookie(api, user, captcha_cookie("abcde"), bad_input)
+    assert r.status_code == 400, r.text
