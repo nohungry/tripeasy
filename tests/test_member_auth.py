@@ -1,10 +1,26 @@
 """P2 會員：權限與資料清理。後續 Task 的會員測試加在這裡。"""
+import datetime
+import os
+import re
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
+import jwt
 import pytest
+import requests
 
-from conftest import TEST_PASSWORD, USER_FK_TABLES, auth_header, delete_user
+from conftest import (
+    API_BASE,
+    MAILPIT_BASE,
+    TEST_PASSWORD,
+    USER_FK_TABLES,
+    auth_header,
+    current_pwv,
+    delete_user,
+    login_token,
+    reset_token,
+)
 from dbfactory import insert
 
 ROLES = "/api/v1/admin/members/roles"
@@ -405,4 +421,189 @@ def test_patch_profile_info_releases_db_connection(api, make_user):
         r = api.patch(PROFILE_INFO, headers=h, json={"name": "連線測試", "preference": prefs}, timeout=5)
         assert r.status_code == 200, f"第 {i + 1} 次：{r.text}"
     r = api.get(PROFILE_INFO, headers=h, timeout=5)
+    assert r.status_code == 200, r.text
+
+
+# ---------------------------------------------------------------------------
+# Task 4：token 用途分離與密碼指紋（P2 spec §3.1、§3.1a）
+# ---------------------------------------------------------------------------
+FRONTEND_PATH = os.getenv("FRONTEND_PATH", "http://localhost:5173")
+RESETPW = "/api/v1/auth/userinfo/resetpw"
+NEW_PW = "Newpass12345"
+# Task 5 Step 3 才統一改用 captcha_cookie()；此 Task 先用現行明文 cookie
+PLAIN_CAPTCHA = {"captcha": "abcde"}
+
+
+def _reset_link(email: str) -> str:
+    """打 forgetpw、等 Mailpit 收信，回傳信中的重設連結。"""
+    r = requests.post(f"{API_BASE}{FORGET}", json={"email": email}, timeout=10)
+    assert r.status_code == 200, r.text
+    deadline = time.time() + 10
+    messages = []
+    while time.time() < deadline:
+        messages = requests.get(
+            f"{MAILPIT_BASE}/api/v1/search", params={"query": f"to:{email}"}, timeout=10
+        ).json()["messages"]
+        if messages:
+            break
+        time.sleep(0.5)
+    assert messages, "沒有收到重設信"
+    html = requests.get(f"{MAILPIT_BASE}/api/v1/message/{messages[0]['ID']}", timeout=10).json()["HTML"]
+    match = re.search(r'href="([^"]*resetpw\?token=[^"]+)"', html)
+    assert match, html
+    return match.group(1)
+
+
+def _token_of(link: str) -> str:
+    return link.split("resetpw?token=", 1)[1]
+
+
+def _resetpw(api, token: str, new_password: str = NEW_PW, **override):
+    body = {
+        "token": token,
+        "new_password": new_password,
+        "confirm_password": new_password,
+        "input": "abcde",
+        **override,
+    }
+    return api.patch(RESETPW, json=body, cookies=PLAIN_CAPTCHA)
+
+
+def _stored_password(db, user_id: str):
+    return db.execute('SELECT password FROM "user" WHERE user_id = %s', (user_id,)).fetchone()[0]
+
+
+def _login_token_via_api(api, user: dict) -> str:
+    r = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    return r.json()["data"]["token"]
+
+
+def _bearer(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _info_status(api, token: str) -> int:
+    """先取出狀態碼再 assert，避免失敗輸出把 JWT 印進 pytest 的斷言說明。"""
+    status = api.get(PROFILE_INFO, headers=_bearer(token)).status_code
+    return status
+
+
+def test_reset_token_cannot_access_member_api(api, make_user):
+    user = make_user()
+    token = _token_of(_reset_link(user["email"]))
+    r = api.get(PROFILE_INFO, headers=_bearer(token))
+    assert r.status_code == 401, r.text
+
+
+def test_reset_link_shape(make_user):
+    user = make_user()
+    link = _reset_link(user["email"])
+    prefix = link.split("token=", 1)[0] + "token="  # 只比對前綴，避免失敗輸出印出 token
+    assert prefix == f"{FRONTEND_PATH}/#/admin/resetpw?token="
+
+
+def test_login_token_cannot_reset_password(api, db, make_user):
+    user = make_user()
+    before = _stored_password(db, user["user_id"])
+    r = _resetpw(api, auth_header(user)["Authorization"].split(" ")[1])
+    assert r.status_code == 400, r.text
+    assert _stored_password(db, user["user_id"]) == before
+
+
+def test_reset_token_is_single_use(api, make_user):
+    user = make_user()
+    token = _token_of(_reset_link(user["email"]))
+    r = _resetpw(api, token)
+    assert r.status_code == 200, r.text
+    r = _resetpw(api, token, "Another12345")
+    assert r.status_code == 400, r.text
+
+
+def test_old_login_token_invalid_after_reset(api, make_user):
+    user = make_user()
+    old = _login_token_via_api(api, user)
+    status = _info_status(api, old)
+    assert status == 200
+
+    r = _resetpw(api, _token_of(_reset_link(user["email"])))
+    assert r.status_code == 200, r.text
+
+    status = _info_status(api, old)
+    assert status == 401
+    r = api.post(LOGIN, json={"email": user["email"], "password": NEW_PW})
+    assert r.status_code == 200, r.text
+    status = _info_status(api, r.json()["data"]["token"])
+    assert status == 200
+
+
+def test_old_login_token_invalid_after_profile_change(api, make_user):
+    user = make_user()
+    old = _login_token_via_api(api, user)
+    r = api.patch(
+        PROFILE_RESET_PW,
+        headers=_bearer(old),
+        json={"password": TEST_PASSWORD, "new_password": NEW_PW, "confirm_password": NEW_PW},
+    )
+    assert r.status_code == 200, r.text
+
+    status = _info_status(api, old)
+    assert status == 401
+    r = api.post(LOGIN, json={"email": user["email"], "password": NEW_PW})
+    assert r.status_code == 200, r.text
+    status = _info_status(api, r.json()["data"]["token"])
+    assert status == 200
+
+
+# 既有行為的回歸測試：一開始就綠。防止新的 verifyLoginToken 把 expired 弄成一律 invalid。
+def test_expired_login_token_is_401(api, make_user):
+    user = make_user()
+    token = login_token(user, exp_delta=datetime.timedelta(seconds=-60))
+    r = api.get(PROFILE_INFO, headers=_bearer(token))
+    assert r.status_code == 401, r.text
+    assert r.json()["message"] == "Token 已過期"
+
+
+# 既有行為的回歸測試：一開始就綠。
+def test_resetpw_validation_and_invalid_token(api, make_user):
+    user = make_user()
+    token = reset_token(user)
+    r = _resetpw(api, token, confirm_password="Other12345")
+    assert r.status_code == 400 and r.json()["message"] == "新密碼與驗證密碼不一致", r.text
+    r = _resetpw(api, "not-a-jwt")
+    assert r.status_code == 400 and r.json()["message"] == "Token 資料錯誤、無效或過期", r.text
+    expired = jwt.encode(
+        {
+            "id": user["user_id"],
+            "typ": "reset",
+            "pwv": current_pwv(user),
+            "exp": datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=60),
+        },
+        os.environ["JWT_SECRET"],
+        algorithm="HS256",
+    )
+    r = _resetpw(api, expired)
+    assert r.status_code == 400 and r.json()["message"] == "Token 資料錯誤、無效或過期", r.text
+
+
+def test_forged_token_without_pwv_is_401(api, make_user):
+    user = make_user()
+    token = jwt.encode({"id": user["user_id"], "role": user["role"]}, os.environ["JWT_SECRET"], algorithm="HS256")
+    r = api.get(PROFILE_INFO, headers=_bearer(token))
+    assert r.status_code == 401, r.text
+
+
+def test_token_of_deleted_user_is_401(api, db, make_user):
+    user = make_user()
+    headers = auth_header(user)
+    delete_user(db, user["user_id"])
+    r = api.get(PROFILE_INFO, headers=headers)
+    assert r.status_code == 401, r.text
+
+
+def test_null_password_user_can_set_password_via_reset(api, make_user):
+    user = make_user(password=None)
+    r = _resetpw(api, _token_of(_reset_link(user["email"])))
+    assert r.status_code == 200, r.text
+    r = api.post(LOGIN, json={"email": user["email"], "password": NEW_PW})
     assert r.status_code == 200, r.text

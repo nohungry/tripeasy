@@ -1,4 +1,7 @@
 """共用 fixture：API session、DB 連線、測試使用者、JWT。"""
+import datetime
+import hashlib
+import hmac
 import importlib.util
 import os
 import uuid
@@ -135,11 +138,37 @@ def make_user(db):
         delete_user(db, user_id)
 
 
+def password_fingerprint(password) -> str:
+    """共用約定的 pwv：HMAC-SHA256(key = JWT_SECRET, msg = password ?? '') 的 hex 前 16 字元。"""
+    key = os.environ["JWT_SECRET"].encode()
+    return hmac.new(key, (password or "").encode(), hashlib.sha256).hexdigest()[:16]
+
+
+def current_pwv(user: dict) -> str:
+    """用新連線查該會員目前的 password 算 pwv（不沿用測試的 db fixture，避免交易可見性問題）。"""
+    with psycopg.connect(**_db_params(), autocommit=True) as conn:
+        row = conn.execute('SELECT password FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
+    return password_fingerprint(row[0] if row else None)
+
+
+def login_token(user: dict, exp_delta: datetime.timedelta | None = None) -> str:
+    """登入 token：{id, role, typ: 'login', pwv}；exp_delta 給定時 exp = 現在 + exp_delta（負值即已過期）。"""
+    payload = {"id": user["user_id"], "role": user["role"], "typ": "login", "pwv": current_pwv(user)}
+    payload["exp"] = datetime.datetime.now(datetime.timezone.utc) + (exp_delta or datetime.timedelta(days=30))
+    return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm="HS256")
+
+
+def reset_token(user: dict) -> str:
+    """重設 token：{id, typ: 'reset', pwv}，效期 15 分鐘。"""
+    payload = {
+        "id": user["user_id"],
+        "typ": "reset",
+        "pwv": current_pwv(user),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15),
+    }
+    return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm="HS256")
+
+
 def auth_header(user: dict) -> dict:
-    """跟 backend 登入時簽發的 payload 一樣：{id, role}。"""
-    token = jwt.encode(
-        {"id": user["user_id"], "role": user["role"]},
-        os.environ["JWT_SECRET"],
-        algorithm="HS256",
-    )
-    return {"Authorization": f"Bearer {token}"}
+    """跟 backend 登入時簽發的登入 token 一樣（帶 pwv）。"""
+    return {"Authorization": f"Bearer {login_token(user)}"}
