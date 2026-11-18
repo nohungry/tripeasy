@@ -723,8 +723,9 @@ def test_captcha_cookie_attributes_from_env():
     assert "HttpOnly" in set_cookie
 
 
-def test_reset_token_concurrent_use_only_one_succeeds(db, make_user):
-    user = make_user()
+@pytest.mark.parametrize("initial_password", ["default", None], ids=["bcrypt_password", "null_password"])
+def test_reset_token_concurrent_use_only_one_succeeds(make_user, initial_password):
+    user = make_user() if initial_password == "default" else make_user(password=None)
     token = reset_token(user)
     passwords = [f"Concurrent{i}Pw123" for i in range(4)]
 
@@ -744,11 +745,16 @@ def test_reset_token_concurrent_use_only_one_succeeds(db, make_user):
     for r in results:
         if r.status_code == 400:
             assert r.json()["message"] == TOKEN_ERR_MSG, r.text
-    # DB 的密碼只對得上成功的那一個
-    winner = passwords[[r.status_code for r in results].index(200)]
-    logins = [
-        requests.post(f"{API_BASE}{LOGIN}", json={"email": user["email"], "password": pw}, timeout=10).status_code
-        for pw in passwords
-    ]
-    assert logins.count(200) == 1
-    assert logins[passwords.index(winner)] == 200
+
+    # DB 的密碼只對得上成功的那一個。先用贏家登入（成功會把失敗次數歸零），
+    # 再只驗一個輸家（單次失敗不會觸發帳號鎖定）
+    winner_idx = [r.status_code for r in results].index(200)
+    loser_idx = (winner_idx + 1) % len(passwords)
+
+    def login_status(pw):
+        return requests.post(
+            f"{API_BASE}{LOGIN}", json={"email": user["email"], "password": pw}, timeout=10
+        ).status_code
+
+    assert login_status(passwords[winner_idx]) == 200
+    assert login_status(passwords[loser_idx]) == 401
