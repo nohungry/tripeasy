@@ -1,6 +1,6 @@
 # P2 會員 設計（Spec）
 
-> 日期：2026-11-12 · 狀態：待使用者審核（已經過 builder check，問題已併入）
+> 日期：2026-11-12 · 狀態：已定案（2026-11-18 使用者確認；已經過 builder check，問題已併入）
 > 上位文件：`docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md`（以下稱「總 spec」）§4 P2 列、§4.1–4.4
 > 產出方式：superpowers:brainstorming，2026-11-12 逐項確認
 > 標記：**【使用者定】** = 使用者明確決定；**【Claude 定】** = 討論中由 Claude 決定、使用者未反對，可在審閱時推翻。
@@ -132,7 +132,7 @@
   - 重設密碼信的連結是 `${FRONTEND_PATH}/admin/resetpw?token=…`（`controllers/userinfo.js` 的 `post_user_forgetPW`），`resetpwPage.vue:104` 讀 `window.location.search` → 實際落到首頁、拿不到 token。改成能進到 `#/admin/resetpw` 並讀到 token 的網址形狀（例如 `/#/admin/resetpw?token=…` 並從 route query 讀）。
   - Google 回跳 `VITE_Redirect_BASE` / `GOOGLE_REDIRECT_URI` 是 `http://localhost:5173/`，只有 `loginPage.vue:108` 讀 `?code`，但 `/` 不是登入頁。改成回跳後能由登入頁（或專用的回跳頁）讀到 `code`。注意 Google 的 redirect_uri 不能帶 `#`，code 會出現在 `#` 前的 query，前端要從 `window.location.search` 讀並在進入 router 前或登入頁處理。
   - 兩處的網址組法連同 `.env.example`、`frontend/.env.development`、`frontend/.env.example` 一起更新。
-- **登入回應的頭像欄位**：`controllers/userinfo.js:113`、`:351` 回 `avatar_url: user.picture`（`user` 表沒有 `picture`），Email 登入後頭像永遠是 null。改成 `user.avatar_url`。
+- **登入回應的頭像欄位**：`controllers/userinfo.js:112`、`:351` 回 `avatar_url: user.picture`（`user` 表沒有 `picture`），Email 登入後頭像永遠是 null。改成 `user.avatar_url`。
 - **`api.js:306` `throw err`**：變數名錯（catch 參數是 `error`），會變成 ReferenceError；改正。實作者順手檢查同檔其他 catch 是否有同類錯誤，有就一起修並列入報告。
 - FB 登入圖示（`loginPage.vue:70`）移除或標示「未開放」。
 
@@ -167,7 +167,7 @@ P2 採**縮小版**【使用者定，2026-11-12 選 (b)】：
 
 ## 6. P1 遺留待辦（P2 開工時處理）
 
-1. strict xfail `tests/test_oauth_spike.py:67`（provider_token；decorator 的 reason 寫「P2 以 migration 修正」，實際改由 §2.4 寫 NULL 解掉，不做 migration）。
+1. strict xfail `tests/test_oauth_spike.py:68`（provider_token；decorator 的 reason 寫「P2 以 migration 修正」，實際改由 §2.4 寫 NULL 解掉，不做 migration）。
 2. strict xfail `tests/test_api_smoke.py:408`（`GET /admin/product` 500，`backend/src/middlewares/product/index.js:296` 的 `tour_ids`、`:312–315` 的 Promise `.rows`）→ 修好、移除 xfail。雖屬後台，但修法小、測試已在，放 P2。
 3. carol 的優惠卷測試在 seed 載入 133 天後會紅 → 加 skip guard 或改成不依賴日期（實作者決定）。
 4. `R__views_functions.sql` 寫死 DROP 簽名、`tests/db_contract.py` 不會自動對照契約文字（`docs/reports/phase-1.md` 附錄 B）→ P2 若動到這兩個檔（§2 會動契約）就順手處理；沒動到就留在已知限制，於 P2 報告重申。【Claude 定】
@@ -176,7 +176,7 @@ P2 採**縮小版**【使用者定，2026-11-12 選 (b)】：
 
 - 重構規則（總 spec §0）：先有測試、計畫中列成獨立 Task、獨立 commit。本設計中屬重構的：刪除註解掉的舊路由表、任何非修 bug 必要的程式整理。
 - git：backend `main`、frontend `dev` 各開 `phase-2` feature branch；完成後 merge、打 `phase-2` tag、更新 `refs.env` 與 README 版本對照表；**只 push 到 nohungry fork**，每個對外動作先問使用者。
-- 模型分工：Sonnet 實作、卡關升 Opus、Fable + Opus 平行 review。
+- 模型分工：Sonnet 實作、卡關升 Opus、每個 Task 由 Fable + Opus 平行 review。
 - 報告 `docs/reports/phase-2.md`，照總 spec §5 範本；使用者確認後才進 P3。
 
 ## 8. 完成標準
