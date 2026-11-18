@@ -122,6 +122,12 @@ def make_user(db):
             ("P0 測試", email, role, password),
         ).fetchone()
         created.append(str(user_id))
+        # 同 Email 註冊交易（controllers/userinfo.js）：登入成功路徑會讀 user_level
+        db.execute(
+            "INSERT INTO user_level (user_id, level, name, badge_url, travel_point) "
+            "VALUES (%s, 'Level 1', '初心旅人', 'https://example.com/badges/level1.png', 0)",
+            (user_id,),
+        )
         return {"user_id": str(user_id), "email": email, "role": role}
 
     yield _make

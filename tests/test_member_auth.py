@@ -129,16 +129,30 @@ def test_signup_concurrent_same_email_only_one_succeeds(api, db, cleanup_email):
     assert _count_email(db, email) == 1
 
 
-def test_login_email_is_case_insensitive(api, db, make_user):
+def test_login_email_is_case_insensitive(api, make_user):
     user = make_user(email=f"lower.{uuid.uuid4().hex[:8]}@example.com")
-    # 登入成功路徑會讀 user_level；make_user 不建，由 make_user teardown 的 delete_user 清除
-    db.execute(
-        "INSERT INTO user_level (user_id, level, name, badge_url, travel_point) "
-        "VALUES (%s, 'Level 1', '初心旅人', 'https://example.com/b.png', 0)",
-        (user["user_id"],),
-    )
     r = api.post(LOGIN, json={"email": user["email"].upper(), "password": TEST_PASSWORD})
     assert r.status_code == 200, r.text
+
+
+def test_login_lowercase_matches_mixed_case_stored_email(api, make_user):
+    user = make_user(email=f"Mixed.{uuid.uuid4().hex[:8]}@Example.COM")
+    r = api.post(LOGIN, json={"email": user["email"].lower(), "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["user"]["id"] == user["user_id"]
+
+
+def test_forgetpw_matches_mixed_case_stored_email(api, make_user):
+    user = make_user(email=f"Mixed.{uuid.uuid4().hex[:8]}@Example.COM")
+    r = api.post(FORGET, json={"email": user["email"].lower()})
+    assert r.status_code != 404, r.text
+
+
+def test_signup_lowercase_conflicts_with_mixed_case_stored_email(api, make_user):
+    user = make_user(email=f"Mixed.{uuid.uuid4().hex[:8]}@Example.COM")
+    r = api.post(SIGNUP, json=_signup_body(user["email"].lower()))
+    assert r.status_code == 409, r.text
+    assert r.json()["message"] == "Email已被使用"
 
 
 # 以下為既有行為的回歸測試，一開始就綠。
