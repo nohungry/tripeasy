@@ -1,6 +1,10 @@
+import re
+import time
+
+import requests
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import FRONTEND_BASE, TEST_PASSWORD
+from e2e.conftest import FRONTEND_BASE, MAILPIT_BASE, TEST_PASSWORD, captcha_cookie
 
 
 def test_signup_login_profile_main_flow(page: Page, new_email):
@@ -101,3 +105,59 @@ def test_invalid_token_redirects_and_clears_state(page: Page):
     page.wait_for_url("**/#/admin/login")
     assert page.evaluate("localStorage.getItem('authToken')") is None
     expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_be_visible()
+
+
+def _latest_reset_link(email: str) -> str:
+    """有期限地輪詢 Mailpit，取該收件人最新一封信中的重設連結。"""
+    deadline = time.time() + 10
+    messages = []
+    while time.time() < deadline:
+        messages = requests.get(
+            f"{MAILPIT_BASE}/api/v1/search", params={"query": f"to:{email}"}, timeout=10
+        ).json()["messages"]
+        if messages:
+            break
+        time.sleep(0.5)
+    assert messages, "沒有收到重設信"
+    html = requests.get(f"{MAILPIT_BASE}/api/v1/message/{messages[0]['ID']}", timeout=10).json()["HTML"]
+    match = re.search(r'href="([^"]*resetpw\?token=[^"]+)"', html)
+    assert match, "信中找不到重設連結"
+    return match.group(1)
+
+
+def test_forgot_password_via_mailpit(page: Page, make_user):
+    new_password = "Newpass123"
+    user = make_user()
+
+    page.goto(f"{FRONTEND_BASE}/#/admin/forgotpw")
+    page.get_by_placeholder("請輸入 Email").fill(user["email"])
+    page.get_by_role("button", name="送出", exact=True).click()
+    swal = page.get_by_role("dialog")
+    expect(swal).to_contain_text("連結寄送成功")
+    swal.get_by_role("button", name="OK", exact=True).click()  # 模態對話框開著會讓頁面其餘內容從 a11y 樹消失
+
+    link = _latest_reset_link(user["email"])
+    # 頁面載入時會打 GET /captcha，其 Set-Cookie 會蓋掉注入值，故等該回應完成後才注入
+    with page.expect_response(re.compile(r"/captcha$")):
+        page.goto(link)
+    page.context.add_cookies(
+        [
+            {
+                "name": "captcha",
+                "value": captcha_cookie("abcde"),
+                "domain": "localhost",
+                "path": "/",
+                "httpOnly": True,
+                "sameSite": "Lax",
+            }
+        ]
+    )
+
+    page.get_by_placeholder("請輸入新密碼", exact=True).fill(new_password)
+    page.get_by_placeholder("請再次輸入新密碼").fill(new_password)
+    page.get_by_placeholder("請輸入驗證碼").fill("abcde")
+    page.get_by_role("button", name="送出", exact=True).click()
+
+    page.wait_for_url("**/#/admin/login", timeout=15_000)
+    _login_via_ui(page, user["email"], new_password)
+    page.wait_for_url("**/#/admin/userprofile", timeout=10_000)
