@@ -1,0 +1,76 @@
+# Task 10 mutation 證據（backend 暫時改動，不 commit，每組跑完 git checkout 還原）
+
+## (a) 首次綁定 UPDATE 拿掉 password = NULL
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_first_bind_clears_password_and_old_tokens（攻擊者舊密碼登入應 401 的那行）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:136: in test_google_first_bind_clears_password_and_old_tokens
+    FAILED tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens
+    1 failed, 20 passed in 2.12s
+
+## (b) 已綁定分支也加上 password = NULL
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_rebind_keeps_password（最後 Email 登入 200 那行）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:186: in test_google_rebind_keeps_password
+    FAILED tests/test_google_login.py::test_google_rebind_keeps_password - Assert...
+    1 failed, 20 passed in 2.01s
+
+## (c) 新會員 INSERT 改寫 bcrypt 密碼
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_new_user_has_null_password、test_google_member_cannot_login_with_default_password（password is None 斷言）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:70: in test_google_new_user_has_null_password
+    tests/test_google_login.py:155: in test_google_member_cannot_login_with_default_password
+    FAILED tests/test_google_login.py::test_google_new_user_has_null_password - A...
+    FAILED tests/test_google_login.py::test_google_member_cannot_login_with_default_password
+    2 failed, 19 passed in 2.50s
+
+## (d) email_verified 檢查改成 === false
+- 改動檔：backend/src/middlewares/userinfo/index.js
+- 預期紅：test_google_unverified_email_rejected／cannot_bind_existing 的 [missing]、[string-true]、[int-1]（status 400 那行）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:83: in test_google_unverified_email_rejected
+    tests/test_google_login.py:83: in test_google_unverified_email_rejected
+    tests/test_google_login.py:83: in test_google_unverified_email_rejected
+    tests/test_google_login.py:96: in test_google_unverified_email_cannot_bind_existing
+    tests/test_google_login.py:96: in test_google_unverified_email_cannot_bind_existing
+    tests/test_google_login.py:96: in test_google_unverified_email_cannot_bind_existing
+    FAILED tests/test_google_login.py::test_google_unverified_email_rejected[missing]
+    FAILED tests/test_google_login.py::test_google_unverified_email_rejected[string-true]
+    FAILED tests/test_google_login.py::test_google_unverified_email_rejected[int-1]
+    FAILED tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[missing]
+    FAILED tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[string-true]
+    FAILED tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[int-1]
+    6 failed, 15 passed in 1.97s
+
+## (e) 查詢改回 email = $1
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_email_case_matches_existing（200 或單一 user 斷言）
+- 實際（還原後 backend 工作樹：乾淨）：
+    21 passed in 2.05s
+
+## (f) 首次綁定改用更新前的 password 簽 token（pwv 用舊密碼）
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_first_bind_clears_password_and_old_tokens（新 token 打 /info 應 200 那行）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:142: in test_google_first_bind_clears_password_and_old_tokens
+    FAILED tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens
+    1 failed, 20 passed in 2.06s
+
+## (g) 拿掉 .toLowerCase()
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_new_user_email_stored_lowercase（stored == lower 那行）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:228: in test_google_new_user_email_stored_lowercase
+    FAILED tests/test_google_login.py::test_google_new_user_email_stored_lowercase
+    1 failed, 20 passed in 2.07s
+
+## (e) 補測試後重跑（新增 test_google_binds_existing_mixed_case_stored_email；上方 (e) 為補測試前，21 passed 無紅，已記錄）
+## (e) 查詢改回 email = $1
+- 改動檔：backend/src/controllers/userinfo.js
+- 預期紅：test_google_binds_existing_mixed_case_stored_email（會員列表應只有同一 user_id，不會多建會員）
+- 實際（還原後 backend 工作樹：乾淨）：
+    tests/test_google_login.py:124: in test_google_binds_existing_mixed_case_stored_email
+    FAILED tests/test_google_login.py::test_google_binds_existing_mixed_case_stored_email
+    1 failed, 21 passed in 2.12s

@@ -114,6 +114,21 @@ def test_google_email_case_matches_existing(api, db, google, make_user):
     ).fetchall() == [("google", claims["sub"], None)]
 
 
+def test_google_binds_existing_mixed_case_stored_email(api, db, google, make_user):
+    """DB 存混合大小寫 email 的既有會員（舊資料或其他寫入點可能留下），Google 以全小寫 email 登入要綁到同一位。"""
+    new_claims, login = google
+    tag = uuid.uuid4().hex[:8]
+    user = make_user(email=f"A.{tag}@Example.COM")
+    claims = new_claims(email=f"a.{tag}@example.com")
+    r = login(claims)
+    assert r.status_code == 200, r.text
+    rows = _user_row(db, claims["email"])
+    assert [str(row[0]) for row in rows] == [user["user_id"]]
+    assert db.execute(
+        'SELECT provider_method, provider_id, provider_token FROM "socialLogin" WHERE user_id = %s', (user["user_id"],)
+    ).fetchall() == [("google", claims["sub"], None)]
+
+
 def test_google_first_bind_clears_password_and_old_tokens(api, db, google):
     """預先劫持：攻擊者先用受害者 email 註冊並拿到 token，受害者首次 Google 登入後都要失效。"""
     new_claims, login = google
