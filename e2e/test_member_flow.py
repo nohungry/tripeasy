@@ -329,7 +329,11 @@ def test_profile_save_network_error_shows_message(page: Page, make_user):
 
 
 def test_resetpw_page_opens_with_expired_token(page: Page, make_user):
-    """既有行為的回歸測試：過期 token 不得讓重設密碼頁被導走（一開始就綠）。"""
+    """既有行為的回歸測試：過期 token 不得讓重設密碼頁被導走（一開始就綠）。
+
+    這個案例只驗過期 token 不會把使用者導走；已登入（token 有效）的使用者能不能開這兩頁，
+    也就是 authPages 擋錯頁的保護，由 test_logged_in_user_can_open_forgotpw_and_resetpw 負責。
+    """
     user = make_user()
     page.add_init_script(
         f"localStorage.setItem('authToken', '{login_token(user, exp_delta=EXPIRED)}')"
@@ -344,7 +348,11 @@ def test_resetpw_page_opens_with_expired_token(page: Page, make_user):
     "path,heading", [("register", "會員註冊"), ("forgotpw", "忘記密碼")]
 )
 def test_register_and_forgotpw_pages_open_with_expired_token(page: Page, make_user, path, heading):
-    """既有行為的回歸測試（一開始就綠）。"""
+    """既有行為的回歸測試（一開始就綠）。
+
+    只驗過期 token 不會把使用者導走；已登入（token 有效）時被導走的保護，
+    由 test_logged_in_user_can_open_forgotpw_and_resetpw 負責（該案例涵蓋 forgotpw 與 resetpw）。
+    """
     user = make_user()
     page.add_init_script(
         f"localStorage.setItem('authToken', '{login_token(user, exp_delta=EXPIRED)}')"
