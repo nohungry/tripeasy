@@ -656,3 +656,14 @@ def test_demoted_admin_old_token_loses_admin(api, db, make_user):
     db.execute('UPDATE "user" SET role = %s WHERE user_id = %s', ("User", admin["user_id"]))
     r = api.patch(ROLES, headers=headers, json=body)
     assert r.status_code == 403, r.text
+
+
+def test_change_role_to_user_keeps_member_access(api, db, make_user):
+    admin = make_user(role="admin")
+    b = make_user(role="admin")
+    r = api.patch(ROLES, headers=auth_header(admin), json={"user_ids": [b["user_id"]], "role": "user"})
+    assert r.status_code == 200, r.text
+    assert _role_of(db, b["user_id"]) == "User"
+    token = _login_token_via_api(api, b)
+    status = _info_status(api, token)
+    assert status == 200

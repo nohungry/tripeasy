@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_change_role_to_user_keeps_member_access _________________
+tests/test_member_auth.py:666: in test_change_role_to_user_keeps_member_access
+    assert _role_of(db, b["user_id"]) == "User"
+E   AssertionError: assert 'user' == 'User'
+E     
+E     - User
+E     ? ^
+E     + user
+E     ? ^
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_change_role_to_user_keeps_member_access
+1 failed, 68 deselected in 0.16s
