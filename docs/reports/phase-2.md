@@ -1,5 +1,5 @@
 # Phase 2：會員（註冊、登入、會員中心、忘記密碼、Google 登入）
-> 2026-11-18（**初稿，待使用者審閱**） · backend tag `phase-2`（待定：合併與打 tag 在 Task 12 Step 5，merge commit 待填；分支最後一個 commit `ec2394e`） · frontend tag `phase-2`（待定；分支最後一個 commit `a9a68b5`）
+> 2026-11-18（定稿） · backend tag `phase-2`（merge commit `3d835a6`；分支最後一個 commit `124e85c`） · frontend tag `phase-2`（merge commit `71a2171`；分支最後一個 commit `a9a68b5`）
 >
 > 本報告依 `docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md` §5 範本與 `docs/reports/phase-1.md` 的格式撰寫。章節骨架與 P1 相同：§0 摘要、§1 問題與修正、§2 工作流、§3 測試方法、§4 操作指南、附錄（A 變更檔案、B 已知限制）。所有引用以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
