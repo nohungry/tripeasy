@@ -1,0 +1,215 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+collecting ... collected 3 items
+
+tests/test_member_auth.py::test_change_role_requires_admin FAILED        [ 33%]
+tests/test_member_auth.py::test_change_role_by_admin PASSED              [ 66%]
+tests/test_member_auth.py::test_delete_user_clears_all_fk_tables FAILED  [100%]
+tests/test_member_auth.py::test_delete_user_clears_all_fk_tables ERROR   [100%]
+
+==================================== ERRORS ====================================
+__________ ERROR at teardown of test_delete_user_clears_all_fk_tables __________
+
+db = <psycopg.Connection [BAD] at 0x7fb1fa5d0ec0>
+
+    @pytest.fixture
+    def make_user(db):
+        created: list[str] = []
+    
+        def _make(role: str = "User", email: str | None = None) -> dict:
+            email = email or f"p0-{uuid.uuid4().hex[:8]}@example.com"
+            (user_id,) = db.execute(
+                'INSERT INTO "user" (name, email, role, password, preference1, preference2, preference3) '
+                "VALUES (%s, %s, %s, %s, 1, 2, 3) RETURNING user_id",
+                ("P0 測試", email, role, "not-a-real-hash"),
+            ).fetchone()
+            created.append(str(user_id))
+            return {"user_id": str(user_id), "email": email, "role": role}
+    
+        yield _make
+        for user_id in created:
+>           delete_user(db, user_id)
+
+tests/conftest.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in delete_user
+    db.execute('DELETE FROM "user" WHERE user_id = %s', (user_id,))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7fb1fa5d0ec0>
+query = 'DELETE FROM "user" WHERE user_id = %s'
+params = ('4aae8010-bf25-47a4-9fc5-68c68818fa2f',)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "user" violates foreign key constraint "cart_user_id_fkey" on table "cart"
+E           DETAIL:  Key (user_id)=(4aae8010-bf25-47a4-9fc5-68c68818fa2f) is still referenced from table "cart".
+
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: ForeignKeyViolation
+=================================== FAILURES ===================================
+_______________________ test_change_role_requires_admin ________________________
+
+api = <conftest.Api object at 0x7fb1fa5d02f0>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7fb1fa5d0ec0>
+make_user = <function make_user.<locals>._make at 0x7fb1fa5e8360>
+
+    def test_change_role_requires_admin(api, db, make_user):
+        a = make_user()
+        b = make_user()
+        r = api.patch(ROLES, headers=auth_header(a), json={"user_ids": [b["user_id"]], "role": "admin"})
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"status":"success","message":"權限修改成功","data":[{"user_id":"c0bb6063-2e38-4bc9-aaa3-94ffa0c7e4f9","name":"P0 測試","email":"p0-cc55db07@example.com"}]}
+E       assert 200 == 403
+E        +  where 200 = <Response [200]>.status_code
+
+tests/test_member_auth.py:16: AssertionError
+____________________ test_delete_user_clears_all_fk_tables _____________________
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7fb1fa5d0ec0>
+make_user = <function make_user.<locals>._make at 0x7fb1fa5e8a40>
+
+    def test_delete_user_clears_all_fk_tables(db, make_user):
+        user = make_user()
+        uid = user["user_id"]
+        tour = insert(db, "tour")
+        coupon = insert(db, "coupon")
+        try:
+            insert(db, "socialLogin", user_id=uid)
+            insert(db, "user_level", user_id=uid)
+            cart = insert(db, "cart", user_id=uid)
+            insert(db, "cart_item", cart_id=cart["cart_id"], tour_id=tour["tour_id"])
+            insert(db, "favorite", user_id=uid, tour_id=tour["tour_id"])
+            order = insert(db, "orders", user_id=uid)
+            insert(db, "order_item", order_id=order["order_id"], tour_id=tour["tour_id"])
+            insert(db, "payment", user_id=uid, order_id=order["order_id"])
+            insert(db, "point_record", user_id=uid)
+            insert(db, "point_record", user_id=uid, order_id=order["order_id"])
+            insert(db, "user_coupon", user_id=uid, coupon_id=coupon["coupon_id"], order_id=order["order_id"])
+            insert(db, "review", user_id=uid, tour_id=tour["tour_id"])
+            insert(db, "hidden_play", user_id=uid, tour_id=tour["tour_id"])
+            insert(db, "auto_setting", user_id=uid)
+    
+>           delete_user(db, uid)  # 不得丟 FK 錯誤
+
+tests/test_member_auth.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in delete_user
+    db.execute('DELETE FROM "user" WHERE user_id = %s', (user_id,))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7fb1fa5d0ec0>
+query = 'DELETE FROM "user" WHERE user_id = %s'
+params = ('4aae8010-bf25-47a4-9fc5-68c68818fa2f',)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "user" violates foreign key constraint "cart_user_id_fkey" on table "cart"
+E           DETAIL:  Key (user_id)=(4aae8010-bf25-47a4-9fc5-68c68818fa2f) is still referenced from table "cart".
+
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: ForeignKeyViolation
+
+During handling of the above exception, another exception occurred:
+
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7fb1fa5d0ec0>
+make_user = <function make_user.<locals>._make at 0x7fb1fa5e8a40>
+
+    def test_delete_user_clears_all_fk_tables(db, make_user):
+        user = make_user()
+        uid = user["user_id"]
+        tour = insert(db, "tour")
+        coupon = insert(db, "coupon")
+        try:
+            insert(db, "socialLogin", user_id=uid)
+            insert(db, "user_level", user_id=uid)
+            cart = insert(db, "cart", user_id=uid)
+            insert(db, "cart_item", cart_id=cart["cart_id"], tour_id=tour["tour_id"])
+            insert(db, "favorite", user_id=uid, tour_id=tour["tour_id"])
+            order = insert(db, "orders", user_id=uid)
+            insert(db, "order_item", order_id=order["order_id"], tour_id=tour["tour_id"])
+            insert(db, "payment", user_id=uid, order_id=order["order_id"])
+            insert(db, "point_record", user_id=uid)
+            insert(db, "point_record", user_id=uid, order_id=order["order_id"])
+            insert(db, "user_coupon", user_id=uid, coupon_id=coupon["coupon_id"], order_id=order["order_id"])
+            insert(db, "review", user_id=uid, tour_id=tour["tour_id"])
+            insert(db, "hidden_play", user_id=uid, tour_id=tour["tour_id"])
+            insert(db, "auto_setting", user_id=uid)
+    
+            delete_user(db, uid)  # 不得丟 FK 錯誤
+    
+            for table in USER_FK_TABLES:
+                (n,) = db.execute(f"SELECT count(*) FROM {table} WHERE user_id = %s", (uid,)).fetchone()
+                assert n == 0, table
+            (n,) = db.execute('SELECT count(*) FROM "user" WHERE user_id = %s', (uid,)).fetchone()
+            assert n == 0
+        finally:
+>           delete_user(db, uid)
+
+tests/test_member_auth.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in delete_user
+    db.execute('DELETE FROM "user" WHERE user_id = %s', (user_id,))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x7fb1fa5d0ec0>
+query = 'DELETE FROM "user" WHERE user_id = %s'
+params = ('4aae8010-bf25-47a4-9fc5-68c68818fa2f',)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "user" violates foreign key constraint "cart_user_id_fkey" on table "cart"
+E           DETAIL:  Key (user_id)=(4aae8010-bf25-47a4-9fc5-68c68818fa2f) is still referenced from table "cart".
+
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: ForeignKeyViolation
+=========================== short test summary info ============================
+ERROR tests/test_member_auth.py::test_delete_user_clears_all_fk_tables - psyc...
+FAILED tests/test_member_auth.py::test_change_role_requires_admin - Assertion...
+FAILED tests/test_member_auth.py::test_delete_user_clears_all_fk_tables - psy...
+===================== 2 failed, 1 passed, 1 error in 0.14s =====================
