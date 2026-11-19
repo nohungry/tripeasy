@@ -478,6 +478,8 @@ scripts/ci.sh        # 啟動全部服務並跑測試
 
 需要 Docker（含 Compose v2）與 [uv](https://docs.astral.sh/uv/)；服務網址同 `docs/reports/phase-0.md` §4.1。**`refs.env` 是 `BACKEND_REF=phase-2`、`FRONTEND_REF=phase-2`，現在指的是 tag**；三個 repo 的 `phase-2` tag 都已 push（總覽 `e06ee26`、backend `3d835a6`、frontend `71a2171`），README 的 clone 指令現在可以直接使用。
 
+總覽 repo 的 `phase-2` tag 本身沒有 `.python-version`（`e1901f9` 才加入），要重現 P2 的測試結果請用 `main`。
+
 ### 4.2 測試帳號
 
 - **seed 帳號**（載入自 `db/seed/R__seed.sql`，明文密碼見 `.env.example` 檔頭）：`alice@example.com`（`User`，有訂單、收藏、購物車、優惠卷）、`bob@example.com`（`admin`）、`carol@example.com`（`User`），密碼都是 `Tripeasy123`。**seed 帳號只能讀，測試不得改它們的密碼或綁定狀態**（plan Global Constraint 9）。
