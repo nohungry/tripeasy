@@ -435,7 +435,7 @@ def test_admin_product_empty_result(api, bob_h):
     r = api.get(f"{BASE}/admin/product", headers=bob_h, params={"page": 1, "limit": 20, "keyword": "不存在的關鍵字-zzzz"})
     assert r.status_code == 200, r.text
     # resStatus 在空結果時不會輸出 data 欄位
-    assert not r.json().get("data"), r.text
+    assert "data" not in r.json(), r.text
 
 
 # ------------------------------------------------------------------ 篩選：v4 驗證器（seed 國家）
