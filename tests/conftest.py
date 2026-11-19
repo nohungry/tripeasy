@@ -122,7 +122,7 @@ def _cleanup_all(items, delete) -> None:
             delete(item)
         except Exception as exc:  # noqa: BLE001
             first_error = first_error or exc
-    if first_error:
+    if first_error is not None:
         raise first_error
 
 

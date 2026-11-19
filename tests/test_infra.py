@@ -51,30 +51,29 @@ def test_purge_removes_only_test_data(db):
     order = insert(db, "orders", user_id=user["user_id"], payment_status=1)
     insert(db, "order_item", order_id=order["order_id"], tour_id=tour["tour_id"], payment_status=1)
     insert(db, "review", user_id=user["user_id"], tour_id=tour["tour_id"])
-    keep = insert(db, "user", email=keep_email)
     gmail_email = f"e2e-{uuid.uuid4().hex[:8]}@gmail.com"
     upper_email = f"E2E-{uuid.uuid4().hex[:8]}@Example.com"
-    gmail = insert(db, "user", email=gmail_email)
-    upper = insert(db, "user", email=upper_email)
     other_tours = "SELECT count(*) FROM tour WHERE NOT starts_with(title, 'p3-')"
     other_before = db.execute(other_tours).fetchone()[0]
     try:
+        insert(db, "user", email=keep_email)
+        insert(db, "user", email=gmail_email)
+        insert(db, "user", email=upper_email)
         result = purge_leftover_test_data(db)
         assert result["users"] >= 1 and result["tours"] >= 1
         assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (test_email,)).fetchone() is None
         assert db.execute("SELECT 1 FROM tour WHERE tour_id = %s", (tour["tour_id"],)).fetchone() is None
         assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (keep_email,)).fetchone() is not None
-        assert db.execute(other_tours).fetchone()[0] == other_before > 0
+        assert other_before > 0
+        assert db.execute(other_tours).fetchone()[0] == other_before
         assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (gmail_email,)).fetchone() is not None
         assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (upper_email,)).fetchone() is None
         for seed in ("alice", "bob", "carol"):
             assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (f"{seed}@example.com",)).fetchone()
     finally:
-        delete_user(db, str(keep["user_id"]))
-        delete_user(db, str(gmail["user_id"]))
-        for row in db.execute('SELECT user_id FROM "user" WHERE email = %s', (upper_email,)).fetchall():
-            delete_user(db, str(row[0]))
-
+        for email in (keep_email, gmail_email, upper_email):
+            for row in db.execute('SELECT user_id FROM "user" WHERE email = %s', (email,)).fetchall():
+                delete_user(db, str(row[0]))
 
 def test_purge_prefixes_cover_fixture_emails():
     from conftest import TEST_EMAIL_PREFIXES
@@ -127,24 +126,46 @@ def test_delete_tour_removes_all_child_rows(db, make_user, make_tour, item):
     order = insert(db, "orders", user_id=user["user_id"], payment_status=1)
     insert(db, "order_item", order_id=order["order_id"], tour_id=tid, payment_status=1)
     tables = ["review", "hidden_play", "favorite", "cart_item", "notification", "order_item"]
+    grandchildren: list[tuple[str, str, str]] = []  # (表, 父欄位, 父 id)
     if item == "travel":
         tables.append("tour_detail")
     if item == "restaurant":
         r = insert(db, "restaurant", tour_id=tid)
         insert(db, "restaurant_business", restaurant_id=r["restaurant_id"])
         insert(db, "restaurant_menu", restaurant_id=r["restaurant_id"])
+        grandchildren += [("restaurant_business", "restaurant_id", str(r["restaurant_id"])),
+                          ("restaurant_menu", "restaurant_id", str(r["restaurant_id"]))]  # fmt: skip
         tables.append("restaurant")
     if item == "hotel":
         h = insert(db, "hotel", tour_id=tid)
         insert(db, "hotel_room", hotel_id=h["hotel_id"])
+        grandchildren.append(("hotel_room", "hotel_id", str(h["hotel_id"])))
         tables.append("hotel")
     for table in tables:
         assert db.execute(f"SELECT count(*) FROM {table} WHERE tour_id = %s", (tid,)).fetchone()[0] == 1, table
+    for table, col, pid in grandchildren:
+        assert db.execute(f"SELECT count(*) FROM {table} WHERE {col} = %s", (pid,)).fetchone()[0] == 1, table
     delete_tour(db, tid)
+    for table, col, pid in grandchildren:
+        assert db.execute(f"SELECT count(*) FROM {table} WHERE {col} = %s", (pid,)).fetchone()[0] == 0, table
     for table in tables:
         assert db.execute(f"SELECT count(*) FROM {table} WHERE tour_id = %s", (tid,)).fetchone()[0] == 0, table
     assert db.execute("SELECT 1 FROM tour WHERE tour_id = %s", (tid,)).fetchone() is None
-    assert db.execute("SELECT 1 FROM restaurant_menu m JOIN restaurant r USING (restaurant_id) WHERE r.tour_id = %s", (tid,)).fetchone() is None
-    assert db.execute("SELECT 1 FROM hotel_room WHERE hotel_id IN (SELECT hotel_id FROM hotel WHERE tour_id = %s)", (tid,)).fetchone() is None
-    db.execute("DELETE FROM orders WHERE order_id = %s", (order["order_id"],))
-    db.execute("DELETE FROM cart WHERE cart_id = %s", (cart["cart_id"],))
+
+
+def test_cleanup_all_continues_after_failure():
+    """回歸測試：單筆刪除失敗時，其餘仍會被呼叫，最後拋出第一個錯誤。"""
+    from conftest import _cleanup_all
+
+    called = []
+    boom = RuntimeError("boom-2")
+
+    def delete(item):
+        called.append(item)
+        if item == 2:
+            raise boom
+
+    with pytest.raises(RuntimeError) as exc_info:
+        _cleanup_all([1, 2, 3], delete)
+    assert called == [1, 2, 3]
+    assert exc_info.value is boom
