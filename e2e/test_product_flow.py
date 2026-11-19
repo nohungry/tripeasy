@@ -344,3 +344,183 @@ def test_search_country_region_selects_removed(page: Page):
     expect(page.get_by_text("所在國家")).to_have_count(0)
     expect(page.get_by_text("所在地區")).to_have_count(0)
     expect(page.get_by_role("combobox")).to_have_count(3)  # 天數、筆數、排序
+
+
+# ---------- 詳情頁的評論與隱藏玩法、商品主線（Task 12） ----------
+
+REVIEW_HINT_GUEST = "登入後，購買過此行程的會員可以評論與分享隱藏玩法"
+REVIEW_HINT_NO_PURCHASE = "購買過此行程的會員才能評論與分享隱藏玩法"
+URL_ERROR = "「url」必須是 http 或 https 網址"
+
+
+def _login_and_open(page: Page, user: dict, tour_id: str) -> None:
+    """在頁面腳本執行前寫入登入 token 與 userName，再開詳情頁。"""
+    token = login_token(user)
+    page.add_init_script(
+        f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-user');"
+    )
+    _open_detail(page, tour_id)
+
+
+def _review_section(page: Page):
+    return page.get_by_test_id("review-section")
+
+
+def _share_section(page: Page):
+    return page.get_by_test_id("share-section")
+
+
+def _submit_review(page: Page, rating: str, content: str) -> None:
+    section = _review_section(page)
+    section.get_by_label("評分").select_option(rating)
+    section.get_by_label("評論內容").fill(content)
+    section.get_by_role("button", name="送出評論").click()
+
+
+def _submit_share(page: Page, title: str, content: str, url: str) -> None:
+    section = _share_section(page)
+    section.get_by_label("標題").fill(title)
+    section.get_by_label("內容", exact=True).fill(content)
+    section.get_by_label("分享連結（選填）").fill(url)
+    section.get_by_role("button", name="分享玩法").click()
+
+
+def test_product_main_flow(page: Page, make_user, make_tour, make_order):
+    from e2e.conftest import TEST_PASSWORD
+
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+
+    page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    search = page.locator(".search_txtbox:visible").first
+    search.fill(tour["title"])
+    search.press("Enter")
+    cards = page.locator(SEARCH_CARD)
+    expect(cards).to_have_count(1)
+    cards.get_by_role("link", name="查看詳情").click()
+
+    expect(_review_section(page).get_by_text("目前還沒有評論", exact=True)).to_be_visible()
+    expect(_review_section(page).get_by_text(REVIEW_HINT_GUEST, exact=True)).to_be_visible()
+    _review_section(page).get_by_role("link", name="登入", exact=True).click()
+    page.get_by_placeholder("請輸入 Email").fill(user["email"])
+    page.get_by_placeholder("請輸入密碼").fill(TEST_PASSWORD)
+    page.get_by_role("button", name="登入", exact=True).click()
+    page.wait_for_url("**/#/admin/userprofile")
+    _open_detail(page, tour["tour_id"])
+
+    _submit_review(page, "4", "p3 主線評論")
+    first = page.get_by_test_id("review-item").first
+    expect(first).to_contain_text("p3 主線評論")
+    expect(_review_section(page).get_by_text("平均 4.0 分", exact=True)).to_be_visible()
+    expect(_review_section(page).get_by_text("你已評論過此行程", exact=True)).to_be_visible()
+    expect(_review_section(page).get_by_role("button", name="送出評論")).to_have_count(0)
+
+    _submit_share(page, "p3 玩法", "清晨去", "https://example.com/tip")
+    item = page.get_by_test_id("share-item").first
+    expect(item).to_contain_text("p3 玩法")
+    link = item.get_by_role("link", name="查看分享連結")
+    expect(link).to_have_attribute("href", "https://example.com/tip")
+    assert "noopener" in link.get_attribute("rel")
+
+
+def test_guest_sees_login_hint(page: Page, make_tour):
+    tour = make_tour()
+    _open_detail(page, tour["tour_id"])
+    review = _review_section(page)
+    expect(review.get_by_text(REVIEW_HINT_GUEST, exact=True)).to_be_visible()
+    expect(review.get_by_role("link", name="登入", exact=True)).to_have_attribute("href", "#/admin/login")
+    expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
+    expect(page.get_by_role("button", name="分享玩法")).to_have_count(0)
+
+
+def test_member_without_purchase_sees_purchase_hint(page: Page, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"], payment_status=3)
+    _login_and_open(page, user, tour["tour_id"])
+    expect(_review_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
+    expect(_share_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
+    expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
+    expect(page.get_by_role("button", name="分享玩法")).to_have_count(0)
+
+
+def test_review_html_rendered_as_text(page: Page, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+    _login_and_open(page, user, tour["tour_id"])
+    payload = '<img src=x onerror="window.__xss=1">'
+    _submit_review(page, "5", payload)
+    item = page.get_by_test_id("review-item").first
+    expect(item.get_by_text(payload, exact=True)).to_be_visible()
+    assert page.evaluate("window.__xss") is None
+    expect(page.locator("img[src='x']")).to_have_count(0)
+
+
+def test_hidden_share_rejects_javascript_url(page: Page, db, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+    _login_and_open(page, user, tour["tour_id"])
+    _submit_share(page, "p3 壞連結", "內容", "javascript:alert(1)")
+    expect(page.get_by_text(URL_ERROR, exact=True)).to_be_visible()
+    (count,) = db.execute("SELECT count(*) FROM hidden_play WHERE tour_id = %s", (tour["tour_id"],)).fetchone()
+    assert count == 0
+
+
+def test_hidden_share_javascript_url_in_db_not_rendered_as_link(page: Page, db, make_user, make_tour):
+    tour = make_tour()
+    user = make_user()
+    db.execute(
+        "INSERT INTO hidden_play (user_id, tour_id, title, content, share_url) VALUES (%s, %s, 'p3 注入', '內容', %s)",
+        (user["user_id"], tour["tour_id"], "javascript:alert(1)"),
+    )
+    _open_detail(page, tour["tour_id"])
+    item = page.get_by_test_id("share-item")
+    expect(item).to_have_count(1)
+    expect(item).to_contain_text("p3 注入")
+    expect(item.get_by_role("link")).to_have_count(0)
+    expect(page.locator("a[href^='javascript:']")).to_have_count(0)
+
+
+def test_review_submit_with_expired_token(page: Page, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+    _login_and_open(page, user, tour["tour_id"])
+    expect(_review_section(page).get_by_role("button", name="送出評論")).to_be_visible()
+    expired = login_token(user, exp_delta=EXPIRED)
+    page.evaluate("t => localStorage.setItem('authToken', t)", expired)
+    _submit_review(page, "3", "過期後送出")
+    page.wait_for_url("**/#/admin/login")
+    expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
+    expect(page.locator(".swal2-icon-error")).to_have_count(0)
+
+
+def test_reviews_and_shares_load_more(page: Page, db, make_user, make_tour):
+    tour = make_tour()
+    users = [make_user() for _ in range(7)]
+    for i, u in enumerate(users):
+        db.execute(
+            "INSERT INTO review (user_id, tour_id, type, rating, content, created_at) "
+            "VALUES (%s, %s, 'travel', 4, %s, now() - make_interval(mins => %s))",
+            (u["user_id"], tour["tour_id"], f"p3 評論 {i}", i),
+        )
+    for i in range(6):
+        db.execute(
+            "INSERT INTO hidden_play (user_id, tour_id, title, content, created_at) "
+            "VALUES (%s, %s, %s, '內容', now() - make_interval(mins => %s))",
+            (users[0]["user_id"], tour["tour_id"], f"p3 玩法 {i}", i),
+        )
+    _open_detail(page, tour["tour_id"])
+    reviews = page.get_by_test_id("review-item")
+    shares = page.get_by_test_id("share-item")
+    expect(reviews).to_have_count(5)
+    expect(shares).to_have_count(5)
+    page.get_by_role("button", name="載入更多評論").click()
+    expect(reviews).to_have_count(7)
+    expect(page.get_by_role("button", name="載入更多評論")).to_have_count(0)
+    page.get_by_role("button", name="載入更多玩法").click()
+    expect(shares).to_have_count(6)
+    expect(page.get_by_role("button", name="載入更多玩法")).to_have_count(0)
