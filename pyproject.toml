@@ -17,3 +17,4 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests", "e2e"]
 addopts = "-ra"
+pythonpath = ["tests"]

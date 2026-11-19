@@ -5,7 +5,6 @@ import hmac
 import importlib.util
 import json
 import os
-import sys
 import time
 import uuid
 from pathlib import Path
@@ -16,8 +15,7 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # e2e 以路徑載入本檔時，dbfactory 才找得到
-from dbfactory import insert  # noqa: E402
+from dbfactory import insert
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
@@ -116,6 +114,18 @@ TEST_PASSWORD_HASH = "$2b$10$Gv8aWHvXWoOcP9b.gyVTl.vEznO/bXW1hLig..ZaTtEgRMmJGuI
 _DEFAULT = object()
 
 
+def _cleanup_all(items, delete) -> None:
+    """逐筆清除；單筆失敗不影響其餘，全部試完後才拋出第一個錯誤。"""
+    first_error = None
+    for item in items:
+        try:
+            delete(item)
+        except Exception as exc:  # noqa: BLE001
+            first_error = first_error or exc
+    if first_error:
+        raise first_error
+
+
 @pytest.fixture
 def make_user(db):
     created: list[str] = []
@@ -140,8 +150,7 @@ def make_user(db):
         return {"user_id": str(user_id), "email": email, "role": role}
 
     yield _make
-    for user_id in created:
-        delete_user(db, user_id)
+    _cleanup_all(created, lambda user_id: delete_user(db, user_id))
 
 
 def password_fingerprint(password) -> str:
@@ -227,7 +236,7 @@ def mock_google_code(claims: dict) -> str:
 
 # 全小寫；比對用 lower(email)，且 email 必須以 @example.com 結尾
 TEST_EMAIL_PREFIXES: tuple[str, ...] = (
-    "p0-", "e2e-", "factory-", "a.", "g.", "mixed.", "nobody.", "val.", "race.", "pref.", "lower.", "dup.", "co.",
+    "p0-", "e2e-", "factory-", "a.", "g.", "mixed.", "nobody.", "val.", "race.", "pref.", "lower.", "dup.", "co.", "mock.",
 )  # fmt: skip
 TEST_TOUR_PREFIX = "p3-"
 
@@ -290,8 +299,7 @@ def make_tour(db):
         return {"tour_id": tour_id, "title": title, "type": tour_type, "item": item, "status": status}
 
     yield _make
-    for tour_id in created:
-        delete_tour(db, tour_id)
+    _cleanup_all(created, lambda tour_id: delete_tour(db, tour_id))
 
 
 @pytest.fixture
@@ -311,6 +319,10 @@ def make_order(db):
         return {"order_id": order_id, "order_item_id": item_id}
 
     yield _make
-    for order_id, item_id in created:
+
+    def _delete(pair):
+        order_id, item_id = pair
         db.execute("DELETE FROM order_item WHERE order_item_id = %s", (item_id,))
         db.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
+
+    _cleanup_all(created, _delete)

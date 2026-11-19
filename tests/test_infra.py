@@ -52,16 +52,28 @@ def test_purge_removes_only_test_data(db):
     insert(db, "order_item", order_id=order["order_id"], tour_id=tour["tour_id"], payment_status=1)
     insert(db, "review", user_id=user["user_id"], tour_id=tour["tour_id"])
     keep = insert(db, "user", email=keep_email)
+    gmail_email = f"e2e-{uuid.uuid4().hex[:8]}@gmail.com"
+    upper_email = f"E2E-{uuid.uuid4().hex[:8]}@Example.com"
+    gmail = insert(db, "user", email=gmail_email)
+    upper = insert(db, "user", email=upper_email)
+    other_tours = "SELECT count(*) FROM tour WHERE NOT starts_with(title, 'p3-')"
+    other_before = db.execute(other_tours).fetchone()[0]
     try:
         result = purge_leftover_test_data(db)
         assert result["users"] >= 1 and result["tours"] >= 1
         assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (test_email,)).fetchone() is None
         assert db.execute("SELECT 1 FROM tour WHERE tour_id = %s", (tour["tour_id"],)).fetchone() is None
         assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (keep_email,)).fetchone() is not None
+        assert db.execute(other_tours).fetchone()[0] == other_before > 0
+        assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (gmail_email,)).fetchone() is not None
+        assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (upper_email,)).fetchone() is None
         for seed in ("alice", "bob", "carol"):
             assert db.execute('SELECT 1 FROM "user" WHERE email = %s', (f"{seed}@example.com",)).fetchone()
     finally:
         delete_user(db, str(keep["user_id"]))
+        delete_user(db, str(gmail["user_id"]))
+        for row in db.execute('SELECT user_id FROM "user" WHERE email = %s', (upper_email,)).fetchall():
+            delete_user(db, str(row[0]))
 
 
 def test_purge_prefixes_cover_fixture_emails():
@@ -73,6 +85,9 @@ def test_purge_prefixes_cover_fixture_emails():
         for path in (ROOT / folder).rglob("*.py"):
             found.update(pattern.findall(path.read_text(encoding="utf-8")))
     assert found, "regex 沒掃到任何前綴"
+    from test_oauth_spike import MOCK_EMAIL
+
+    assert MOCK_EMAIL.lower().startswith(TEST_EMAIL_PREFIXES), MOCK_EMAIL
     for prefix in found:
         assert prefix.lower().startswith(TEST_EMAIL_PREFIXES), prefix
 
@@ -93,3 +108,43 @@ def test_runner_and_python_pinned():
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     assert "runs-on: ubuntu-24.04" in ci
     assert (ROOT / ".python-version").read_text().strip() == "3.13"
+
+
+@pytest.mark.parametrize("item", ["travel", "restaurant", "hotel"])
+def test_delete_tour_removes_all_child_rows(db, make_user, make_tour, item):
+    """回歸測試：delete_tour 清乾淨每一張子表。"""
+    from conftest import delete_tour
+
+    user = make_user()
+    t = make_tour(item=item, with_detail=item == "travel")
+    tid = t["tour_id"]
+    insert(db, "review", user_id=user["user_id"], tour_id=tid)
+    insert(db, "hidden_play", user_id=user["user_id"], tour_id=tid)
+    insert(db, "favorite", user_id=user["user_id"], tour_id=tid)
+    cart = insert(db, "cart", user_id=user["user_id"])
+    insert(db, "cart_item", cart_id=cart["cart_id"], tour_id=tid)
+    insert(db, "notification", tour_id=tid)
+    order = insert(db, "orders", user_id=user["user_id"], payment_status=1)
+    insert(db, "order_item", order_id=order["order_id"], tour_id=tid, payment_status=1)
+    tables = ["review", "hidden_play", "favorite", "cart_item", "notification", "order_item"]
+    if item == "travel":
+        tables.append("tour_detail")
+    if item == "restaurant":
+        r = insert(db, "restaurant", tour_id=tid)
+        insert(db, "restaurant_business", restaurant_id=r["restaurant_id"])
+        insert(db, "restaurant_menu", restaurant_id=r["restaurant_id"])
+        tables.append("restaurant")
+    if item == "hotel":
+        h = insert(db, "hotel", tour_id=tid)
+        insert(db, "hotel_room", hotel_id=h["hotel_id"])
+        tables.append("hotel")
+    for table in tables:
+        assert db.execute(f"SELECT count(*) FROM {table} WHERE tour_id = %s", (tid,)).fetchone()[0] == 1, table
+    delete_tour(db, tid)
+    for table in tables:
+        assert db.execute(f"SELECT count(*) FROM {table} WHERE tour_id = %s", (tid,)).fetchone()[0] == 0, table
+    assert db.execute("SELECT 1 FROM tour WHERE tour_id = %s", (tid,)).fetchone() is None
+    assert db.execute("SELECT 1 FROM restaurant_menu m JOIN restaurant r USING (restaurant_id) WHERE r.tour_id = %s", (tid,)).fetchone() is None
+    assert db.execute("SELECT 1 FROM hotel_room WHERE hotel_id IN (SELECT hotel_id FROM hotel WHERE tour_id = %s)", (tid,)).fetchone() is None
+    db.execute("DELETE FROM orders WHERE order_id = %s", (order["order_id"],))
+    db.execute("DELETE FROM cart WHERE cart_id = %s", (cart["cart_id"],))
