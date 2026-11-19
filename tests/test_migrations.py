@@ -84,7 +84,7 @@ def test_v4_applied(db):
 
 def test_review_user_tour_unique_index(db):
     row = db.execute(
-        "SELECT indexdef FROM pg_indexes WHERE indexname = 'review_user_tour_key'"
+        "SELECT indexdef FROM pg_indexes WHERE tablename = 'review' AND indexname = 'review_user_tour_key'"
     ).fetchone()
     assert row is not None, "缺少 review_user_tour_key"
     assert "UNIQUE" in row[0]
@@ -96,14 +96,20 @@ def test_review_duplicate_user_tour_rejected(tx):
     user = insert(tx, "user")
     tour = insert(tx, "tour")
     insert(tx, "review", user_id=user["user_id"], tour_id=tour["tour_id"], type="travel", rating=5)
-    with pytest.raises(psycopg.errors.UniqueViolation):
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
         insert(tx, "review", user_id=user["user_id"], tour_id=tour["tour_id"], type="travel", rating=4)
+    assert exc.value.diag.constraint_name == "review_user_tour_key"
 
 
 def test_web_reviews_not_limited_by_unique_index(tx):
+    """對照組：tour_id 為 NULL 的評論不受限；partial 條件由 indexdef 測試驗證。"""
     user = insert(tx, "user")
     insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=5)
     insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=4)
+    count = tx.execute(
+        "SELECT count(*) FROM review WHERE user_id = %s AND tour_id IS NULL", (user["user_id"],)
+    ).fetchone()[0]
+    assert count == 2
 
 
 @pytest.mark.parametrize("rating, ok", [(0, False), (6, False), (1, True), (5, True)])
@@ -112,5 +118,6 @@ def test_review_rating_check(tx, rating, ok):
     if ok:
         insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=rating)
     else:
-        with pytest.raises(psycopg.errors.CheckViolation):
+        with pytest.raises(psycopg.errors.CheckViolation) as exc:
             insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=rating)
+        assert exc.value.diag.constraint_name == "review_rating_range"

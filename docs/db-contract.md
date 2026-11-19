@@ -1764,13 +1764,13 @@ V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applie
 
 | # | 變更 | 理由（P3 spec） | 對應測試 |
 |---|---|---|---|
-| 1 | 部分唯一索引 `review_user_tour_key ON review (user_id, tour_id) WHERE tour_id IS NOT NULL` | §3.3、§4.1：每位會員對每個行程只能有一則評論，併發下由 DB 擋住（撞到時 `23505` 回 409）；`tour_id` 為 NULL 的 `web` 評論不受限。 | `tests/test_migrations.py::test_review_user_tour_unique_index`、`test_review_duplicate_user_tour_rejected`、`test_web_reviews_not_limited_by_unique_index` |
-| 2 | CHECK `review_rating_range CHECK (rating BETWEEN 1 AND 5)` | §3.3、§4.1：評分只能是 1–5（V1 只有 `DEFAULT 1`，沒有範圍限制）。 | `test_migrations.py::test_review_rating_check`（0、6 被拒；1、5 通過） |
+| 1 | 部分唯一索引 `review_user_tour_key ON review (user_id, tour_id) WHERE tour_id IS NOT NULL` | §3.3、§4.1：每位會員對每個行程只能有一則評論，併發下由 DB 擋住（撞到時 `23505` 回 409，P3 Task 6 實作）；`tour_id` 為 NULL 的 `web` 評論不受限。 | `tests/test_migrations.py::test_review_user_tour_unique_index`、`test_review_duplicate_user_tour_rejected`、`test_web_reviews_not_limited_by_unique_index`（對照組） |
+| 2 | CHECK `review_rating_range CHECK (rating BETWEEN 1 AND 5)` | §4.1：評分只能是 1–5（V1 只有 `DEFAULT 1`，沒有範圍限制）。 | `test_migrations.py::test_review_rating_check`（0、6 被拒；1、5 通過） |
 
 V4 套用狀態由 `test_migrations.py::test_v4_applied` 與 `test_flyway_applied_v1_to_v4` 檢查。V4 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變。
 
 ### 購買資格（非 DB 物件）
 
 - **定義**（P3 spec §4.2 R1）：會員「購買過」某行程，是指存在該會員本人的 `orders`，其 `order_item` 屬於該行程且 `order_item.payment_status = 1`（已付款）。未付款、已取消、已退款、逾時、別人的訂單、別的行程的訂單都不算。
-- **實作位置**：`backend/src/utils/purchase.js`（`hasPurchased`），是唯一實作；評論、隱藏玩法與資格查詢 API 都呼叫它，不得另寫 SQL。
+- **實作位置**：`backend/src/utils/purchase.js`（`hasPurchased`，P3 Task 6 建立），是唯一實作；評論、隱藏玩法與資格查詢 API 都呼叫它，不得另寫 SQL。
 - **對 P4 的依賴**：付款成功時，P4 必須把 `order_item.payment_status` 設成 `1`；否則會員永遠沒有評論與分享隱藏玩法的資格（現況 `newebpay.js` 的寫入失敗，見 §4.2「契約已記錄」的付款項）。
