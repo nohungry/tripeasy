@@ -101,7 +101,8 @@ def test_detail_with_expired_token_still_renders(page: Page, db, make_user):
     _expire_session(page, user)
     tour_id, title = _seed_tour(db, "travel")
     _open_detail(page, tour_id)
-    expect(page.get_by_role("heading", name=title)).to_be_visible()
+    # 提示只顯示 2 秒（timer），先確認提示，再確認標題
     expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
     assert page.evaluate("localStorage.getItem('authToken')") is None
     expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_be_visible()
