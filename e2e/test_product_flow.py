@@ -1,4 +1,3 @@
-import datetime
 import json
 import re
 import uuid
@@ -6,9 +5,7 @@ import uuid
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import FRONTEND_BASE, live_promotion, login_token
-
-EXPIRED = datetime.timedelta(seconds=-60)
+from e2e.conftest import EXPIRED, FRONTEND_BASE, live_promotion, login_token
 
 
 def _seed_tour(db, item: str) -> tuple[str, str]:
@@ -88,12 +85,7 @@ def test_add_to_cart_coming_soon(page: Page, db):
 
 
 def test_detail_promo_price_shown(page: Page, db, make_tour):
-    tour = make_tour()
-    db.execute(
-        "INSERT INTO notification (tour_id, type, start_date, end_date, discount, promo_price) "
-        "VALUES (%s, '促銷', now() - interval '1 day', now() + interval '1 day', 10, 900)",
-        (tour["tour_id"],),
-    )  # notification 由 make_tour teardown 的 delete_tour 清除
+    tour = live_promotion(db, make_tour)
     _open_detail(page, tour["tour_id"])
     expect(page.get_by_role("heading", name=tour["title"])).to_be_visible()
     expect(page.get_by_text("NT$900", exact=True)).to_be_visible()
@@ -138,10 +130,6 @@ def test_detail_server_error_shows_load_failed(page: Page, db):
 
 HOME_API = "/user/home/search/products"
 HOME_CARD_TITLES = "[data-testid=home-product-card] h3"
-
-
-def _home_titles(page: Page) -> list[str]:
-    return page.locator(HOME_CARD_TITLES).all_inner_texts()
 
 
 def _home_response(item: str, page_no: int | None = None):
@@ -193,7 +181,7 @@ def test_home_products_match_api(page: Page, db, make_tour):
 def test_home_product_pagination(page: Page):
     with page.expect_response(_home_response("popular", 1)) as info:
         page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
-    data = info.value.json()["data"]
+    data = info.value.json().get("data", [])
     page_no = 1
     prev_button = page.get_by_role("button", name="上一頁")
     next_button = page.get_by_role("button", name="下一頁")
@@ -202,7 +190,7 @@ def test_home_product_pagination(page: Page):
         with page.expect_response(_home_response("popular", page_no + 1)) as info:
             next_button.click()
         page_no += 1
-        data = info.value.json()["data"]
+        data = info.value.json().get("data", [])
         expect(page.locator(HOME_CARD_TITLES)).to_have_text([row["旅遊名稱"] for row in data])
     assert page_no >= 2, "熱門專區至少要有 2 頁才能測分頁"
     expect(next_button).to_be_disabled()
@@ -308,12 +296,24 @@ def test_search_price_filter_and_sort(page: Page):
     page.get_by_placeholder("最大金額").fill("50000")
     with page.expect_response(_search_response(min_price=20000, max_price=50000, sort_by="price", order="desc")) as info:
         page.get_by_role("button", name="搜尋", exact=True).click()
-    rows = info.value.json()["data"]
+    rows = info.value.json().get("data", [])
     assert rows, "價格區間內應有行程"
     prices = [float(r["價錢"]) for r in rows]
     assert all(20000 <= p <= 50000 for p in prices), prices
     assert prices == sorted(prices, reverse=True), prices
     expect(page.locator(SEARCH_TITLES)).to_have_text([r["旅遊名稱"] for r in rows])
+
+
+def test_search_invalid_price_range_shows_backend_message(page: Page):
+    _open_search(page)
+    page.get_by_placeholder("最小金額").fill("50000")
+    page.get_by_placeholder("最大金額").fill("20000")
+    with page.expect_response(_search_response(min_price=50000, max_price=20000)) as info:
+        page.get_by_role("button", name="搜尋", exact=True).click()
+    assert info.value.status == 400
+    message = info.value.json()["message"]
+    expect(page.get_by_text(message, exact=True)).to_be_visible()
+    expect(page.get_by_text("載入失敗", exact=False)).to_have_count(0)
 
 
 def test_search_no_result(page: Page):
@@ -327,7 +327,7 @@ def test_search_no_result(page: Page):
 def test_search_card_opens_detail(page: Page):
     with page.expect_response(_search_response()) as info:
         page.goto(f"{FRONTEND_BASE}/#/search", wait_until="domcontentloaded")
-    rows = info.value.json()["data"]
+    rows = info.value.json().get("data", [])
     assert rows, "搜尋頁第一頁回應不應為空"
     first_row = rows[0]
     card = page.locator(SEARCH_CARD).first
@@ -447,6 +447,17 @@ def test_member_without_purchase_sees_purchase_hint(page: Page, make_user, make_
     expect(page.get_by_role("button", name="分享玩法")).to_have_count(0)
 
 
+def test_admin_sees_purchase_hint_without_forms(page: Page, make_user, make_tour):
+    tour = make_tour()
+    admin = make_user(role="admin")
+    _login_and_open(page, admin, tour["tour_id"])
+    expect(_review_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
+    expect(_share_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
+    expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
+    expect(page.get_by_role("button", name="分享玩法")).to_have_count(0)
+    expect(page).to_have_url(re.compile(rf"#/tour/{tour['tour_id']}$"))
+
+
 def test_review_html_rendered_as_text(page: Page, make_user, make_tour, make_order):
     tour = make_tour()
     user = make_user()
@@ -495,8 +506,8 @@ def test_review_submit_with_expired_token(page: Page, make_user, make_tour, make
     expired = login_token(user, exp_delta=EXPIRED)
     page.evaluate("t => localStorage.setItem('authToken', t)", expired)
     _submit_review(page, "3", "過期後送出")
-    page.wait_for_url("**/#/admin/login")
     expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
+    page.wait_for_url("**/#/admin/login")
     expect(page.locator(".swal2-icon-error")).to_have_count(0)
 
 

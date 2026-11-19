@@ -13,7 +13,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 
 | 項目 | 結果 |
 |---|---|
-| 測試數量 | **329 passed、2 xfailed（P2 結束）→ 499 passed、0 xfailed**（`scripts/ci.sh` 連跑兩次，見 §3.3）。收集數 331 → 499，淨增 168 個測試；2 個 strict xfail 移除後轉為一般通過 |
+| 測試數量 | **329 passed、2 xfailed（P2 結束）→ 499 passed、0 xfailed**（`scripts/ci.sh` 連跑兩次，見 §3.3；最終修正波後 **504 passed、0 xfailed**，見附錄 C）。收集數 331 → 499，淨增 168 個測試；2 個 strict xfail 移除後轉為一般通過 |
 | xfail | **2 → 0**：PATCH `/info` 部分更新的兩個 strict xfail（`tests/test_member_auth.py:397`、`:406`）因修好而移除（§1.1） |
 | 後端 | 既有讀取 API 修 5 類問題（搜尋分頁不穩、`duration` 不生效、詳情 500、food 空項、隱藏玩法 `title`）；首頁促銷修 2 個契約缺口；新增 3 支 API（資格查詢、寫評論、分享隱藏玩法）；新增 migration `V4`（一人一行程一則評論、評分 1–5） |
 | 前端 | 首頁清單、搜尋頁、詳情頁接 API；詳情頁評論與隱藏玩法讀寫；401 統一提示、成功提示改 `timer`；首頁雙 header 修掉；刪除假行程頁與其圖檔 |
@@ -54,7 +54,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 **現象**（已實測）：`duration=5` 回 10 筆（沒有過濾）。
 **根因**：`buildDynamicTourSQL` 用 `typeof duration === 'number'`，但 query 參數是字串。
 **紅燈**：同 §1.3 的 `task-3-red.txt`（總覽 `aace4c2`）；`duration` 測試改走 `_all_pages` 以避免空轉。
-**修正**：backend `1edf1b7`：條件改為 `duration !== undefined`，參數 `Number(duration)`。
+**修正**：backend `1edf1b7`：條件改為 `duration !== undefined && duration !== ''`，參數 `Number(duration)`。
 **綠燈**：搜尋結果的天數集合與 DB 相符。
 
 ### 1.5 首頁促銷：露出已下架行程、沒有期間條件（P3 spec §5.1、§8.2 N6；契約 #7、#9）
@@ -227,7 +227,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 | API 契約 | 三支新 API 的正常、每個驗證錯誤、401／403；既有讀取 API 的修正；回應鍵名對齊 GET | `tests/test_product_write.py`（82）、`tests/test_product_read.py`（19）、`tests/test_api_smoke.py`（36）、`tests/test_product_routes.py`（8） |
 | 安全 | 未付款狀態（-1、0、2、3、4）不能寫；別人的、別行程的已付款訂單不算；admin 403；非 http(s) 網址 400；HTML 原樣保存（API）且在頁面以文字顯示不執行（E2E）；併發 5 則評論只成功 1 則 | `tests/test_product_write.py`、`e2e/test_product_flow.py` |
 | DB 狀態 | `review.type = tour.item`、內容已 trim、`share_url` NULL／有值；V4 索引與 CHECK（含網站好評不受限）；seed 唯讀冒煙 | `tests/test_migrations.py`（15）、`tests/test_db_contract.py`（45）、`tests/test_product_write.py` |
-| E2E | 首頁單一 header 與清單；搜尋分頁走完每個上架行程恰一次；header 關鍵字；詳情四種 item；未登入／未購買／admin 提示；XSS；過期 token；假頁面路由 404；主線 | `e2e/test_product_flow.py`（41）、`e2e/test_member_flow.py`（27） |
+| E2E | 首頁單一 header 與清單；搜尋分頁走完每個上架行程恰一次；header 關鍵字；詳情四種 item；未登入／未購買／admin 提示；XSS；過期 token；假頁面路由 404；主線 | `e2e/test_product_flow.py`（43）、`e2e/test_member_flow.py`（27） |
 | 測試基礎 | `make_tour`、`make_order`、`purge_leftovers`、`_cleanup_all` | `tests/conftest.py`、`tests/test_infra.py`（12）、`e2e/conftest.py` |
 
 ### 3.2 值得一看的技巧
@@ -400,4 +400,17 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 - Task 9：日期 `slice(0,10)` 依賴 backend UTC（部署換時區會少一天）；`safeUrl` 擋 `javascript:` 無 E2E；無促銷時不出現 `<del>` 無反向驗證；`formatPrice(null)` 為 `NT$0`。
 - Task 10：tab 缺 `role=presentation`、無 tabpanel／方向鍵；首頁 API 失敗無提示；卡片 `li` click 無鍵盤可及；收藏圖示 P5 需 `@click.stop`；`isSticky`／`handleScroll` 成為無作用程式碼。
 - Task 11：搜尋測試依賴 seed 內容；`min>max` 等 400 顯示「載入失敗」誤導；同關鍵字重複導航不重查；「自由選擇」文案為新增；ILIKE 萬用字元（既有後端）。
-- Task 12：列表讀取失敗顯示「目前還沒有評論」誤導；共用 `submitting` 旗標；XSS 只驗評論未驗玩法 `title`／`content`；409 後重讀資格失敗成為未處理 rejection（只在 console）；admin 狀態詳情頁無 E2E。
+- Task 12：列表讀取失敗顯示「目前還沒有評論」誤導；共用 `submitting` 旗標；XSS 只驗評論未驗玩法 `title`／`content`；409 後重讀資格失敗成為未處理 rejection（只在 console）；（admin 詳情頁 E2E 已於最終修正波補上）。
+
+
+### 附錄 C 最終審查修正波（2026-11-19）
+
+| 項目 | 修正 | commit |
+|---|---|---|
+| F1 | 搜尋日期區間與 `duration`：controller 的語意是「開始日 ≥ start_date、結束日 ≤ end_date、天數 = duration」，所以行程要落在區間內，只需 `duration ≤ 區間涵蓋天數`，涵蓋天數 = end_date − start_date + 1（含頭尾）。舊驗證要求 `duration` 等於天數差，寬區間永遠 400。超過時回 400「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 N 天）」。前端搜尋頁 400 時顯示後端 message，其他錯誤維持「載入失敗，請稍後再試」。紅燈 [final-fix-red.txt](evidence/phase-3/final-fix-red.txt)（3 failed 19 deselected） | 總覽 `fb339da`（紅）；backend `a956697`；frontend `9940fa1` |
+| F2 | `test_review_submit_with_expired_token` 先斷言「登入已過期」再等導頁 | 總覽（見 git log） |
+| F3 | 補 admin 詳情頁 E2E（`test_admin_sees_purchase_hint_without_forms`）：顯示未購買提示、無評論／玩法表單、不導頁 | 同上 |
+| F4–F7 | §1.4 條件措辭；`EXPIRED` 移到 `e2e/conftest.py` 共用；促銷測試改用 `live_promotion`（語意相符：有效促銷、價 900）；`["data"]` 改 `.get("data", [])`；刪 `_home_titles` | 同上 |
+| F8、F9 | `tourPage.vue` 新增 `createdText`（評論／玩法建立時間以 Asia/Taipei 換算），`dateText`（行程日期）不動；分享連結輸入框加 `autocapitalize/autocorrect/spellcheck` | frontend `9940fa1` |
+
+`scripts/ci.sh` 結果：**504 passed、0 xfailed、0 failed**（133.25s）；較 499 多 3 個後端（F1）與 2 個 E2E（搜尋 400 訊息、admin）。

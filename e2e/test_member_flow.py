@@ -1,4 +1,3 @@
-import datetime
 import json
 import re
 import time
@@ -11,6 +10,7 @@ from playwright.sync_api import Page, expect
 
 from e2e.conftest import (
     API_BASE,
+    EXPIRED,
     FRONTEND_BASE,
     MAILPIT_BASE,
     TEST_PASSWORD,
@@ -189,7 +189,6 @@ def test_forgot_password_via_mailpit(page: Page, make_user):
 # ---- Task 9：會員中心 ----
 
 AVATAR_FIXTURE = Path(__file__).parent / "fixtures" / "avatar.png"
-EXPIRED = datetime.timedelta(seconds=-60)
 
 
 def _login_to_profile(page: Page, user: dict) -> None:
