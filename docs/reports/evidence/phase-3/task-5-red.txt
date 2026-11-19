@@ -1,0 +1,67 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 15 items
+
+tests/test_migrations.py::test_flyway_applied_v1_to_v4 FAILED            [  6%]
+tests/test_migrations.py::test_all_v1_tables_exist PASSED                [ 13%]
+tests/test_migrations.py::test_flyway_applied_views_functions PASSED     [ 20%]
+tests/test_migrations.py::test_v3_applied PASSED                         [ 26%]
+tests/test_migrations.py::test_user_password_is_nullable PASSED          [ 33%]
+tests/test_migrations.py::test_user_email_lower_unique_index PASSED      [ 40%]
+tests/test_migrations.py::test_email_case_duplicate_rejected PASSED      [ 46%]
+tests/test_migrations.py::test_v4_applied FAILED                         [ 53%]
+tests/test_migrations.py::test_review_user_tour_unique_index FAILED      [ 60%]
+tests/test_migrations.py::test_review_duplicate_user_tour_rejected FAILED [ 66%]
+tests/test_migrations.py::test_web_reviews_not_limited_by_unique_index PASSED [ 73%]
+tests/test_migrations.py::test_review_rating_check[0-False] FAILED       [ 80%]
+tests/test_migrations.py::test_review_rating_check[6-False] FAILED       [ 86%]
+tests/test_migrations.py::test_review_rating_check[1-True] PASSED        [ 93%]
+tests/test_migrations.py::test_review_rating_check[5-True] PASSED        [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_flyway_applied_v1_to_v4 _________________________
+tests/test_migrations.py:21: in test_flyway_applied_v1_to_v4
+    assert rows == [("1", True), ("2", True), ("3", True), ("4", True)]
+E   AssertionError: assert [('1', True),..., ('3', True)] == [('1', True),..., ('4', True)]
+E     
+E     Right contains one more item: ('4', True)
+E     
+E     Full diff:
+E       [
+E           (
+E               '1',...
+E     
+E     ...Full output truncated (15 lines hidden), use '-vv' to show
+_______________________________ test_v4_applied ________________________________
+tests/test_migrations.py:82: in test_v4_applied
+    assert row == (True,)
+E   assert None == (True,)
+______________________ test_review_user_tour_unique_index ______________________
+tests/test_migrations.py:89: in test_review_user_tour_unique_index
+    assert row is not None, "缺少 review_user_tour_key"
+E   AssertionError: 缺少 review_user_tour_key
+E   assert None is not None
+___________________ test_review_duplicate_user_tour_rejected ___________________
+tests/test_migrations.py:99: in test_review_duplicate_user_tour_rejected
+    with pytest.raises(psycopg.errors.UniqueViolation):
+E   Failed: DID NOT RAISE <class 'psycopg.errors.UniqueViolation'>
+______________________ test_review_rating_check[0-False] _______________________
+tests/test_migrations.py:115: in test_review_rating_check
+    with pytest.raises(psycopg.errors.CheckViolation):
+E   Failed: DID NOT RAISE <class 'psycopg.errors.CheckViolation'>
+______________________ test_review_rating_check[6-False] _______________________
+tests/test_migrations.py:115: in test_review_rating_check
+    with pytest.raises(psycopg.errors.CheckViolation):
+E   Failed: DID NOT RAISE <class 'psycopg.errors.CheckViolation'>
+=========================== short test summary info ============================
+FAILED tests/test_migrations.py::test_flyway_applied_v1_to_v4 - AssertionErro...
+FAILED tests/test_migrations.py::test_v4_applied - assert None == (True,)
+FAILED tests/test_migrations.py::test_review_user_tour_unique_index - Asserti...
+FAILED tests/test_migrations.py::test_review_duplicate_user_tour_rejected - F...
+FAILED tests/test_migrations.py::test_review_rating_check[0-False] - Failed: ...
+FAILED tests/test_migrations.py::test_review_rating_check[6-False] - Failed: ...
+========================= 6 failed, 9 passed in 0.17s ==========================
