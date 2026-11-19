@@ -302,6 +302,17 @@ def make_tour(db):
     _cleanup_all(created, lambda tour_id: delete_tour(db, tour_id))
 
 
+def live_promotion(db, make_tour) -> dict:
+    """建立一個上架行程，並寫一筆有效的促銷（now() ± 1 day、discount 10、promo_price 900）；回傳該行程。"""
+    t = make_tour()
+    db.execute(
+        "INSERT INTO notification (tour_id, type, start_date, end_date, discount, promo_price) "
+        "VALUES (%s, '促銷', now() - interval '1 day', now() + interval '1 day', 10, 900)",
+        (t["tour_id"],),
+    )  # notification 由 make_tour teardown 的 delete_tour 清除
+    return t
+
+
 @pytest.fixture
 def make_order(db):
     created: list[tuple[str, str]] = []

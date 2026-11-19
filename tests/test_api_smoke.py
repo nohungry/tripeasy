@@ -10,7 +10,7 @@ GET /collection/info/all 送兩次回應（第一次回應完整，requests 只�
 結帳 GET /summary 對沒有項目的訂單 500 等。
 """
 import pytest
-from conftest import auth_header
+from conftest import auth_header, live_promotion
 from db_contract import OBJECTS
 from test_seed import SEED_USERS
 
@@ -105,34 +105,43 @@ def _home_expected(base: str, ranking: str | None) -> list[str]:
 
 
 @pytest.mark.parametrize("type_,item,ranking", HOME_GROUPS, ids=lambda v: str(v))
-def test_home_products_guest(api, type_, item, ranking):
+def test_home_products_guest(api, db, make_tour, type_, item, ranking):
     # 未登入 → tour_base（join popular／most_favorited）
+    t = live_promotion(db, make_tour) if item == "promotion" else None
     r = api.get(f"{BASE}/user/home/search/products", params={"type": type_, "item": item, **PAGING})
     rows = data_rows(r)
+    if t:
+        assert rows[0]["旅遊編號"] == t["tour_id"]
     assert_has_keys(rows[0], _home_expected("tour_base", ranking))
     assert {row["小分類"] for row in rows} == {item if type_ == "backpacker" else "travel"}
     assert "收藏狀態" not in rows[0]  # 未登入走 tour_base，沒有收藏狀態
 
 
 @pytest.mark.parametrize("type_,item,ranking", HOME_GROUPS, ids=lambda v: str(v))
-def test_home_products_logged_in(api, alice_h, type_, item, ranking):
+def test_home_products_logged_in(api, alice_h, db, make_tour, type_, item, ranking):
     # 已登入 → tour_travel(使用者編號)，多一個收藏狀態
+    t = live_promotion(db, make_tour) if item == "promotion" else None
     r = api.get(
         f"{BASE}/user/home/search/products",
         headers=alice_h,
         params={"type": type_, "item": item, **PAGING},
     )
     rows = data_rows(r)
+    if t:
+        assert rows[0]["旅遊編號"] == t["tour_id"]
     assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
     assert {row["小分類"] for row in rows} == {item if type_ == "backpacker" else "travel"}
 
 
-def test_home_promotion_rows_are_promotions(api):
+def test_home_promotion_rows_are_promotions(api, db, make_tour):
+    t = live_promotion(db, make_tour)
     r = api.get(
         f"{BASE}/user/home/search/products",
         params={"type": "tourgroup", "item": "promotion", **PAGING},
     )
-    assert {row["通知狀態"] for row in data_rows(r)} == {"促銷"}
+    rows = data_rows(r)
+    assert {row["通知狀態"] for row in rows} == {"促銷"}
+    assert t["tour_id"] in {row["旅遊編號"] for row in rows}
 
 
 # ----------------------------------------------------------------- 首頁好評：user_level_review_forHome
