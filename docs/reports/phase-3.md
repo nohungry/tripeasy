@@ -1,5 +1,5 @@
 # Phase 3：商品（列表、搜尋、詳情、評論與隱藏玩法）
-> **初稿，待使用者審閱**（2026-11-19 起草） · backend tag `phase-3`（分支最後 commit `05562d3`，**尚未合併、尚未打 tag**） · frontend tag `phase-3`（分支最後 commit `a443460`，**尚未合併、尚未打 tag**） · 總覽 repo 分支 `phase-3`（起草時 `d73a78d`，起點 `ac8cbdc`）
+> **初稿，待使用者審閱**（2026-11-19 起草） · backend tag `phase-3`（分支最後 commit `adffa31`，**尚未合併、尚未打 tag**） · frontend tag `phase-3`（分支最後 commit `9940fa1`，**尚未合併、尚未打 tag**） · 總覽 repo 分支 `phase-3`（起草時 `d73a78d`，起點 `ac8cbdc`；之後的修正與最後 commit 見附錄 C 與 `git log`）
 >
 > 本報告依 `docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md` §5 範本與 `docs/reports/phase-2.md` 的格式撰寫。設計見 `docs/superpowers/specs/2026-11-19-p3-product-design.md`（以下稱「P3 spec」），計畫見 `docs/superpowers/plans/2026-11-19-p3-product.md`。引用一律以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
@@ -280,15 +280,15 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 1. alice 開「義大利深度文化之旅」：她只有一筆 `payment_status = -1` 的訂單，資格查詢 `GET …/eligibility` 回 **200** `{ can_write: false, has_reviewed: false }`，畫面顯示「購買過此行程的會員才能評論與分享隱藏玩法」，沒有表單（**未購買**的 403 只會出現在 POST，見下方 curl）。
 2. alice 開「北海道雪景 5 日深度遊」：顯示「你已評論過此行程」，玩法表單仍出現，但不要送出。
 3. bob（admin）登入後開任一詳情：資格查詢回 403，前端照樣顯示 (1) 的提示（有 E2E `test_admin_sees_purchase_hint_without_forms` 涵蓋：403、無表單、不導頁、無 `pageerror`）。
-4. **搜尋的日期與天數**（日期會隨載入日平移，先用 SQL 查出北海道 5 日的起訖日，不要照抄範例）：
+4. **搜尋的日期與天數**（日期會隨載入日平移，先用下面的 SQL 查出北海道 5 日的起訖日，不要照抄範例）：
 
-   ```bash
-   docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' <<'SQL'
-   select tour_start_date::date, tour_end_date::date, days from tour where title = '北海道雪景 5 日深度遊';
-   SQL
-   ```
+```bash
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' <<'SQL'
+select tour_start_date::date, tour_end_date::date, days from tour where title = '北海道雪景 5 日深度遊';
+SQL
+```
 
-   開 `#/search`，「旅遊日期」填查到的起日與訖日（含當天，訖日 23:59:59 結束的行程也算），「旅遊天數」選 5日，按「搜尋」：清單要有「北海道雪景 5 日深度遊」。把訖日改成前一天（區間只剩 4 天）再搜：畫面顯示後端訊息「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 4 天）」，**不是**「載入失敗，請稍後再試」。起日填得比訖日晚：顯示「「start_date」不可大於「end_date」」。最小金額填得比最大金額大：顯示「「min_price」不可大於「max_price」」。（以上訊息已以 curl 對照 API 實測，狀態碼 400。）
+開 `#/search`，「旅遊日期」填查到的起日與訖日（含當天，訖日 23:59:59 結束的行程也算），「旅遊天數」選 5日，按「搜尋」：清單要有「北海道雪景 5 日深度遊」。把訖日改成前一天（區間只剩 4 天）再搜：畫面顯示後端訊息「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 4 天）」，**不是**「載入失敗，請稍後再試」。起日填得比訖日晚：顯示「「start_date」不可大於「end_date」」。先把日期改回原區間，再把最小金額填得比最大金額大：顯示「「min_price」不可大於「max_price」」。（以上訊息已以 curl 對照 API 實測，狀態碼 400。）
 
 **403 的 curl 示範**（token 一律用 login API 取得，不從 localStorage 拿；這兩個請求都在驗證或資格階段被擋，**不會新增任何列**（login 只會重設 `login_attempts`／`locked_datetime`／`login_method`），`review` 仍是 13 筆）：
 
@@ -402,7 +402,7 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 
 - 搜尋的 `start_date`／`end_date` 帶不存在的日期（例如 `2027-02-30`）會回 500，不是 400。
 - 搜尋 400 的訊息直接顯示 API 參數名（`duration`、`start_date`、`min_price` 等），沒有轉成使用者用語。
-- `end_date` 帶時區偏移時，SQL 的 `::date` 以 UTC 取日，可能與使用者本地日期差一天。
+- `end_date`／`start_date` 帶時區偏移時，validator 以伺服器時區（UTC）計算區間天數，而 SQL 的 `::date` 取字面日期，兩者可能差一天；前端 `type=date` 只送 `YYYY-MM-DD`，實際影響小。
 - `tests/test_product_read.py` 的 `:164`、`:178`、`:199`、`:219`、`:227` 仍直接取 `["data"]`（空回應沒有 `data` 鍵時會 KeyError，而不是清楚的斷言失敗）。
 - admin E2E 的 `pageerror` 斷言只抓得到 `expect` 完成之前發生的錯誤；之後才冒出的未處理 rejection 不會被發現。
 
@@ -425,7 +425,7 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 
 | 項目 | 修正 | commit |
 |---|---|---|
-| F1 | 搜尋日期區間與 `duration`：controller 的語意是「開始日 ≥ start_date、結束日 ≤ end_date、天數 = duration」，所以行程要落在區間內，只需 `duration ≤ 區間涵蓋天數`，涵蓋天數 = end_date − start_date + 1（含頭尾）。舊驗證要求 `duration` 等於天數差，寬區間永遠 400。超過時回 400「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 N 天）」。前端搜尋頁 400 時顯示後端 message，其他錯誤維持「載入失敗，請稍後再試」。例：seed 北海道 5 日行程（2027-06-02～2027-06-06，日期隨載入日平移）以 6/2～6/6 + `duration=5` 查詢，涵蓋 5 天、合法。第 2 輪另把 `end_date` 改為含當天（見下）。紅燈 [final-fix-red.txt](evidence/phase-3/final-fix-red.txt)（3 failed 19 deselected） | 總覽 `fb339da`（紅）；backend `a956697`；frontend `9940fa1` |
+| F1 | 搜尋日期區間與 `duration`：controller 的語意是「開始日 ≥ start_date、結束日 ≤ end_date（第 2 輪改為含當天）、天數 = duration」，所以行程要落在區間內，只需 `duration ≤ 區間涵蓋天數`，涵蓋天數 = end_date − start_date + 1（含頭尾）。舊驗證要求 `duration` 等於天數差，寬區間永遠 400。超過時回 400「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 N 天）」。前端搜尋頁 400 時顯示後端 message，其他錯誤維持「載入失敗，請稍後再試」。例：seed 北海道 5 日行程（2027-06-02～2027-06-06，日期隨載入日平移）以 6/2～6/6 + `duration=5` 查詢，涵蓋 5 天、合法。第 2 輪另把 `end_date` 改為含當天（見下）。紅燈 [final-fix-red.txt](evidence/phase-3/final-fix-red.txt)（3 failed 19 deselected） | 總覽 `fb339da`（紅）；backend `a956697`；frontend `9940fa1` |
 | F2 | `test_review_submit_with_expired_token` 先斷言「登入已過期」再等導頁 | 總覽 `44b2e9a` |
 | F3 | 補 admin 詳情頁 E2E（`test_admin_sees_purchase_hint_without_forms`）：顯示未購買提示、無評論／玩法表單、不導頁 | 總覽 `44b2e9a` |
 | F4–F7 | §1.4 條件措辭；`EXPIRED` 移到 `e2e/conftest.py` 共用；促銷測試改用 `live_promotion`（語意相符：有效促銷、價 900）；`["data"]` 改 `.get("data", [])`；刪 `_home_titles` | 總覽 `44b2e9a` |
