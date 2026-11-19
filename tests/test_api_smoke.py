@@ -111,6 +111,7 @@ def test_home_products_guest(api, db, make_tour, type_, item, ranking):
     r = api.get(f"{BASE}/user/home/search/products", params={"type": type_, "item": item, **PAGING})
     rows = data_rows(r)
     if t:
+        # 依賴 ORDER BY 旅遊開始日期 DESC 的 NULLS FIRST，且目前沒有其他「開始日 NULL、仍在期間內」的 tourgroup 促銷行程
         assert rows[0]["旅遊編號"] == t["tour_id"]
     assert_has_keys(rows[0], _home_expected("tour_base", ranking))
     assert {row["小分類"] for row in rows} == {item if type_ == "backpacker" else "travel"}
@@ -128,6 +129,7 @@ def test_home_products_logged_in(api, alice_h, db, make_tour, type_, item, ranki
     )
     rows = data_rows(r)
     if t:
+        # 依賴 ORDER BY 旅遊開始日期 DESC 的 NULLS FIRST，且目前沒有其他「開始日 NULL、仍在期間內」的 tourgroup 促銷行程
         assert rows[0]["旅遊編號"] == t["tour_id"]
     assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
     assert {row["小分類"] for row in rows} == {item if type_ == "backpacker" else "travel"}

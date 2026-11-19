@@ -26,21 +26,27 @@ def _db_ids(db, where: str = "status = 1", params=()) -> set[str]:
     return {str(r[0]) for r in db.execute(f"SELECT tour_id FROM tour WHERE {where}", params).fetchall()}
 
 
-def test_search_pages_cover_every_listed_tour_once(api, db):
+def test_search_pages_cover_every_listed_tour_once(api, db, make_tour):
+    # 12 筆開始日皆 NULL（排序值相同）的行程，必須靠次要排序才不會在分頁間重複或遺漏
+    fixtures = {make_tour()["tour_id"] for _ in range(12)}
     ids = [r["旅遊編號"] for r in _all_pages(api, **PAGING)]
     assert ids
+    assert fixtures <= set(ids)
     assert len(ids) == len(set(ids))
     assert set(ids) == _db_ids(db)
 
 
-def test_search_price_desc_pages_cover_every_listed_tour_once(api, db):
-    rows = _all_pages(api, sort_by="price", order="desc", lang="zh-TW")
+def test_search_price_asc_pages_cover_every_listed_tour_once(api, db, make_tour):
+    # 預設 price 1000，12 筆同價
+    fixtures = {make_tour()["tour_id"] for _ in range(12)}
+    rows = _all_pages(api, sort_by="price", order="asc", lang="zh-TW")
     ids = [r["旅遊編號"] for r in rows]
     assert ids
+    assert fixtures <= set(ids)
     assert len(ids) == len(set(ids))
     assert set(ids) == _db_ids(db)
     prices = [r["價錢"] for r in rows]
-    assert prices == sorted(prices, reverse=True)
+    assert prices == sorted(prices)
 
 
 def test_search_duration_filter(api, db):
@@ -111,8 +117,9 @@ def test_home_promotion_excludes_delisted_and_out_of_period(api, db, make_user, 
             f"VALUES (%s, '促銷', {start}, {end}, 10, 900)",
             (t["tour_id"],),
         )
-    for headers in (None, auth_header(make_user())):
+    names = {a["tour_id"]: "A(下架)", b["tour_id"]: "B(已過期)", c["tour_id"]: "C(未開始)"}
+    for label, headers in (("訪客", None), ("會員", auth_header(make_user()))):
         ids = _home_promotion_ids(api, headers)
-        assert d["tour_id"] in ids
-        for t in (a, b, c):
-            assert t["tour_id"] not in ids, t
+        assert d["tour_id"] in ids, label
+        leaked = sorted(names[i] for i in names if i in ids)
+        assert not leaked, f"{label}：不該出現的促銷行程 {leaked}"
