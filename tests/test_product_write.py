@@ -520,7 +520,7 @@ def test_post_hidden_share_invalid_tour_id_is_400(api, make_user):
     u = make_user()
     r = api.post(_share_url("not-a-uuid"), headers=auth_header(u), json=SHARE_BODY)
     assert r.status_code == 400, r.text
-    assert r.json()["message"]
+    assert r.json()["message"] == "「tour_id」必須是有效的 UUID 格式"
 
 
 def test_post_hidden_share_success_201(api, db, make_user, make_order, make_tour):
@@ -567,8 +567,11 @@ def test_post_hidden_share_multiple_allowed(api, db, make_user, make_order, make
     t = make_tour()
     u = _buyer(make_user, make_order, t)
     h = auth_header(u)
-    assert api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY).status_code == 201
-    assert api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY).status_code == 201
+    r1 = api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY)
+    r2 = api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY)
+    assert r1.status_code == 201, r1.text
+    assert r2.status_code == 201, r2.text
+    assert r1.json()["data"]["shares_id"] != r2.json()["data"]["shares_id"]
     assert _share_count(db, t["tour_id"]) == 2
 
 
@@ -580,8 +583,9 @@ def test_post_hidden_share_appears_in_list(api, make_user, make_order, make_tour
     r = api.get(_share_url(t["tour_id"]), params={"page": 1, "limit": 5, "lang": "zh-TW"})
     assert r.status_code == 200, r.text
     rows = r.json()["data"]
-    assert len(rows) >= 1
+    assert len(rows) == 1
     assert rows[0]["title"] == body["title"]
+    assert rows[0]["content"] == body["content"]
     assert rows[0]["url"] == body["url"]
 
 
@@ -650,3 +654,21 @@ def test_post_hidden_share_html_stored_verbatim(api, db, make_user, make_order, 
     ).fetchone()
     assert row is not None
     assert row[0] == content
+
+
+def test_post_hidden_share_url_is_trimmed(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    r = api.post(
+        _share_url(t["tour_id"]),
+        headers=auth_header(u),
+        json={"title": "t", "content": "x", "url": " https://example.com/tip "},
+    )
+    assert r.status_code == 201, r.text
+    data = r.json()["data"]
+    assert data["url"] == "https://example.com/tip"
+    row = db.execute(
+        "SELECT share_url FROM hidden_play WHERE hidden_play_id = %s", (data["shares_id"],)
+    ).fetchone()
+    assert row is not None
+    assert row[0] == "https://example.com/tip"
