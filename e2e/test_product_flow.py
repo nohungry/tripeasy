@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 import uuid
 
 import pytest
@@ -13,7 +14,8 @@ EXPIRED = datetime.timedelta(seconds=-60)
 def _seed_tour(db, item: str) -> tuple[str, str]:
     """seed 中該 item 第一個上架行程（ORDER BY title）的 (tour_id, title)；只讀。"""
     row = db.execute(
-        "SELECT tour_id, title FROM tour WHERE item = %s AND status = 1 ORDER BY title LIMIT 1", (item,)
+        "SELECT tour_id, title FROM tour WHERE item = %s AND status = 1 AND title NOT LIKE 'p3-%%' "
+        "ORDER BY title LIMIT 1", (item,)
     ).fetchone()
     assert row, f"seed 沒有上架的 {item} 行程"
     return str(row[0]), row[1]
@@ -55,8 +57,10 @@ def test_detail_page_item_sections(page: Page, db, item, headings):
         expect(page.get_by_role("heading", name=heading, exact=True)).to_be_visible()
 
 
-@pytest.mark.parametrize("path", [str(uuid.uuid4()), "not-a-uuid"], ids=["uuid-not-exist", "not-a-uuid"])
-def test_detail_page_unknown_tour(page: Page, path):
+@pytest.mark.parametrize("path", [str(uuid.uuid4()), "not-a-uuid", "unlisted"], ids=["uuid-not-exist", "not-a-uuid", "unlisted"])
+def test_detail_page_unknown_tour(page: Page, make_tour, path):
+    if path == "unlisted":
+        path = make_tour(status=2)["tour_id"]  # 已下架
     page.goto(f"{FRONTEND_BASE}/#/tour/{path}", wait_until="domcontentloaded")
     expect(page.get_by_text("查無此行程", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="回搜尋頁")).to_have_attribute("href", "#/search")
@@ -100,10 +104,19 @@ def test_detail_with_expired_token_still_renders(page: Page, db, make_user):
     user = make_user()
     _expire_session(page, user)
     tour_id, title = _seed_tour(db, "travel")
+    detail_auth: list[bool] = []
+    page.on(
+        "request",
+        lambda r: detail_auth.append("authorization" in r.headers)
+        if r.url.split("?")[0].endswith(f"/api/v1/user/product/search/{tour_id}")
+        else None,
+    )
     _open_detail(page, tour_id)
     # 提示只顯示 2 秒（timer），先確認提示，再確認標題
     expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
     expect(page.get_by_role("heading", name=title)).to_be_visible()
+    expect(page).to_have_url(re.compile(rf"#/tour/{tour_id}$"))
+    assert detail_auth == [True, False]  # 第一筆帶過期 token，重試不帶
     assert page.evaluate("localStorage.getItem('authToken')") is None
     expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_be_visible()
 
