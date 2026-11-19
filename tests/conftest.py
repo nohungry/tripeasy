@@ -317,9 +317,13 @@ def live_promotion(db, make_tour) -> dict:
 def make_order(db):
     created: list[tuple[str, str]] = []
 
-    def _make(user: dict, tour_id: str, payment_status: int = 1, quantity: int = 1) -> dict:
+    def _make(
+        user: dict, tour_id: str, payment_status: int = 1, quantity: int = 1, order_payment_status: int | None = None
+    ) -> dict:
+        """payment_status 是 order_item 的；order_payment_status 是 orders 的（預設與 payment_status 相同）。"""
         total = 1000 * quantity
-        order = insert(db, "orders", user_id=user["user_id"], payment_status=payment_status, total_price=total)
+        order_status = payment_status if order_payment_status is None else order_payment_status
+        order = insert(db, "orders", user_id=user["user_id"], payment_status=order_status, total_price=total)
         order_id = str(order["order_id"])
         item = insert(
             db, "order_item", order_id=order_id, tour_id=tour_id, payment_status=payment_status,

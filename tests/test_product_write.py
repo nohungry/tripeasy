@@ -1,10 +1,13 @@
 """P3 Task 6：購買資格查詢與寫評論 API（只限購買過的會員）。"""
+import datetime
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
+import psycopg
 import pytest
 import requests
-from conftest import API_BASE, DEFAULT_TIMEOUT, auth_header
+from conftest import API_BASE, DEFAULT_TIMEOUT, _db_params, auth_header
 
 SEARCH = "/api/v1/user/product/search"
 NO_PERMISSION = "您沒有權限進行此操作"
@@ -76,6 +79,7 @@ def test_post_review_other_users_order_does_not_count(api, db, make_user, make_o
     a = make_user()
     r = api.post(_url(t["tour_id"]), headers=auth_header(a), json=BODY)
     assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT
     assert _review_count(db, t["tour_id"]) == 0
 
 
@@ -84,7 +88,99 @@ def test_post_review_order_for_other_tour_does_not_count(api, db, make_user, mak
     u = _buyer(make_user, make_order, x)
     r = api.post(_url(y["tour_id"]), headers=auth_header(u), json=BODY)
     assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT
     assert _review_count(db, y["tour_id"]) == 0
+
+
+def test_post_review_order_paid_but_item_unpaid_is_403(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = make_user()
+    make_order(u, t["tour_id"], payment_status=0, order_payment_status=1)
+    r = api.post(_url(t["tour_id"]), headers=auth_header(u), json=BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT
+    assert _review_count(db, t["tour_id"]) == 0
+
+
+def test_post_review_item_paid_but_order_unpaid_is_201(api, make_user, make_order, make_tour):
+    t = make_tour()
+    u = make_user()
+    make_order(u, t["tour_id"], payment_status=1, order_payment_status=0)
+    r = api.post(_url(t["tour_id"]), headers=auth_header(u), json=BODY)
+    assert r.status_code == 201, r.text
+
+
+def test_post_review_unpaid_item_in_same_order_as_paid_item_is_403(api, db, make_user, make_order, make_tour):
+    from dbfactory import insert
+
+    x, y = make_tour(), make_tour()
+    u = make_user()
+    order = make_order(u, x["tour_id"], payment_status=1)  # X 已付款
+    insert(
+        db, "order_item", order_id=order["order_id"], tour_id=y["tour_id"], payment_status=0,
+        total_price=1000, quantity=1, start_date=datetime.datetime.now(),
+    )  # Y 同一張訂單、未付款；會員的 teardown（delete_user）會清掉該訂單的所有品項
+    r = api.post(_url(y["tour_id"]), headers=auth_header(u), json=BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT
+    assert _review_count(db, y["tour_id"]) == 0
+    r = api.post(_url(x["tour_id"]), headers=auth_header(u), json=BODY)
+    assert r.status_code == 201, r.text
+
+
+def _wait_until_insert_blocked(db, blocker_pid, timeout=10.0) -> None:
+    """有期限地輪詢，直到後端的 review INSERT 被 blocker_pid 的交易擋住。"""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        row = db.execute(
+            "SELECT count(*) FROM pg_stat_activity "
+            "WHERE wait_event_type = 'Lock' AND %s = ANY(pg_blocking_pids(pid)) "
+            "AND query LIKE 'INSERT INTO public.\"review\"%%'",
+            (blocker_pid,),
+        ).fetchone()
+        if row[0] > 0:
+            return
+        time.sleep(0.05)
+    pytest.fail("後端的 INSERT 沒有在期限內被未提交的交易擋住")
+
+
+@pytest.mark.parametrize("finish, expected", [("commit", 409), ("rollback", 201)])
+def test_post_review_insert_unique_violation_is_409(
+    api, db, make_user, make_order, make_tour, finish, expected
+):
+    # 另一條連線先 INSERT 同一組 (user, tour) 但不 commit：READ COMMITTED 下 middleware 的
+    # hasReviewed 看不到它而放行，後端的 INSERT 卡在唯一索引上；commit 後撞 23505 → 409，
+    # rollback 則正常 201（對照組）
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    holder = psycopg.connect(**_db_params())  # 非 autocommit
+    try:
+        holder.execute(
+            "INSERT INTO review (user_id, tour_id, type, rating, content) VALUES (%s, %s, 'travel', 5, 'holder')",
+            (u["user_id"], t["tour_id"]),
+        )
+        blocker_pid = holder.info.backend_pid
+        with ThreadPoolExecutor(1) as pool:
+            fut = pool.submit(
+                lambda: requests.post(
+                    f"{API_BASE}{_url(t['tour_id'])}", headers=auth_header(u), json=BODY, timeout=DEFAULT_TIMEOUT
+                )
+            )
+            try:
+                _wait_until_insert_blocked(db, blocker_pid)
+            finally:
+                getattr(holder, finish)()
+            r = fut.result(timeout=DEFAULT_TIMEOUT)
+    finally:
+        holder.close()
+    assert r.status_code == expected, r.text
+    if expected == 409:
+        assert r.json()["message"] == DUPLICATE
+        # 留下的是 holder 那一則；會員／行程的 teardown 會清掉 review
+        assert db.execute(
+            "SELECT content FROM review WHERE tour_id = %s", (t["tour_id"],)
+        ).fetchall() == [("holder",)]
+    assert _review_count(db, t["tour_id"]) == 1
 
 
 def test_post_review_validation_before_purchase_check(api, make_user, make_tour):
@@ -249,6 +345,7 @@ def test_eligibility_requires_login(api, make_tour):
     t = make_tour()
     r = api.get(_url(t["tour_id"], "eligibility"))
     assert r.status_code == 401, r.text
+    assert r.json()["message"] == "請先登入"
 
 
 def test_eligibility_admin_is_403(api, make_user, make_tour):
@@ -257,6 +354,20 @@ def test_eligibility_admin_is_403(api, make_user, make_tour):
     r = api.get(_url(t["tour_id"], "eligibility"), headers=auth_header(admin))
     assert r.status_code == 403, r.text
     assert r.json()["message"] == NO_PERMISSION
+
+
+def test_eligibility_invalid_tour_id_is_400(api, make_user):
+    u = make_user()
+    r = api.get(_url("not-a-uuid", "eligibility"), headers=auth_header(u))
+    assert r.status_code == 400, r.text
+
+
+def test_eligibility_delisted_tour_is_404(api, make_user, make_tour):
+    t = make_tour(status=2)
+    u = make_user()
+    r = api.get(_url(t["tour_id"], "eligibility"), headers=auth_header(u))
+    assert r.status_code == 404, r.text
+    assert r.json()["message"] == "查無此旅遊項目"
 
 
 def test_eligibility_unknown_tour_is_404(api, make_user):

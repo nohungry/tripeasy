@@ -1,0 +1,31 @@
+== 突變 A：controller 的 constraint 比對改成 MUTATED；新測試連跑 3 次 ==
+-- run 1
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+tests/test_product_write.py:176: AssertionError: {"status":"error","message":"伺服器錯誤"}
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_review_insert_unique_violation_is_409[commit-409]
+1 failed, 1 passed, 43 deselected in 0.28s
+-- run 2
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+tests/test_product_write.py:176: AssertionError: {"status":"error","message":"伺服器錯誤"}
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_review_insert_unique_violation_is_409[commit-409]
+1 failed, 1 passed, 43 deselected in 0.29s
+-- run 3
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+tests/test_product_write.py:176: AssertionError: {"status":"error","message":"伺服器錯誤"}
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_review_insert_unique_violation_is_409[commit-409]
+1 failed, 1 passed, 43 deselected in 0.26s
+== 突變 B：purchase.js 的 oi.payment_status 改成 o.payment_status ==
+tests/test_product_write.py:100: AssertionError: {"status":"success","message":"評論成功","data":{"review_id":"650f330e-7d74-428a-aa31-0fc721f8a638","review_type":"travel","rating":4,"content":"很棒的行程","create_date":"2026-11-19T03:48:28.149Z"}}
+tests/test_product_write.py:110: AssertionError: {"status":"failed","message":"購買過此行程的會員才能評論"}
+tests/test_product_write.py:124: AssertionError: {"status":"success","message":"評論成功","data":{"review_id":"b93927aa-f626-47cc-bf69-c60493eeb22f","review_type":"travel","rating":4,"content":"很棒的行程","create_date":"2026-11-19T03:48:28.269Z"}}
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_review_order_paid_but_item_unpaid_is_403
+FAILED tests/test_product_write.py::test_post_review_item_paid_but_order_unpaid_is_201
+FAILED tests/test_product_write.py::test_post_review_unpaid_item_in_same_order_as_paid_item_is_403
+3 failed, 42 deselected in 0.25s
