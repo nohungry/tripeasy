@@ -1,0 +1,72 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 8 items
+
+tests/test_infra.py::test_make_tour_creates_listed_tour ERROR            [ 12%]
+tests/test_infra.py::test_make_tour_rejects_detail_for_hotel ERROR       [ 25%]
+tests/test_infra.py::test_make_order_writes_paid_item ERROR              [ 37%]
+tests/test_infra.py::test_purge_removes_only_test_data FAILED            [ 50%]
+tests/test_infra.py::test_purge_prefixes_cover_fixture_emails FAILED     [ 62%]
+tests/test_infra.py::test_requires_python_has_upper_bound FAILED         [ 75%]
+tests/test_infra.py::test_setup_uv_pins_uv_version FAILED                [ 87%]
+tests/test_infra.py::test_runner_and_python_pinned PASSED                [100%]
+
+==================================== ERRORS ====================================
+_____________ ERROR at setup of test_make_tour_creates_listed_tour _____________
+file tests/test_infra.py, line 13
+  def test_make_tour_creates_listed_tour(api, make_tour):
+E       fixture 'make_tour' not found
+>       available fixtures: _artifacts_recorder, _pw_artifacts_folder, _verify_url, api, base_url, browser, browser_channel, browser_context_args, browser_name, browser_type, browser_type_launch_args, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, context, db, delete_output_dir, device, doctest_namespace, is_chromium, is_firefox, is_webkit, launch_browser, make_user, monkeypatch, new_context, page, playwright, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, tx
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+tests/test_infra.py:13
+__________ ERROR at setup of test_make_tour_rejects_detail_for_hotel ___________
+file tests/test_infra.py, line 22
+  def test_make_tour_rejects_detail_for_hotel(make_tour):
+E       fixture 'make_tour' not found
+>       available fixtures: _artifacts_recorder, _pw_artifacts_folder, _verify_url, api, base_url, browser, browser_channel, browser_context_args, browser_name, browser_type, browser_type_launch_args, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, context, db, delete_output_dir, device, doctest_namespace, is_chromium, is_firefox, is_webkit, launch_browser, make_user, monkeypatch, new_context, page, playwright, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, tx
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+tests/test_infra.py:22
+______________ ERROR at setup of test_make_order_writes_paid_item ______________
+file tests/test_infra.py, line 27
+  def test_make_order_writes_paid_item(db, make_user, make_tour, make_order):
+E       fixture 'make_tour' not found
+>       available fixtures: _artifacts_recorder, _pw_artifacts_folder, _verify_url, api, base_url, browser, browser_channel, browser_context_args, browser_name, browser_type, browser_type_launch_args, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, context, db, delete_output_dir, device, doctest_namespace, is_chromium, is_firefox, is_webkit, launch_browser, make_user, monkeypatch, new_context, page, playwright, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, tx
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+tests/test_infra.py:27
+=================================== FAILURES ===================================
+______________________ test_purge_removes_only_test_data _______________________
+tests/test_infra.py:42: in test_purge_removes_only_test_data
+    from conftest import delete_user, purge_leftover_test_data
+E   ImportError: cannot import name 'purge_leftover_test_data' from 'conftest' (tests/conftest.py)
+___________________ test_purge_prefixes_cover_fixture_emails ___________________
+tests/test_infra.py:68: in test_purge_prefixes_cover_fixture_emails
+    from conftest import TEST_EMAIL_PREFIXES
+E   ImportError: cannot import name 'TEST_EMAIL_PREFIXES' from 'conftest' (tests/conftest.py)
+_____________________ test_requires_python_has_upper_bound _____________________
+tests/test_infra.py:81: in test_requires_python_has_upper_bound
+    assert 'requires-python = ">=3.10,<3.14"' in (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+E   assert 'requires-python = ">=3.10,<3.14"' in '[project]\nname = "tripeasy-tests"\nversion = "0.1.0"\nrequires-python = ">=3.10"\ndependencies = [\n  "pytest==8.3.3",\n  "requests==2.32.3",\n  "psycopg[binary]==3.2.3",\n  "PyJWT==2.9.0",\n  "python-dotenv==1.0.1",\n  "pytest-playwright==0.5.2",\n]\n\n[tool.uv]\npackage = false\n\n[tool.pytest.ini_options]\ntestpaths = ["tests", "e2e"]\naddopts = "-ra"\n'
+E    +  where '[project]\nname = "tripeasy-tests"\nversion = "0.1.0"\nrequires-python = ">=3.10"\ndependencies = [\n  "pytest==8.3.3",\n  "requests==2.32.3",\n  "psycopg[binary]==3.2.3",\n  "PyJWT==2.9.0",\n  "python-dotenv==1.0.1",\n  "pytest-playwright==0.5.2",\n]\n\n[tool.uv]\npackage = false\n\n[tool.pytest.ini_options]\ntestpaths = ["tests", "e2e"]\naddopts = "-ra"\n' = read_text(encoding='utf-8')
+E    +    where read_text = (PosixPath('.') / 'pyproject.toml').read_text
+________________________ test_setup_uv_pins_uv_version _________________________
+tests/test_infra.py:88: in test_setup_uv_pins_uv_version
+    assert re.search(r'uses: astral-sh/setup-uv@v10\.3\.3\s*\n\s*with:\s*\n\s*version: "0\.13\.9"', ci)
+E   assert None
+E    +  where None = <function search at 0x7d65c86e4860>('uses: astral-sh/setup-uv@v10\\.3\\.3\\s*\\n\\s*with:\\s*\\n\\s*version: "0\\.13\\.9"', 'name: ci\n\non:\n  push:\n  pull_request:\n  workflow_dispatch:\n\njobs:\n  test:\n    # 固定 runner 版本：ubuntu-latest 映像改版會讓系統套件與 Python 跟著漂移（見 docs/reports/phase-2.md §3.3）\n    runs-on: ubuntu-24.04\n    steps:\n      - uses: actions/checkout@v7\n\n      - name: 讀取 refs.env\n        run: cat refs.env >> "$GITHUB_ENV"\n\n      - uses: actions/checkout@v7\n        with:\n          repository: nohungry/tripeasy-backend\n          ref: ${{ env.BACKEND_REF }}\n          path: backend\n\n      - uses: actions/checkout@v7\n        with:\n          repository: nohungry/tripeasy-frontend\n          ref: ${{ env.FRONTEND_REF }}\n          path: frontend\n\n      - uses: astral-sh/setup-uv@v10.3.3\n\n      - name: 啟動服務並測試\n        run: scripts/ci.sh\n\n      - name: 收集 compose log\n        if: failure()\n        run: docker compose logs --no-color > compose-logs.txt\n\n      - uses: actions/upload-artifact@v7\n        if: failure()\n        with:\n          name: compose-logs\n          path: compose-logs.txt\n')
+E    +    where <function search at 0x7d65c86e4860> = re.search
+=========================== short test summary info ============================
+ERROR tests/test_infra.py::test_make_tour_creates_listed_tour
+ERROR tests/test_infra.py::test_make_tour_rejects_detail_for_hotel
+ERROR tests/test_infra.py::test_make_order_writes_paid_item
+FAILED tests/test_infra.py::test_purge_removes_only_test_data - ImportError: ...
+FAILED tests/test_infra.py::test_purge_prefixes_cover_fixture_emails - Import...
+FAILED tests/test_infra.py::test_requires_python_has_upper_bound - assert 're...
+FAILED tests/test_infra.py::test_setup_uv_pins_uv_version - assert None
+==================== 4 failed, 1 passed, 3 errors in 0.05s =====================
