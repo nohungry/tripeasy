@@ -1,0 +1,307 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 81 items / 45 deselected / 36 selected
+
+tests/test_product_write.py::test_post_hidden_share_requires_login FAILED [  2%]
+tests/test_product_write.py::test_post_hidden_share_admin_is_403 FAILED  [  5%]
+tests/test_product_write.py::test_post_hidden_share_admin_with_invalid_body_is_403 FAILED [  8%]
+tests/test_product_write.py::test_post_hidden_share_without_order_is_403 FAILED [ 11%]
+tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[-1] FAILED [ 13%]
+tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[0] FAILED [ 16%]
+tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[2] FAILED [ 19%]
+tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[3] FAILED [ 22%]
+tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[4] FAILED [ 25%]
+tests/test_product_write.py::test_post_hidden_share_other_users_order_does_not_count FAILED [ 27%]
+tests/test_product_write.py::test_post_hidden_share_order_for_other_tour_does_not_count FAILED [ 30%]
+tests/test_product_write.py::test_post_hidden_share_order_paid_but_item_unpaid_is_403 FAILED [ 33%]
+tests/test_product_write.py::test_post_hidden_share_item_paid_but_order_unpaid_is_201 FAILED [ 36%]
+tests/test_product_write.py::test_post_hidden_share_validation_before_purchase_check FAILED [ 38%]
+tests/test_product_write.py::test_post_hidden_share_invalid_tour_id_is_400 FAILED [ 41%]
+tests/test_product_write.py::test_post_hidden_share_success_201 FAILED   [ 44%]
+tests/test_product_write.py::test_post_hidden_share_without_url FAILED   [ 47%]
+tests/test_product_write.py::test_post_hidden_share_multiple_allowed FAILED [ 50%]
+tests/test_product_write.py::test_post_hidden_share_appears_in_list FAILED [ 52%]
+tests/test_product_write.py::test_post_hidden_share_validation[body0-\u300ctitle\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d] FAILED [ 55%]
+tests/test_product_write.py::test_post_hidden_share_validation[body1-\u300ctitle\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d] FAILED [ 58%]
+tests/test_product_write.py::test_post_hidden_share_validation[body2-\u300ctitle\u300d\u4e0d\u53ef\u8d85\u904e 50 \u5b57] FAILED [ 61%]
+tests/test_product_write.py::test_post_hidden_share_validation[body3-\u8acb\u8f38\u5165\u300ctitle\u300d] FAILED [ 63%]
+tests/test_product_write.py::test_post_hidden_share_validation[body4-\u8acb\u8f38\u5165\u300ccontent\u300d] FAILED [ 66%]
+tests/test_product_write.py::test_post_hidden_share_validation[body5-\u300ccontent\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d] FAILED [ 69%]
+tests/test_product_write.py::test_post_hidden_share_validation[body6-\u300ccontent\u300d\u4e0d\u53ef\u8d85\u904e 1000 \u5b57] FAILED [ 72%]
+tests/test_product_write.py::test_post_hidden_share_validation[body7-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] FAILED [ 75%]
+tests/test_product_write.py::test_post_hidden_share_validation[body8-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] FAILED [ 77%]
+tests/test_product_write.py::test_post_hidden_share_validation[body9-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] FAILED [ 80%]
+tests/test_product_write.py::test_post_hidden_share_validation[body10-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] FAILED [ 83%]
+tests/test_product_write.py::test_post_hidden_share_validation[body11-\u300curl\u300d\u4e0d\u53ef\u8d85\u904e 255 \u5b57] FAILED [ 86%]
+tests/test_product_write.py::test_post_hidden_share_validation[body12-\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d\u300crating\u300d] FAILED [ 88%]
+tests/test_product_write.py::test_post_hidden_share_boundaries_ok FAILED [ 91%]
+tests/test_product_write.py::test_post_hidden_share_delisted_tour_is_404 FAILED [ 94%]
+tests/test_product_write.py::test_post_hidden_share_unknown_tour_is_404 FAILED [ 97%]
+tests/test_product_write.py::test_post_hidden_share_html_stored_verbatim FAILED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_post_hidden_share_requires_login _____________________
+tests/test_product_write.py:435: in test_post_hidden_share_requires_login
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+_____________________ test_post_hidden_share_admin_is_403 ______________________
+tests/test_product_write.py:443: in test_post_hidden_share_admin_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+____________ test_post_hidden_share_admin_with_invalid_body_is_403 _____________
+tests/test_product_write.py:451: in test_post_hidden_share_admin_with_invalid_body_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+_________________ test_post_hidden_share_without_order_is_403 __________________
+tests/test_product_write.py:459: in test_post_hidden_share_without_order_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+_______________ test_post_hidden_share_unpaid_status_is_403[-1] ________________
+tests/test_product_write.py:469: in test_post_hidden_share_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+________________ test_post_hidden_share_unpaid_status_is_403[0] ________________
+tests/test_product_write.py:469: in test_post_hidden_share_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+________________ test_post_hidden_share_unpaid_status_is_403[2] ________________
+tests/test_product_write.py:469: in test_post_hidden_share_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+________________ test_post_hidden_share_unpaid_status_is_403[3] ________________
+tests/test_product_write.py:469: in test_post_hidden_share_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+________________ test_post_hidden_share_unpaid_status_is_403[4] ________________
+tests/test_product_write.py:469: in test_post_hidden_share_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________ test_post_hidden_share_other_users_order_does_not_count ____________
+tests/test_product_write.py:479: in test_post_hidden_share_other_users_order_does_not_count
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+__________ test_post_hidden_share_order_for_other_tour_does_not_count __________
+tests/test_product_write.py:488: in test_post_hidden_share_order_for_other_tour_does_not_count
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________ test_post_hidden_share_order_paid_but_item_unpaid_is_403 ___________
+tests/test_product_write.py:498: in test_post_hidden_share_order_paid_but_item_unpaid_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________ test_post_hidden_share_item_paid_but_order_unpaid_is_201 ___________
+tests/test_product_write.py:508: in test_post_hidden_share_item_paid_but_order_unpaid_is_201
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+___________ test_post_hidden_share_validation_before_purchase_check ____________
+tests/test_product_write.py:515: in test_post_hidden_share_validation_before_purchase_check
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+________________ test_post_hidden_share_invalid_tour_id_is_400 _________________
+tests/test_product_write.py:522: in test_post_hidden_share_invalid_tour_id_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+______________________ test_post_hidden_share_success_201 ______________________
+tests/test_product_write.py:534: in test_post_hidden_share_success_201
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+______________________ test_post_hidden_share_without_url ______________________
+tests/test_product_write.py:556: in test_post_hidden_share_without_url
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_hidden_share_multiple_allowed ____________________
+tests/test_product_write.py:570: in test_post_hidden_share_multiple_allowed
+    assert api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY).status_code == 201
+E   AssertionError: assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = post('/api/v1/user/product/search/647fae90-b4e4-4520-be64-39b1b119c3dd/hidden-shares', headers={'Authorization': 'Bearer <redacted>'}, json={'content': '六點前到', 'title': '清晨的魚市'})
+E    +      where post = <conftest.Api object at 0x763838d42cf0>.post
+E    +      and   '/api/v1/user/product/search/647fae90-b4e4-4520-be64-39b1b119c3dd/hidden-shares' = _share_url('647fae90-b4e4-4520-be64-39b1b119c3dd')
+____________________ test_post_hidden_share_appears_in_list ____________________
+tests/test_product_write.py:579: in test_post_hidden_share_appears_in_list
+    assert api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=body).status_code == 201
+E   AssertionError: assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = post('/api/v1/user/product/search/027f573f-46c0-424d-b2b2-80ecb5ba2b79/hidden-shares', headers={'Authorization': 'Bearer <redacted>'}, json={'content': '六點前到', 'title': '清晨的魚市', 'url': 'https://example.com/tip'})
+E    +      where post = <conftest.Api object at 0x763838d42cf0>.post
+E    +      and   '/api/v1/user/product/search/027f573f-46c0-424d-b2b2-80ecb5ba2b79/hidden-shares' = _share_url('027f573f-46c0-424d-b2b2-80ecb5ba2b79')
+E    +      and   {'Authorization': 'Bearer <redacted>'} = auth_header({'email': 'p0-0e76b2ae@example.com', 'role': 'User', 'user_id': 'e335dc87-53a8-4928-ac0c-8a8a2d55194b'})
+_ test_post_hidden_share_validation[body0-\u300ctitle\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body1-\u300ctitle\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body2-\u300ctitle\u300d\u4e0d\u53ef\u8d85\u904e 50 \u5b57] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body3-\u8acb\u8f38\u5165\u300ctitle\u300d] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body4-\u8acb\u8f38\u5165\u300ccontent\u300d] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body5-\u300ccontent\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body6-\u300ccontent\u300d\u4e0d\u53ef\u8d85\u904e 1000 \u5b57] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body7-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body8-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body9-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body10-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body11-\u300curl\u300d\u4e0d\u53ef\u8d85\u904e 255 \u5b57] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_ test_post_hidden_share_validation[body12-\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d\u300crating\u300d] _
+tests/test_product_write.py:610: in test_post_hidden_share_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_____________________ test_post_hidden_share_boundaries_ok _____________________
+tests/test_product_write.py:621: in test_post_hidden_share_boundaries_ok
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+_________________ test_post_hidden_share_delisted_tour_is_404 __________________
+tests/test_product_write.py:630: in test_post_hidden_share_delisted_tour_is_404
+    assert r.json()["message"] == "查無此旅遊項目"
+E   AssertionError: assert '找不到此網站' == '查無此旅遊項目'
+E     
+E     - 查無此旅遊項目
+E     + 找不到此網站
+__________________ test_post_hidden_share_unknown_tour_is_404 __________________
+tests/test_product_write.py:637: in test_post_hidden_share_unknown_tour_is_404
+    assert r.json()["message"] == "查無此旅遊項目"
+E   AssertionError: assert '找不到此網站' == '查無此旅遊項目'
+E     
+E     - 查無此旅遊項目
+E     + 找不到此網站
+_________________ test_post_hidden_share_html_stored_verbatim __________________
+tests/test_product_write.py:647: in test_post_hidden_share_html_stored_verbatim
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_hidden_share_requires_login - A...
+FAILED tests/test_product_write.py::test_post_hidden_share_admin_is_403 - Ass...
+FAILED tests/test_product_write.py::test_post_hidden_share_admin_with_invalid_body_is_403
+FAILED tests/test_product_write.py::test_post_hidden_share_without_order_is_403
+FAILED tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[-1]
+FAILED tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[0]
+FAILED tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[2]
+FAILED tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[3]
+FAILED tests/test_product_write.py::test_post_hidden_share_unpaid_status_is_403[4]
+FAILED tests/test_product_write.py::test_post_hidden_share_other_users_order_does_not_count
+FAILED tests/test_product_write.py::test_post_hidden_share_order_for_other_tour_does_not_count
+FAILED tests/test_product_write.py::test_post_hidden_share_order_paid_but_item_unpaid_is_403
+FAILED tests/test_product_write.py::test_post_hidden_share_item_paid_but_order_unpaid_is_201
+FAILED tests/test_product_write.py::test_post_hidden_share_validation_before_purchase_check
+FAILED tests/test_product_write.py::test_post_hidden_share_invalid_tour_id_is_400
+FAILED tests/test_product_write.py::test_post_hidden_share_success_201 - Asse...
+FAILED tests/test_product_write.py::test_post_hidden_share_without_url - Asse...
+FAILED tests/test_product_write.py::test_post_hidden_share_multiple_allowed
+FAILED tests/test_product_write.py::test_post_hidden_share_appears_in_list - ...
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body0-\u300ctitle\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body1-\u300ctitle\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body2-\u300ctitle\u300d\u4e0d\u53ef\u8d85\u904e 50 \u5b57]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body3-\u8acb\u8f38\u5165\u300ctitle\u300d]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body4-\u8acb\u8f38\u5165\u300ccontent\u300d]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body5-\u300ccontent\u300d\u4e0d\u5f97\u70ba\u7a7a\u767d]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body6-\u300ccontent\u300d\u4e0d\u53ef\u8d85\u904e 1000 \u5b57]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body7-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body8-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body9-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body10-\u300curl\u300d\u5fc5\u9808\u662f http \u6216 https \u7db2\u5740]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body11-\u300curl\u300d\u4e0d\u53ef\u8d85\u904e 255 \u5b57]
+FAILED tests/test_product_write.py::test_post_hidden_share_validation[body12-\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d\u300crating\u300d]
+FAILED tests/test_product_write.py::test_post_hidden_share_boundaries_ok - As...
+FAILED tests/test_product_write.py::test_post_hidden_share_delisted_tour_is_404
+FAILED tests/test_product_write.py::test_post_hidden_share_unknown_tour_is_404
+FAILED tests/test_product_write.py::test_post_hidden_share_html_stored_verbatim
+====================== 36 failed, 45 deselected in 2.06s =======================

@@ -1,4 +1,4 @@
-"""P3 Task 6：購買資格查詢與寫評論 API（只限購買過的會員）。"""
+"""P3 Task 6／7：購買資格查詢、寫評論、分享隱藏玩法 API（只限購買過的會員）。"""
 import datetime
 import time
 import uuid
@@ -13,6 +13,9 @@ SEARCH = "/api/v1/user/product/search"
 NO_PERMISSION = "您沒有權限進行此操作"
 NOT_BOUGHT = "購買過此行程的會員才能評論"
 DUPLICATE = "你已評論過此行程"
+NOT_BOUGHT_SHARE = "購買過此行程的會員才能分享隱藏玩法"
+URL_MSG = "「url」必須是 http 或 https 網址"
+SHARE_BODY = {"title": "清晨的魚市", "content": "六點前到"}
 RATING_MSG = "「rating」必須是 1 到 5 的整數"
 BODY = {"rating": 4, "content": "很棒的行程"}
 
@@ -413,3 +416,237 @@ def test_eligibility_seed_alice(api, db):
     assert _eligibility(api, alice, hokkaido) == {"can_write": True, "has_reviewed": True}
     assert _eligibility(api, alice, italy) == {"can_write": False, "has_reviewed": False}
     assert _eligibility(api, carol, hokkaido) == {"can_write": True, "has_reviewed": False}
+
+
+# ---------- Task 7：分享隱藏玩法 ----------
+
+
+def _share_count(db, tour_id) -> int:
+    return db.execute("SELECT count(*) FROM hidden_play WHERE tour_id = %s", (tour_id,)).fetchone()[0]
+
+
+def _share_url(tour_id) -> str:
+    return _url(tour_id, "hidden-shares")
+
+
+def test_post_hidden_share_requires_login(api, make_tour):
+    t = make_tour()
+    r = api.post(_share_url(t["tour_id"]), json=SHARE_BODY)
+    assert r.status_code == 401, r.text
+    assert r.json()["message"] == "請先登入"
+
+
+def test_post_hidden_share_admin_is_403(api, make_user, make_tour):
+    t = make_tour()
+    admin = make_user(role="admin")
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(admin), json=SHARE_BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NO_PERMISSION
+
+
+def test_post_hidden_share_admin_with_invalid_body_is_403(api, make_user, make_tour):
+    t = make_tour()
+    admin = make_user(role="admin")
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(admin), json={"title": ""})
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NO_PERMISSION
+
+
+def test_post_hidden_share_without_order_is_403(api, db, make_user, make_tour):
+    t = make_tour()
+    u = make_user()
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT_SHARE
+    assert _share_count(db, t["tour_id"]) == 0
+
+
+@pytest.mark.parametrize("status", [-1, 0, 2, 3, 4])
+def test_post_hidden_share_unpaid_status_is_403(api, db, make_user, make_order, make_tour, status):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t, status=status)
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT_SHARE
+    assert _share_count(db, t["tour_id"]) == 0
+
+
+def test_post_hidden_share_other_users_order_does_not_count(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    _buyer(make_user, make_order, t)  # B 已付款
+    a = make_user()
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(a), json=SHARE_BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT_SHARE
+    assert _share_count(db, t["tour_id"]) == 0
+
+
+def test_post_hidden_share_order_for_other_tour_does_not_count(api, db, make_user, make_order, make_tour):
+    x, y = make_tour(), make_tour()
+    u = _buyer(make_user, make_order, x)
+    r = api.post(_share_url(y["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT_SHARE
+    assert _share_count(db, y["tour_id"]) == 0
+
+
+def test_post_hidden_share_order_paid_but_item_unpaid_is_403(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = make_user()
+    make_order(u, t["tour_id"], payment_status=0, order_payment_status=1)
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 403, r.text
+    assert r.json()["message"] == NOT_BOUGHT_SHARE
+    assert _share_count(db, t["tour_id"]) == 0
+
+
+def test_post_hidden_share_item_paid_but_order_unpaid_is_201(api, make_user, make_order, make_tour):
+    t = make_tour()
+    u = make_user()
+    make_order(u, t["tour_id"], payment_status=1, order_payment_status=0)
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 201, r.text
+
+
+def test_post_hidden_share_validation_before_purchase_check(api, make_user, make_tour):
+    t = make_tour()
+    u = make_user()  # 未購買
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json={"title": "", "content": "x"})
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「title」不得為空白"
+
+
+def test_post_hidden_share_invalid_tour_id_is_400(api, make_user):
+    u = make_user()
+    r = api.post(_share_url("not-a-uuid"), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 400, r.text
+    assert r.json()["message"]
+
+
+def test_post_hidden_share_success_201(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    r = api.post(
+        _share_url(t["tour_id"]),
+        headers=auth_header(u),
+        json={"title": " 清晨的魚市 ", "content": " 六點前到 ", "url": "https://example.com/tip"},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["message"] == "分享成功"
+    data = body["data"]
+    assert set(data) == {"shares_id", "title", "content", "url", "create_date"}
+    assert data["title"] == "清晨的魚市"
+    assert data["content"] == "六點前到"
+    assert data["url"] == "https://example.com/tip"
+    row = db.execute(
+        "SELECT user_id, tour_id, title, content, share_url FROM hidden_play WHERE hidden_play_id = %s",
+        (data["shares_id"],),
+    ).fetchone()
+    assert row is not None
+    assert (str(row[0]), str(row[1]), row[2], row[3], row[4]) == (
+        u["user_id"], t["tour_id"], "清晨的魚市", "六點前到", "https://example.com/tip",
+    )  # fmt: skip
+
+
+def test_post_hidden_share_without_url(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 201, r.text
+    data = r.json()["data"]
+    assert data["url"] is None
+    row = db.execute(
+        "SELECT share_url IS NULL FROM hidden_play WHERE hidden_play_id = %s", (data["shares_id"],)
+    ).fetchone()
+    assert row is not None
+    assert row[0] is True
+
+
+def test_post_hidden_share_multiple_allowed(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    h = auth_header(u)
+    assert api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY).status_code == 201
+    assert api.post(_share_url(t["tour_id"]), headers=h, json=SHARE_BODY).status_code == 201
+    assert _share_count(db, t["tour_id"]) == 2
+
+
+def test_post_hidden_share_appears_in_list(api, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    body = {"title": "清晨的魚市", "content": "六點前到", "url": "https://example.com/tip"}
+    assert api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=body).status_code == 201
+    r = api.get(_share_url(t["tour_id"]), params={"page": 1, "limit": 5, "lang": "zh-TW"})
+    assert r.status_code == 200, r.text
+    rows = r.json()["data"]
+    assert len(rows) >= 1
+    assert rows[0]["title"] == body["title"]
+    assert rows[0]["url"] == body["url"]
+
+
+@pytest.mark.parametrize(
+    "body, message",
+    [
+        ({"title": "", "content": "x"}, "「title」不得為空白"),
+        ({"title": "   ", "content": "x"}, "「title」不得為空白"),
+        ({"title": "字" * 51, "content": "x"}, "「title」不可超過 50 字"),
+        ({"content": "x"}, "請輸入「title」"),
+        ({"title": "t"}, "請輸入「content」"),
+        ({"title": "t", "content": ""}, "「content」不得為空白"),
+        ({"title": "t", "content": "字" * 1001}, "「content」不可超過 1000 字"),
+        ({"title": "t", "content": "x", "url": "javascript:alert(1)"}, URL_MSG),
+        ({"title": "t", "content": "x", "url": "data:text/html,x"}, URL_MSG),
+        ({"title": "t", "content": "x", "url": "ftp://example.com/a"}, URL_MSG),
+        ({"title": "t", "content": "x", "url": ""}, URL_MSG),
+        ({"title": "t", "content": "x", "url": "https://example.com/" + "a" * 236}, "「url」不可超過 255 字"),
+        ({"title": "t", "content": "x", "rating": 5}, "不支援的欄位「rating」"),
+    ],
+)
+def test_post_hidden_share_validation(api, db, make_user, make_order, make_tour, body, message):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=body)
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == message
+    assert _share_count(db, t["tour_id"]) == 0
+
+
+def test_post_hidden_share_boundaries_ok(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    body = {"title": "字" * 50, "content": "字" * 1000, "url": "https://example.com/" + "a" * 235}
+    assert len(body["url"]) == 255
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=body)
+    assert r.status_code == 201, r.text
+    assert _share_count(db, t["tour_id"]) == 1
+
+
+def test_post_hidden_share_delisted_tour_is_404(api, make_user, make_order, make_tour):
+    t = make_tour(status=2)
+    u = _buyer(make_user, make_order, t)
+    r = api.post(_share_url(t["tour_id"]), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 404, r.text
+    assert r.json()["message"] == "查無此旅遊項目"
+
+
+def test_post_hidden_share_unknown_tour_is_404(api, make_user):
+    u = make_user()
+    r = api.post(_share_url(uuid.uuid4()), headers=auth_header(u), json=SHARE_BODY)
+    assert r.status_code == 404, r.text
+    assert r.json()["message"] == "查無此旅遊項目"
+
+
+def test_post_hidden_share_html_stored_verbatim(api, db, make_user, make_order, make_tour):
+    t = make_tour()
+    u = _buyer(make_user, make_order, t)
+    content = "<img src=x onerror=alert(1)>"
+    r = api.post(
+        _share_url(t["tour_id"]), headers=auth_header(u), json={"title": "t", "content": content}
+    )
+    assert r.status_code == 201, r.text
+    row = db.execute(
+        "SELECT content FROM hidden_play WHERE hidden_play_id = %s", (r.json()["data"]["shares_id"],)
+    ).fetchone()
+    assert row is not None
+    assert row[0] == content
