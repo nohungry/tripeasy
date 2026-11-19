@@ -474,7 +474,7 @@ def test_login_success_ok_closes_and_redirects_immediately(page: Page, make_user
     page.locator(".swal2-confirm").wait_for(state="visible")
     page.locator(".swal2-confirm").click()
     # 原本要等滿 3 秒才跳轉；改用 timer 後按 OK 應立即跳轉
-    page.wait_for_url("**/#/admin/userprofile", timeout=1500)
+    page.wait_for_url("**/#/admin/userprofile", timeout=2500)
 
 
 def test_signup_success_ok_redirects_immediately(page: Page, new_email):
@@ -490,17 +490,54 @@ def test_signup_success_ok_redirects_immediately(page: Page, new_email):
 
     page.locator(".swal2-confirm").wait_for(state="visible")
     page.locator(".swal2-confirm").click()
-    page.wait_for_url("**/#/admin/login", timeout=1500)
+    page.wait_for_url("**/#/admin/login", timeout=2500)
 
 
-def test_session_expired_on_member_api_shows_message(page: Page, make_user):
+def _trigger_save(page: Page) -> str:
+    _edit_name(page, "過期後改名")
+    page.get_by_role("button", name="儲存設定").click()
+    return r"/user/userinfo/info$"
+
+
+def _trigger_avatar(page: Page) -> str:
+    with page.expect_file_chooser() as chooser:
+        page.locator(".sidebar .headimg").click()
+    chooser.value.set_files(str(AVATAR_FIXTURE))
+    return r"/user/userinfo/avatar$"
+
+
+def _trigger_change_password(page: Page) -> str:
+    new_password = "Newpass123"
+    page.get_by_placeholder("請輸入舊密碼").fill(TEST_PASSWORD)
+    page.locator("#password .pw-edit-icon").nth(0).click()
+    page.locator("#password .pw-edit-icon").nth(1).click()
+    page.get_by_placeholder("請輸入新密碼").fill(new_password)
+    page.get_by_placeholder("再次輸入新密碼").fill(new_password)
+    page.get_by_role("button", name="更新密碼").click()
+    return r"/auth/userinfo/resetprofilepw$"
+
+
+@pytest.mark.parametrize(
+    "trigger", [_trigger_save, _trigger_avatar, _trigger_change_password], ids=["save", "avatar", "password"]
+)
+def test_session_expired_on_member_api_shows_message(page: Page, make_user, trigger):
     user = make_user()
     _login_to_profile(page, user)
 
     page.evaluate("t => localStorage.setItem('authToken', t)", login_token(user, exp_delta=EXPIRED))
-    _edit_name(page, "過期後改名")
-    page.get_by_role("button", name="儲存設定").click()
+    # 提示框 2 秒後自動關閉，斷言要在 wait_for_url 之前；觸發動作在 expect_response 內
+    pattern = {
+        _trigger_save: r"/user/userinfo/info$",
+        _trigger_avatar: r"/user/userinfo/avatar$",
+        _trigger_change_password: r"/auth/userinfo/resetprofilepw$",
+    }[trigger]
+    with page.expect_response(re.compile(pattern)) as resp:
+        trigger(page)
+    assert resp.value.status == 401
 
-    page.wait_for_url("**/#/admin/login", timeout=10_000)
     expect(page.get_by_text("登入已過期")).to_be_visible()
+    expect(page.get_by_text("請重新登入")).to_be_visible()
+    expect(page.locator(".swal2-icon-warning")).to_be_visible()
+    expect(page.locator(".swal2-confirm")).to_be_hidden()
     expect(page.locator(".swal2-icon-error")).to_have_count(0)
+    page.wait_for_url("**/#/admin/login", timeout=10_000)

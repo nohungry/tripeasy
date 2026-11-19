@@ -1,0 +1,47 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 27 items / 24 deselected / 3 selected
+
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save] PASSED [ 33%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar] FAILED [ 66%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] FAILED [100%]
+
+=================================== FAILURES ===================================
+______ test_session_expired_on_member_api_shows_message[chromium-avatar] _______
+e2e/test_member_flow.py:538: in test_session_expired_on_member_api_shows_message
+    expect(page.get_by_text("登入已過期")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("登入已過期") with timeout 5000ms
+E     - waiting for get_by_text("登入已過期")
+E   
+E   Aria snapshot:
+E   - dialog "failed":
+E     - heading "failed" [level=2]
+E     - text: Token 已過期
+E     - button "OK"
+_____ test_session_expired_on_member_api_shows_message[chromium-password] ______
+e2e/test_member_flow.py:538: in test_session_expired_on_member_api_shows_message
+    expect(page.get_by_text("登入已過期")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("登入已過期") with timeout 5000ms
+E     - waiting for get_by_text("登入已過期")
+E   
+E   Aria snapshot:
+E   - dialog "failed":
+E     - heading "failed" [level=2]
+E     - text: Token 已過期
+E     - button "OK"
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar]
+FAILED e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password]
+================= 2 failed, 1 passed, 24 deselected in 23.14s ==================
