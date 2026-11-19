@@ -106,3 +106,16 @@ def test_detail_with_expired_token_still_renders(page: Page, db, make_user):
     expect(page.get_by_role("heading", name=title)).to_be_visible()
     assert page.evaluate("localStorage.getItem('authToken')") is None
     expect(page.get_by_role("link", name="註冊/登入", exact=True).filter(visible=True)).to_be_visible()
+
+
+def test_detail_server_error_shows_load_failed(page: Page, db):
+    tour_id, _ = _seed_tour(db, "travel")
+    page.route(
+        "**/api/v1/user/product/search/*",
+        lambda route: route.fulfill(
+            status=500, content_type="application/json", body='{"status":"failed","message":"伺服器錯誤"}'
+        ),
+    )
+    _open_detail(page, tour_id)
+    expect(page.get_by_text("載入失敗，請稍後再試", exact=True)).to_be_visible()
+    expect(page.get_by_text("查無此行程", exact=True)).to_have_count(0)
