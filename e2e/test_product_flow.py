@@ -227,3 +227,111 @@ def test_home_with_expired_token_lists_products(page: Page, make_user):
     # 提示只顯示 2 秒（timer），先確認提示，再確認清單
     expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
     expect(page.locator("[data-testid=home-product-card]").first).to_be_visible()
+
+
+# ---------- 搜尋頁與 header 搜尋框（Task 11） ----------
+
+SEARCH_CARD = "[data-testid=tour-card]"
+SEARCH_TITLES = "[data-testid=tour-card] h5"
+
+
+def _search_response(**params):
+    """predicate：搜尋列表 API（不含詳情），且 query 含指定的參數值。"""
+
+    def _match(r):
+        path, _, query = r.url.partition("?")
+        if not path.endswith("/user/product/search"):
+            return False
+        return all(re.search(rf"[?&]{k}={v}(&|$)", "?" + query) for k, v in params.items())
+
+    return _match
+
+
+def _open_search(page: Page) -> list[str]:
+    """開搜尋頁並回傳第一頁 API 的標題序列（斷言非空，PF7）。"""
+    with page.expect_response(_search_response()) as info:
+        page.goto(f"{FRONTEND_BASE}/#/search", wait_until="domcontentloaded")
+    titles = _api_titles(info.value)
+    assert titles, "搜尋頁第一頁回應不應為空"
+    return titles
+
+
+def test_search_lists_tours_from_api(page: Page):
+    expected = _open_search(page)
+    assert len(expected) == 6
+    expect(page.locator(SEARCH_TITLES)).to_have_text(expected)
+
+
+def test_search_pagination_visits_every_listed_tour_once(page: Page, db):
+    first = _open_search(page)
+    expect(page.locator(SEARCH_TITLES)).to_have_text(first)
+    seen = list(first)
+    next_button = page.get_by_role("button", name="下一頁")
+    page_no = 1
+    while next_button.is_enabled():
+        page_no += 1
+        with page.expect_response(_search_response(page=page_no)) as info:
+            next_button.click()
+        titles = _api_titles(info.value)
+        expect(page.locator(SEARCH_TITLES)).to_have_text(titles)
+        expect(page.get_by_text(f"第 {page_no} 頁")).to_be_visible()
+        seen.extend(titles)
+        assert page_no < 50, "分頁沒有終點"
+    assert page_no >= 2, "至少要有 2 頁才能測分頁"
+    assert len(seen) == len(set(seen)), f"分頁出現重複行程：{seen}"
+    rows = db.execute("SELECT title FROM tour WHERE status = 1").fetchall()
+    assert set(seen) == {r[0] for r in rows}
+
+
+def test_header_keyword_search(page: Page):
+    page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    box = page.locator(".search_txtbox:visible").first
+    box.fill("  北海道 ")
+    with page.expect_response(_search_response(keyword="%E5%8C%97%E6%B5%B7%E9%81%93")):
+        box.press("Enter")
+    expect(page).to_have_url(re.compile(r"#/search\?keyword="))
+    expect(page.locator(SEARCH_TITLES)).to_have_text(["北海道雪景 5 日深度遊"])
+
+
+def test_search_price_filter_and_sort(page: Page):
+    _open_search(page)
+    page.get_by_placeholder("最小金額").fill("20000")
+    page.get_by_placeholder("最大金額").fill("50000")
+    page.get_by_label("金額排序").select_option("desc")
+    with page.expect_response(_search_response(min_price=20000, max_price=50000, sort_by="price", order="desc")) as info:
+        page.get_by_role("button", name="搜尋", exact=True).click()
+    rows = info.value.json()["data"]
+    assert rows, "價格區間內應有行程"
+    prices = [float(r["價錢"]) for r in rows]
+    assert all(20000 <= p <= 50000 for p in prices), prices
+    assert prices == sorted(prices, reverse=True), prices
+    expect(page.locator(SEARCH_TITLES)).to_have_text([r["旅遊名稱"] for r in rows])
+
+
+def test_search_no_result(page: Page):
+    _open_search(page)
+    page.get_by_placeholder("請輸入關鍵字（標題或介紹）").fill("p3-不存在-zzzz")
+    page.get_by_role("button", name="搜尋", exact=True).click()
+    expect(page.get_by_text("查無符合條件的行程")).to_be_visible()
+    expect(page.locator(SEARCH_CARD)).to_have_count(0)
+
+
+def test_search_card_opens_detail(page: Page):
+    with page.expect_response(_search_response()) as info:
+        page.goto(f"{FRONTEND_BASE}/#/search", wait_until="domcontentloaded")
+    rows = info.value.json()["data"]
+    assert rows, "搜尋頁第一頁回應不應為空"
+    first_row = rows[0]
+    card = page.locator(SEARCH_CARD).first
+    expect(card.locator("h5")).to_have_text(first_row["旅遊名稱"])
+    link = card.get_by_role("link", name="查看詳情")
+    expect(link).to_have_attribute("href", f"#/tour/{first_row['旅遊編號']}")
+    link.click()
+    expect(page).to_have_url(re.compile(r"/#/tour/[^/]+$"))
+    expect(page.get_by_role("heading", name=first_row["旅遊名稱"])).to_be_visible()
+
+
+def test_search_country_region_selects_removed(page: Page):
+    _open_search(page)
+    expect(page.get_by_text("所在國家")).to_have_count(0)
+    expect(page.get_by_text("所在地區")).to_have_count(0)
