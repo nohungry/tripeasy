@@ -408,9 +408,9 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 | 項目 | 修正 | commit |
 |---|---|---|
 | F1 | 搜尋日期區間與 `duration`：controller 的語意是「開始日 ≥ start_date、結束日 ≤ end_date、天數 = duration」，所以行程要落在區間內，只需 `duration ≤ 區間涵蓋天數`，涵蓋天數 = end_date − start_date + 1（含頭尾）。舊驗證要求 `duration` 等於天數差，寬區間永遠 400。超過時回 400「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 N 天）」。前端搜尋頁 400 時顯示後端 message，其他錯誤維持「載入失敗，請稍後再試」。紅燈 [final-fix-red.txt](evidence/phase-3/final-fix-red.txt)（3 failed 19 deselected） | 總覽 `fb339da`（紅）；backend `a956697`；frontend `9940fa1` |
-| F2 | `test_review_submit_with_expired_token` 先斷言「登入已過期」再等導頁 | 總覽（見 git log） |
-| F3 | 補 admin 詳情頁 E2E（`test_admin_sees_purchase_hint_without_forms`）：顯示未購買提示、無評論／玩法表單、不導頁 | 同上 |
-| F4–F7 | §1.4 條件措辭；`EXPIRED` 移到 `e2e/conftest.py` 共用；促銷測試改用 `live_promotion`（語意相符：有效促銷、價 900）；`["data"]` 改 `.get("data", [])`；刪 `_home_titles` | 同上 |
+| F2 | `test_review_submit_with_expired_token` 先斷言「登入已過期」再等導頁 | 總覽 `44b2e9a` |
+| F3 | 補 admin 詳情頁 E2E（`test_admin_sees_purchase_hint_without_forms`）：顯示未購買提示、無評論／玩法表單、不導頁 | 總覽 `44b2e9a` |
+| F4–F7 | §1.4 條件措辭；`EXPIRED` 移到 `e2e/conftest.py` 共用；促銷測試改用 `live_promotion`（語意相符：有效促銷、價 900）；`["data"]` 改 `.get("data", [])`；刪 `_home_titles` | 總覽 `44b2e9a` |
 | F8、F9 | `tourPage.vue` 新增 `createdText`（評論／玩法建立時間以 Asia/Taipei 換算），`dateText`（行程日期）不動；分享連結輸入框加 `autocapitalize/autocorrect/spellcheck` | frontend `9940fa1` |
 
 `scripts/ci.sh` 結果：**504 passed、0 xfailed、0 failed**（133.25s）；較 499 多 3 個後端（F1）與 2 個 E2E（搜尋 400 訊息、admin）。
