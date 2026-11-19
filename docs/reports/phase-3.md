@@ -5,7 +5,7 @@
 >
 > 行號基準：P3 之前就存在的問題，行號取自 backend `main`（`3d835a6`）／frontend `dev`（`71a2171`）修正前，多數沿用 P3 spec 的實測行號。
 >
-> **本稿尚缺**：(1) §2.1 使用的 skill 與關鍵 prompt（ledger 沒有紀錄，仍標「未查證」，需使用者補）；(2) 合併後才能填的 merge commit、tag、GitHub Actions run id（§3.3）。
+> **本稿尚缺**：(1) §2.1 使用的 skill 與關鍵 prompt（ledger 沒有紀錄，仍標「未查證」，需使用者補）；(2) 合併後才能填的 merge commit、tag、`main` 的 GitHub Actions run id（§3.3；`phase-3` 分支的 run `44496092927` 已填）。
 
 ## 0. 摘要
 
@@ -250,8 +250,9 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 - 兩次輸出以 `grep -ci xfail` 檢查，xfail 字樣為 0。
 - 329 passed、2 xfailed（P2）→ 499 passed、0 xfailed。
 - 每個檔案的通過數（第 2 次）：`tests/` 下 `test_member_auth.py` 83、`test_product_write.py` 82、`test_db_contract.py` 45、`test_api_smoke.py` 36、`test_seed.py` 29、`test_views_b.py` 24、`test_google_login.py` 23、`test_views_a.py` 22、`test_product_read.py` 19（第 2 輪修正後 23）、`test_migrations.py` 15、`test_views_c.py` 13、`test_infra.py` 12、`test_product_routes.py` 8、`test_build_seed.py` 7、`test_frontend.py` 5、`test_storage.py` 3、`test_oauth_spike.py` 2、`test_async_errors.py`／`test_health.py`／`test_mail.py` 各 1；`e2e/` 下 `test_product_flow.py` 41、`test_member_flow.py` 27。
-- **GitHub Actions**：Task 1 當時的 run `44448611062`（rerun）為綠燈，341 passed 2 xfailed，uv 0.13.9、CPython 3.13.18。**最終 run id 待 Step 6 push 後補**：（待補）。
-- **`timeout-minutes: 30` 的理由**：job 預設逾時是 360 分鐘，真卡死時會空轉 6 小時。本機 `ci.sh` 全程約 2–3 分鐘；GitHub runner 還要 `playwright install --with-deps`，上次因 apt 鏡像慢（約 84.8 kB/s）就多了約 6 分鐘。30 分鐘約是「正常耗時的數倍」，能容納鏡像變慢，又能擋住真卡死。若之後正常耗時逼近 20 分鐘，應改值而不是單純拉高。
+- **GitHub Actions**：Task 1 當時的 run `44448611062`（rerun）為綠燈，341 passed 2 xfailed，uv 0.13.9、CPython 3.13.18。
+- **`phase-3` 分支的 GitHub Actions run `44496092927`**：綠燈，505 passed（pytest 115.99s），整個 run 從 09:24:17Z 到 09:33:27Z，約 9m10s（含 `docker compose up --build`、`playwright install --with-deps`）。merge 之後 `main` 的 run id 待補。
+- **`timeout-minutes: 30` 的理由**：job 預設逾時是 360 分鐘，真卡死時會空轉 6 小時。實測佐證：本機 `ci.sh` 全程約 2–3 分鐘；GitHub runner 上 run `44496092927` 總耗時約 9m10s（apt 鏡像慢時 `playwright install` 還會多出數分鐘）。30 分鐘約是實測耗時的 3 倍多，能容納鏡像變慢，又能擋住真卡死。若之後正常耗時逼近 20 分鐘，應改值而不是單純拉高。
 
 ## 4. 操作指南
 
@@ -278,7 +279,16 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 
 1. alice 開「義大利深度文化之旅」：她只有一筆 `payment_status = -1` 的訂單，資格查詢 `GET …/eligibility` 回 **200** `{ can_write: false, has_reviewed: false }`，畫面顯示「購買過此行程的會員才能評論與分享隱藏玩法」，沒有表單（**未購買**的 403 只會出現在 POST，見下方 curl）。
 2. alice 開「北海道雪景 5 日深度遊」：顯示「你已評論過此行程」，玩法表單仍出現，但不要送出。
-3. bob（admin）登入後開任一詳情：資格查詢回 403，前端照樣顯示 (1) 的提示。
+3. bob（admin）登入後開任一詳情：資格查詢回 403，前端照樣顯示 (1) 的提示（有 E2E `test_admin_sees_purchase_hint_without_forms` 涵蓋：403、無表單、不導頁、無 `pageerror`）。
+4. **搜尋的日期與天數**（日期會隨載入日平移，先用 SQL 查出北海道 5 日的起訖日，不要照抄範例）：
+
+   ```bash
+   docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' <<'SQL'
+   select tour_start_date::date, tour_end_date::date, days from tour where title = '北海道雪景 5 日深度遊';
+   SQL
+   ```
+
+   開 `#/search`，「旅遊日期」填查到的起日與訖日（含當天，訖日 23:59:59 結束的行程也算），「旅遊天數」選 5日，按「搜尋」：清單要有「北海道雪景 5 日深度遊」。把訖日改成前一天（區間只剩 4 天）再搜：畫面顯示後端訊息「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 4 天）」，**不是**「載入失敗，請稍後再試」。起日填得比訖日晚：顯示「「start_date」不可大於「end_date」」。最小金額填得比最大金額大：顯示「「min_price」不可大於「max_price」」。（以上訊息已以 curl 對照 API 實測，狀態碼 400。）
 
 **403 的 curl 示範**（token 一律用 login API 取得，不從 localStorage 拿；這兩個請求都在驗證或資格階段被擋，**不會新增任何列**（login 只會重設 `login_attempts`／`locked_datetime`／`login_method`），`review` 仍是 13 筆）：
 
@@ -387,6 +397,14 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 **N12**（seed 既有的「沒買過的人」的評論與玩法，規則不追溯）：評論 bob→馬爾地夫（無訂單）、carol→紐西蘭（2）（訂單 `payment_status = 2`）、carol→義大利（無訂單）、alice→巴黎（無訂單）；玩法 alice→紐西蘭（4）（訂單 `payment_status = 4`）、alice→大阪（無訂單）；另有 admin bob 寫的評論→曼谷設計旅店探索、玩法→北海道、巴黎（他有已付款訂單，但角色是 admin，`authRole('User')` 下不能寫）。若錯：展示時看得到「沒買過的人的評論」，可在重建 seed 時一併修。
 
 **N13**：seed 有 5 則 `review.type` 與 `tour.item` 不一致（格式為 type／item）：馬爾地夫 hotel／travel、大阪 hotel／food、巴黎 food／spot、曼谷設計旅店 food／hotel、義大利 spot／travel。只影響 `review_type` 欄位的顯示，P3 頁面不顯示它，不修 seed。
+
+**B.2a 最終修正波後的已知限制（ledger 記為 deferred）**
+
+- 搜尋的 `start_date`／`end_date` 帶不存在的日期（例如 `2027-02-30`）會回 500，不是 400。
+- 搜尋 400 的訊息直接顯示 API 參數名（`duration`、`start_date`、`min_price` 等），沒有轉成使用者用語。
+- `end_date` 帶時區偏移時，SQL 的 `::date` 以 UTC 取日，可能與使用者本地日期差一天。
+- `tests/test_product_read.py` 的 `:164`、`:178`、`:199`、`:219`、`:227` 仍直接取 `["data"]`（空回應沒有 `data` 鍵時會 KeyError，而不是清楚的斷言失敗）。
+- admin E2E 的 `pageerror` 斷言只抓得到 `expect` 完成之前發生的錯誤；之後才冒出的未處理 rejection 不會被發現。
 
 **B.3 ledger 的「P4 以後」與 deferred minor**（逐項來自 `.superpowers/sdd/2026-11-19-p3-product/progress.md`，不重寫細節）
 
