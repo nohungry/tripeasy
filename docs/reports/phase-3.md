@@ -5,7 +5,7 @@
 >
 > 行號基準：P3 之前就存在的問題，行號取自 backend `main`（`3d835a6`）／frontend `dev`（`71a2171`）修正前，多數沿用 P3 spec 的實測行號。
 >
-> **本稿尚缺（定稿前要補）**：Step 5 final whole-branch review 的結果（§2.3、§2.4）；Step 6 合併後的 merge commit、tag、GitHub Actions run id（§3.3）；§2.1 使用的 skill 與關鍵 prompt（ledger 沒有紀錄，標「未查證」）。
+> **本稿尚缺（合併後才能填）**：Step 6 合併後的 merge commit、tag、GitHub Actions run id（§3.3）。
 
 ## 0. 摘要
 
@@ -13,7 +13,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 
 | 項目 | 結果 |
 |---|---|
-| 測試數量 | **329 passed、2 xfailed（P2 結束）→ 499 passed、0 xfailed**（`scripts/ci.sh` 連跑兩次，見 §3.3；最終修正波後 **504 passed、0 xfailed**，見附錄 C）。收集數 331 → 499，淨增 168 個測試；2 個 strict xfail 移除後轉為一般通過 |
+| 測試數量 | **329 passed、2 xfailed（P2 結束）→ 499 passed、0 xfailed**（`scripts/ci.sh` 連跑兩次，見 §3.3；最終修正波後 **505 passed、0 xfailed**，見附錄 C）。收集數 331 → 499，淨增 168 個測試；2 個 strict xfail 移除後轉為一般通過 |
 | xfail | **2 → 0**：PATCH `/info` 部分更新的兩個 strict xfail（`tests/test_member_auth.py:397`、`:406`）因修好而移除（§1.1） |
 | 後端 | 既有讀取 API 修 5 類問題（搜尋分頁不穩、`duration` 不生效、詳情 500、food 空項、隱藏玩法 `title`）；首頁促銷修 2 個契約缺口；新增 3 支 API（資格查詢、寫評論、分享隱藏玩法）；新增 migration `V4`（一人一行程一則評論、評分 1–5） |
 | 前端 | 首頁清單、搜尋頁、詳情頁接 API；詳情頁評論與隱藏玩法讀寫；401 統一提示、成功提示改 `timer`；首頁雙 header 修掉；刪除假行程頁與其圖檔 |
@@ -224,7 +224,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 
 | 層 | 內容 | 主要檔案 |
 |---|---|---|
-| API 契約 | 三支新 API 的正常、每個驗證錯誤、401／403；既有讀取 API 的修正；回應鍵名對齊 GET | `tests/test_product_write.py`（82）、`tests/test_product_read.py`（19）、`tests/test_api_smoke.py`（36）、`tests/test_product_routes.py`（8） |
+| API 契約 | 三支新 API 的正常、每個驗證錯誤、401／403；既有讀取 API 的修正；回應鍵名對齊 GET | `tests/test_product_write.py`（82）、`tests/test_product_read.py`（23）、`tests/test_api_smoke.py`（36）、`tests/test_product_routes.py`（8） |
 | 安全 | 未付款狀態（-1、0、2、3、4）不能寫；別人的、別行程的已付款訂單不算；admin 403；非 http(s) 網址 400；HTML 原樣保存（API）且在頁面以文字顯示不執行（E2E）；併發 5 則評論只成功 1 則 | `tests/test_product_write.py`、`e2e/test_product_flow.py` |
 | DB 狀態 | `review.type = tour.item`、內容已 trim、`share_url` NULL／有值；V4 索引與 CHECK（含網站好評不受限）；seed 唯讀冒煙 | `tests/test_migrations.py`（15）、`tests/test_db_contract.py`（45）、`tests/test_product_write.py` |
 | E2E | 首頁單一 header 與清單；搜尋分頁走完每個上架行程恰一次；header 關鍵字；詳情四種 item；未登入／未購買／admin 提示；XSS；過期 token；假頁面路由 404；主線 | `e2e/test_product_flow.py`（43）、`e2e/test_member_flow.py`（27） |
@@ -249,7 +249,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 
 - 兩次輸出以 `grep -ci xfail` 檢查，xfail 字樣為 0。
 - 329 passed、2 xfailed（P2）→ 499 passed、0 xfailed。
-- 每個檔案的通過數（第 2 次）：`tests/` 下 `test_member_auth.py` 83、`test_product_write.py` 82、`test_db_contract.py` 45、`test_api_smoke.py` 36、`test_seed.py` 29、`test_views_b.py` 24、`test_google_login.py` 23、`test_views_a.py` 22、`test_product_read.py` 19、`test_migrations.py` 15、`test_views_c.py` 13、`test_infra.py` 12、`test_product_routes.py` 8、`test_build_seed.py` 7、`test_frontend.py` 5、`test_storage.py` 3、`test_oauth_spike.py` 2、`test_async_errors.py`／`test_health.py`／`test_mail.py` 各 1；`e2e/` 下 `test_product_flow.py` 41、`test_member_flow.py` 27。
+- 每個檔案的通過數（第 2 次）：`tests/` 下 `test_member_auth.py` 83、`test_product_write.py` 82、`test_db_contract.py` 45、`test_api_smoke.py` 36、`test_seed.py` 29、`test_views_b.py` 24、`test_google_login.py` 23、`test_views_a.py` 22、`test_product_read.py` 19（第 2 輪修正後 23）、`test_migrations.py` 15、`test_views_c.py` 13、`test_infra.py` 12、`test_product_routes.py` 8、`test_build_seed.py` 7、`test_frontend.py` 5、`test_storage.py` 3、`test_oauth_spike.py` 2、`test_async_errors.py`／`test_health.py`／`test_mail.py` 各 1；`e2e/` 下 `test_product_flow.py` 41、`test_member_flow.py` 27。
 - **GitHub Actions**：Task 1 當時的 run `44448611062`（rerun）為綠燈，341 passed 2 xfailed，uv 0.13.9、CPython 3.13.18。**最終 run id 待 Step 6 push 後補**：（待補）。
 - **`timeout-minutes: 30` 的理由**：job 預設逾時是 360 分鐘，真卡死時會空轉 6 小時。本機 `ci.sh` 全程約 2–3 分鐘；GitHub runner 還要 `playwright install --with-deps`，上次因 apt 鏡像慢（約 84.8 kB/s）就多了約 6 分鐘。30 分鐘約是「正常耗時的數倍」，能容納鏡像變慢，又能擋住真卡死。若之後正常耗時逼近 20 分鐘，應改值而不是單純拉高。
 
@@ -397,9 +397,9 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 - Task 6：陣列 body 回英文訊息；部分斷言只驗狀態碼；body 400 先於 404 無測試；NUL 字元 500；格式錯誤的 JSON 先於 auth（既有）；`make_order` 同訂單第二品項清理依賴 fixture 順序。
 - Task 7：大寫 scheme（`HTTPS://`）被擋（Joi scheme 分大小寫）；401 只測「請先登入」；`create_date` 未驗。
 - Task 8：`Bearer null` 也算帶 `Authorization`；`updateUserInfo` 無 try/catch（既有）；`serviceSetting.vue:77` 既有 `v-html`（P6 範圍）；否定斷言在提示框關閉後空過的殘留小時間窗。
-- Task 9：日期 `slice(0,10)` 依賴 backend UTC（部署換時區會少一天）；`safeUrl` 擋 `javascript:` 無 E2E；無促銷時不出現 `<del>` 無反向驗證；`formatPrice(null)` 為 `NT$0`。
+- Task 9：日期 `slice(0,10)` 依賴 backend UTC（部署換時區會少一天）（評論／玩法建立日期已於最終修正波修正，只剩行程日期）；`safeUrl` 擋 `javascript:` 無 E2E；無促銷時不出現 `<del>` 無反向驗證；`formatPrice(null)` 為 `NT$0`。
 - Task 10：tab 缺 `role=presentation`、無 tabpanel／方向鍵；首頁 API 失敗無提示；卡片 `li` click 無鍵盤可及；收藏圖示 P5 需 `@click.stop`；`isSticky`／`handleScroll` 成為無作用程式碼。
-- Task 11：搜尋測試依賴 seed 內容；`min>max` 等 400 顯示「載入失敗」誤導；同關鍵字重複導航不重查；「自由選擇」文案為新增；ILIKE 萬用字元（既有後端）。
+- Task 11：搜尋測試依賴 seed 內容；`min>max` 等 400 顯示「載入失敗」誤導（已於最終修正波修正）；同關鍵字重複導航不重查；「自由選擇」文案為新增；ILIKE 萬用字元（既有後端）。
 - Task 12：列表讀取失敗顯示「目前還沒有評論」誤導；共用 `submitting` 旗標；XSS 只驗評論未驗玩法 `title`／`content`；409 後重讀資格失敗成為未處理 rejection（只在 console）；（admin 詳情頁 E2E 已於最終修正波補上）。
 
 
@@ -407,10 +407,12 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 
 | 項目 | 修正 | commit |
 |---|---|---|
-| F1 | 搜尋日期區間與 `duration`：controller 的語意是「開始日 ≥ start_date、結束日 ≤ end_date、天數 = duration」，所以行程要落在區間內，只需 `duration ≤ 區間涵蓋天數`，涵蓋天數 = end_date − start_date + 1（含頭尾）。舊驗證要求 `duration` 等於天數差，寬區間永遠 400。超過時回 400「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 N 天）」。前端搜尋頁 400 時顯示後端 message，其他錯誤維持「載入失敗，請稍後再試」。紅燈 [final-fix-red.txt](evidence/phase-3/final-fix-red.txt)（3 failed 19 deselected） | 總覽 `fb339da`（紅）；backend `a956697`；frontend `9940fa1` |
+| F1 | 搜尋日期區間與 `duration`：controller 的語意是「開始日 ≥ start_date、結束日 ≤ end_date、天數 = duration」，所以行程要落在區間內，只需 `duration ≤ 區間涵蓋天數`，涵蓋天數 = end_date − start_date + 1（含頭尾）。舊驗證要求 `duration` 等於天數差，寬區間永遠 400。超過時回 400「「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 N 天）」。前端搜尋頁 400 時顯示後端 message，其他錯誤維持「載入失敗，請稍後再試」。例：seed 北海道 5 日行程（2027-06-02～2027-06-06，日期隨載入日平移）以 6/2～6/6 + `duration=5` 查詢，涵蓋 5 天、合法。第 2 輪另把 `end_date` 改為含當天（見下）。紅燈 [final-fix-red.txt](evidence/phase-3/final-fix-red.txt)（3 failed 19 deselected） | 總覽 `fb339da`（紅）；backend `a956697`；frontend `9940fa1` |
 | F2 | `test_review_submit_with_expired_token` 先斷言「登入已過期」再等導頁 | 總覽 `44b2e9a` |
 | F3 | 補 admin 詳情頁 E2E（`test_admin_sees_purchase_hint_without_forms`）：顯示未購買提示、無評論／玩法表單、不導頁 | 總覽 `44b2e9a` |
 | F4–F7 | §1.4 條件措辭；`EXPIRED` 移到 `e2e/conftest.py` 共用；促銷測試改用 `live_promotion`（語意相符：有效促銷、價 900）；`["data"]` 改 `.get("data", [])`；刪 `_home_titles` | 總覽 `44b2e9a` |
 | F8、F9 | `tourPage.vue` 新增 `createdText`（評論／玩法建立時間以 Asia/Taipei 換算），`dateText`（行程日期）不動；分享連結輸入框加 `autocapitalize/autocorrect/spellcheck` | frontend `9940fa1` |
 
-`scripts/ci.sh` 結果：**504 passed、0 xfailed、0 failed**（133.25s）；較 499 多 3 個後端（F1）與 2 個 E2E（搜尋 400 訊息、admin）。
+第 1 輪 `scripts/ci.sh`：504 passed、0 xfailed（133.25s）。
+
+**第 2 輪**：`end_date` 含當天。複審發現 controller 以 `旅遊結束日期 <= end_date`（當天 00:00）比對，而 seed 行程結束於 23:59:59，6/2～6/6 + `duration=5` 查不到北海道。改為 `旅遊結束日期 < (end_date::date + 1)`（backend `adffa31`）。紅燈 [final-fix2-red.txt](evidence/phase-3/final-fix2-red.txt)（總覽 `0377e20`，1 failed 22 passed）；測試從 DB 讀北海道日期（seed 日期浮動）。admin E2E 另斷言 `/eligibility` 回 403 且沒有 `pageerror`。前端 400 訊息 E2E 沒有先留紅燈證據（舊模板固定顯示「載入失敗」，新斷言在舊碼必紅）。第 2 輪 `scripts/ci.sh`：**505 passed、0 xfailed、0 failed**（138.06s）。

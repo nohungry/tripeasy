@@ -450,12 +450,22 @@ def test_member_without_purchase_sees_purchase_hint(page: Page, make_user, make_
 def test_admin_sees_purchase_hint_without_forms(page: Page, make_user, make_tour):
     tour = make_tour()
     admin = make_user(role="admin")
-    _login_and_open(page, admin, tour["tour_id"])
+    page_errors: list[str] = []
+    page.on("pageerror", lambda e: page_errors.append(str(e)))
+    token = login_token(admin)
+    page.add_init_script(
+        f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-admin');"
+    )
+    with page.expect_response(lambda r: "/eligibility" in r.url) as info:
+        _open_detail(page, tour["tour_id"])
+    assert info.value.status == 403
     expect(_review_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
     expect(_share_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
     expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
     expect(page.get_by_role("button", name="分享玩法")).to_have_count(0)
     expect(page).to_have_url(re.compile(rf"#/tour/{tour['tour_id']}$"))
+    page.wait_for_timeout(300)  # 讓可能的未處理 rejection 有機會觸發
+    assert page_errors == []
 
 
 def test_review_html_rendered_as_text(page: Page, make_user, make_tour, make_order):
