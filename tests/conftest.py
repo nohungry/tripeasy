@@ -5,6 +5,7 @@ import hmac
 import importlib.util
 import json
 import os
+import sys
 import time
 import uuid
 from pathlib import Path
@@ -13,8 +14,10 @@ import jwt
 import psycopg
 import pytest
 import requests
-from dbfactory import insert
 from dotenv import load_dotenv
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # e2e 以路徑載入本檔時，dbfactory 才找得到
+from dbfactory import insert  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
