@@ -149,18 +149,40 @@ def test_detail_tour_without_detail_rows_is_404(api, make_tour):
     assert r.json()["message"] == "查無此旅遊項目"
 
 
-def test_detail_food_has_no_empty_menu_or_opening(api, db):
-    row = db.execute(
-        "SELECT tour_id FROM tour WHERE item = 'food' AND status = 1 ORDER BY title LIMIT 1"
-    ).fetchone()
-    assert row, "seed 沒有上架的 food 行程"
-    r = _detail(api, str(row[0]))
+def test_detail_food_has_no_empty_menu_or_opening(api, db, make_tour):
+    from dbfactory import insert
+
+    t = make_tour(item="food", with_detail=False)
+    rs = insert(db, "restaurant", tour_id=t["tour_id"])
+    for name in ("p3-菜甲", "p3-菜乙"):
+        insert(db, "restaurant_menu", restaurant_id=rs["restaurant_id"], name=name)
+    insert(db, "restaurant_business", restaurant_id=rs["restaurant_id"], week="p3-週一")
+    r = _detail(api, t["tour_id"])
     assert r.status_code == 200, r.text
     feature = r.json()["data"]["feature"]
-    assert feature["menu"]
-    assert all(m["name"] is not None for m in feature["menu"]), feature["menu"]
-    assert feature["opening"]
-    assert all(o["week"] is not None for o in feature["opening"]), feature["opening"]
+    assert len(feature["menu"]) == 2
+    assert sorted(m["name"] for m in feature["menu"]) == sorted(["p3-菜甲", "p3-菜乙"])
+    assert len(feature["opening"]) == 1
+    assert feature["opening"][0]["week"] == "p3-週一"
+
+
+def test_detail_food_without_menu_or_opening_has_empty_lists(api, db, make_tour):
+    from dbfactory import insert
+
+    t = make_tour(item="food", with_detail=False)
+    insert(db, "restaurant", tour_id=t["tour_id"])
+    r = _detail(api, t["tour_id"])
+    assert r.status_code == 200, r.text
+    feature = r.json()["data"]["feature"]
+    assert feature["menu"] == []
+    assert feature["opening"] == []
+
+
+def test_detail_spot_without_detail_rows_stays_200(api, make_tour):
+    # 既有行為的回歸測試（spec :134）：spot 對 tour_detail 是 LEFT JOIN，沒有明細仍回 200
+    t = make_tour(item="spot", with_detail=False)
+    r = _detail(api, t["tour_id"])
+    assert r.status_code == 200, r.text
 
 
 def test_hidden_shares_include_title(api, db, make_user, make_tour):
@@ -199,6 +221,7 @@ def test_reviews_average_and_pagination(api, db, make_user, make_tour):
     assert dates == sorted(dates, reverse=True)
     assert d1["average_rating"] == 4.3
     r2 = api.get(url, params={"page": 2, "limit": 2, "lang": "zh-TW"})
+    assert r2.status_code == 200, r2.text
     d2 = r2.json()["data"]
     assert len(d2["reviews"]) == 1
     assert d2["reviews"][0]["rating"] == 5
