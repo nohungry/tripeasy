@@ -359,7 +359,8 @@ def _login_and_open(page: Page, user: dict, tour_id: str) -> None:
     page.add_init_script(
         f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-user');"
     )
-    _open_detail(page, tour_id)
+    with page.expect_response(lambda r: "/eligibility" in r.url):
+        _open_detail(page, tour_id)
 
 
 def _review_section(page: Page):
@@ -421,7 +422,8 @@ def test_product_main_flow(page: Page, make_user, make_tour, make_order):
     expect(item).to_contain_text("p3 玩法")
     link = item.get_by_role("link", name="查看分享連結")
     expect(link).to_have_attribute("href", "https://example.com/tip")
-    assert "noopener" in link.get_attribute("rel")
+    expect(link).to_have_attribute("rel", re.compile("noopener"))
+    expect(link).to_have_attribute("target", "_blank")
 
 
 def test_guest_sees_login_hint(page: Page, make_tour):
@@ -524,3 +526,64 @@ def test_reviews_and_shares_load_more(page: Page, db, make_user, make_tour):
     page.get_by_role("button", name="載入更多玩法").click()
     expect(shares).to_have_count(6)
     expect(page.get_by_role("button", name="載入更多玩法")).to_have_count(0)
+    review_texts = reviews.all_inner_texts()
+    share_texts = shares.all_inner_texts()
+    assert len(set(review_texts)) == 7
+    assert len(set(share_texts)) == 6
+
+
+def test_purchase_hint_not_shown_while_eligibility_pending(page: Page, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+    held = []
+    page.route("**/eligibility", lambda route: held.append(route))
+    token = login_token(user)
+    page.add_init_script(f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-user');")
+    _open_detail(page, tour["tour_id"])
+    expect(page.get_by_test_id("review-section")).to_be_visible()
+    expect(page.get_by_text(REVIEW_HINT_NO_PURCHASE)).to_have_count(0)
+    expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
+    assert len(held) == 1
+    with page.expect_response(lambda r: "/eligibility" in r.url):
+        held[0].continue_()
+    expect(_review_section(page).get_by_role("button", name="送出評論")).to_be_visible()
+    expect(page.get_by_text(REVIEW_HINT_NO_PURCHASE)).to_have_count(0)
+
+
+def test_eligibility_401_does_not_redirect(page: Page, make_user, make_tour):
+    """回歸測試：既有行為（isMemberApi 不含 /eligibility）。"""
+    tour = make_tour()
+    user = make_user()
+    page.route("**/eligibility", lambda route: route.fulfill(response=route.fetch(), status=401))
+    _login_and_open(page, user, tour["tour_id"])
+    expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
+    expect(page).to_have_url(re.compile(rf"#/tour/{tour['tour_id']}$"))
+    expect(_review_section(page).get_by_text(REVIEW_HINT_GUEST, exact=True)).to_be_visible()
+
+
+def test_share_with_blank_url_succeeds(page: Page, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+    _login_and_open(page, user, tour["tour_id"])
+    _submit_share(page, "p3 空白連結", "內容", "   ")
+    item = page.get_by_test_id("share-item").first
+    expect(item).to_contain_text("p3 空白連結")
+    expect(item.get_by_role("link")).to_have_count(0)
+
+
+def test_duplicate_review_409_switches_to_reviewed(page: Page, db, make_user, make_tour, make_order):
+    tour = make_tour()
+    user = make_user()
+    make_order(user, tour["tour_id"])
+    _login_and_open(page, user, tour["tour_id"])
+    expect(_review_section(page).get_by_role("button", name="送出評論")).to_be_visible()
+    db.execute(
+        "INSERT INTO review (user_id, tour_id, type, rating, content) VALUES (%s, %s, 'travel', 4, 'p3 先寫')",
+        (user["user_id"], tour["tour_id"]),
+    )
+    _submit_review(page, "5", "p3 重複")
+    expect(page.locator(".swal2-html-container")).to_have_text("你已評論過此行程")
+    expect(page.get_by_test_id("review-form")).to_have_count(0)
+    expect(_review_section(page).get_by_text("你已評論過此行程", exact=True)).to_be_visible()

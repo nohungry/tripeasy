@@ -1,0 +1,54 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 4 items
+
+e2e/test_product_flow.py::test_purchase_hint_not_shown_while_eligibility_pending[chromium] FAILED [ 25%]
+e2e/test_product_flow.py::test_eligibility_401_does_not_redirect[chromium] PASSED [ 50%]
+e2e/test_product_flow.py::test_share_with_blank_url_succeeds[chromium] FAILED [ 75%]
+e2e/test_product_flow.py::test_duplicate_review_409_switches_to_reviewed[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+_______ test_purchase_hint_not_shown_while_eligibility_pending[chromium] _______
+e2e/test_product_flow.py:545: in test_purchase_hint_not_shown_while_eligibility_pending
+    expect(page.get_by_text(REVIEW_HINT_NO_PURCHASE)).to_have_count(0)
+E   AssertionError: Locator expected to have count '0'
+E   Actual value: 2 
+E   Call log:
+E     - Expect "to_have_count" get_by_text("購買過此行程的會員才能評論與分享隱藏玩法") with timeout 5000ms
+E     - waiting for get_by_text("購買過此行程的會員才能評論與分享隱藏玩法")
+E       14 × locator resolved to 2 elements
+E          - unexpected value "2"
+_________________ test_share_with_blank_url_succeeds[chromium] _________________
+e2e/test_product_flow.py:572: in test_share_with_blank_url_succeeds
+    expect(item).to_contain_text("p3 空白連結")
+E   AssertionError: Locator expected to contain text 'p3 空白連結'
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_contain_text" get_by_test_id("share-item").first with timeout 5000ms
+E     - waiting for get_by_test_id("share-item").first
+E   
+E   Aria snapshot:
+E   - dialog "failed":
+E     - heading "failed" [level=2]
+E     - text: 「url」必須是 http 或 https 網址
+E     - button "OK"
+___________ test_duplicate_review_409_switches_to_reviewed[chromium] ___________
+e2e/test_product_flow.py:588: in test_duplicate_review_409_switches_to_reviewed
+    expect(page.get_by_test_id("review-form")).to_have_count(0)
+E   AssertionError: Locator expected to have count '0'
+E   Actual value: 1 
+E   Call log:
+E     - Expect "to_have_count" get_by_test_id("review-form") with timeout 5000ms
+E     - waiting for get_by_test_id("review-form")
+E       14 × locator resolved to 1 element
+E          - unexpected value "1"
+=========================== short test summary info ============================
+FAILED e2e/test_product_flow.py::test_purchase_hint_not_shown_while_eligibility_pending[chromium]
+FAILED e2e/test_product_flow.py::test_share_with_blank_url_succeeds[chromium]
+FAILED e2e/test_product_flow.py::test_duplicate_review_409_switches_to_reviewed[chromium]
+========================= 3 failed, 1 passed in 18.96s =========================
