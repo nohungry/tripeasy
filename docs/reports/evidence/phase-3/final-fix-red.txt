@@ -1,0 +1,54 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collected 22 items / 19 deselected / 3 selected
+
+tests/test_product_read.py FFF                                           [100%]
+
+=================================== FAILURES ===================================
+_________________ test_search_wide_date_range_with_duration_ok _________________
+
+api = <conftest.Api object at 0x7b2427536cf0>
+
+    def test_search_wide_date_range_with_duration_ok(api):
+        # 區間涵蓋天數（含頭尾）≥ duration 即合法，不要求天數差剛好相等
+        r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-12-31", "duration": 5, **PAGING, "page": 1, "limit": 10})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"failed","message":"「duration」必須等於「end_date」減「start_date」的天數差（目前應為 364）"}
+E       assert 400 == 200
+E        +  where 400 = <Response [400]>.status_code
+
+tests/test_product_read.py:242: AssertionError
+_______________ test_search_duration_equal_to_inclusive_range_ok _______________
+
+api = <conftest.Api object at 0x7b2427536cf0>
+
+    def test_search_duration_equal_to_inclusive_range_ok(api):
+        # 2027-01-01～2027-01-05 涵蓋 5 天，可容納 5 日行程
+        r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-01-05", "duration": 5, **PAGING, "page": 1, "limit": 10})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"status":"failed","message":"「duration」必須等於「end_date」減「start_date」的天數差（目前應為 4）"}
+E       assert 400 == 200
+E        +  where 400 = <Response [400]>.status_code
+
+tests/test_product_read.py:248: AssertionError
+_________________ test_search_duration_exceeding_range_is_400 __________________
+
+api = <conftest.Api object at 0x7b2427536cf0>
+
+    def test_search_duration_exceeding_range_is_400(api):
+        r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-01-05", "duration": 6, **PAGING, "page": 1, "limit": 10})
+        assert r.status_code == 400
+>       assert "duration" in r.text and "涵蓋" in r.text
+E       assert ('duration' in '{"status":"failed","message":"「duration」必須等於「end_date」減「start_date」的天數差（目前應為 4）"}' and '涵蓋' in '{"status":"failed","message":"「duration」必須等於「end_date」減「start_date」的天數差（目前應為 4）"}')
+E        +  where '{"status":"failed","message":"「duration」必須等於「end_date」減「start_date」的天數差（目前應為 4）"}' = <Response [400]>.text
+E        +  and   '{"status":"failed","message":"「duration」必須等於「end_date」減「start_date」的天數差（目前應為 4）"}' = <Response [400]>.text
+
+tests/test_product_read.py:254: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_product_read.py::test_search_wide_date_range_with_duration_ok
+FAILED tests/test_product_read.py::test_search_duration_equal_to_inclusive_range_ok
+FAILED tests/test_product_read.py::test_search_duration_exceeding_range_is_400
+======================= 3 failed, 19 deselected in 0.15s =======================

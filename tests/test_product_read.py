@@ -234,3 +234,21 @@ def test_reviews_empty_tour(api, make_tour):
     assert r.status_code == 200, r.text
     assert r.json()["message"] == "暫無此旅遊項目評論"
     assert "data" not in r.json()
+
+
+def test_search_wide_date_range_with_duration_ok(api):
+    # 區間涵蓋天數（含頭尾）≥ duration 即合法，不要求天數差剛好相等
+    r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-12-31", "duration": 5, **PAGING, "page": 1, "limit": 10})
+    assert r.status_code == 200, r.text
+
+
+def test_search_duration_equal_to_inclusive_range_ok(api):
+    # 2027-01-01～2027-01-05 涵蓋 5 天，可容納 5 日行程
+    r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-01-05", "duration": 5, **PAGING, "page": 1, "limit": 10})
+    assert r.status_code == 200, r.text
+
+
+def test_search_duration_exceeding_range_is_400(api):
+    r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-01-05", "duration": 6, **PAGING, "page": 1, "limit": 10})
+    assert r.status_code == 400
+    assert "duration" in r.text and "涵蓋" in r.text
