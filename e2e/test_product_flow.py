@@ -540,7 +540,8 @@ def test_purchase_hint_not_shown_while_eligibility_pending(page: Page, make_user
     page.route("**/eligibility", lambda route: held.append(route))
     token = login_token(user)
     page.add_init_script(f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-user');")
-    _open_detail(page, tour["tour_id"])
+    with page.expect_request(lambda r: "/eligibility" in r.url):
+        _open_detail(page, tour["tour_id"])
     expect(page.get_by_test_id("review-section")).to_be_visible()
     expect(page.get_by_text(REVIEW_HINT_NO_PURCHASE)).to_have_count(0)
     expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
@@ -587,3 +588,28 @@ def test_duplicate_review_409_switches_to_reviewed(page: Page, db, make_user, ma
     expect(page.locator(".swal2-html-container")).to_have_text("你已評論過此行程")
     expect(page.get_by_test_id("review-form")).to_have_count(0)
     expect(_review_section(page).get_by_text("你已評論過此行程", exact=True)).to_be_visible()
+
+
+def test_load_more_button_disabled_while_loading(page: Page, db, make_user, make_tour):
+    """回歸測試：既有行為。攔住 page=2 的請求，載入中按鈕停用，放行後列表筆數正確。"""
+    tour = make_tour()
+    users = [make_user() for _ in range(7)]
+    for i, u in enumerate(users):
+        db.execute(
+            "INSERT INTO review (user_id, tour_id, type, rating, content, created_at) "
+            "VALUES (%s, %s, 'travel', 4, %s, now() - make_interval(mins => %s))",
+            (u["user_id"], tour["tour_id"], f"p3 評論 {i}", i),
+        )
+    held = []
+    page.route(re.compile(r"/reviews\?.*page=2"), lambda route: held.append(route))
+    _open_detail(page, tour["tour_id"])
+    reviews = page.get_by_test_id("review-item")
+    expect(reviews).to_have_count(5)
+    button = page.get_by_role("button", name="載入更多評論")
+    with page.expect_request(lambda r: "page=2" in r.url and "/reviews" in r.url):
+        button.click()
+    expect(button).to_be_disabled()
+    with page.expect_response(lambda r: "page=2" in r.url and "/reviews" in r.url):
+        held[0].continue_()
+    expect(reviews).to_have_count(7)
+    expect(button).to_have_count(0)
