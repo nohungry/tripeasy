@@ -13,6 +13,7 @@ import jwt
 import psycopg
 import pytest
 import requests
+from dbfactory import insert
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -217,3 +218,96 @@ def mock_google_code(claims: dict) -> str:
     )
     assert r.status_code == 302, r.text
     return parse_qs(urlparse(r.headers["Location"]).query)["code"][0]
+
+
+# ------------------------------------------------------------------ P3：測試行程、訂單與殘留清除
+
+# 全小寫；比對用 lower(email)，且 email 必須以 @example.com 結尾
+TEST_EMAIL_PREFIXES: tuple[str, ...] = (
+    "p0-", "e2e-", "factory-", "a.", "g.", "mixed.", "nobody.", "val.", "race.", "pref.", "lower.", "dup.", "co.",
+)  # fmt: skip
+TEST_TOUR_PREFIX = "p3-"
+
+
+def delete_tour(db, tour_id: str) -> None:
+    """依 FK 順序刪除行程與其附屬資料。"""
+    p = (tour_id,)
+    for table in ("review", "hidden_play", "favorite", "cart_item", "notification", "order_item", "tour_detail"):
+        db.execute(f"DELETE FROM {table} WHERE tour_id = %s", p)
+    restaurants = "SELECT restaurant_id FROM restaurant WHERE tour_id = %s"
+    db.execute(f"DELETE FROM restaurant_business WHERE restaurant_id IN ({restaurants})", p)
+    db.execute(f"DELETE FROM restaurant_menu WHERE restaurant_id IN ({restaurants})", p)
+    db.execute("DELETE FROM restaurant WHERE tour_id = %s", p)
+    db.execute("DELETE FROM hotel_room WHERE hotel_id IN (SELECT hotel_id FROM hotel WHERE tour_id = %s)", p)
+    db.execute("DELETE FROM hotel WHERE tour_id = %s", p)
+    db.execute("DELETE FROM tour WHERE tour_id = %s", p)
+
+
+def purge_leftover_test_data(db) -> dict:
+    """刪除前次測試殘留的測試會員與測試行程（先會員後行程）。"""
+    user_ids = [
+        str(user_id)
+        for user_id, email in db.execute('SELECT user_id, lower(email) FROM "user"').fetchall()
+        if email.endswith("@example.com") and email.startswith(TEST_EMAIL_PREFIXES)
+    ]
+    for user_id in user_ids:
+        delete_user(db, user_id)
+    tour_ids = [
+        str(r[0])
+        for r in db.execute(
+            "SELECT tour_id FROM tour WHERE starts_with(title, %s)", (TEST_TOUR_PREFIX,)
+        ).fetchall()
+    ]
+    for tour_id in tour_ids:
+        delete_tour(db, tour_id)
+    return {"users": len(user_ids), "tours": len(tour_ids)}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def purge_leftovers(db):
+    purge_leftover_test_data(db)
+
+
+@pytest.fixture
+def make_tour(db):
+    created: list[str] = []
+
+    def _make(item: str = "travel", status: int = 1, with_detail: bool = True, title: str | None = None) -> dict:
+        if with_detail and item not in ("travel", "spot"):
+            raise ValueError(f"item={item!r} 不能建立 tour_detail（只允許 travel／spot）")
+        title = title or f"{TEST_TOUR_PREFIX}{uuid.uuid4().hex[:8]}"
+        assert title.startswith(TEST_TOUR_PREFIX), title
+        tour_type = "tourgroup" if item == "travel" else "backpacker"
+        # tour_start_date／tour_end_date 刻意不傳（保持 NULL）
+        row = insert(db, "tour", type=tour_type, item=item, status=status, title=title)
+        tour_id = str(row["tour_id"])
+        created.append(tour_id)
+        if with_detail:
+            insert(db, "tour_detail", tour_id=tour_id)
+        return {"tour_id": tour_id, "title": title, "type": tour_type, "item": item, "status": status}
+
+    yield _make
+    for tour_id in created:
+        delete_tour(db, tour_id)
+
+
+@pytest.fixture
+def make_order(db):
+    created: list[tuple[str, str]] = []
+
+    def _make(user: dict, tour_id: str, payment_status: int = 1, quantity: int = 1) -> dict:
+        total = 1000 * quantity
+        order = insert(db, "orders", user_id=user["user_id"], payment_status=payment_status, total_price=total)
+        order_id = str(order["order_id"])
+        item = insert(
+            db, "order_item", order_id=order_id, tour_id=tour_id, payment_status=payment_status,
+            total_price=total, quantity=quantity, start_date=datetime.datetime.now(),
+        )  # fmt: skip
+        item_id = str(item["order_item_id"])
+        created.append((order_id, item_id))
+        return {"order_id": order_id, "order_item_id": item_id}
+
+    yield _make
+    for order_id, item_id in created:
+        db.execute("DELETE FROM order_item WHERE order_item_id = %s", (item_id,))
+        db.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
