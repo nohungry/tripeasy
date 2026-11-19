@@ -28,6 +28,8 @@ jobs:
           path: frontend
 
       - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.9"
 
       - name: 啟動服務並測試
         run: scripts/ci.sh
