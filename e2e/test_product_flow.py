@@ -156,7 +156,7 @@ def _home_response(item: str, page_no: int | None = None):
 
 
 def _api_titles(response) -> list[str]:
-    return [row["旅遊名稱"] for row in response.json()["data"]]
+    return [row["旅遊名稱"] for row in response.json().get("data", [])]
 
 
 def test_home_page_single_header(page: Page):
@@ -262,7 +262,14 @@ def test_search_lists_tours_from_api(page: Page):
     expect(page.locator(SEARCH_TITLES)).to_have_text(expected)
 
 
-def test_search_pagination_visits_every_listed_tour_once(page: Page, db):
+@pytest.mark.parametrize("pad_to_multiple_of_page_size", [False, True], ids=["as_is", "total_is_multiple_of_6"])
+def test_search_pagination_visits_every_listed_tour_once(page: Page, db, make_tour, pad_to_multiple_of_page_size):
+    if pad_to_multiple_of_page_size:
+        # 上架總數剛好是每頁筆數的倍數：最後的「下一頁」會拿到沒有 data 鍵的空回應
+        total = db.execute("SELECT count(*) FROM tour WHERE status = 1").fetchone()[0]
+        for _ in range((-total) % 6):
+            make_tour()
+        assert db.execute("SELECT count(*) FROM tour WHERE status = 1").fetchone()[0] % 6 == 0
     first = _open_search(page)
     expect(page.locator(SEARCH_TITLES)).to_have_text(first)
     seen = list(first)
@@ -295,9 +302,10 @@ def test_header_keyword_search(page: Page):
 
 def test_search_price_filter_and_sort(page: Page):
     _open_search(page)
+    with page.expect_response(_search_response(sort_by="price", order="desc")):
+        page.get_by_label("金額排序").select_option("desc")
     page.get_by_placeholder("最小金額").fill("20000")
     page.get_by_placeholder("最大金額").fill("50000")
-    page.get_by_label("金額排序").select_option("desc")
     with page.expect_response(_search_response(min_price=20000, max_price=50000, sort_by="price", order="desc")) as info:
         page.get_by_role("button", name="搜尋", exact=True).click()
     rows = info.value.json()["data"]
@@ -335,3 +343,4 @@ def test_search_country_region_selects_removed(page: Page):
     _open_search(page)
     expect(page.get_by_text("所在國家")).to_have_count(0)
     expect(page.get_by_text("所在地區")).to_have_count(0)
+    expect(page.get_by_role("combobox")).to_have_count(3)  # 天數、筆數、排序
