@@ -1,4 +1,6 @@
 """P3 Task 3：搜尋分頁、天數篩選、首頁促銷期間。"""
+import datetime
+
 import pytest
 from conftest import auth_header
 
@@ -236,16 +238,46 @@ def test_reviews_empty_tour(api, make_tour):
     assert "data" not in r.json()
 
 
-def test_search_wide_date_range_with_duration_ok(api):
-    # 區間涵蓋天數（含頭尾）≥ duration 即合法，不要求天數差剛好相等
-    r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-12-31", "duration": 5, **PAGING, "page": 1, "limit": 10})
-    assert r.status_code == 200, r.text
+HOKKAIDO = "北海道雪景 5 日深度遊"
 
 
-def test_search_duration_equal_to_inclusive_range_ok(api):
-    # 2027-01-01～2027-01-05 涵蓋 5 天，可容納 5 日行程
-    r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-01-05", "duration": 5, **PAGING, "page": 1, "limit": 10})
+def _hokkaido(db):
+    """seed 北海道 5 日行程的 (tour_id, 開始日, 結束日)；seed 日期隨載入日平移，所以從 DB 讀。"""
+    row = db.execute("SELECT tour_id, tour_start_date, tour_end_date FROM tour WHERE title = %s", (HOKKAIDO,)).fetchone()
+    assert row, "seed 沒有北海道 5 日行程"
+    return str(row[0]), row[1], row[2]
+
+
+def _search(api, **params):
+    r = api.get(SEARCH, params={**params, **PAGING, "page": 1, "limit": 50})
+    return r
+
+
+def test_search_wide_date_range_with_duration_ok(api, db):
+    _, start, _ = _hokkaido(db)
+    lo, hi = start.date() - datetime.timedelta(days=30), start.date() + datetime.timedelta(days=300)
+    rows = _all_pages(api, start_date=lo.isoformat(), end_date=hi.isoformat(), duration=5, **PAGING)
+    assert rows
+    assert {r["旅遊天數"] for r in rows} == {5}
+    assert HOKKAIDO in {r["旅遊名稱"] for r in rows}
+
+
+def test_search_duration_equal_to_inclusive_range_ok(api, db):
+    # 區間 start～start+4 涵蓋 5 天；end_date 含當天（行程結束於當天 23:59:59 也算）
+    tour_id, start, end = _hokkaido(db)
+    assert end.date() == start.date() + datetime.timedelta(days=4)
+    r = _search(api, start_date=start.date().isoformat(), end_date=end.date().isoformat(), duration=5)
     assert r.status_code == 200, r.text
+    assert tour_id in {x["旅遊編號"] for x in r.json()["data"]}
+
+
+def test_search_end_date_before_tour_end_excludes_it(api, db):
+    tour_id, start, end = _hokkaido(db)
+    # 區間整體前移一天（仍涵蓋 5 天，通過驗證），結束日早於行程結束日
+    lo, early = start.date() - datetime.timedelta(days=1), end.date() - datetime.timedelta(days=1)
+    r = _search(api, start_date=lo.isoformat(), end_date=early.isoformat(), duration=5)
+    assert r.status_code == 200, r.text
+    assert tour_id not in {x["旅遊編號"] for x in r.json().get("data", [])}
 
 
 def test_search_duration_exceeding_range_is_400(api):

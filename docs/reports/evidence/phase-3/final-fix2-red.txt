@@ -1,0 +1,28 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0
+rootdir: /home/nohungry/project/tripeasy
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collected 23 items
+
+tests/test_product_read.py ....................F..                       [100%]
+
+=================================== FAILURES ===================================
+_______________ test_search_duration_equal_to_inclusive_range_ok _______________
+
+api = <conftest.Api object at 0x73e7b5942cf0>
+db = <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x73e7b5942f90>
+
+    def test_search_duration_equal_to_inclusive_range_ok(api, db):
+        # 區間 start～start+4 涵蓋 5 天；end_date 含當天（行程結束於當天 23:59:59 也算）
+        tour_id, start, end = _hokkaido(db)
+        assert end.date() == start.date() + datetime.timedelta(days=4)
+        r = _search(api, start_date=start.date().isoformat(), end_date=end.date().isoformat(), duration=5)
+        assert r.status_code == 200, r.text
+>       assert tour_id in {x["旅遊編號"] for x in r.json()["data"]}
+E       KeyError: 'data'
+
+tests/test_product_read.py:271: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_product_read.py::test_search_duration_equal_to_inclusive_range_ok
+========================= 1 failed, 22 passed in 1.02s =========================
