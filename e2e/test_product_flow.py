@@ -353,14 +353,15 @@ REVIEW_HINT_NO_PURCHASE = "購買過此行程的會員才能評論與分享隱�
 URL_ERROR = "「url」必須是 http 或 https 網址"
 
 
-def _login_and_open(page: Page, user: dict, tour_id: str) -> None:
-    """在頁面腳本執行前寫入登入 token 與 userName，再開詳情頁。"""
+def _login_and_open(page: Page, user: dict, tour_id: str):
+    """在頁面腳本執行前寫入登入 token 與 userName，再開詳情頁；回傳 /eligibility 的 response。"""
     token = login_token(user)
     page.add_init_script(
         f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-user');"
     )
-    with page.expect_response(lambda r: "/eligibility" in r.url):
+    with page.expect_response(lambda r: "/eligibility" in r.url) as info:
         _open_detail(page, tour_id)
+    return info.value
 
 
 def _review_section(page: Page):
@@ -452,19 +453,13 @@ def test_admin_sees_purchase_hint_without_forms(page: Page, make_user, make_tour
     admin = make_user(role="admin")
     page_errors: list[str] = []
     page.on("pageerror", lambda e: page_errors.append(str(e)))
-    token = login_token(admin)
-    page.add_init_script(
-        f"localStorage.setItem('authToken', {json.dumps(token)}); localStorage.setItem('userName', 'p3-admin');"
-    )
-    with page.expect_response(lambda r: "/eligibility" in r.url) as info:
-        _open_detail(page, tour["tour_id"])
-    assert info.value.status == 403
+    eligibility = _login_and_open(page, admin, tour["tour_id"])
+    assert eligibility.status == 403
     expect(_review_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
     expect(_share_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
     expect(page.get_by_role("button", name="送出評論")).to_have_count(0)
     expect(page.get_by_role("button", name="分享玩法")).to_have_count(0)
     expect(page).to_have_url(re.compile(rf"#/tour/{tour['tour_id']}$"))
-    page.wait_for_timeout(300)  # 讓可能的未處理 rejection 有機會觸發
     assert page_errors == []
 
 

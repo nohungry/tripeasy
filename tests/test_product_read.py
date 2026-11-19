@@ -253,13 +253,37 @@ def _search(api, **params):
     return r
 
 
-def test_search_wide_date_range_with_duration_ok(api, db):
+def test_search_wide_date_range_with_duration_ok(api, db, make_tour):
     _, start, _ = _hokkaido(db)
     lo, hi = start.date() - datetime.timedelta(days=30), start.date() + datetime.timedelta(days=300)
+    # seed 只有一個 5 日行程，另建區間內與兩個越界的行程，才分辨得出日期條件有沒有作用
+    one_day = datetime.timedelta(days=1)
+    spans = {
+        "inside": (lo + one_day, lo + one_day * 5),
+        "starts_before": (lo - one_day, lo + one_day * 3),
+        "ends_after": (hi - one_day * 3, hi + one_day),
+    }
+    ids = {}
+    for name, (d1, d2) in spans.items():
+        ids[name] = make_tour()["tour_id"]
+        db.execute(
+            "UPDATE tour SET days = 5, tour_start_date = %s, tour_end_date = %s::date + time '23:59:59' WHERE tour_id = %s",
+            (d1, d2, ids[name]),
+        )
     rows = _all_pages(api, start_date=lo.isoformat(), end_date=hi.isoformat(), duration=5, **PAGING)
     assert rows
     assert {r["旅遊天數"] for r in rows} == {5}
     assert HOKKAIDO in {r["旅遊名稱"] for r in rows}
+    # 結果恰為「上架、5 天、開始日 ≥ lo 當天 00:00、結束日 < hi 隔天 00:00」的行程（每列都在區間內，區間內的也不漏）
+    expected = _db_ids(
+        db,
+        "status = 1 AND days = 5 AND tour_start_date >= %s AND tour_end_date < %s::date + 1",
+        (lo, hi),
+    )
+    got = {r["旅遊編號"] for r in rows}
+    assert got == expected
+    assert ids["inside"] in got
+    assert ids["starts_before"] not in got and ids["ends_after"] not in got
 
 
 def test_search_duration_equal_to_inclusive_range_ok(api, db):
@@ -268,7 +292,7 @@ def test_search_duration_equal_to_inclusive_range_ok(api, db):
     assert end.date() == start.date() + datetime.timedelta(days=4)
     r = _search(api, start_date=start.date().isoformat(), end_date=end.date().isoformat(), duration=5)
     assert r.status_code == 200, r.text
-    assert tour_id in {x["旅遊編號"] for x in r.json()["data"]}
+    assert tour_id in {x["旅遊編號"] for x in r.json().get("data", [])}
 
 
 def test_search_end_date_before_tour_end_excludes_it(api, db):

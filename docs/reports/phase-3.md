@@ -5,7 +5,7 @@
 >
 > 行號基準：P3 之前就存在的問題，行號取自 backend `main`（`3d835a6`）／frontend `dev`（`71a2171`）修正前，多數沿用 P3 spec 的實測行號。
 >
-> **本稿尚缺（合併後才能填）**：Step 6 合併後的 merge commit、tag、GitHub Actions run id（§3.3）。
+> **本稿尚缺**：(1) §2.1 使用的 skill 與關鍵 prompt（ledger 沒有紀錄，仍標「未查證」，需使用者補）；(2) 合併後才能填的 merge commit、tag、GitHub Actions run id（§3.3）。
 
 ## 0. 摘要
 
@@ -158,7 +158,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 
 ### 2.1 使用的 skill
 
-未查證（ledger 沒有逐項紀錄 skill 與關鍵 prompt，請使用者在審閱時補）。可以確定的流程：P3 spec 經三輪 reviewer-opus 審查（commits `baf5f9b` → `9cd37b7` → `5480908` → `ac8cbdc`）；計畫完成後先做 pre-flight scan（掃描 540 行計畫對照 spec，找出 9 項 Findings，裁決成 Ruling PF1–PF9）；之後逐 Task 派 implementer 實作、reviewer 審查，結果記在 `.superpowers/sdd/2026-11-19-p3-product/progress.md`（以下稱 ledger）。
+**使用的 skill 與關鍵 prompt：未查證**（ledger 沒有逐項紀錄，請使用者在審閱時補）。以下流程可由 ledger 與 git log 確認的流程：P3 spec 經三輪 reviewer-opus 審查（commits `baf5f9b` → `9cd37b7` → `5480908` → `ac8cbdc`）；計畫完成後先做 pre-flight scan（掃描 540 行計畫對照 spec，找出 9 項 Findings，裁決成 Ruling PF1–PF9）；之後逐 Task 派 implementer 實作、reviewer 審查，結果記在 `.superpowers/sdd/2026-11-19-p3-product/progress.md`（以下稱 ledger）。
 
 ### 2.2 使用者的決定
 
@@ -177,7 +177,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 | 5 V4 與契約 | ❌ C1（措辭）＋ M1–M4 | ❌ C1 ＋ I1–I3 | 一致：C1（「購買數」裁決的措辭）；約束名稱與對照組的分辨力，fable 列 Important、opus 列 Minor。C1 由使用者確認購買數而解決 |
 | 6 資格與寫評論 API | spec ✅、安全無漏洞、無 Critical | spec ✅、安全無漏洞、無 Critical | 共同 Important：23505 確定性測試、`payment_status` 兩表分辨；fable 另列 I3（eligibility 缺 400／下架 404），opus 列 Minor |
 | 8 前端 401／timer | spec ✅、無 Critical | spec ✅、無 Critical | fable I1–I3（guard 覆蓋、401 提示內容、時間競爭）≈ opus Minor 1–3 |
-| 13／整支分支 | （Step 5，待補） | （Step 5，待補） | （待補） |
+| 13／整支分支（最終審查） | 0 Critical、2 Important（I1 搜尋日期與天數互斥且 400 顯示「載入失敗」、I2 refs `phase-3` 分支／tag 歧義）、8 Minor | 0 Critical、2 Important（I1 過期 token E2E 斷言順序、I2 報告誤稱有 admin E2E）、12 Minor | 四個 Important 互不重疊，全數處理（I1 經使用者裁決改後端為「天數 ≤ 區間涵蓋天數」並讓前端顯示 400 訊息；I2 待合併打 tag 後刪三個 repo 的 `phase-3` 分支，遠端刪除逐次詢問）。opus M2（詳情頁不 watch `tour_id`）被 fable 以 `App.vue` 的 `:key="$route.fullPath"` 反證，不修。之後共 3 輪修正與複審：第 1 輪複審 opus 新增 1 個 Important（`end_date` 以 00:00 比對，seed 行程結束於 23:59:59，剛好塞滿區間查不到；opus 以 curl 實測成立，fable 未查 seed）、fable 0 Important，使用者裁決 `end_date` 改含當天；第 2 輪複審 opus 1 項必修（本節仍寫待補）、fable 3 個 Important（寬區間缺區間內斷言、本稿尚缺與本節矛盾、`wait_for_timeout` 無鑑別力）；第 3 輪（只改測試與文件）複審只派 reviewer-opus（見附錄 C）。詳見 ledger `progress.md` 的 Final review、Fix re-review、Fix2 re-review 各行 |
 
 單審的 Task（2、3、4、7、9、10、11、12）共抓出的 Important：Task 3 價格排序測試無分辨力；Task 7 `url` 缺 `.trim()`（spec ✅ 但計畫漏寫）；Task 9 `load()` 把 500 也顯示查無；Task 11 `_api_titles` 空回應 KeyError；Task 12 資格載入前就渲染預設狀態。皆已在 fix round 修好（詳見 ledger）。
 
@@ -416,3 +416,5 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 第 1 輪 `scripts/ci.sh`：504 passed、0 xfailed（133.25s）。
 
 **第 2 輪**：`end_date` 含當天。複審發現 controller 以 `旅遊結束日期 <= end_date`（當天 00:00）比對，而 seed 行程結束於 23:59:59，6/2～6/6 + `duration=5` 查不到北海道。改為 `旅遊結束日期 < (end_date::date + 1)`（backend `adffa31`）。紅燈 [final-fix2-red.txt](evidence/phase-3/final-fix2-red.txt)（總覽 `0377e20`，1 failed 22 passed）；測試從 DB 讀北海道日期（seed 日期浮動）。admin E2E 另斷言 `/eligibility` 回 403 且沒有 `pageerror`。前端 400 訊息 E2E 沒有先留紅燈證據（舊模板固定顯示「載入失敗」，新斷言在舊碼必紅）。第 2 輪 `scripts/ci.sh`：**505 passed、0 xfailed、0 failed**（138.06s）。
+
+**第 3 輪**（只改總覽 repo 的測試與報告）：寬區間測試補「每列落在區間內」斷言——結果與 DB 以同條件（上架、5 天、開始日 ≥ 區間起日、結束日 < 區間迄日隔天）做集合相等，並另建區間內與兩個越界行程（seed 只有一個 5 日行程，單靠它分辨不出日期條件有沒有作用）；暫時停用 controller 的 `start_date`／`end_date` 條件，該測試轉紅，還原後轉綠（暫改動未 commit，backend 維持 `adffa31`）。另刪 `wait_for_timeout(300)`、`_login_and_open` 回傳 `/eligibility` response。§2.3 補上最終審查結果、§2.1 維持「未查證」。`scripts/ci.sh`：**505 passed、0 xfailed、0 failed**（136.57s）。
