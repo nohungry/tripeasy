@@ -265,7 +265,7 @@ def test_tour_hidden_shares_use_user_level(api, db):
     rows = r.json()["data"]
     assert rows, r.text
     assert_has_keys(rows[0], ["shares_id", "name", "avatar", "level", "content", "url", "create_date"])
-    # controller 的 title 讀 row.type，hidden_play 沒有這欄（undefined → JSON 省略），不是 view 的問題，這裡不斷言
+    assert rows[0]["title"]
     assert rows[0]["name"] and rows[0]["level"]["name"] and rows[0]["level"]["badge_icon"]
 
 

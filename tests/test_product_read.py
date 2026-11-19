@@ -123,3 +123,91 @@ def test_home_promotion_excludes_delisted_and_out_of_period(api, db, make_user, 
         assert d["tour_id"] in ids, label
         leaked = sorted(names[i] for i in names if i in ids)
         assert not leaked, f"{label}：不該出現的促銷行程 {leaked}"
+
+
+# ----------------------------------------------------------------- Task 4：詳情 404、餐廳空項、隱藏玩法 title
+
+TOUR = "/api/v1/user/product/search"
+
+
+def _detail(api, tour_id):
+    return api.get(f"{TOUR}/{tour_id}", params={"lang": "zh-TW"})
+
+
+def test_detail_delisted_tour_is_404(api, make_tour):
+    t = make_tour(status=2)
+    r = _detail(api, t["tour_id"])
+    assert r.status_code == 404, r.text
+    assert r.json()["message"] == "查無此旅遊項目"
+
+
+def test_detail_tour_without_detail_rows_is_404(api, make_tour):
+    # tour_hotel 對 hotel 是 INNER JOIN，沒有 hotel 資料列 → function 回 0 列
+    t = make_tour(item="hotel", with_detail=False)
+    r = _detail(api, t["tour_id"])
+    assert r.status_code == 404, r.text
+    assert r.json()["message"] == "查無此旅遊項目"
+
+
+def test_detail_food_has_no_empty_menu_or_opening(api, db):
+    row = db.execute(
+        "SELECT tour_id FROM tour WHERE item = 'food' AND status = 1 ORDER BY title LIMIT 1"
+    ).fetchone()
+    assert row, "seed 沒有上架的 food 行程"
+    r = _detail(api, str(row[0]))
+    assert r.status_code == 200, r.text
+    feature = r.json()["data"]["feature"]
+    assert feature["menu"]
+    assert all(m["name"] is not None for m in feature["menu"]), feature["menu"]
+    assert feature["opening"]
+    assert all(o["week"] is not None for o in feature["opening"]), feature["opening"]
+
+
+def test_hidden_shares_include_title(api, db, make_user, make_tour):
+    from dbfactory import insert
+
+    u, t = make_user(), make_tour()
+    insert(db, "hidden_play", user_id=u["user_id"], tour_id=t["tour_id"], title="p3 標題", content="內容")
+    r = api.get(
+        f"{TOUR}/{t['tour_id']}/hidden-shares", params={"page": 1, "limit": 10, "lang": "zh-TW"}
+    )
+    assert r.status_code == 200, r.text
+    rows = r.json()["data"]
+    assert rows
+    assert rows[0]["title"] == "p3 標題"
+
+
+def test_reviews_average_and_pagination(api, db, make_user, make_tour):
+    # 既有行為的回歸測試
+    from dbfactory import insert
+
+    t = make_tour()
+    for rating, age in ((5, "3 minutes"), (4, "2 minutes"), (4, "1 minute")):
+        u = make_user()
+        row = insert(db, "review", user_id=u["user_id"], tour_id=t["tour_id"], type="travel", rating=rating)
+        db.execute(
+            "UPDATE review SET created_at = now() - %s::interval WHERE review_id = %s",
+            (age, row["review_id"]),
+        )
+    url = f"{TOUR}/{t['tour_id']}/reviews"
+    r1 = api.get(url, params={"page": 1, "limit": 2, "lang": "zh-TW"})
+    assert r1.status_code == 200, r1.text
+    d1 = r1.json()["data"]
+    assert len(d1["reviews"]) == 2
+    assert [x["rating"] for x in d1["reviews"]] == [4, 4]
+    dates = [x["create_date"] for x in d1["reviews"]]
+    assert dates == sorted(dates, reverse=True)
+    assert d1["average_rating"] == 4.3
+    r2 = api.get(url, params={"page": 2, "limit": 2, "lang": "zh-TW"})
+    d2 = r2.json()["data"]
+    assert len(d2["reviews"]) == 1
+    assert d2["reviews"][0]["rating"] == 5
+
+
+def test_reviews_empty_tour(api, make_tour):
+    # 既有行為的回歸測試
+    t = make_tour()
+    r = api.get(f"{TOUR}/{t['tour_id']}/reviews", params={"page": 1, "limit": 10, "lang": "zh-TW"})
+    assert r.status_code == 200, r.text
+    assert r.json()["message"] == "暫無此旅遊項目評論"
+    assert "data" not in r.json()
