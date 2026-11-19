@@ -6,7 +6,7 @@ import uuid
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import FRONTEND_BASE, login_token
+from e2e.conftest import FRONTEND_BASE, live_promotion, login_token
 
 EXPIRED = datetime.timedelta(seconds=-60)
 
@@ -132,3 +132,98 @@ def test_detail_server_error_shows_load_failed(page: Page, db):
     _open_detail(page, tour_id)
     expect(page.get_by_text("載入失敗，請稍後再試", exact=True)).to_be_visible()
     expect(page.get_by_text("查無此行程", exact=True)).to_have_count(0)
+
+
+# ---------- 首頁 ----------
+
+HOME_API = "/user/home/search/products"
+HOME_CARD_TITLES = "[data-testid=home-product-card] h3"
+
+
+def _home_titles(page: Page) -> list[str]:
+    return page.locator(HOME_CARD_TITLES).all_inner_texts()
+
+
+def _home_response(item: str, page_no: int | None = None):
+    """predicate：首頁商品 API 且 item（與 page）符合。"""
+
+    def _match(r):
+        if HOME_API not in r.url or not re.search(rf"[?&]item={item}(&|$)", r.url):
+            return False
+        return page_no is None or re.search(rf"[?&]page={page_no}(&|$)", r.url) is not None
+
+    return _match
+
+
+def _api_titles(response) -> list[str]:
+    return [row["旅遊名稱"] for row in response.json()["data"]]
+
+
+def test_home_page_single_header(page: Page):
+    page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    expect(page.locator(".header")).to_have_count(1)
+    expect(page.locator(".footer")).to_have_count(1)
+
+
+def test_home_products_match_api(page: Page, db, make_tour):
+    promo_tour = live_promotion(db, make_tour)
+    with page.expect_response(_home_response("popular")) as info:
+        page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    expected = _api_titles(info.value)
+    assert expected, "熱門專區回應不應為空"
+    expect(page.locator(HOME_CARD_TITLES)).to_have_text(expected)
+
+    categories = page.get_by_role("tablist", name="商品分類")
+    subs = page.get_by_role("tablist", name="子分類")
+    with page.expect_response(_home_response("promotion")) as info:
+        subs.get_by_role("tab", name="促銷專區").click()
+    expected = _api_titles(info.value)
+    assert expected, "促銷專區回應不應為空（已自建促銷）"
+    assert expected[0] == promo_tour["title"]
+    expect(page.locator(HOME_CARD_TITLES)).to_have_text(expected)
+
+    with page.expect_response(_home_response("hotel")) as info:
+        categories.get_by_role("tab", name="背包客").click()
+    expected = _api_titles(info.value)
+    assert expected, "住宿回應不應為空"
+    expect(subs.get_by_role("tab")).to_have_text(["住宿", "美食", "景點"])
+    expect(page.locator(HOME_CARD_TITLES)).to_have_text(expected)
+
+
+def test_home_product_pagination(page: Page):
+    with page.expect_response(_home_response("popular", 1)) as info:
+        page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    data = info.value.json()["data"]
+    page_no = 1
+    prev_button = page.get_by_role("button", name="上一頁")
+    next_button = page.get_by_role("button", name="下一頁")
+    expect(prev_button).to_be_disabled()
+    while len(data) == 4:
+        with page.expect_response(_home_response("popular", page_no + 1)) as info:
+            next_button.click()
+        page_no += 1
+        data = info.value.json()["data"]
+        expect(page.locator(HOME_CARD_TITLES)).to_have_text([row["旅遊名稱"] for row in data])
+    assert page_no >= 2, "熱門專區至少要有 2 頁才能測分頁"
+    expect(next_button).to_be_disabled()
+    with page.expect_response(_home_response("popular", page_no - 1)) as info:
+        prev_button.click()
+    expect(page.locator(HOME_CARD_TITLES)).to_have_text(_api_titles(info.value))
+
+
+def test_home_product_opens_detail(page: Page):
+    page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    first = page.locator("[data-testid=home-product-card]").first
+    expect(first).to_be_visible()
+    title = first.locator("h3").inner_text()
+    first.click()
+    expect(page).to_have_url(re.compile(r"/#/tour/[^/]+$"))
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+
+
+def test_home_with_expired_token_lists_products(page: Page, make_user):
+    _expire_session(page, make_user())
+    page.goto(f"{FRONTEND_BASE}/#/", wait_until="domcontentloaded")
+    # 提示只顯示 2 秒（timer），先確認提示，再確認清單
+    expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
+    expect(page.locator("[data-testid=home-product-card]").first).to_be_visible()
