@@ -461,3 +461,46 @@ def test_google_login_via_mock(page: Page, new_email, db):
         (email,),
     ).fetchall()
     assert [r[0] for r in rows] == ["google"]
+
+
+# ---- P3 Task 8：提示框改用 timer、401 統一訊息 ----
+
+
+def test_login_success_ok_closes_and_redirects_immediately(page: Page, make_user):
+    user = make_user()
+    page.goto(f"{FRONTEND_BASE}/#/admin/login", wait_until="domcontentloaded")
+    _login_via_ui(page, user["email"], TEST_PASSWORD)
+
+    page.locator(".swal2-confirm").wait_for(state="visible")
+    page.locator(".swal2-confirm").click()
+    # 原本要等滿 3 秒才跳轉；改用 timer 後按 OK 應立即跳轉
+    page.wait_for_url("**/#/admin/userprofile", timeout=1500)
+
+
+def test_signup_success_ok_redirects_immediately(page: Page, new_email):
+    email = new_email()
+    page.goto(f"{FRONTEND_BASE}/#/admin/register", wait_until="domcontentloaded")
+    page.get_by_placeholder("請輸入姓名").fill("測試會員")
+    page.get_by_placeholder("請輸入 Email").fill(email)
+    page.get_by_placeholder("請輸入密碼").fill(TEST_PASSWORD)
+    selects = page.get_by_role("combobox")
+    for i, label in enumerate(["探索冒險", "放鬆療癒", "文化體驗"]):
+        selects.nth(i).select_option(label=label)
+    page.get_by_role("button", name="加入會員", exact=True).click()
+
+    page.locator(".swal2-confirm").wait_for(state="visible")
+    page.locator(".swal2-confirm").click()
+    page.wait_for_url("**/#/admin/login", timeout=1500)
+
+
+def test_session_expired_on_member_api_shows_message(page: Page, make_user):
+    user = make_user()
+    _login_to_profile(page, user)
+
+    page.evaluate("t => localStorage.setItem('authToken', t)", login_token(user, exp_delta=EXPIRED))
+    _edit_name(page, "過期後改名")
+    page.get_by_role("button", name="儲存設定").click()
+
+    page.wait_for_url("**/#/admin/login", timeout=10_000)
+    expect(page.get_by_text("登入已過期")).to_be_visible()
+    expect(page.locator(".swal2-icon-error")).to_have_count(0)
