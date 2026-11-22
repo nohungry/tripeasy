@@ -1,4 +1,3 @@
-import datetime
 import json
 import re
 import time
@@ -11,6 +10,7 @@ from playwright.sync_api import Page, expect
 
 from e2e.conftest import (
     API_BASE,
+    EXPIRED,
     FRONTEND_BASE,
     MAILPIT_BASE,
     TEST_PASSWORD,
@@ -189,7 +189,6 @@ def test_forgot_password_via_mailpit(page: Page, make_user):
 # ---- Task 9：會員中心 ----
 
 AVATAR_FIXTURE = Path(__file__).parent / "fixtures" / "avatar.png"
-EXPIRED = datetime.timedelta(seconds=-60)
 
 
 def _login_to_profile(page: Page, user: dict) -> None:
@@ -461,3 +460,81 @@ def test_google_login_via_mock(page: Page, new_email, db):
         (email,),
     ).fetchall()
     assert [r[0] for r in rows] == ["google"]
+
+
+# ---- P3 Task 8：提示框改用 timer、401 統一訊息 ----
+
+
+def test_login_success_ok_closes_and_redirects_immediately(page: Page, make_user):
+    user = make_user()
+    page.goto(f"{FRONTEND_BASE}/#/admin/login", wait_until="domcontentloaded")
+    _login_via_ui(page, user["email"], TEST_PASSWORD)
+
+    page.locator(".swal2-confirm").wait_for(state="visible")
+    page.locator(".swal2-confirm").click()
+    # 原本要等滿 3 秒才跳轉；改用 timer 後按 OK 應立即跳轉
+    page.wait_for_url("**/#/admin/userprofile", timeout=2000)
+
+
+def test_signup_success_ok_redirects_immediately(page: Page, new_email):
+    email = new_email()
+    page.goto(f"{FRONTEND_BASE}/#/admin/register", wait_until="domcontentloaded")
+    page.get_by_placeholder("請輸入姓名").fill("測試會員")
+    page.get_by_placeholder("請輸入 Email").fill(email)
+    page.get_by_placeholder("請輸入密碼").fill(TEST_PASSWORD)
+    selects = page.get_by_role("combobox")
+    for i, label in enumerate(["探索冒險", "放鬆療癒", "文化體驗"]):
+        selects.nth(i).select_option(label=label)
+    page.get_by_role("button", name="加入會員", exact=True).click()
+
+    page.locator(".swal2-confirm").wait_for(state="visible")
+    page.locator(".swal2-confirm").click()
+    page.wait_for_url("**/#/admin/login", timeout=2000)
+
+
+def _trigger_save(page: Page) -> None:
+    _edit_name(page, "過期後改名")
+    page.get_by_role("button", name="儲存設定").click()
+
+
+def _trigger_avatar(page: Page) -> None:
+    with page.expect_file_chooser() as chooser:
+        page.locator(".sidebar .headimg").click()
+    chooser.value.set_files(str(AVATAR_FIXTURE))
+
+
+def _trigger_change_password(page: Page) -> None:
+    new_password = "Newpass123"
+    page.get_by_placeholder("請輸入舊密碼").fill(TEST_PASSWORD)
+    page.locator("#password .pw-edit-icon").nth(0).click()
+    page.locator("#password .pw-edit-icon").nth(1).click()
+    page.get_by_placeholder("請輸入新密碼").fill(new_password)
+    page.get_by_placeholder("再次輸入新密碼").fill(new_password)
+    page.get_by_role("button", name="更新密碼").click()
+
+
+@pytest.mark.parametrize(
+    "trigger, pattern",
+    [
+        (_trigger_save, r"/user/userinfo/info$"),
+        (_trigger_avatar, r"/user/userinfo/avatar$"),
+        (_trigger_change_password, r"/auth/userinfo/resetprofilepw$"),
+    ],
+    ids=["save", "avatar", "password"],
+)
+def test_session_expired_on_member_api_shows_message(page: Page, make_user, trigger, pattern):
+    user = make_user()
+    _login_to_profile(page, user)
+
+    page.evaluate("t => localStorage.setItem('authToken', t)", login_token(user, exp_delta=EXPIRED))
+    # 提示框 2 秒後自動關閉，斷言要在 wait_for_url 之前；觸發動作在 expect_response 內
+    with page.expect_response(re.compile(pattern)) as resp:
+        trigger(page)
+    assert resp.value.status == 401
+
+    expect(page.get_by_text("登入已過期")).to_be_visible()
+    expect(page.get_by_text("請重新登入")).to_be_visible()
+    expect(page.locator(".swal2-icon-warning")).to_be_visible()
+    expect(page.locator(".swal2-confirm")).to_be_hidden()
+    expect(page.locator(".swal2-icon-error")).to_have_count(0)
+    page.wait_for_url("**/#/admin/login", timeout=10_000)

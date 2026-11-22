@@ -1,6 +1,8 @@
-"""確認 Flyway 已套用 V1、V2、V3 與 R__views_functions，並且 V1 的 25 張表都存在；V3 的表格約束。"""
+"""確認 Flyway 已套用 V1–V4 與 R__views_functions，並且 V1 的 25 張表都存在；V3、V4 的表格約束。"""
 import psycopg
 import pytest
+
+from dbfactory import insert
 
 EXPECTED_TABLES = {
     "user", "socialLogin", "user_level", "coupon", "user_coupon", "point_record",
@@ -11,12 +13,12 @@ EXPECTED_TABLES = {
 }
 
 
-def test_flyway_applied_v1_to_v3(db):
+def test_flyway_applied_v1_to_v4(db):
     rows = db.execute(
         "SELECT version, success FROM flyway_schema_history "
         "WHERE version IS NOT NULL ORDER BY installed_rank"
     ).fetchall()
-    assert rows == [("1", True), ("2", True), ("3", True)]
+    assert rows == [("1", True), ("2", True), ("3", True), ("4", True)]
 
 
 def test_all_v1_tables_exist(db):
@@ -71,3 +73,51 @@ def test_email_case_duplicate_rejected(tx):
     tx.execute(sql, ("Case@Example.com",))
     with pytest.raises(psycopg.errors.UniqueViolation):
         tx.execute(sql, ("case@example.com",))
+
+
+def test_v4_applied(db):
+    row = db.execute(
+        "SELECT success FROM flyway_schema_history WHERE version = '4'"
+    ).fetchone()
+    assert row == (True,)
+
+
+def test_review_user_tour_unique_index(db):
+    row = db.execute(
+        "SELECT indexdef FROM pg_indexes WHERE tablename = 'review' AND indexname = 'review_user_tour_key'"
+    ).fetchone()
+    assert row is not None, "缺少 review_user_tour_key"
+    assert "UNIQUE" in row[0]
+    assert "(user_id, tour_id)" in row[0]
+    assert "WHERE (tour_id IS NOT NULL)" in row[0]
+
+
+def test_review_duplicate_user_tour_rejected(tx):
+    user = insert(tx, "user")
+    tour = insert(tx, "tour")
+    insert(tx, "review", user_id=user["user_id"], tour_id=tour["tour_id"], type="travel", rating=5)
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+        insert(tx, "review", user_id=user["user_id"], tour_id=tour["tour_id"], type="travel", rating=4)
+    assert exc.value.diag.constraint_name == "review_user_tour_key"
+
+
+def test_web_reviews_not_limited_by_unique_index(tx):
+    """對照組：tour_id 為 NULL 的評論不受限；partial 條件由 indexdef 測試驗證。"""
+    user = insert(tx, "user")
+    insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=5)
+    insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=4)
+    count = tx.execute(
+        "SELECT count(*) FROM review WHERE user_id = %s AND tour_id IS NULL", (user["user_id"],)
+    ).fetchone()[0]
+    assert count == 2
+
+
+@pytest.mark.parametrize("rating, ok", [(0, False), (6, False), (1, True), (5, True)])
+def test_review_rating_check(tx, rating, ok):
+    user = insert(tx, "user")
+    if ok:
+        insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=rating)
+    else:
+        with pytest.raises(psycopg.errors.CheckViolation) as exc:
+            insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=rating)
+        assert exc.value.diag.constraint_name == "review_rating_range"

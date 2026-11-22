@@ -9,6 +9,8 @@ jobs:
   test:
     # 固定 runner 版本：ubuntu-latest 映像改版會讓系統套件與 Python 跟著漂移（見 docs/reports/phase-2.md §3.3）
     runs-on: ubuntu-24.04
+    # 正常約數分鐘到十餘分鐘（含 apt 安裝 Chromium 依賴）；30 分鐘擋真卡死，避免預設 360 分鐘空轉
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -28,6 +30,8 @@ jobs:
           path: frontend
 
       - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.9"
 
       - name: 啟動服務並測試
         run: scripts/ci.sh

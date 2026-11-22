@@ -1,0 +1,51 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 11 items
+
+tests/test_product_read.py::test_search_pages_cover_every_listed_tour_once FAILED [  9%]
+tests/test_product_read.py::test_search_price_desc_pages_cover_every_listed_tour_once PASSED [ 18%]
+tests/test_product_read.py::test_search_duration_filter FAILED           [ 27%]
+tests/test_product_read.py::test_search_keyword_matches_title_or_slogan PASSED [ 36%]
+tests/test_product_read.py::test_search_validation_errors[{'page': 0}] PASSED [ 45%]
+tests/test_product_read.py::test_search_validation_errors[{'order': 'up'}] PASSED [ 54%]
+tests/test_product_read.py::test_search_validation_errors[{'sort_by': 'name'}] PASSED [ 63%]
+tests/test_product_read.py::test_search_validation_errors[{'type': 'x'}] PASSED [ 72%]
+tests/test_product_read.py::test_search_validation_errors[{'type': 'tourgroup', 'item': 'hotel'}] PASSED [ 81%]
+tests/test_product_read.py::test_search_validation_errors[{'lang': None}] PASSED [ 90%]
+tests/test_product_read.py::test_home_promotion_excludes_delisted_and_out_of_period FAILED [100%]
+
+=================================== FAILURES ===================================
+________________ test_search_pages_cover_every_listed_tour_once ________________
+tests/test_product_read.py:32: in test_search_pages_cover_every_listed_tour_once
+    assert len(ids) == len(set(ids))
+E   AssertionError: assert 22 == 21
+E    +  where 22 = len(['9d2e5cdc-230a-4a0a-a7d5-4eb00039fed0', 'c2e03b7d-b117-4bea-94d6-59e753b00d90', '8c74c63e-933e-4623-aa4c-f3814db9c6c2', 'f7cdc48d-7443-4b5b-b12a-31a5fa287dd2', '9fd27d62-39ba-4b57-8015-6cfc47bb0a52', 'c35e011b-ffe4-48ea-8511-9f27ef0d5d69', ...])
+E    +  and   21 = len({'144d34ec-2c8c-491f-9f7c-def1351e49d6', '1692beb1-be37-4a73-93e4-89d0adf1250c', '474a2d5e-8dda-40fa-83bf-a80f646b33eb', '4cf0efbd-2f6f-4586-9bbf-e2aea735fe74', '581c88ef-479d-4aea-9330-d83ed9c2ba71', '6045e5a7-50f4-4cfc-814a-bface065157f', ...})
+E    +    where {'144d34ec-2c8c-491f-9f7c-def1351e49d6', '1692beb1-be37-4a73-93e4-89d0adf1250c', '474a2d5e-8dda-40fa-83bf-a80f646b33eb', '4cf0efbd-2f6f-4586-9bbf-e2aea735fe74', '581c88ef-479d-4aea-9330-d83ed9c2ba71', '6045e5a7-50f4-4cfc-814a-bface065157f', ...} = set(['9d2e5cdc-230a-4a0a-a7d5-4eb00039fed0', 'c2e03b7d-b117-4bea-94d6-59e753b00d90', '8c74c63e-933e-4623-aa4c-f3814db9c6c2', 'f7cdc48d-7443-4b5b-b12a-31a5fa287dd2', '9fd27d62-39ba-4b57-8015-6cfc47bb0a52', 'c35e011b-ffe4-48ea-8511-9f27ef0d5d69', ...])
+_________________________ test_search_duration_filter __________________________
+tests/test_product_read.py:49: in test_search_duration_filter
+    assert {r["旅遊天數"] for r in rows} == {5}
+E   AssertionError: assert {0, 5, 6, 7, 8, 9, ...} == {5}
+E     
+E     Extra items in the left set:
+E     0
+E     6
+E     7
+E     8
+E     9...
+E     
+E     ...Full output truncated (12 lines hidden), use '-vv' to show
+___________ test_home_promotion_excludes_delisted_and_out_of_period ____________
+tests/test_product_read.py:118: in test_home_promotion_excludes_delisted_and_out_of_period
+    assert t["tour_id"] not in ids, t
+E   AssertionError: {'item': 'travel', 'status': 2, 'title': 'p3-c174d726', 'tour_id': '06176525-ef86-4d44-be9d-e229372606bd', ...}
+E   assert '06176525-ef86-4d44-be9d-e229372606bd' not in {'06176525-ef86-4d44-be9d-e229372606bd', '0b4b6505-87f1-415f-8843-47d9208c3f12', '6943c33e-8d1a-4af9-ae32-6fd8fd034ed1', '9d2e5cdc-230a-4a0a-a7d5-4eb00039fed0', '9d6a9e3e-810a-4875-8062-a40d429bcb99', '9fd27d62-39ba-4b57-8015-6cfc47bb0a52', ...}
+=========================== short test summary info ============================
+FAILED tests/test_product_read.py::test_search_pages_cover_every_listed_tour_once
+FAILED tests/test_product_read.py::test_search_duration_filter - AssertionErr...
+FAILED tests/test_product_read.py::test_home_promotion_excludes_delisted_and_out_of_period
+========================= 3 failed, 8 passed in 0.24s ==========================

@@ -1,0 +1,888 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 20 items / 15 deselected / 5 selected
+
+e2e/test_product_flow.py::test_home_page_single_header[chromium] FAILED  [ 20%]
+e2e/test_product_flow.py::test_home_products_match_api[chromium] FAILED  [ 40%]
+e2e/test_product_flow.py::test_home_product_pagination[chromium] FAILED  [ 60%]
+e2e/test_product_flow.py::test_home_product_opens_detail[chromium] FAILED [ 80%]
+e2e/test_product_flow.py::test_home_with_expired_token_lists_products[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_home_page_single_header[chromium] ____________________
+e2e/test_product_flow.py:164: in test_home_page_single_header
+    expect(page.locator(".header")).to_have_count(1)
+E   AssertionError: Locator expected to have count '1'
+E   Actual value: 2 
+E   Call log:
+E     - Expect "to_have_count" locator(".header") with timeout 5000ms
+E     - waiting for locator(".header")
+E       13 × locator resolved to 2 elements
+E          - unexpected value "2"
+____________________ test_home_products_match_api[chromium] ____________________
+e2e/test_product_flow.py:170: in test_home_products_match_api
+    with page.expect_response(_home_response("popular")) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+____________________ test_home_product_pagination[chromium] ____________________
+e2e/test_product_flow.py:194: in test_home_product_pagination
+    with page.expect_response(_home_response("popular", 1)) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+___________________ test_home_product_opens_detail[chromium] ___________________
+e2e/test_product_flow.py:217: in test_home_product_opens_detail
+    expect(first).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" locator("[data-testid=home-product-card]").first with timeout 5000ms
+E     - waiting for locator("[data-testid=home-product-card]").first
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - list:
+E     - listitem:
+E       - img
+E     - listitem:
+E       - img
+E     - listitem:
+E       - img
+E     - listitem:
+E       - img
+E   - paragraph: 讓旅行更輕鬆
+E   - paragraph: 讓世界更近!
+E   - text: 開始旅行
+E   - heading "矚目功能" [level=2]
+E   - list:
+E     - listitem:
+E       - heading "旅遊探索和即時預訂" [level=3]
+E       - paragraph: 想去世界的某個角落？我們提供精選旅遊行程，依據地點、價格、興趣快速篩選，發掘當地隱藏玩法！即將開賣的行程不再錯過，還能及時掌握優惠
+E     - listitem:
+E       - heading "個人化會員體驗" [level=3]
+E       - paragraph: 註冊成為會員，追蹤旅遊積分、VIP等級，累積專屬優惠！收藏你感興趣的旅程，設定價格追蹤，當行程降價或有新優惠，我們及時通知，讓你的旅行更划算、更自由！
+E     - listitem:
+E       - heading "安心支付" [level=3]
+E       - paragraph: 選擇你的旅遊項目，透過信用卡、Apple Pay、Google Pay等安全支付結帳，支援促銷折扣與點數兌換！
+E   - heading "購物專區" [level=2]
+E   - list:
+E     - listitem:
+E       - link "旅行團":
+E         - /url: "#"
+E     - listitem:
+E       - link "背包客":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "熱門專區":
+E         - /url: "#"
+E     - listitem:
+E       - link "促銷專區":
+E         - /url: "#"
+E     - listitem:
+E       - link "多人收藏":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - list:
+E         - listitem: 探索冒險
+E         - listitem: 文化體驗
+E         - listitem: 放鬆療癒
+E       - heading "高雄承億酒店" [level=3]
+E       - paragraph: "出發日 : 自由選擇"
+E       - paragraph: NT$7000
+E     - listitem:
+E       - list:
+E         - listitem: 美食探索
+E         - listitem: 特殊主題
+E         - listitem: 親子主題
+E       - heading "東京青年商旅" [level=3]
+E       - paragraph: "出發日 : 自由選擇"
+E       - paragraph: NT$5500
+E     - listitem:
+E       - list:
+E         - listitem: 拍照打卡
+E         - listitem: 文化體驗
+E         - listitem: 都市感官
+E       - heading "洛杉磯豪華酒店" [level=3]
+E       - paragraph: "出發日 : 自由選擇"
+E       - paragraph: NT$12000
+E   - list:
+E     - listitem
+E     - listitem:
+E       - link "1":
+E         - /url: ""
+E     - listitem: /
+E     - listitem:
+E       - link "3":
+E         - /url: ""
+E     - listitem
+E   - img "產品主圖"
+E   - link "查看更多":
+E     - /url: "#/search"
+E   - heading "旅遊神器" [level=2]
+E   - list:
+E     - listitem:
+E       - link "天氣查詢":
+E         - /url: "#"
+E     - listitem:
+E       - link "匯率查詢":
+E         - /url: "#"
+E     - listitem:
+E       - link "機票/租車查詢":
+E         - /url: "#"
+E     - listitem:
+E       - link "互動地圖":
+E         - /url: "#"
+E     - listitem:
+E       - link "文化介紹":
+E         - /url: "#"
+E   - list:
+E     - listitem
+E     - listitem
+E     - listitem
+E     - listitem
+E     - listitem
+E   - img
+E   - text: 快速查詢各國匯率，幫助你即時掌握幣值變化，精打細算旅費 開始體驗
+E   - heading "好評專區" [level=2]
+E   - list:
+E     - listitem:
+E       - img "avatar"
+E       - text: 王小明
+E       - img "badge"
+E       - text: 世界探索者
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#旅遊神器讚讚！ 旅遊神器太好用了！非常適合旅遊中毒者使用，到了一個國家，能夠馬上顯示天氣預報，非常方便！"
+E     - listitem:
+E       - img "avatar"
+E       - text: 劉小芬
+E       - img "badge"
+E       - text: 初心旅人
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#真人客服解決了我的問題！ TripEasy五星級服務，24小時皆有真人客服，不會操作，馬上就有人可詢問解決！要安排行程肯定要來..."
+E     - listitem:
+E       - img "avatar"
+E       - text: 陳小花
+E       - img "badge"
+E       - text: 熱血旅遊家
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#行程推薦 首頁的朋友專區超適合旅遊規劃新手，推薦的行程真的非常適合朋友旅遊，價格也很合理！"
+E     - listitem:
+E       - img "avatar"
+E       - text: 游小彥
+E       - img "badge"
+E       - text: 世界探索者
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#資深旅遊者大力推 身為資深背包客，真的非常推薦這個平台！安排購買行程一次到位，讓出去玩更能輕鬆自在"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________ test_home_with_expired_token_lists_products[chromium] _____________
+e2e/test_product_flow.py:228: in test_home_with_expired_token_lists_products
+    expect(page.get_by_text("登入已過期", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("登入已過期", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("登入已過期", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！expired-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！expired-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/#"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！expired-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！expired-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/#"
+E   - link "登出":
+E     - /url: "#"
+E   - list:
+E     - listitem:
+E       - img
+E     - listitem:
+E       - img
+E     - listitem:
+E       - img
+E     - listitem:
+E       - img
+E   - paragraph: 讓旅行更輕鬆
+E   - paragraph: 讓世界更近!
+E   - text: 開始旅行
+E   - heading "矚目功能" [level=2]
+E   - list:
+E     - listitem:
+E       - heading "旅遊探索和即時預訂" [level=3]
+E       - paragraph: 想去世界的某個角落？我們提供精選旅遊行程，依據地點、價格、興趣快速篩選，發掘當地隱藏玩法！即將開賣的行程不再錯過，還能及時掌握優惠
+E     - listitem:
+E       - heading "個人化會員體驗" [level=3]
+E       - paragraph: 註冊成為會員，追蹤旅遊積分、VIP等級，累積專屬優惠！收藏你感興趣的旅程，設定價格追蹤，當行程降價或有新優惠，我們及時通知，讓你的旅行更划算、更自由！
+E     - listitem:
+E       - heading "安心支付" [level=3]
+E       - paragraph: 選擇你的旅遊項目，透過信用卡、Apple Pay、Google Pay等安全支付結帳，支援促銷折扣與點數兌換！
+E   - heading "購物專區" [level=2]
+E   - list:
+E     - listitem:
+E       - link "旅行團":
+E         - /url: "#"
+E     - listitem:
+E       - link "背包客":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "熱門專區":
+E         - /url: "#"
+E     - listitem:
+E       - link "促銷專區":
+E         - /url: "#"
+E     - listitem:
+E       - link "多人收藏":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - list:
+E         - listitem: 探索冒險
+E         - listitem: 文化體驗
+E         - listitem: 放鬆療癒
+E       - heading "高雄承億酒店" [level=3]
+E       - paragraph: "出發日 : 自由選擇"
+E       - paragraph: NT$7000
+E     - listitem:
+E       - list:
+E         - listitem: 美食探索
+E         - listitem: 特殊主題
+E         - listitem: 親子主題
+E       - heading "東京青年商旅" [level=3]
+E       - paragraph: "出發日 : 自由選擇"
+E       - paragraph: NT$5500
+E     - listitem:
+E       - list:
+E         - listitem: 拍照打卡
+E         - listitem: 文化體驗
+E         - listitem: 都市感官
+E       - heading "洛杉磯豪華酒店" [level=3]
+E       - paragraph: "出發日 : 自由選擇"
+E       - paragraph: NT$12000
+E   - list:
+E     - listitem
+E     - listitem:
+E       - link "1":
+E         - /url: ""
+E     - listitem: /
+E     - listitem:
+E       - link "3":
+E         - /url: ""
+E     - listitem
+E   - img "產品主圖"
+E   - link "查看更多":
+E     - /url: "#/search"
+E   - heading "旅遊神器" [level=2]
+E   - list:
+E     - listitem:
+E       - link "天氣查詢":
+E         - /url: "#"
+E     - listitem:
+E       - link "匯率查詢":
+E         - /url: "#"
+E     - listitem:
+E       - link "機票/租車查詢":
+E         - /url: "#"
+E     - listitem:
+E       - link "互動地圖":
+E         - /url: "#"
+E     - listitem:
+E       - link "文化介紹":
+E         - /url: "#"
+E   - list:
+E     - listitem
+E     - listitem
+E     - listitem
+E     - listitem
+E     - listitem
+E   - img
+E   - text: 快速查詢各國匯率，幫助你即時掌握幣值變化，精打細算旅費 開始體驗
+E   - heading "好評專區" [level=2]
+E   - list:
+E     - listitem:
+E       - img "avatar"
+E       - text: 王小明
+E       - img "badge"
+E       - text: 世界探索者
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#旅遊神器讚讚！ 旅遊神器太好用了！非常適合旅遊中毒者使用，到了一個國家，能夠馬上顯示天氣預報，非常方便！"
+E     - listitem:
+E       - img "avatar"
+E       - text: 劉小芬
+E       - img "badge"
+E       - text: 初心旅人
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#真人客服解決了我的問題！ TripEasy五星級服務，24小時皆有真人客服，不會操作，馬上就有人可詢問解決！要安排行程肯定要來..."
+E     - listitem:
+E       - img "avatar"
+E       - text: 陳小花
+E       - img "badge"
+E       - text: 熱血旅遊家
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#行程推薦 首頁的朋友專區超適合旅遊規劃新手，推薦的行程真的非常適合朋友旅遊，價格也很合理！"
+E     - listitem:
+E       - img "avatar"
+E       - text: 游小彥
+E       - img "badge"
+E       - text: 世界探索者
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - img "star"
+E       - text: "#資深旅遊者大力推 身為資深背包客，真的非常推薦這個平台！安排購買行程一次到位，讓出去玩更能輕鬆自在"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+=========================== short test summary info ============================
+FAILED e2e/test_product_flow.py::test_home_page_single_header[chromium] - Ass...
+FAILED e2e/test_product_flow.py::test_home_products_match_api[chromium] - pla...
+FAILED e2e/test_product_flow.py::test_home_product_pagination[chromium] - pla...
+FAILED e2e/test_product_flow.py::test_home_product_opens_detail[chromium] - A...
+FAILED e2e/test_product_flow.py::test_home_with_expired_token_lists_products[chromium]
+================= 5 failed, 15 deselected in 76.61s (0:01:16) ==================

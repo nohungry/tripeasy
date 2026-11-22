@@ -1,0 +1,28 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 83 items / 81 deselected / 2 selected
+
+tests/test_member_auth.py::test_patch_profile_info_name_only FAILED      [ 50%]
+tests/test_member_auth.py::test_patch_profile_info_preference_only FAILED [100%]
+
+=================================== FAILURES ===================================
+______________________ test_patch_profile_info_name_only _______________________
+tests/test_member_auth.py:400: in test_patch_profile_info_name_only
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+___________________ test_patch_profile_info_preference_only ____________________
+tests/test_member_auth.py:413: in test_patch_profile_info_preference_only
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_member_auth.py::test_patch_profile_info_name_only - Asserti...
+FAILED tests/test_member_auth.py::test_patch_profile_info_preference_only - A...
+======================= 2 failed, 81 deselected in 0.21s =======================

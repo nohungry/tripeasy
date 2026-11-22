@@ -1,0 +1,59 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 53 items / 37 deselected / 16 selected
+
+tests/test_product_read.py::test_detail_delisted_tour_is_404 FAILED      [  6%]
+tests/test_product_read.py::test_detail_tour_without_detail_rows_is_404 FAILED [ 12%]
+tests/test_product_read.py::test_detail_food_has_no_empty_menu_or_opening FAILED [ 18%]
+tests/test_product_read.py::test_hidden_shares_include_title FAILED      [ 25%]
+tests/test_product_read.py::test_reviews_average_and_pagination PASSED   [ 31%]
+tests/test_product_read.py::test_reviews_empty_tour PASSED               [ 37%]
+tests/test_api_smoke.py::test_home_reviews PASSED                        [ 43%]
+tests/test_api_smoke.py::test_detail_travel_tour_tour_detail PASSED      [ 50%]
+tests/test_api_smoke.py::test_detail_spot_tour_tour_detail PASSED        [ 56%]
+tests/test_api_smoke.py::test_detail_hotel_tour_hotel PASSED             [ 62%]
+tests/test_api_smoke.py::test_detail_food_tour_restaurant PASSED         [ 68%]
+tests/test_api_smoke.py::test_detail_logged_in_has_favorite_flag PASSED  [ 75%]
+tests/test_api_smoke.py::test_tour_reviews_use_user_level PASSED         [ 81%]
+tests/test_api_smoke.py::test_tour_hidden_shares_use_user_level FAILED   [ 87%]
+tests/test_api_smoke.py::test_purchases_item_detail PASSED               [ 93%]
+tests/test_api_smoke.py::test_admin_member_detail PASSED                 [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_detail_delisted_tour_is_404 _______________________
+tests/test_product_read.py:140: in test_detail_delisted_tour_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 404
+E    +  where 500 = <Response [500]>.status_code
+_________________ test_detail_tour_without_detail_rows_is_404 __________________
+tests/test_product_read.py:148: in test_detail_tour_without_detail_rows_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 404
+E    +  where 500 = <Response [500]>.status_code
+________________ test_detail_food_has_no_empty_menu_or_opening _________________
+tests/test_product_read.py:161: in test_detail_food_has_no_empty_menu_or_opening
+    assert all(m["name"] is not None for m in feature["menu"]), feature["menu"]
+E   AssertionError: [{'description': 'Tainan在地人推薦。', 'name': 'Tainan招牌小吃', 'price': 120}, {'description': 'Tainan在地人推薦。', 'name': 'Tainan特調飲品', 'price': 80}, {'description': None, 'name': None, 'price': None}, {'description': None, 'name': None, 'price': None}, {'description': None, 'name': None, 'price': None}, {'description': None, 'name': None, 'price': None}, ...]
+E   assert False
+E    +  where False = all(<generator object test_detail_food_has_no_empty_menu_or_opening.<locals>.<genexpr> at 0x74a1a9bedf20>)
+_______________________ test_hidden_shares_include_title _______________________
+tests/test_product_read.py:177: in test_hidden_shares_include_title
+    assert rows[0]["title"] == "p3 標題"
+E   KeyError: 'title'
+____________________ test_tour_hidden_shares_use_user_level ____________________
+tests/test_api_smoke.py:268: in test_tour_hidden_shares_use_user_level
+    assert rows[0]["title"]
+E   KeyError: 'title'
+=========================== short test summary info ============================
+FAILED tests/test_product_read.py::test_detail_delisted_tour_is_404 - Asserti...
+FAILED tests/test_product_read.py::test_detail_tour_without_detail_rows_is_404
+FAILED tests/test_product_read.py::test_detail_food_has_no_empty_menu_or_opening
+FAILED tests/test_product_read.py::test_hidden_shares_include_title - KeyErro...
+FAILED tests/test_api_smoke.py::test_tour_hidden_shares_use_user_level - KeyE...
+================= 5 failed, 11 passed, 37 deselected in 0.38s ==================

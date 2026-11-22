@@ -1,0 +1,88 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 27 items / 24 deselected / 3 selected
+
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save] PASSED [ 33%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar] FAILED [ 66%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] FAILED [100%]
+
+=================================== FAILURES ===================================
+______ test_session_expired_on_member_api_shows_message[chromium-avatar] _______
+e2e/test_member_flow.py:538: in test_session_expired_on_member_api_shows_message
+    expect(page.get_by_text("登入已過期")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("登入已過期") with timeout 5000ms
+E     - waiting for get_by_text("登入已過期")
+E   
+E   Aria snapshot:
+E   - dialog "failed":
+E     - heading "failed" [level=2]
+E     - text: Token 已過期
+E     - button "OK"
+_____ test_session_expired_on_member_api_shows_message[chromium-password] ______
+e2e/test_member_flow.py:538: in test_session_expired_on_member_api_shows_message
+    expect(page.get_by_text("登入已過期")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("登入已過期") with timeout 5000ms
+E     - waiting for get_by_text("登入已過期")
+E   
+E   Aria snapshot:
+E   - dialog "failed":
+E     - heading "failed" [level=2]
+E     - text: Token 已過期
+E     - button "OK"
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar]
+FAILED e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password]
+================= 2 failed, 1 passed, 24 deselected in 23.14s ==================
+
+===== fix2: 舊實作 (71a2171) 連跑 3 次，門檻 2000ms =====
+--- run 1 ---
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] FAILED [ 50%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] FAILED [100%]
+FAILED e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium]
+FAILED e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium]
+======================= 2 failed, 25 deselected in 5.53s =======================
+--- run 2 ---
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] FAILED [ 50%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] FAILED [100%]
+FAILED e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium]
+FAILED e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium]
+======================= 2 failed, 25 deselected in 5.85s =======================
+--- run 3 ---
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] FAILED [ 50%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] FAILED [100%]
+FAILED e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium]
+FAILED e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium]
+======================= 2 failed, 25 deselected in 5.47s =======================
+
+===== 新實作 (7eb1dcd) 連跑 3 次 =====
+--- run 1 ---
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] PASSED [ 50%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] PASSED [100%]
+======================= 2 passed, 25 deselected in 1.57s =======================
+--- run 2 ---
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] PASSED [ 50%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] PASSED [100%]
+======================= 2 passed, 25 deselected in 1.47s =======================
+--- run 3 ---
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] PASSED [ 50%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] PASSED [100%]
+======================= 2 passed, 25 deselected in 1.55s =======================
+
+===== fix2: 移除 save guard (patch_user_Profile) =====
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save] FAILED [ 33%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar] PASSED [ 66%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] PASSED [100%]
+FAILED e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save]
+================= 1 failed, 2 passed, 24 deselected in 16.89s ==================

@@ -1,0 +1,335 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 38 items
+
+tests/test_product_write.py::test_post_review_requires_login FAILED      [  2%]
+tests/test_product_write.py::test_post_review_admin_is_403 FAILED        [  5%]
+tests/test_product_write.py::test_post_review_admin_with_invalid_body_is_403 FAILED [  7%]
+tests/test_product_write.py::test_post_review_without_order_is_403 FAILED [ 10%]
+tests/test_product_write.py::test_post_review_unpaid_status_is_403[-1] FAILED [ 13%]
+tests/test_product_write.py::test_post_review_unpaid_status_is_403[0] FAILED [ 15%]
+tests/test_product_write.py::test_post_review_unpaid_status_is_403[2] FAILED [ 18%]
+tests/test_product_write.py::test_post_review_unpaid_status_is_403[3] FAILED [ 21%]
+tests/test_product_write.py::test_post_review_unpaid_status_is_403[4] FAILED [ 23%]
+tests/test_product_write.py::test_post_review_other_users_order_does_not_count FAILED [ 26%]
+tests/test_product_write.py::test_post_review_order_for_other_tour_does_not_count FAILED [ 28%]
+tests/test_product_write.py::test_post_review_validation_before_purchase_check FAILED [ 31%]
+tests/test_product_write.py::test_post_review_unknown_tour_is_404 FAILED [ 34%]
+tests/test_product_write.py::test_post_review_delisted_tour_is_404 FAILED [ 36%]
+tests/test_product_write.py::test_post_review_invalid_tour_id_is_400 FAILED [ 39%]
+tests/test_product_write.py::test_post_review_success_201 FAILED         [ 42%]
+tests/test_product_write.py::test_post_review_type_follows_tour_item FAILED [ 44%]
+tests/test_product_write.py::test_post_review_appears_in_list_with_average FAILED [ 47%]
+tests/test_product_write.py::test_post_review_twice_is_409 FAILED        [ 50%]
+tests/test_product_write.py::test_post_review_concurrent_only_one_succeeds FAILED [ 52%]
+tests/test_product_write.py::test_post_review_multiple_paid_orders_ok FAILED [ 55%]
+tests/test_product_write.py::test_post_review_validation[rating-0] FAILED [ 57%]
+tests/test_product_write.py::test_post_review_validation[rating-6] FAILED [ 60%]
+tests/test_product_write.py::test_post_review_validation[rating-4.5] FAILED [ 63%]
+tests/test_product_write.py::test_post_review_validation[rating-str] FAILED [ 65%]
+tests/test_product_write.py::test_post_review_validation[rating-missing] FAILED [ 68%]
+tests/test_product_write.py::test_post_review_validation[content-empty] FAILED [ 71%]
+tests/test_product_write.py::test_post_review_validation[content-blank] FAILED [ 73%]
+tests/test_product_write.py::test_post_review_validation[content-501] FAILED [ 76%]
+tests/test_product_write.py::test_post_review_validation[content-missing] FAILED [ 78%]
+tests/test_product_write.py::test_post_review_validation[unknown-field] FAILED [ 81%]
+tests/test_product_write.py::test_post_review_content_500_chars_ok FAILED [ 84%]
+tests/test_product_write.py::test_post_review_html_stored_verbatim FAILED [ 86%]
+tests/test_product_write.py::test_eligibility_requires_login FAILED      [ 89%]
+tests/test_product_write.py::test_eligibility_admin_is_403 FAILED        [ 92%]
+tests/test_product_write.py::test_eligibility_unknown_tour_is_404 FAILED [ 94%]
+tests/test_product_write.py::test_eligibility_states FAILED              [ 97%]
+tests/test_product_write.py::test_eligibility_seed_alice FAILED          [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_post_review_requires_login ________________________
+tests/test_product_write.py:34: in test_post_review_requires_login
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+________________________ test_post_review_admin_is_403 _________________________
+tests/test_product_write.py:42: in test_post_review_admin_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+_______________ test_post_review_admin_with_invalid_body_is_403 ________________
+tests/test_product_write.py:50: in test_post_review_admin_with_invalid_body_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_post_review_without_order_is_403 _____________________
+tests/test_product_write.py:58: in test_post_review_without_order_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+__________________ test_post_review_unpaid_status_is_403[-1] ___________________
+tests/test_product_write.py:68: in test_post_review_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_unpaid_status_is_403[0] ___________________
+tests/test_product_write.py:68: in test_post_review_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_unpaid_status_is_403[2] ___________________
+tests/test_product_write.py:68: in test_post_review_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_unpaid_status_is_403[3] ___________________
+tests/test_product_write.py:68: in test_post_review_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_unpaid_status_is_403[4] ___________________
+tests/test_product_write.py:68: in test_post_review_unpaid_status_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+______________ test_post_review_other_users_order_does_not_count _______________
+tests/test_product_write.py:78: in test_post_review_other_users_order_does_not_count
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+_____________ test_post_review_order_for_other_tour_does_not_count _____________
+tests/test_product_write.py:86: in test_post_review_order_for_other_tour_does_not_count
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+______________ test_post_review_validation_before_purchase_check _______________
+tests/test_product_write.py:94: in test_post_review_validation_before_purchase_check
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_____________________ test_post_review_unknown_tour_is_404 _____________________
+tests/test_product_write.py:101: in test_post_review_unknown_tour_is_404
+    assert r.json()["message"] == "查無此旅遊項目"
+E   AssertionError: assert '找不到此網站' == '查無此旅遊項目'
+E     
+E     - 查無此旅遊項目
+E     + 找不到此網站
+____________________ test_post_review_delisted_tour_is_404 _____________________
+tests/test_product_write.py:109: in test_post_review_delisted_tour_is_404
+    assert r.json()["message"] == "查無此旅遊項目"
+E   AssertionError: assert '找不到此網站' == '查無此旅遊項目'
+E     
+E     - 查無此旅遊項目
+E     + 找不到此網站
+___________________ test_post_review_invalid_tour_id_is_400 ____________________
+tests/test_product_write.py:115: in test_post_review_invalid_tour_id_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_________________________ test_post_review_success_201 _________________________
+tests/test_product_write.py:124: in test_post_review_success_201
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_type_follows_tour_item ____________________
+tests/test_product_write.py:146: in test_post_review_type_follows_tour_item
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+________________ test_post_review_appears_in_list_with_average _________________
+tests/test_product_write.py:154: in test_post_review_appears_in_list_with_average
+    assert api.post(_url(t["tour_id"]), headers=auth_header(u), json=BODY).status_code == 201
+E   AssertionError: assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = post('/api/v1/user/product/search/8bf95dd3-5c3b-4fa5-b836-874896b69193/reviews', headers={'Authorization': 'Bearer <redacted>'}, json={'content': '很棒的行程', 'rating': 4})
+E    +      where post = <conftest.Api object at 0x782d7593acf0>.post
+E    +      and   '/api/v1/user/product/search/8bf95dd3-5c3b-4fa5-b836-874896b69193/reviews' = _url('8bf95dd3-5c3b-4fa5-b836-874896b69193')
+E    +      and   {'Authorization': 'Bearer <redacted>'} = auth_header({'email': 'p0-a4132b03@example.com', 'role': 'User', 'user_id': '554eacd6-c133-4250-8cd6-33dba2dbff21'})
+________________________ test_post_review_twice_is_409 _________________________
+tests/test_product_write.py:167: in test_post_review_twice_is_409
+    assert api.post(_url(t["tour_id"]), headers=h, json=BODY).status_code == 201
+E   AssertionError: assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = post('/api/v1/user/product/search/0f311b87-0e52-4486-8716-a852957843eb/reviews', headers={'Authorization': 'Bearer <redacted>'}, json={'content': '很棒的行程', 'rating': 4})
+E    +      where post = <conftest.Api object at 0x782d7593acf0>.post
+E    +      and   '/api/v1/user/product/search/0f311b87-0e52-4486-8716-a852957843eb/reviews' = _url('0f311b87-0e52-4486-8716-a852957843eb')
+________________ test_post_review_concurrent_only_one_succeeds _________________
+tests/test_product_write.py:187: in test_post_review_concurrent_only_one_succeeds
+    assert codes == [201, 409, 409, 409, 409]
+E   AssertionError: assert [404, 404, 404, 404, 404] == [201, 409, 409, 409, 409]
+E     
+E     At index 0 diff: 404 != 201
+E     
+E     Full diff:
+E       [
+E     -     201,
+E     -     409,...
+E     
+E     ...Full output truncated (17 lines hidden), use '-vv' to show
+___________________ test_post_review_multiple_paid_orders_ok ___________________
+tests/test_product_write.py:196: in test_post_review_multiple_paid_orders_ok
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_post_review_validation[rating-0] _____________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_post_review_validation[rating-6] _____________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_validation[rating-4.5] ____________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_validation[rating-str] ____________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_________________ test_post_review_validation[rating-missing] __________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+__________________ test_post_review_validation[content-empty] __________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+__________________ test_post_review_validation[content-blank] __________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_post_review_validation[content-501] ___________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_________________ test_post_review_validation[content-missing] _________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+__________________ test_post_review_validation[unknown-field] __________________
+tests/test_product_write.py:222: in test_post_review_validation
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_post_review_content_500_chars_ok _____________________
+tests/test_product_write.py:231: in test_post_review_content_500_chars_ok
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_post_review_html_stored_verbatim _____________________
+tests/test_product_write.py:239: in test_post_review_html_stored_verbatim
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+_______________________ test_eligibility_requires_login ________________________
+tests/test_product_write.py:251: in test_eligibility_requires_login
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+________________________ test_eligibility_admin_is_403 _________________________
+tests/test_product_write.py:258: in test_eligibility_admin_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+_____________________ test_eligibility_unknown_tour_is_404 _____________________
+tests/test_product_write.py:266: in test_eligibility_unknown_tour_is_404
+    assert r.json()["message"] == "查無此旅遊項目"
+E   AssertionError: assert '找不到此網站' == '查無此旅遊項目'
+E     
+E     - 查無此旅遊項目
+E     + 找不到此網站
+___________________________ test_eligibility_states ____________________________
+tests/test_product_write.py:279: in test_eligibility_states
+    assert _eligibility(api, u, t["tour_id"]) == {"can_write": False, "has_reviewed": False}
+tests/test_product_write.py:271: in _eligibility
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+_________________________ test_eligibility_seed_alice __________________________
+tests/test_product_write.py:302: in test_eligibility_seed_alice
+    assert _eligibility(api, alice, hokkaido) == {"can_write": True, "has_reviewed": True}
+tests/test_product_write.py:271: in _eligibility
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_review_requires_login - Asserti...
+FAILED tests/test_product_write.py::test_post_review_admin_is_403 - Assertion...
+FAILED tests/test_product_write.py::test_post_review_admin_with_invalid_body_is_403
+FAILED tests/test_product_write.py::test_post_review_without_order_is_403 - A...
+FAILED tests/test_product_write.py::test_post_review_unpaid_status_is_403[-1]
+FAILED tests/test_product_write.py::test_post_review_unpaid_status_is_403[0]
+FAILED tests/test_product_write.py::test_post_review_unpaid_status_is_403[2]
+FAILED tests/test_product_write.py::test_post_review_unpaid_status_is_403[3]
+FAILED tests/test_product_write.py::test_post_review_unpaid_status_is_403[4]
+FAILED tests/test_product_write.py::test_post_review_other_users_order_does_not_count
+FAILED tests/test_product_write.py::test_post_review_order_for_other_tour_does_not_count
+FAILED tests/test_product_write.py::test_post_review_validation_before_purchase_check
+FAILED tests/test_product_write.py::test_post_review_unknown_tour_is_404 - As...
+FAILED tests/test_product_write.py::test_post_review_delisted_tour_is_404 - A...
+FAILED tests/test_product_write.py::test_post_review_invalid_tour_id_is_400
+FAILED tests/test_product_write.py::test_post_review_success_201 - AssertionE...
+FAILED tests/test_product_write.py::test_post_review_type_follows_tour_item
+FAILED tests/test_product_write.py::test_post_review_appears_in_list_with_average
+FAILED tests/test_product_write.py::test_post_review_twice_is_409 - Assertion...
+FAILED tests/test_product_write.py::test_post_review_concurrent_only_one_succeeds
+FAILED tests/test_product_write.py::test_post_review_multiple_paid_orders_ok
+FAILED tests/test_product_write.py::test_post_review_validation[rating-0] - A...
+FAILED tests/test_product_write.py::test_post_review_validation[rating-6] - A...
+FAILED tests/test_product_write.py::test_post_review_validation[rating-4.5]
+FAILED tests/test_product_write.py::test_post_review_validation[rating-str]
+FAILED tests/test_product_write.py::test_post_review_validation[rating-missing]
+FAILED tests/test_product_write.py::test_post_review_validation[content-empty]
+FAILED tests/test_product_write.py::test_post_review_validation[content-blank]
+FAILED tests/test_product_write.py::test_post_review_validation[content-501]
+FAILED tests/test_product_write.py::test_post_review_validation[content-missing]
+FAILED tests/test_product_write.py::test_post_review_validation[unknown-field]
+FAILED tests/test_product_write.py::test_post_review_content_500_chars_ok - A...
+FAILED tests/test_product_write.py::test_post_review_html_stored_verbatim - A...
+FAILED tests/test_product_write.py::test_eligibility_requires_login - Asserti...
+FAILED tests/test_product_write.py::test_eligibility_admin_is_403 - Assertion...
+FAILED tests/test_product_write.py::test_eligibility_unknown_tour_is_404 - As...
+FAILED tests/test_product_write.py::test_eligibility_states - AssertionError:...
+FAILED tests/test_product_write.py::test_eligibility_seed_alice - AssertionEr...
+============================== 38 failed in 1.90s ==============================

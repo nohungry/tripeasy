@@ -74,3 +74,15 @@ def test_admin_patch_tour_is_reachable(api, db, make_user):
     assert r.json()["message"] == "欄位未填寫正確"
     after = db.execute("SELECT updated_at FROM tour WHERE tour_id = %s", (tour_id,)).fetchone()[0]
     assert after == updated_at  # 沒有改到 seed
+
+
+def test_delete_tour_releases_db_connection(api, make_user, make_tour):
+    """DELETE 商品每次都要把 DB 連線還給 pool（pool 預設 max 10），否則第 11 個請求起會卡住。"""
+    admin = make_user(role="admin")
+    for _ in range(12):
+        tour = make_tour(with_detail=False)
+        r = api.delete(ADMIN, headers=auth_header(admin), json={"tour_ids": [tour["tour_id"]]}, timeout=10)
+        assert r.status_code == 200, r.text
+        assert r.json()["message"] == "刪除成功"
+    r = api.get("/api/v1/user/userinfo/info", headers=auth_header(make_user()), timeout=10)
+    assert r.status_code == 200, r.text

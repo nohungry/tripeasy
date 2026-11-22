@@ -1,0 +1,60 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 8 items / 7 deselected / 1 selected
+
+tests/test_product_routes.py::test_delete_tour_releases_db_connection FAILED [100%]
+
+=================================== FAILURES ===================================
+___________________ test_delete_tour_releases_db_connection ____________________
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:540: in _make_request
+    response = conn.getresponse()
+.venv/lib/python3.13/site-packages/urllib3/connection.py:638: in getresponse
+    httplib_response = super().getresponse()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:1459: in getresponse
+    response.begin()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:336: in begin
+    version, status, reason = self._read_status()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:297: in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/socket.py:723: in readinto
+    return self._sock.recv_into(b)
+E   TimeoutError: timed out
+
+The above exception was the direct cause of the following exception:
+.venv/lib/python3.13/site-packages/requests/adapters.py:667: in send
+    resp = conn.urlopen(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:847: in urlopen
+    retries = retries.increment(
+.venv/lib/python3.13/site-packages/urllib3/util/retry.py:510: in increment
+    raise reraise(type(error), error, _stacktrace)
+.venv/lib/python3.13/site-packages/urllib3/util/util.py:39: in reraise
+    raise value
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:793: in urlopen
+    response = self._make_request(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:542: in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:373: in _raise_timeout
+    raise ReadTimeoutError(
+E   urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=10)
+
+During handling of the above exception, another exception occurred:
+tests/test_product_routes.py:84: in test_delete_tour_releases_db_connection
+    r = api.delete(ADMIN, headers=auth_header(admin), json={"tour_ids": [tour["tour_id"]]}, timeout=10)
+.venv/lib/python3.13/site-packages/requests/sessions.py:671: in delete
+    return self.request("DELETE", url, **kwargs)
+tests/conftest.py:50: in request
+    return super().request(method, url, *args, **kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+.venv/lib/python3.13/site-packages/requests/adapters.py:713: in send
+    raise ReadTimeout(e, request=request)
+E   requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=10)
+=========================== short test summary info ============================
+FAILED tests/test_product_routes.py::test_delete_tour_releases_db_connection
+======================= 1 failed, 7 deselected in 10.51s =======================

@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 28 items / 26 deselected / 2 selected
+
+e2e/test_product_flow.py::test_search_pagination_visits_every_listed_tour_once[chromium-as_is] PASSED [ 50%]
+e2e/test_product_flow.py::test_search_pagination_visits_every_listed_tour_once[chromium-total_is_multiple_of_6] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ test_search_pagination_visits_every_listed_tour_once[chromium-total_is_multiple_of_6] _
+e2e/test_product_flow.py:282: in test_search_pagination_visits_every_listed_tour_once
+    titles = _api_titles(info.value)
+e2e/test_product_flow.py:159: in _api_titles
+    return [row["旅遊名稱"] for row in response.json()["data"]]
+E   KeyError: 'data'
+=========================== short test summary info ============================
+FAILED e2e/test_product_flow.py::test_search_pagination_visits_every_listed_tour_once[chromium-total_is_multiple_of_6]
+================== 1 failed, 1 passed, 26 deselected in 2.11s ==================

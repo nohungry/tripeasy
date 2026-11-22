@@ -1,0 +1,2197 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 13 items
+
+e2e/test_product_flow.py::test_detail_page_shows_travel_tour[chromium] FAILED [  7%]
+e2e/test_product_flow.py::test_detail_page_item_sections[chromium-hotel-headings0] FAILED [ 15%]
+e2e/test_product_flow.py::test_detail_page_item_sections[chromium-food-headings1] FAILED [ 23%]
+e2e/test_product_flow.py::test_detail_page_item_sections[chromium-spot-headings2] FAILED [ 30%]
+e2e/test_product_flow.py::test_detail_page_unknown_tour[chromium-uuid-not-exist] FAILED [ 38%]
+e2e/test_product_flow.py::test_detail_page_unknown_tour[chromium-not-a-uuid] FAILED [ 46%]
+e2e/test_product_flow.py::test_detail_page_single_header[chromium] FAILED [ 53%]
+e2e/test_product_flow.py::test_fake_tour_routes_removed[chromium-#/tour] FAILED [ 61%]
+e2e/test_product_flow.py::test_fake_tour_routes_removed[chromium-#/tourfake] FAILED [ 69%]
+e2e/test_product_flow.py::test_fake_tour_routes_removed[chromium-#/tourfakeUSA] FAILED [ 76%]
+e2e/test_product_flow.py::test_add_to_cart_coming_soon[chromium] FAILED  [ 84%]
+e2e/test_product_flow.py::test_detail_promo_price_shown[chromium] FAILED [ 92%]
+e2e/test_product_flow.py::test_detail_with_expired_token_still_renders[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+_________________ test_detail_page_shows_travel_tour[chromium] _________________
+e2e/test_product_flow.py:37: in test_detail_page_shows_travel_tour
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="冰島極光 8 日探索") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="冰島極光 8 日探索")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________ test_detail_page_item_sections[chromium-hotel-headings0] ___________
+e2e/test_product_flow.py:53: in test_detail_page_item_sections
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="峇里島別墅旅宿") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="峇里島別墅旅宿")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/581c88ef-479d-4aea-9330-d83ed9c2ba71#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________ test_detail_page_item_sections[chromium-food-headings1] ____________
+e2e/test_product_flow.py:53: in test_detail_page_item_sections
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="台南小吃巡禮") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="台南小吃巡禮")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/7d6b03fa-e9bb-497d-8962-975ae377ca50#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________ test_detail_page_item_sections[chromium-spot-headings2] ____________
+e2e/test_product_flow.py:53: in test_detail_page_item_sections
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="京都古寺散步") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="京都古寺散步")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/6b7ee8db-b242-4e34-8c22-33c111662feb#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________ test_detail_page_unknown_tour[chromium-uuid-not-exist] ____________
+e2e/test_product_flow.py:61: in test_detail_page_unknown_tour
+    expect(page.get_by_text("查無此行程", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("查無此行程", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("查無此行程", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/a6190fa1-840f-481b-8b44-0f6f636dcae5#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+______________ test_detail_page_unknown_tour[chromium-not-a-uuid] ______________
+e2e/test_product_flow.py:61: in test_detail_page_unknown_tour
+    expect(page.get_by_text("查無此行程", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("查無此行程", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("查無此行程", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/not-a-uuid#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/not-a-uuid#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________________ test_detail_page_single_header[chromium] ___________________
+e2e/test_product_flow.py:69: in test_detail_page_single_header
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="冰島極光 8 日探索") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="冰島極光 8 日探索")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+________________ test_fake_tour_routes_removed[chromium-#/tour] ________________
+e2e/test_product_flow.py:77: in test_fake_tour_routes_removed
+    expect(page.get_by_text("找不到頁面", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("找不到頁面", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("找不到頁面", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+______________ test_fake_tour_routes_removed[chromium-#/tourfake] ______________
+e2e/test_product_flow.py:77: in test_fake_tour_routes_removed
+    expect(page.get_by_text("找不到頁面", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("找不到頁面", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("找不到頁面", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tourfake#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tourfake#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tourfake#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - img "banner"
+E   - text: 因施工緣故，因此會有施工噪音
+E   - heading "晨光海景酒店" [level=2]
+E   - heading "晨曦灑落的每一刻，都是渡假的開始" [level=4]
+E   - text: 
+E   - paragraph: 在晨光海景酒店，每個細節都為了療癒旅人而設計。從房間望出去，是一望無際的海平線，夕陽灑落時，整片天際彷彿染上溫柔的詩意。飯店提供豐富設施與親切服務。
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - text: 房型介紹
+E   - heading "標準雙人房｜溫馨舒適、性價比高" [level=5]
+E   - paragraph: 一大床或兩小床選擇，配備基本設施，簡約風格中展現自在氛圍，適合輕旅遊或商務短住
+E   - heading "海景豪華房｜一窗一世界的療癒感" [level=5]
+E   - paragraph: 面海大陽台、加大雙人床，附設沙發區與咖啡機，晨起即可擁抱日出，傍晚擁有私人的夕陽角度。
+E   - heading "家庭四人房｜共享假期的溫馨空間" [level=5]
+E   - paragraph: 兩張大床、寬敞浴室與兒童友善設計，備有親子用品租借與簡易烹飪區，適合親子或三五好友同遊。
+E   - separator
+E   - text: 客房服務
+E   - heading "基本設施與服務" [level=6]
+E   - list:
+E     - listitem: 24 小時櫃台服務
+E     - listitem: 免費 Wi-Fi
+E     - listitem: 無障礙設施
+E   - heading "餐飲相關服務" [level=6]
+E   - list:
+E     - listitem: 餐廳 / 咖啡廳
+E     - listitem: 迷你吧
+E     - listitem: 飲水機
+E   - heading "客房與設施" [level=6]
+E   - list:
+E     - listitem: 獨立衛浴
+E     - listitem: 電視
+E     - listitem: 小冰箱
+E   - heading "休閒與娛樂設施" [level=6]
+E   - list:
+E     - listitem: 健身房
+E     - listitem: 兒童遊戲區
+E     - listitem: SPA / 按摩服務
+E   - heading "交通與停車" [level=6]
+E   - list:
+E     - listitem: 租車服務
+E     - listitem: 停車場
+E     - listitem: 單車租借
+E   - heading "其他便利服務" [level=6]
+E   - list:
+E     - listitem: 叫車 / 代叫計程車
+E     - listitem: 外幣兌換
+E   - separator
+E   - text: 詳細地址
+E   - iframe
+E   - text: NT$3,200 / 每晚 入住日期與時間
+E   - textbox
+E   - text: 退房日期與時間
+E   - textbox
+E   - text: 選擇房型
+E   - combobox:
+E     - option "請選擇房型" [selected]
+E     - option "標準雙人房"
+E     - option "海景豪華房"
+E     - option "家庭四人房"
+E   - text: 選擇人數
+E   - combobox:
+E     - option "請選擇人數" [selected]
+E     - option "1"
+E     - option "2"
+E     - option "3"
+E     - option "4"
+E     - option "5"
+E     - option "6"
+E   - button "加入購物車"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________ test_fake_tour_routes_removed[chromium-#/tourfakeUSA] _____________
+e2e/test_product_flow.py:77: in test_fake_tour_routes_removed
+    expect(page.get_by_text("找不到頁面", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("找不到頁面", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("找不到頁面", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tourfakeUSA#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tourfakeUSA#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - img "banner"
+E   - text: 因受降雪影響，所有交通暫停，請留意最新通知。
+E   - heading "走進美國大峽谷" [level=2]
+E   - heading "遼闊之境，一眼萬年" [level=4]
+E   - text: 
+E   - paragraph: 踏上美西壯遊之旅，探索壯麗無比的大峽谷、夢幻羚羊谷與壯觀馬蹄灣，感受大自然奇景。暢遊繁華拉斯維加斯，穿越經典66號公路，體驗美國西部風情，享受難忘的探索之旅！
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - img "環境照"
+E   - text: 美國大峽谷 6 天 5 夜 暢遊大禮包
+E   - heading "特色一" [level=5]
+E   - paragraph: 欣賞大峽谷日出日落，絕美震撼景色
+E   - heading "特色二" [level=5]
+E   - paragraph: 拉斯維加斯璀璨夜景與極致娛樂體驗
+E   - heading "特色三" [level=5]
+E   - paragraph: 拉斯維加斯璀璨夜景與極致娛樂體驗
+E   - separator
+E   - text: 旅遊行程規劃
+E   - list:
+E     - listitem: Day 1：抵達洛杉磯，市區自由行（星光大道、比佛利山莊）
+E     - listitem: Day 2：前往拉斯維加斯，夜遊不夜城賭城風光間
+E     - listitem: Day 3：大峽谷國家公園（南緣），欣賞壯麗景色
+E     - listitem: Day 4：馬蹄灣、羚羊谷，沉浸紅岩奇景
+E     - listitem: Day 5：回程途經66號公路，探索經典美國西部風情
+E     - listitem: Day 6：返回洛杉磯，購物/自由行，準備返程
+E   - text: NT$18,800 25/03/01~25/03/06 選擇人數
+E   - combobox:
+E     - option "請選擇人數" [selected]
+E     - option "1"
+E     - option "2"
+E     - option "3"
+E     - option "4"
+E     - option "5"
+E     - option "6"
+E   - button "加入購物車"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________________ test_add_to_cart_coming_soon[chromium] ____________________
+e2e/test_product_flow.py:83: in test_add_to_cart_coming_soon
+    expect(page.get_by_role("button", name="加入購物車（即將開放）")).to_be_disabled()
+E   AssertionError: Locator expected to be disabled
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_disabled" get_by_role("button", name="加入購物車（即將開放）") with timeout 5000ms
+E     - waiting for get_by_role("button", name="加入購物車（即將開放）")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________________ test_detail_promo_price_shown[chromium] ____________________
+e2e/test_product_flow.py:94: in test_detail_promo_price_shown
+    expect(page.get_by_role("heading", name=tour["title"])).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="p3-5ed43e76") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="p3-5ed43e76")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/1b661e86-d808-4d0b-b39a-70995cdbb918#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________ test_detail_with_expired_token_still_renders[chromium] ____________
+e2e/test_product_flow.py:104: in test_detail_with_expired_token_still_renders
+    expect(page.get_by_role("heading", name=title)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_role("heading", name="冰島極光 8 日探索") with timeout 5000ms
+E     - waiting for get_by_role("heading", name="冰島極光 8 日探索")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！expired-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！expired-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/dfe1a4a5-f228-4ac2-820b-fd8e96b7fd33#"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "找不到頁面" [level=1]
+E   - paragraph: 你要找的頁面不存在，或已經被移動。
+E   - link "回首頁":
+E     - /url: "#/"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+=========================== short test summary info ============================
+FAILED e2e/test_product_flow.py::test_detail_page_shows_travel_tour[chromium]
+FAILED e2e/test_product_flow.py::test_detail_page_item_sections[chromium-hotel-headings0]
+FAILED e2e/test_product_flow.py::test_detail_page_item_sections[chromium-food-headings1]
+FAILED e2e/test_product_flow.py::test_detail_page_item_sections[chromium-spot-headings2]
+FAILED e2e/test_product_flow.py::test_detail_page_unknown_tour[chromium-uuid-not-exist]
+FAILED e2e/test_product_flow.py::test_detail_page_unknown_tour[chromium-not-a-uuid]
+FAILED e2e/test_product_flow.py::test_detail_page_single_header[chromium] - A...
+FAILED e2e/test_product_flow.py::test_fake_tour_routes_removed[chromium-#/tour]
+FAILED e2e/test_product_flow.py::test_fake_tour_routes_removed[chromium-#/tourfake]
+FAILED e2e/test_product_flow.py::test_fake_tour_routes_removed[chromium-#/tourfakeUSA]
+FAILED e2e/test_product_flow.py::test_add_to_cart_coming_soon[chromium] - Ass...
+FAILED e2e/test_product_flow.py::test_detail_promo_price_shown[chromium] - As...
+FAILED e2e/test_product_flow.py::test_detail_with_expired_token_still_renders[chromium]
+======================== 13 failed in 67.99s (0:01:07) =========================

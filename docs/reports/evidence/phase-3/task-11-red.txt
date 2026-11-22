@@ -1,0 +1,189 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 27 items / 20 deselected / 7 selected
+
+e2e/test_product_flow.py::test_search_lists_tours_from_api[chromium] FAILED [ 14%]
+e2e/test_product_flow.py::test_search_pagination_visits_every_listed_tour_once[chromium] FAILED [ 28%]
+e2e/test_product_flow.py::test_header_keyword_search[chromium] FAILED    [ 42%]
+e2e/test_product_flow.py::test_search_price_filter_and_sort[chromium] FAILED [ 57%]
+e2e/test_product_flow.py::test_search_no_result[chromium] FAILED         [ 71%]
+e2e/test_product_flow.py::test_search_card_opens_detail[chromium] FAILED [ 85%]
+e2e/test_product_flow.py::test_search_country_region_selects_removed[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+__________________ test_search_lists_tours_from_api[chromium] __________________
+e2e/test_product_flow.py:260: in test_search_lists_tours_from_api
+    expected = _open_search(page)
+e2e/test_product_flow.py:252: in _open_search
+    with page.expect_response(_search_response()) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+________ test_search_pagination_visits_every_listed_tour_once[chromium] ________
+e2e/test_product_flow.py:266: in test_search_pagination_visits_every_listed_tour_once
+    first = _open_search(page)
+e2e/test_product_flow.py:252: in _open_search
+    with page.expect_response(_search_response()) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+_____________________ test_header_keyword_search[chromium] _____________________
+e2e/test_product_flow.py:290: in test_header_keyword_search
+    with page.expect_response(_search_response(keyword="%E5%8C%97%E6%B5%B7%E9%81%93")):
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+_________________ test_search_price_filter_and_sort[chromium] __________________
+e2e/test_product_flow.py:297: in test_search_price_filter_and_sort
+    _open_search(page)
+e2e/test_product_flow.py:252: in _open_search
+    with page.expect_response(_search_response()) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+_______________________ test_search_no_result[chromium] ________________________
+e2e/test_product_flow.py:312: in test_search_no_result
+    _open_search(page)
+e2e/test_product_flow.py:252: in _open_search
+    with page.expect_response(_search_response()) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+___________________ test_search_card_opens_detail[chromium] ____________________
+e2e/test_product_flow.py:320: in test_search_card_opens_detail
+    with page.expect_response(_search_response()) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+_____________ test_search_country_region_selects_removed[chromium] _____________
+e2e/test_product_flow.py:335: in test_search_country_region_selects_removed
+    _open_search(page)
+e2e/test_product_flow.py:252: in _open_search
+    with page.expect_response(_search_response()) as info:
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+=========================== short test summary info ============================
+FAILED e2e/test_product_flow.py::test_search_lists_tours_from_api[chromium]
+FAILED e2e/test_product_flow.py::test_search_pagination_visits_every_listed_tour_once[chromium]
+FAILED e2e/test_product_flow.py::test_header_keyword_search[chromium] - playw...
+FAILED e2e/test_product_flow.py::test_search_price_filter_and_sort[chromium]
+FAILED e2e/test_product_flow.py::test_search_no_result[chromium] - playwright...
+FAILED e2e/test_product_flow.py::test_search_card_opens_detail[chromium] - pl...
+FAILED e2e/test_product_flow.py::test_search_country_region_selects_removed[chromium]
+================= 7 failed, 20 deselected in 211.67s (0:03:31) =================

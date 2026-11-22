@@ -1,0 +1,760 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 8 items
+
+e2e/test_product_flow.py::test_product_main_flow[chromium] FAILED        [ 12%]
+e2e/test_product_flow.py::test_guest_sees_login_hint[chromium] FAILED    [ 25%]
+e2e/test_product_flow.py::test_member_without_purchase_sees_purchase_hint[chromium] FAILED [ 37%]
+e2e/test_product_flow.py::test_review_html_rendered_as_text[chromium] FAILED [ 50%]
+e2e/test_product_flow.py::test_hidden_share_rejects_javascript_url[chromium] FAILED [ 62%]
+e2e/test_product_flow.py::test_hidden_share_javascript_url_in_db_not_rendered_as_link[chromium] FAILED [ 75%]
+e2e/test_product_flow.py::test_review_submit_with_expired_token[chromium] FAILED [ 87%]
+e2e/test_product_flow.py::test_reviews_and_shares_load_more[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_product_main_flow[chromium] _______________________
+e2e/test_product_flow.py:403: in test_product_main_flow
+    expect(_review_section(page).get_by_text("目前還沒有評論", exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_test_id("review-section").get_by_text("目前還沒有評論", exact=True) with timeout 5000ms
+E     - waiting for get_by_test_id("review-section").get_by_text("目前還沒有評論", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/8378222f-38c2-42e6-989b-7cb75948a4a9#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "p3-ff668ffc" [level=2]
+E   - heading "測試標語" [level=4]
+E   - img "p3-ff668ffc"
+E   - paragraph: NT$1,000
+E   - paragraph: 出發日期：自由選擇
+E   - paragraph: 探索冒險 放鬆療癒 文化體驗
+E   - paragraph: 測試描述
+E   - paragraph:
+E     - text: 測試國 測試區 測試地址
+E     - link "Google Map":
+E       - /url: https://maps.example.com/x
+E   - button "加入購物車（即將開放）" [disabled]
+E   - img "圖1"
+E   - paragraph: 圖1
+E   - img "圖2"
+E   - paragraph: 圖2
+E   - img "圖3"
+E   - paragraph: 圖3
+E   - img "圖4"
+E   - paragraph: 圖4
+E   - img "圖5"
+E   - paragraph: 圖5
+E   - img "圖6"
+E   - paragraph: 圖6
+E   - heading "行程特色" [level=3]
+E   - paragraph: 特色1
+E   - img "特色1"
+E   - paragraph: 特色2
+E   - img "特色2"
+E   - paragraph: 特色3
+E   - img "特色3"
+E   - heading "行程規劃" [level=3]
+E   - paragraph: 測試行程規劃
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+_____________________ test_guest_sees_login_hint[chromium] _____________________
+e2e/test_product_flow.py:431: in test_guest_sees_login_hint
+    expect(review.get_by_text(REVIEW_HINT_GUEST, exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_test_id("review-section").get_by_text("登入後，購買過此行程的會員可以評論與分享隱藏玩法", exact=True) with timeout 5000ms
+E     - waiting for get_by_test_id("review-section").get_by_text("登入後，購買過此行程的會員可以評論與分享隱藏玩法", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/389e166e-d64a-465e-a5ad-205b4963c529#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - heading "p3-01bd45e1" [level=2]
+E   - heading "測試標語" [level=4]
+E   - img "p3-01bd45e1"
+E   - paragraph: NT$1,000
+E   - paragraph: 出發日期：自由選擇
+E   - paragraph: 探索冒險 放鬆療癒 文化體驗
+E   - paragraph: 測試描述
+E   - paragraph:
+E     - text: 測試國 測試區 測試地址
+E     - link "Google Map":
+E       - /url: https://maps.example.com/x
+E   - button "加入購物車（即將開放）" [disabled]
+E   - img "圖1"
+E   - paragraph: 圖1
+E   - img "圖2"
+E   - paragraph: 圖2
+E   - img "圖3"
+E   - paragraph: 圖3
+E   - img "圖4"
+E   - paragraph: 圖4
+E   - img "圖5"
+E   - paragraph: 圖5
+E   - img "圖6"
+E   - paragraph: 圖6
+E   - heading "行程特色" [level=3]
+E   - paragraph: 特色1
+E   - img "特色1"
+E   - paragraph: 特色2
+E   - img "特色2"
+E   - paragraph: 特色3
+E   - img "特色3"
+E   - heading "行程規劃" [level=3]
+E   - paragraph: 測試行程規劃
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+__________ test_member_without_purchase_sees_purchase_hint[chromium] ___________
+e2e/test_product_flow.py:442: in test_member_without_purchase_sees_purchase_hint
+    expect(_review_section(page).get_by_text(REVIEW_HINT_NO_PURCHASE, exact=True)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_test_id("review-section").get_by_text("購買過此行程的會員才能評論與分享隱藏玩法", exact=True) with timeout 5000ms
+E     - waiting for get_by_test_id("review-section").get_by_text("購買過此行程的會員才能評論與分享隱藏玩法", exact=True)
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！p3-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！p3-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/a5c2031c-ee76-4965-adb9-4a46194fba1f#"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "p3-316e1fef" [level=2]
+E   - heading "測試標語" [level=4]
+E   - img "p3-316e1fef"
+E   - paragraph: NT$1,000
+E   - paragraph: 出發日期：自由選擇
+E   - paragraph: 探索冒險 放鬆療癒 文化體驗
+E   - paragraph: 測試描述
+E   - paragraph:
+E     - text: 測試國 測試區 測試地址
+E     - link "Google Map":
+E       - /url: https://maps.example.com/x
+E   - button "加入購物車（即將開放）" [disabled]
+E   - img "圖1"
+E   - paragraph: 圖1
+E   - img "圖2"
+E   - paragraph: 圖2
+E   - img "圖3"
+E   - paragraph: 圖3
+E   - img "圖4"
+E   - paragraph: 圖4
+E   - img "圖5"
+E   - paragraph: 圖5
+E   - img "圖6"
+E   - paragraph: 圖6
+E   - heading "行程特色" [level=3]
+E   - paragraph: 特色1
+E   - img "特色1"
+E   - paragraph: 特色2
+E   - img "特色2"
+E   - paragraph: 特色3
+E   - img "特色3"
+E   - heading "行程規劃" [level=3]
+E   - paragraph: 測試行程規劃
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+_________________ test_review_html_rendered_as_text[chromium] __________________
+e2e/test_product_flow.py:454: in test_review_html_rendered_as_text
+    _submit_review(page, "5", payload)
+e2e/test_product_flow.py:375: in _submit_review
+    section.get_by_label("評分").select_option(rating)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:13201: in select_option
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:779: in select_option
+    return await self._frame.select_option(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:1051: in select_option
+    await self._channel.selectOption(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:398: in _mapped
+    return mapper(await awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.select_option: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_test_id("review-section").get_by_label("評分")
+______________ test_hidden_share_rejects_javascript_url[chromium] ______________
+e2e/test_product_flow.py:466: in test_hidden_share_rejects_javascript_url
+    _submit_share(page, "p3 壞連結", "內容", "javascript:alert(1)")
+e2e/test_product_flow.py:382: in _submit_share
+    section.get_by_label("標題").fill(title)
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11664: in fill
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:352: in fill
+    return await self._frame.fill(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:736: in fill
+    return await self._channel.fill(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_test_id("share-section").get_by_label("標題")
+____ test_hidden_share_javascript_url_in_db_not_rendered_as_link[chromium] _____
+e2e/test_product_flow.py:481: in test_hidden_share_javascript_url_in_db_not_rendered_as_link
+    expect(item).to_have_count(1)
+E   AssertionError: Locator expected to have count '1'
+E   Actual value: 0 
+E   Call log:
+E     - Expect "to_have_count" get_by_test_id("share-item") with timeout 5000ms
+E     - waiting for get_by_test_id("share-item")
+E       14 × locator resolved to 0 elements
+E          - unexpected value "0"
+_______________ test_review_submit_with_expired_token[chromium] ________________
+e2e/test_product_flow.py:492: in test_review_submit_with_expired_token
+    expect(_review_section(page).get_by_role("button", name="送出評論")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_test_id("review-section").get_by_role("button", name="送出評論") with timeout 5000ms
+E     - waiting for get_by_test_id("review-section").get_by_role("button", name="送出評論")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！p3-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！p3-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/tour/8fb37133-36a9-471c-a3c9-ec16fcc47be4#"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "p3-ab04505a" [level=2]
+E   - heading "測試標語" [level=4]
+E   - img "p3-ab04505a"
+E   - paragraph: NT$1,000
+E   - paragraph: 出發日期：自由選擇
+E   - paragraph: 探索冒險 放鬆療癒 文化體驗
+E   - paragraph: 測試描述
+E   - paragraph:
+E     - text: 測試國 測試區 測試地址
+E     - link "Google Map":
+E       - /url: https://maps.example.com/x
+E   - button "加入購物車（即將開放）" [disabled]
+E   - img "圖1"
+E   - paragraph: 圖1
+E   - img "圖2"
+E   - paragraph: 圖2
+E   - img "圖3"
+E   - paragraph: 圖3
+E   - img "圖4"
+E   - paragraph: 圖4
+E   - img "圖5"
+E   - paragraph: 圖5
+E   - img "圖6"
+E   - paragraph: 圖6
+E   - heading "行程特色" [level=3]
+E   - paragraph: 特色1
+E   - img "特色1"
+E   - paragraph: 特色2
+E   - img "特色2"
+E   - paragraph: 特色3
+E   - img "特色3"
+E   - heading "行程規劃" [level=3]
+E   - paragraph: 測試行程規劃
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+_________________ test_reviews_and_shares_load_more[chromium] __________________
+e2e/test_product_flow.py:519: in test_reviews_and_shares_load_more
+    expect(reviews).to_have_count(5)
+E   AssertionError: Locator expected to have count '5'
+E   Actual value: 0 
+E   Call log:
+E     - Expect "to_have_count" get_by_test_id("review-item") with timeout 5000ms
+E     - waiting for get_by_test_id("review-item")
+E       14 × locator resolved to 0 elements
+E          - unexpected value "0"
+=========================== short test summary info ============================
+FAILED e2e/test_product_flow.py::test_product_main_flow[chromium] - Assertion...
+FAILED e2e/test_product_flow.py::test_guest_sees_login_hint[chromium] - Asser...
+FAILED e2e/test_product_flow.py::test_member_without_purchase_sees_purchase_hint[chromium]
+FAILED e2e/test_product_flow.py::test_review_html_rendered_as_text[chromium]
+FAILED e2e/test_product_flow.py::test_hidden_share_rejects_javascript_url[chromium]
+FAILED e2e/test_product_flow.py::test_hidden_share_javascript_url_in_db_not_rendered_as_link[chromium]
+FAILED e2e/test_product_flow.py::test_review_submit_with_expired_token[chromium]
+FAILED e2e/test_product_flow.py::test_reviews_and_shares_load_more[chromium]
+========================= 8 failed in 94.15s (0:01:34) =========================

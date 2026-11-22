@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 82 items / 81 deselected / 1 selected
+
+tests/test_product_write.py::test_post_hidden_share_url_is_trimmed FAILED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_post_hidden_share_url_is_trimmed _____________________
+tests/test_product_write.py:667: in test_post_hidden_share_url_is_trimmed
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"failed","message":"「url」必須是 http 或 https 網址"}
+E   assert 400 == 201
+E    +  where 400 = <Response [400]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_product_write.py::test_post_hidden_share_url_is_trimmed - A...
+======================= 1 failed, 81 deselected in 0.21s =======================

@@ -394,16 +394,18 @@ def test_login_response_has_avatar_url(api, db, make_user):
     assert r.json()["data"]["user"]["avatar_url"] == url
 
 
-@pytest.mark.xfail(strict=True, reason="P3：PATCH /info 部分更新（只給 name）會 500；中介層假設 preference 必有")
 def test_patch_profile_info_name_only(api, db, make_user):
     user = make_user()
     r = api.patch(PROFILE_INFO, headers=auth_header(user), json={"name": "新名字"})
     assert r.status_code == 200, r.text
     (name,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
     assert name == "新名字"
+    prefs = db.execute(
+        'SELECT preference1, preference2, preference3 FROM "user" WHERE user_id = %s', (user["user_id"],)
+    ).fetchone()
+    assert tuple(prefs) == (1, 2, 3)
 
 
-@pytest.mark.xfail(strict=True, reason="P3：PATCH /info 部分更新（只給 preference）會 500；controller 一律寫入 name")
 def test_patch_profile_info_preference_only(api, db, make_user):
     user = make_user()
     (before,) = db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()
