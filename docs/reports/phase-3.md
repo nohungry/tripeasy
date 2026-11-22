@@ -156,7 +156,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 
 ### 2.1 使用的 skill
 
-**使用的 skill 與關鍵 prompt：未查證**（ledger 沒有逐項紀錄，請使用者在審閱時補）。以下流程可由 ledger 與 git log 確認的流程：P3 spec 經三輪 reviewer-opus 審查（commits `baf5f9b` → `9cd37b7` → `5480908` → `ac8cbdc`）；計畫完成後先做 pre-flight scan（掃描 540 行計畫對照 spec，找出 9 項 Findings，裁決成 Ruling PF1–PF9）；之後逐 Task 派 implementer 實作、reviewer 審查，結果記在 `.superpowers/sdd/2026-11-19-p3-product/progress.md`（以下稱 ledger）。
+**使用的 skill 與關鍵 prompt：未查證**（ledger 無紀錄，見附錄 B.4）。以下流程可由 ledger 與 git log 確認的流程：P3 spec 經三輪 reviewer-opus 審查（commits `baf5f9b` → `9cd37b7` → `5480908` → `ac8cbdc`）；計畫完成後先做 pre-flight scan（掃描 540 行計畫對照 spec，找出 9 項 Findings，裁決成 Ruling PF1–PF9）；之後逐 Task 派 implementer 實作、reviewer 審查，結果記在 `.superpowers/sdd/2026-11-19-p3-product/progress.md`（以下稱 ledger）。
 
 ### 2.2 使用者的決定
 
@@ -335,7 +335,7 @@ SQL
 
 ### A. 變更檔案清單
 
-**backend**（`main..phase-3`，9 個檔案，+321／−24）
+**backend**（`phase-2..phase-3`，9 個檔案，+326／−28）
 
 | 檔案 | 變更 |
 |---|---|
@@ -346,9 +346,9 @@ SQL
 | `src/controllers/userProfile.js`、`src/middlewares/userProfile/index.js` | PATCH `/info` 部分更新 |
 | `src/middlewares/product/index.js`、`src/routes/product.js`、`src/utils/Validator/product_Validator.js` | 三支新 API 的 middleware、路由、驗證 |
 
-**frontend**（`dev..phase-3`，18 個檔案）：`src/utils/api.js`、`src/router/index.js`、`src/components/HeaderComponent.vue`、`src/views/HomeView.vue`、`src/views/front/searchPage.vue`、`src/views/front/tourPage.vue`；刪除 `src/views/front/tourPageFake.vue`、`src/views/front/tourFakeUSA.vue` 與 `src/assets/img/tour/` 下 10 張圖。
+**frontend**（`phase-2..phase-3`，18 個檔案）：`src/utils/api.js`、`src/router/index.js`、`src/components/HeaderComponent.vue`、`src/views/HomeView.vue`、`src/views/front/searchPage.vue`、`src/views/front/tourPage.vue`；刪除 `src/views/front/tourPageFake.vue`、`src/views/front/tourFakeUSA.vue` 與 `src/assets/img/tour/` 下 10 張圖。
 
-**總覽**（`main..phase-3`，不含 evidence）
+**總覽**（`phase-2..phase-3`，不含 evidence）
 
 | 檔案 | 變更 |
 |---|---|
@@ -365,17 +365,17 @@ SQL
 **B.1 P1 遺留第 4 項（P3 spec §8 C14）重申：P3 沒有改 `R__views_functions.sql` 與 `tests/db_contract.py`。**
 
 ```
-$ git -C backend diff --stat main..phase-3 -- migrations/R__views_functions.sql
+$ git -C backend diff --stat phase-2..phase-3 -- migrations/R__views_functions.sql
 （無輸出）
-$ git diff --stat main..phase-3 -- tests/db_contract.py
+$ git diff --stat phase-2..phase-3 -- tests/db_contract.py
 （無輸出）
-$ git -C backend diff --name-only main..phase-3 | grep -c 'R__'
+$ git -C backend diff --name-only phase-2..phase-3 | grep -c 'R__'
 0
-$ git diff --name-only main..HEAD | grep -c 'db_contract.py'
+$ git diff --name-only phase-2..phase-3 | grep -c 'db_contract.py'
 0
 ```
 
-（`git diff --stat main..phase-3` 的完整檔案清單見附錄 A；`docs/db-contract.md`（契約文字）有改，`tests/db_contract.py`（契約測試輔助）沒有。）所以 P1 遺留的兩項限制仍然成立：`R__views_functions.sql` 的 DROP 清單寫死；`tests/db_contract.py` 不比對契約文字。
+（`git diff --stat phase-2..phase-3` 的完整檔案清單見附錄 A；`docs/db-contract.md`（契約文字）有改，`tests/db_contract.py`（契約測試輔助）沒有。）所以 P1 遺留的兩項限制仍然成立：`R__views_functions.sql` 的 DROP 清單寫死；`tests/db_contract.py` 不比對契約文字。
 
 **B.2 P3 spec §8 的延後項**
 
