@@ -1,11 +1,9 @@
 # Phase 3：商品（列表、搜尋、詳情、評論與隱藏玩法）
-> **初稿，待使用者審閱**（2026-11-19 起草） · backend tag `phase-3`（分支最後 commit `adffa31`；已合併至 `main`，合併 commit `06ded19`，tag `phase-3` 指向合併 commit） · frontend tag `phase-3`（分支最後 commit `9940fa1`；已合併至 `dev`，合併 commit `ae9b824`，tag `phase-3` 指向合併 commit） · 總覽 repo 分支 `phase-3`（起草時 `d73a78d`，起點 `ac8cbdc`；之後的修正與最後 commit 見附錄 C 與 `git log`）；總覽 repo 已合併至 `main`，合併 commit `34d2a7c`（README 版本對照表加 P3 為 `433ac28`），tag `phase-3` 指向合併 commit。三個 repo 的主分支與 tag 已於 2026-11-22 push
+> 2026-11-22（定稿） · backend tag `phase-3`（merge commit `06ded19`；分支最後一個 commit `adffa31`） · frontend tag `phase-3`（merge commit `ae9b824`；分支最後一個 commit `9940fa1`） · 總覽 tag `phase-3`（merge commit `34d2a7c`；分支最後一個 commit `433ac28`）
 >
 > 本報告依 `docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md` §5 範本與 `docs/reports/phase-2.md` 的格式撰寫。設計見 `docs/superpowers/specs/2026-11-19-p3-product-design.md`（以下稱「P3 spec」），計畫見 `docs/superpowers/plans/2026-11-19-p3-product.md`。引用一律以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
 > 行號基準：P3 之前就存在的問題，行號取自 backend `main`（`3d835a6`）／frontend `dev`（`71a2171`）修正前，多數沿用 P3 spec 的實測行號。
->
-> **本稿尚缺**：(1) §2.1 使用的 skill 與關鍵 prompt（ledger 沒有紀錄，仍標「未查證」，需使用者補）。
 
 ## 0. 摘要
 
@@ -166,6 +164,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 - 2026-11-19：「購買數」＝ `order_item` 列數，不乘 `quantity`（Task 5 雙審時以 AskUserQuestion 確認）。
 - 2026-11-19：Task 1 完成後經同意 push 總覽 `phase-3` 跑 CI（覆蓋計畫 Constraint 2「Task 13 前不 push」，Ruling PF4）。
 - 2026-11-19：Task 13 Step 1 前由使用者自己執行 `docker compose down -v`（乾淨 volume）。
+- 2026-11-22：略過 §4.3 手動實測直接合併；合併後刪除三個 repo 的 `phase-3` 分支（本機與遠端）。
 
 ### 2.3 Fable vs Opus review 對照
 
@@ -177,7 +176,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 | 5 V4 與契約 | ❌ C1（措辭）＋ M1–M4 | ❌ C1 ＋ I1–I3 | 一致：C1（「購買數」裁決的措辭）；約束名稱與對照組的分辨力，fable 列 Important、opus 列 Minor。C1 由使用者確認購買數而解決 |
 | 6 資格與寫評論 API | spec ✅、安全無漏洞、無 Critical | spec ✅、安全無漏洞、無 Critical | 共同 Important：23505 確定性測試、`payment_status` 兩表分辨；fable 另列 I3（eligibility 缺 400／下架 404），opus 列 Minor |
 | 8 前端 401／timer | spec ✅、無 Critical | spec ✅、無 Critical | fable I1–I3（guard 覆蓋、401 提示內容、時間競爭）≈ opus Minor 1–3 |
-| 13／整支分支（最終審查） | 0 Critical、2 Important（I1 搜尋日期與天數互斥且 400 顯示「載入失敗」、I2 refs `phase-3` 分支／tag 歧義）、8 Minor | 0 Critical、2 Important（I1 過期 token E2E 斷言順序、I2 報告誤稱有 admin E2E）、12 Minor | 四個 Important 互不重疊，全數處理（I1 經使用者裁決改後端為「天數 ≤ 區間涵蓋天數」並讓前端顯示 400 訊息；I2 已合併並打 tag；三個 repo 的 `phase-3` 分支尚未刪除，刪除為下一步，遠端刪除逐次詢問）。opus M2（詳情頁不 watch `tour_id`）被 fable 以 `App.vue` 的 `:key="$route.fullPath"` 反證，不修。之後共 3 輪修正與複審：第 1 輪複審 opus 新增 1 個 Important（`end_date` 以 00:00 比對，seed 行程結束於 23:59:59，剛好塞滿區間查不到；opus 以 curl 實測成立，fable 未查 seed）、fable 0 Important，使用者裁決 `end_date` 改含當天；第 2 輪複審 opus 1 項必修（本節仍寫待補）、fable 3 個 Important（寬區間缺區間內斷言、本稿尚缺與本節矛盾、`wait_for_timeout` 無鑑別力）；第 3 輪（只改測試與文件）複審只派 reviewer-opus（見附錄 C）。詳見 ledger `progress.md` 的 Final review、Fix re-review、Fix2 re-review 各行 |
+| 13／整支分支（最終審查） | 0 Critical、2 Important（I1 搜尋日期與天數互斥且 400 顯示「載入失敗」、I2 refs `phase-3` 分支／tag 歧義）、8 Minor | 0 Critical、2 Important（I1 過期 token E2E 斷言順序、I2 報告誤稱有 admin E2E）、12 Minor | 四個 Important 互不重疊，全數處理（I1 經使用者裁決改後端為「天數 ≤ 區間涵蓋天數」並讓前端顯示 400 訊息；I2 已合併打 tag，並於 2026-11-22 刪除三個 repo 的 `phase-3` 分支（本機與遠端），歧義解除）。opus M2（詳情頁不 watch `tour_id`）被 fable 以 `App.vue` 的 `:key="$route.fullPath"` 反證，不修。之後共 3 輪修正與複審：第 1 輪複審 opus 新增 1 個 Important（`end_date` 以 00:00 比對，seed 行程結束於 23:59:59，剛好塞滿區間查不到；opus 以 curl 實測成立，fable 未查 seed）、fable 0 Important，使用者裁決 `end_date` 改含當天；第 2 輪複審 opus 1 項必修（本節仍寫待補）、fable 3 個 Important（寬區間缺區間內斷言、本稿尚缺與本節矛盾、`wait_for_timeout` 無鑑別力）；第 3 輪（只改測試與文件）複審只派 reviewer-opus（見附錄 C）。詳見 ledger `progress.md` 的 Final review、Fix re-review、Fix2 re-review 各行 |
 
 單審的 Task（2、3、4、7、9、10、11、12）共抓出的 Important：Task 3 價格排序測試無分辨力；Task 7 `url` 缺 `.trim()`（spec ✅ 但計畫漏寫）；Task 9 `load()` 把 500 也顯示查無；Task 11 `_api_titles` 空回應 KeyError；Task 12 資格載入前就渲染預設狀態。皆已在 fix round 修好（詳見 ledger）。
 
@@ -252,7 +251,7 @@ P3 的目標：讓「首頁 → 搜尋 → 詳情 → 讀評論與隱藏玩法 �
 - 每個檔案的通過數（第 2 次）：`tests/` 下 `test_member_auth.py` 83、`test_product_write.py` 82、`test_db_contract.py` 45、`test_api_smoke.py` 36、`test_seed.py` 29、`test_views_b.py` 24、`test_google_login.py` 23、`test_views_a.py` 22、`test_product_read.py` 19（第 2 輪修正後 23）、`test_migrations.py` 15、`test_views_c.py` 13、`test_infra.py` 12、`test_product_routes.py` 8、`test_build_seed.py` 7、`test_frontend.py` 5、`test_storage.py` 3、`test_oauth_spike.py` 2、`test_async_errors.py`／`test_health.py`／`test_mail.py` 各 1；`e2e/` 下 `test_product_flow.py` 41、`test_member_flow.py` 27。
 - **GitHub Actions**：Task 1 當時的 run `44448611062`（rerun）為綠燈，341 passed 2 xfailed，uv 0.13.9、CPython 3.13.18。
 - **`phase-3` 分支的 GitHub Actions run `44496092927`**：綠燈，505 passed（pytest 115.99s），整個 run 從 09:24:17Z 到 09:33:27Z，約 9m10s（含 `docker compose up --build`、`playwright install --with-deps`）。
-- **合併後的 GitHub Actions run**（2026-11-22 push 主分支與 tag 後觸發，皆綠燈、505 passed）：`main` 的 run `45008564851`（總耗時 3m34s，pytest 114.82s）；`phase-3` tag 的 run `45008564712`（總耗時 3m38s）。
+- **合併後的 GitHub Actions run**（2026-11-22 push 主分支與 tag 後觸發，皆綠燈、505 passed）：`main` 的 run `45008564851`（總耗時 3m34s，pytest 114.82s）；`phase-3` tag 的 run `45008564712`（總耗時 3m38s，pytest 115.75s）。
 - **`timeout-minutes: 30` 的理由**：job 預設逾時是 360 分鐘，真卡死時會空轉 6 小時。實測佐證：本機 `ci.sh` 全程約 2–3 分鐘；GitHub runner 上 run `44496092927` 總耗時約 9m10s（apt 鏡像慢時 `playwright install` 還會多出數分鐘）。30 分鐘約是實測耗時的 3 倍多，能容納鏡像變慢，又能擋住真卡死。若之後正常耗時逼近 20 分鐘，應改值而不是單純拉高。
 
 ## 4. 操作指南
@@ -266,7 +265,7 @@ git clone -b "$(grep FRONTEND_REF refs.env | cut -d= -f2)" https://github.com/no
 scripts/ci.sh        # 啟動全部服務並跑測試
 ```
 
-需要 Docker（含 Compose v2）與 [uv](https://docs.astral.sh/uv/)；服務網址同 `docs/reports/phase-0.md` §4.1。目前 `refs.env` 是 `BACKEND_REF=phase-3`、`FRONTEND_REF=phase-3`；**合併與打 tag 之後（Step 6）它指的才是 tag**，目前指的是分支。一次只能跑一個 pytest／`ci.sh`：session 開頭會 purge 測試資料，並行會互刪。
+需要 Docker（含 Compose v2）與 [uv](https://docs.astral.sh/uv/)；服務網址同 `docs/reports/phase-0.md` §4.1。目前 `refs.env` 是 `BACKEND_REF=phase-3`、`FRONTEND_REF=phase-3`；`phase-3` 是 tag（指向合併 commit），同名分支已於 2026-11-22 刪除，所以 `clone -b phase-3` 取得的就是 tag。一次只能跑一個 pytest／`ci.sh`：session 開頭會 purge 測試資料，並行會互刪。
 
 ### 4.2 測試帳號
 
@@ -274,7 +273,7 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 
 ### 4.3 手動實測
 
-> **未實測說明**：使用者於 2026-11-22 選擇略過本節手動實測、直接合併；先前未實跑的 seed 帳號 POST 403 curl 因此仍未實測。
+> **未實測說明**：使用者於 2026-11-22 選擇略過本節手動實測、直接合併，因此本節的步驟從未實跑：唯讀示範 1–4 的畫面操作、以 seed 帳號 alice／bob 對評論 API 發 POST、預期 403 的兩個 curl（(a)、(b)），以及「示範 201」的註冊帳號與 SQL 補訂單。（唯讀示範第 4 項的 400 訊息僅以 curl 對照 API 查證，不是照本節操作畫面。）
 
 前提：以下指令都在總覽 repo 根目錄（`/home/nohungry/project/tripeasy`，`docker-compose.yml` 與 `pyproject.toml` 所在處）執行，服務已啟動（`docker compose up -d`）。
 
@@ -423,6 +422,10 @@ $ git diff --name-only main..HEAD | grep -c 'db_contract.py'
 - Task 11：搜尋測試依賴 seed 內容；`min>max` 等 400 顯示「載入失敗」誤導（已於最終修正波修正）；同關鍵字重複導航不重查；「自由選擇」文案為新增；ILIKE 萬用字元（既有後端）。
 - Task 12：列表讀取失敗顯示「目前還沒有評論」誤導；共用 `submitting` 旗標；XSS 只驗評論未驗玩法 `title`／`content`；409 後重讀資格失敗成為未處理 rejection（只在 console）；（admin 詳情頁 E2E 已於最終修正波補上）。
 
+**B.4 報告本身的限制**
+
+- §2.1 使用的 skill 與關鍵 prompt 未查證（ledger 無紀錄）。
+- §4.3 手動實測未執行（使用者 2026-11-22 決定略過直接合併）。
 
 ### 附錄 C 最終審查修正波（2026-11-19）
 
