@@ -3,7 +3,7 @@
 >
 > 本報告依 `docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md` §5 範本與 `docs/reports/phase-2.md` 的格式撰寫。設計見 `docs/superpowers/specs/2026-11-19-p3-product-design.md`（以下稱「P3 spec」），計畫見 `docs/superpowers/plans/2026-11-19-p3-product.md`。引用一律以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
-> 行號基準：P3 之前就存在的問題，行號取自 backend `main`（`3d835a6`）／frontend `dev`（`71a2171`）修正前，多數沿用 P3 spec 的實測行號。
+> 行號基準：P3 之前就存在的問題，行號取自 tag `phase-2`（backend `3d835a6`／frontend `71a2171`）修正前，多數沿用 P3 spec 的實測行號。
 
 ## 0. 摘要
 
@@ -348,7 +348,7 @@ SQL
 
 **frontend**（`phase-2..phase-3`，18 個檔案）：`src/utils/api.js`、`src/router/index.js`、`src/components/HeaderComponent.vue`、`src/views/HomeView.vue`、`src/views/front/searchPage.vue`、`src/views/front/tourPage.vue`；刪除 `src/views/front/tourPageFake.vue`、`src/views/front/tourFakeUSA.vue` 與 `src/assets/img/tour/` 下 10 張圖。
 
-**總覽**（`phase-2..phase-3`，不含 evidence）
+**總覽**（`ac8cbdc..phase-3`，不含 evidence；`ac8cbdc` 是 P3 分支起點，即 `phase-3^1..phase-3`）
 
 | 檔案 | 變更 |
 |---|---|
@@ -357,8 +357,9 @@ SQL
 | `tests/test_migrations.py`、`tests/test_member_auth.py` | V4 測試、移除 2 個 xfail |
 | `e2e/test_product_flow.py`（新）、`e2e/test_member_flow.py`、`e2e/conftest.py` | 商品 E2E、401／timer 回歸 |
 | `docs/db-contract.md` | §6 V4、購買數裁決 |
+| `README.md`（`433ac28`） | 版本對照表加入 P3 |
 | `docs/reports/phase-2.md`、`docs/reports/phase-3.md`（本檔）、`docs/reports/evidence/phase-3/` | 報告與 evidence |
-| `.github/workflows/ci.yml`、`pyproject.toml`、`uv.lock`、`refs.env` | CI 鎖版與 timeout、Python 上限、分支指向 |
+| `.github/workflows/ci.yml`、`pyproject.toml`、`uv.lock`、`refs.env` | CI 鎖版與 timeout、Python 上限、指向 tag `phase-3` |
 
 ### B. 已知限制
 
@@ -367,15 +368,15 @@ SQL
 ```
 $ git -C backend diff --stat phase-2..phase-3 -- migrations/R__views_functions.sql
 （無輸出）
-$ git diff --stat phase-2..phase-3 -- tests/db_contract.py
+$ git diff --stat ac8cbdc..phase-3 -- tests/db_contract.py
 （無輸出）
 $ git -C backend diff --name-only phase-2..phase-3 | grep -c 'R__'
 0
-$ git diff --name-only phase-2..phase-3 | grep -c 'db_contract.py'
+$ git diff --name-only ac8cbdc..phase-3 | grep -c 'db_contract.py'
 0
 ```
 
-（`git diff --stat phase-2..phase-3` 的完整檔案清單見附錄 A；`docs/db-contract.md`（契約文字）有改，`tests/db_contract.py`（契約測試輔助）沒有。）所以 P1 遺留的兩項限制仍然成立：`R__views_functions.sql` 的 DROP 清單寫死；`tests/db_contract.py` 不比對契約文字。
+（總覽 repo `git diff --stat ac8cbdc..phase-3` 與 backend／frontend `phase-2..phase-3` 的完整檔案清單見附錄 A；`docs/db-contract.md`（契約文字）有改，`tests/db_contract.py`（契約測試輔助）沒有。）所以 P1 遺留的兩項限制仍然成立：`R__views_functions.sql` 的 DROP 清單寫死；`tests/db_contract.py` 不比對契約文字。
 
 **B.2 P3 spec §8 的延後項**
 
@@ -426,6 +427,7 @@ $ git diff --name-only phase-2..phase-3 | grep -c 'db_contract.py'
 
 - §2.1 使用的 skill 與關鍵 prompt 未查證（ledger 無紀錄）。
 - §4.3 手動實測未執行（使用者 2026-11-22 決定略過直接合併）。
+- 總覽 repo 的 tag `phase-3` 內的本報告是合併當下的初稿版（tag 不移動）；定稿（含合併資訊）在其後的 `main`，請以 `main` 的版本為準。
 
 ### 附錄 C 最終審查修正波（2026-11-19）
 
