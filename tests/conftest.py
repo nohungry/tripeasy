@@ -207,6 +207,21 @@ def add_to_cart(api, user, tour, people=1, start_date=None, end_date=None):
     return api.post(f"{CART_API}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
 
 
+CHECKOUT_API = "/api/v1/user/checkout"
+
+
+def checkout(api, user, tours: list[dict]) -> str:
+    """依序把每個行程（make_tour 回傳的 dict）加入購物車，再用該會員的購物車建單；回傳 order_id。"""
+    for tour in tours:
+        r = add_to_cart(api, user, tour)
+        assert r.status_code == 201, r.text
+    with psycopg.connect(**_db_params(), autocommit=True) as conn:
+        (cart_id,) = conn.execute("SELECT cart_id FROM cart WHERE user_id = %s", (user["user_id"],)).fetchone()
+    r = api.post(f"{CHECKOUT_API}/order/{cart_id}", headers=auth_header(user), timeout=5)
+    assert r.status_code == 200, r.text
+    return r.json()["data"]["order_id"]
+
+
 CAPTCHA_TTL_MS = 5 * 60 * 1000
 
 

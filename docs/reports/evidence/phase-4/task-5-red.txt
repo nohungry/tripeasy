@@ -1,0 +1,129 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 50 items / 35 deselected / 15 selected
+
+tests/test_trade_checkout.py::test_create_order_includes_every_cart_item FAILED [  6%]
+tests/test_trade_checkout.py::test_create_order_snapshots_promo_price FAILED [ 13%]
+tests/test_trade_checkout.py::test_create_order_empty_cart_is_400 FAILED [ 20%]
+tests/test_trade_checkout.py::test_create_order_cancels_previous_pending FAILED [ 26%]
+tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending FAILED [ 33%]
+tests/test_trade_checkout.py::test_create_order_keeps_cart PASSED        [ 40%]
+tests/test_trade_checkout.py::test_other_users_cart_is_404 FAILED        [ 46%]
+tests/test_trade_checkout.py::test_other_users_summary_is_404 FAILED     [ 53%]
+tests/test_trade_checkout.py::test_other_users_userinfo_is_404 FAILED    [ 60%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order FAILED  [ 66%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_order_with_payment_in_progress FAILED [ 73%]
+tests/test_trade_checkout.py::test_summary_get_point_is_floor_of_payable FAILED [ 80%]
+tests/test_trade_checkout.py::test_payable_treats_zero_discount_price_as_no_promo FAILED [ 86%]
+tests/test_trade_checkout.py::test_payable_matches_seed_paid_orders FAILED [ 93%]
+tests/test_api_smoke.py::test_checkout_summary_unpaid_order PASSED       [100%]
+
+=================================== FAILURES ===================================
+__________________ test_create_order_includes_every_cart_item __________________
+tests/test_trade_checkout.py:33: in test_create_order_includes_every_cart_item
+    assert db.execute("SELECT count(*) FROM order_item WHERE order_id = %s", (order_id,)).fetchone()[0] == 2
+E   assert 1 == 2
+___________________ test_create_order_snapshots_promo_price ____________________
+tests/test_trade_checkout.py:46: in test_create_order_snapshots_promo_price
+    assert rows[plain["tour_id"]] is None
+E   KeyError: '81f82db9-280f-4a84-81b1-81488b85270e'
+_____________________ test_create_order_empty_cart_is_400 ______________________
+tests/test_trade_checkout.py:62: in test_create_order_empty_cart_is_400
+    assert r.status_code == 400
+E   assert 500 == 400
+E    +  where 500 = <Response [500]>.status_code
+__________________ test_create_order_cancels_previous_pending __________________
+tests/test_trade_checkout.py:72: in test_create_order_cancels_previous_pending
+    assert _statuses(db, first) == (2, {2})
+E   AssertionError: assert (-1, {-1}) == (2, {2})
+E     
+E     At index 0 diff: -1 != 2
+E     
+E     Full diff:
+E       (
+E     -     2,
+E     ?     ^...
+E     
+E     ...Full output truncated (9 lines hidden), use '-vv' to show
+______________ test_create_order_concurrently_leaves_one_pending _______________
+tests/test_trade_checkout.py:87: in test_create_order_concurrently_leaves_one_pending
+    assert pending == 1
+E   assert 2 == 1
+_________________________ test_other_users_cart_is_404 _________________________
+tests/test_trade_checkout.py:101: in test_other_users_cart_is_404
+    assert r.status_code == 404
+E   assert 500 == 404
+E    +  where 500 = <Response [500]>.status_code
+_______________________ test_other_users_summary_is_404 ________________________
+tests/test_trade_checkout.py:110: in test_other_users_summary_is_404
+    assert r.status_code == 404
+E   assert 500 == 404
+E    +  where 500 = <Response [500]>.status_code
+_______________________ test_other_users_userinfo_is_404 _______________________
+tests/test_trade_checkout.py:118: in test_other_users_userinfo_is_404
+    assert r.status_code == 404
+E   assert 200 == 404
+E    +  where 200 = <Response [200]>.status_code
+______________________ test_summary_expires_overdue_order ______________________
+tests/test_trade_checkout.py:128: in test_summary_expires_overdue_order
+    assert r.json()["data"]["summary"]["payment_status"] == 4
+E   KeyError: 'payment_status'
+_________ test_summary_does_not_expire_order_with_payment_in_progress __________
+tests/test_trade_checkout.py:143: in test_summary_does_not_expire_order_with_payment_in_progress
+    assert r.json()["data"]["summary"]["payment_status"] == -1
+E   KeyError: 'payment_status'
+__________________ test_summary_get_point_is_floor_of_payable __________________
+tests/test_trade_checkout.py:151: in test_summary_get_point_is_floor_of_payable
+    assert summary["payable"] == 1005
+E   KeyError: 'payable'
+_____________ test_payable_treats_zero_discount_price_as_no_promo ______________
+tests/test_trade_checkout.py:161: in test_payable_treats_zero_discount_price_as_no_promo
+    assert summary["promo_subtotal"] == summary["total_price"]
+E   KeyError: 'promo_subtotal'
+____________________ test_payable_matches_seed_paid_orders _____________________
+tests/test_trade_checkout.py:200: in test_payable_matches_seed_paid_orders
+    assert proc.returncode == 0, proc.stderr
+E   AssertionError: node:internal/modules/cjs/loader:1228
+E       throw err;
+E       ^
+E     
+E     Error: Cannot find module './src/utils/trade'
+E     Require stack:
+E     - /usr/backend/[eval]
+E         at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+E         at Function._load (node:internal/modules/cjs/loader:1055:27)
+E         at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+E         at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+E         at Module.require (node:internal/modules/cjs/loader:1311:12)
+E         at require (node:internal/modules/helpers:136:16)
+E         at [eval]:3:28
+E         at runScriptInThisContext (node:internal/vm:209:10)
+E         at node:internal/process/execution:449:12
+E         at [eval]-wrapper:6:24 {
+E       code: 'MODULE_NOT_FOUND',
+E       requireStack: [ '/usr/backend/[eval]' ]
+E     }
+E     
+E     Node.js v22.14.0
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'compose', 'exec', '-T', 'backend', 'node', '-e', "\nconst { pool } = require('./src/config/database');\nconst { computePayable } = require('./src/utils/trade');\n(async () => {\n  const ids = JSON.parse(process.argv[1]);\n  const client = await pool.connect();\n  const out = {};\n  try {\n    await client.query('BEGIN');\n    for (const id of ids) out[id] = (await computePayable(client, id)).payable;\n  } finally {\n    await client.query('ROLLBACK');\n    client.release();\n  }\n  console.log('RESULT' + JSON.stringify(out));\n  process.exit(0);\n})().catch((e) => { console.error(e); process.exit(1); });\n", '["b294a0bd-a29b-40c9-8228-721c0e31899e", "271f2096-cf89-428c-8087-5647fdc99339", "b020fdc5-5c7d-419d-b24f-fde477c82d27", "e3447913-9796-456b-a66b-dce3aafbbb8b", "14dcadc5-26be-4868-8b84-c6651b2452a5", "ffc9a14e-0f11-43ce-9b7a-588c52ca02dc", "9fa3756a-2625-4c3e-8581-d44f032c5894", "991f0bb9-e8fd-47b4-9019-6fbd7952dbe1", "3a2ca85d-2384-40a7-b970-69821733277a", "c50b5a31-084a-4071-a1bc-ed84b2dfdf03", "5a8d9174-3da6-4cb7-b3f6-ceb395dfba50", "a1efba0e-62f7-4234-91ce-25eb8caa57ce", "7650668e-16e8-4107-a63c-56e49805705a", "229652ef-084a-411d-8564-614aefe78256", "75ae017f-9925-4728-98cc-f4cdf1e726f3"]'], returncode=1, stdout='✅ 使用預設 .env.example\n', stderr="node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module './src/utils/trade'\nRequire stack:\n- /usr/backend/[eval]\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Module.require (node:internal/modules/cjs/loader:1311:12)\n    at require (node:internal/modules/helpers:136:16)\n    at [eval]:3:28\n    at runScriptInThisContext (node:internal/vm:209:10)\n    at node:internal/process/execution:449:12\n    at [eval]-wrapper:6:24 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [ '/usr/backend/[eval]' ]\n}\n\nNode.js v22.14.0\n").returncode
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_create_order_includes_every_cart_item
+FAILED tests/test_trade_checkout.py::test_create_order_snapshots_promo_price
+FAILED tests/test_trade_checkout.py::test_create_order_empty_cart_is_400 - as...
+FAILED tests/test_trade_checkout.py::test_create_order_cancels_previous_pending
+FAILED tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending
+FAILED tests/test_trade_checkout.py::test_other_users_cart_is_404 - assert 50...
+FAILED tests/test_trade_checkout.py::test_other_users_summary_is_404 - assert...
+FAILED tests/test_trade_checkout.py::test_other_users_userinfo_is_404 - asser...
+FAILED tests/test_trade_checkout.py::test_summary_expires_overdue_order - Key...
+FAILED tests/test_trade_checkout.py::test_summary_does_not_expire_order_with_payment_in_progress
+FAILED tests/test_trade_checkout.py::test_summary_get_point_is_floor_of_payable
+FAILED tests/test_trade_checkout.py::test_payable_treats_zero_discount_price_as_no_promo
+FAILED tests/test_trade_checkout.py::test_payable_matches_seed_paid_orders - ...
+================= 13 failed, 2 passed, 35 deselected in 1.79s ==================
