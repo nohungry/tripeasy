@@ -189,6 +189,24 @@ def auth_header(user: dict) -> dict:
     return {"Authorization": f"Bearer {login_token(user)}"}
 
 
+CART_API = "/api/v1/user/trade/cart"
+
+
+def add_to_cart(api, user, tour, people=1, start_date=None, end_date=None):
+    """POST 加入購物車。tour 是 make_tour 回傳的 dict（取其 tour_id、type、item），不是 tour_id 字串。
+    start_date／end_date 為 YYYY-MM-DD，預設明天、後天；回傳 requests.Response。"""
+    today = datetime.date.today()
+    start_date = start_date or (today + datetime.timedelta(days=1)).isoformat()
+    end_date = end_date or (today + datetime.timedelta(days=2)).isoformat()
+    body = {
+        "type": tour["type"],
+        "item": tour["item"],
+        "people": people,
+        "options": {"start_date": start_date, "end_date": end_date},
+    }
+    return api.post(f"{CART_API}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
+
+
 CAPTCHA_TTL_MS = 5 * 60 * 1000
 
 

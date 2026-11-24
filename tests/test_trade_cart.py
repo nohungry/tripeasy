@@ -1,26 +1,12 @@
 """P4 Task 1：購物車與建立訂單的 controller 不可洩漏資料庫連線（pool max 10，迴圈 max + 5 次）。"""
 import datetime
 
-from conftest import auth_header
+from conftest import add_to_cart, auth_header
 
 POOL_MAX = 10  # backend/src/config/database.js 未設定 max，採 pg 預設 10
 LOOPS = POOL_MAX + 5
 CART = "/api/v1/user/trade/cart"
 CHECKOUT_ORDER = "/api/v1/user/checkout/order"
-
-
-def add_to_cart(api, user, tour, people=1, start_date=None, end_date=None):
-    """加入購物車；tour 為 make_tour 回傳的 dict（type／item 取自它）。日期預設明天、後天。"""
-    today = datetime.date.today()
-    start_date = start_date or (today + datetime.timedelta(days=1)).isoformat()
-    end_date = end_date or (today + datetime.timedelta(days=2)).isoformat()
-    body = {
-        "type": tour["type"],
-        "item": tour["item"],
-        "people": people,
-        "options": {"start_date": start_date, "end_date": end_date},
-    }
-    return api.post(f"{CART}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
 
 
 def _cart_item_id(db, user_id, tour_id) -> str:
