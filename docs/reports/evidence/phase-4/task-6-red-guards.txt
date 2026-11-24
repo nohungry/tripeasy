@@ -1,0 +1,112 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 44 items
+
+tests/test_trade_checkout.py::test_create_order_includes_every_cart_item PASSED [  2%]
+tests/test_trade_checkout.py::test_create_order_snapshots_promo_price PASSED [  4%]
+tests/test_trade_checkout.py::test_create_order_empty_cart_is_400 PASSED [  6%]
+tests/test_trade_checkout.py::test_create_order_cancels_previous_pending PASSED [  9%]
+tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending PASSED [ 11%]
+tests/test_trade_checkout.py::test_create_order_keeps_cart PASSED        [ 13%]
+tests/test_trade_checkout.py::test_other_users_cart_is_404 PASSED        [ 15%]
+tests/test_trade_checkout.py::test_other_users_summary_is_404 PASSED     [ 18%]
+tests/test_trade_checkout.py::test_other_users_userinfo_is_404 PASSED    [ 20%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order PASSED  [ 22%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_order_with_payment_in_progress PASSED [ 25%]
+tests/test_trade_checkout.py::test_summary_get_point_is_floor_of_payable PASSED [ 27%]
+tests/test_trade_checkout.py::test_payable_treats_zero_discount_price_as_no_promo PASSED [ 29%]
+tests/test_trade_checkout.py::test_summary_expires_when_payment_attempt_has_result PASSED [ 31%]
+tests/test_trade_checkout.py::test_summary_expires_when_payment_attempt_past_trade_limit PASSED [ 34%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_before_deadline PASSED [ 36%]
+tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500 PASSED [ 38%]
+tests/test_trade_checkout.py::test_payable_matches_seed_paid_orders PASSED [ 40%]
+tests/test_trade_checkout.py::test_coupon_subtracts_amount_on_promo_subtotal PASSED [ 43%]
+tests/test_trade_checkout.py::test_trial_discount_does_not_write PASSED  [ 45%]
+tests/test_trade_checkout.py::test_point_must_be_multiple_of_five PASSED [ 47%]
+tests/test_trade_checkout.py::test_point_reserves_and_limits_balance PASSED [ 50%]
+tests/test_trade_checkout.py::test_discount_must_leave_one_dollar PASSED [ 52%]
+tests/test_trade_checkout.py::test_coupon_reserved_by_other_order_is_409 PASSED [ 54%]
+tests/test_trade_checkout.py::test_preview_change_discount_releases_previous PASSED [ 56%]
+tests/test_trade_checkout.py::test_cancel_discount_releases_coupon PASSED [ 59%]
+tests/test_trade_checkout.py::test_cancel_discount_releases_points PASSED [ 61%]
+tests/test_trade_checkout.py::test_negative_balance_means_zero_available_points PASSED [ 63%]
+tests/test_trade_checkout.py::test_preview_other_users_order_is_404 PASSED [ 65%]
+tests/test_trade_checkout.py::test_trial_discount_other_users_order_is_404 PASSED [ 68%]
+tests/test_trade_checkout.py::test_cancel_discount_other_users_order_is_404 PASSED [ 70%]
+tests/test_trade_checkout.py::test_used_and_expired_coupon_rejected PASSED [ 72%]
+tests/test_trade_checkout.py::test_other_users_coupon_is_404 PASSED      [ 75%]
+tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once PASSED [ 77%]
+tests/test_trade_checkout.py::test_preview_on_expired_order_is_409 PASSED [ 79%]
+tests/test_trade_checkout.py::test_preview_on_paid_order_is_409 PASSED   [ 81%]
+tests/test_trade_checkout.py::test_expire_releases_point_reservation PASSED [ 84%]
+tests/test_trade_checkout.py::test_create_new_order_releases_point_reservation PASSED [ 86%]
+tests/test_trade_checkout.py::test_create_new_order_releases_coupon_reservation PASSED [ 88%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order_releases_coupon PASSED [ 90%]
+tests/test_trade_checkout.py::test_cancel_discount_on_paid_order_is_409 FAILED [ 93%]
+tests/test_trade_checkout.py::test_cancel_discount_on_expired_order_is_409 FAILED [ 95%]
+tests/test_trade_checkout.py::test_preview_while_payment_in_progress_is_409 FAILED [ 97%]
+tests/test_trade_checkout.py::test_cancel_discount_while_payment_in_progress_is_409 FAILED [100%]
+
+=================================== FAILURES ===================================
+__________________ test_cancel_discount_on_paid_order_is_409 ___________________
+tests/test_trade_checkout.py:615: in test_cancel_discount_on_paid_order_is_409
+    assert (r.status_code, r.json()["message"]) == (409, "訂單狀態不允許此操作")
+E   AssertionError: assert (200, '查詢成功') == (409, '訂單狀態不允許此操作')
+E     
+E     At index 0 diff: 200 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+_________________ test_cancel_discount_on_expired_order_is_409 _________________
+tests/test_trade_checkout.py:625: in test_cancel_discount_on_expired_order_is_409
+    assert (r.status_code, r.json()["message"]) == (409, "訂單已逾時")
+E   AssertionError: assert (200, '查詢成功') == (409, '訂單已逾時')
+E     
+E     At index 0 diff: 200 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+________________ test_preview_while_payment_in_progress_is_409 _________________
+tests/test_trade_checkout.py:637: in test_preview_while_payment_in_progress_is_409
+    assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
+E   AssertionError: assert (200, '資料更新成功') == (409, '付款進行中，請稍後再試')
+E     
+E     At index 0 diff: 200 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+____________ test_cancel_discount_while_payment_in_progress_is_409 _____________
+tests/test_trade_checkout.py:651: in test_cancel_discount_while_payment_in_progress_is_409
+    assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
+E   AssertionError: assert (200, '查詢成功') == (409, '付款進行中，請稍後再試')
+E     
+E     At index 0 diff: 200 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_cancel_discount_on_paid_order_is_409
+FAILED tests/test_trade_checkout.py::test_cancel_discount_on_expired_order_is_409
+FAILED tests/test_trade_checkout.py::test_preview_while_payment_in_progress_is_409
+FAILED tests/test_trade_checkout.py::test_cancel_discount_while_payment_in_progress_is_409
+========================= 4 failed, 40 passed in 5.86s =========================

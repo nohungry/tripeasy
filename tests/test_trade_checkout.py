@@ -589,3 +589,65 @@ def test_summary_expires_overdue_order_releases_coupon(api, db, make_user, make_
     assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 4
     assert _statuses(db, order_id) == (4, {4})
     assert _user_coupon(db, user, coupon) == (0, None)
+
+
+# ---- 已付款與付款進行中不得改折扣
+
+IN_PROGRESS = "付款進行中，請稍後再試"
+
+
+def _start_payment(db, user, order_id):
+    db.execute(
+        "INSERT INTO payment (user_id, order_id, payment_method, payment_status, result_time, created_at) "
+        "VALUES (%s, %s, 'credit_card', 0, NULL, now())",
+        (user["user_id"], order_id),
+    )
+
+
+def test_cancel_discount_on_paid_order_is_409(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
+    before = _order_discount(db, order_id)
+    db.execute("UPDATE orders SET payment_status = 1 WHERE order_id = %s", (order_id,))
+    r = cancel_discount(api, user, order_id)
+    assert (r.status_code, r.json()["message"]) == (409, "訂單狀態不允許此操作")
+    assert _order_discount(db, order_id) == before
+    assert _user_coupon(db, user, coupon) == (-1, order_id)
+
+
+def test_cancel_discount_on_expired_order_is_409(api, db, make_user, make_tour):
+    user = make_user()
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    _age_order(db, order_id)
+    r = cancel_discount(api, user, order_id)
+    assert (r.status_code, r.json()["message"]) == (409, "訂單已逾時")
+    assert _statuses(db, order_id) == (4, {4})
+
+
+def test_preview_while_payment_in_progress_is_409(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    first, second = make_coupon(user), make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "coupon", "coupon_id": first["coupon_id"]}).status_code == 200
+    before = _order_discount(db, order_id)
+    _start_payment(db, user, order_id)
+    r = preview(api, user, order_id, {"type": "coupon", "coupon_id": second["coupon_id"]})
+    assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
+    assert _user_coupon(db, user, first) == (-1, order_id)
+    assert _user_coupon(db, user, second) == (0, None)
+    assert _order_discount(db, order_id) == before
+
+
+def test_cancel_discount_while_payment_in_progress_is_409(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
+    before = _order_discount(db, order_id)
+    _start_payment(db, user, order_id)
+    r = cancel_discount(api, user, order_id)
+    assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
+    assert _user_coupon(db, user, coupon) == (-1, order_id)
+    assert _order_discount(db, order_id) == before
