@@ -630,9 +630,10 @@ def test_seed_user_coupons_point_to_rebuilt_orders(db):
         (EMAIL["alice"], "VIP300", 1, True, MALDIVES, 98000),  # 訂單 #4
         (EMAIL["carol"], "TRV010", 0, False, None, None),
     ], key=str)
-    # 優惠卷折抵：orders.discount_price = total_price - coupon.discount
+    # 優惠卷折抵：orders.discount_price = 促銷後金額 - coupon.discount
     rows = db.execute(
-        "SELECT o.total_price - c.discount, o.discount_price, o.discount_type"
+        "SELECT (SELECT sum(COALESCE(NULLIF(oi.discount_price, 0), oi.total_price)) FROM order_item oi"
+        " WHERE oi.order_id = o.order_id) - c.discount, o.discount_price, o.discount_type"
         " FROM user_coupon uc JOIN orders o USING (order_id) JOIN coupon c USING (coupon_id)"
     ).fetchall()
     assert all(a == b and kind == "coupon" for a, b, kind in rows) and len(rows) == 3
