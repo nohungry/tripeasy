@@ -1769,6 +1769,21 @@ V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applie
 
 V4 套用狀態由 `test_migrations.py::test_v4_applied` 與 `test_flyway_applied_v1_to_v4` 檢查。V4 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變。
 
+V5 套用狀態由 `test_migrations.py::test_flyway_applied_v1_to_v5` 檢查。
+
+### P4 表格約束（V5）
+
+`backend/migrations/V5__p4_trade.sql`（P4 spec §3）對 `payment` 新增一欄與兩項約束。不回填資料（seed 的 15 筆 `payment` 的 `merchant_order_no` 皆為 NULL），不改 view，所以 `R__views_functions.sql` 與 §1–§3 的契約型別都不受影響。
+
+| # | 變更 | 理由（P4 spec §3） | 對應測試 |
+|---|---|---|---|
+| 1 | 欄位 `payment.merchant_order_no VARCHAR(30) NULL` ＋ UNIQUE 約束 `payment_merchant_order_no_key (merchant_order_no)` | 付款編號（藍新 `MerchantOrderNo`）一對一對應一筆付款；NULL 不受唯一限制（seed 與舊資料為 NULL）。 | `test_migrations.py::test_payment_merchant_order_no_column`、`test_payment_merchant_order_no_unique`、`test_seed_payments_have_null_merchant_order_no` |
+| 2 | 部分唯一索引 `payment_order_paid_key ON payment (order_id) WHERE payment_status = 1` | 每張訂單最多一筆成功付款，併發重複通知由 DB 擋住；`payment_status = 0` 的列可並存。 | `test_migrations.py::test_payment_one_paid_per_order` |
+
+`payment` 欄位新增：`merchant_order_no`（`character varying(30)`，可為 NULL）。
+
+`point_record.type` 值域新增兩個值（不是 DB 約束，`type` 仍是 VARCHAR(50) NOT NULL）：`退款退回`（退款時退還已使用的點數）、`退款收回`（退款時收回已回饋的點數）。既有值為 `新增`、`減少`、`減少_確認中`。
+
 ### 購買資格（非 DB 物件）
 
 - **定義**（P3 spec §4.2 R1）：會員「購買過」某行程，是指存在該會員本人的 `orders`，其 `order_item` 屬於該行程且 `order_item.payment_status = 1`（已付款）。未付款、已取消、已退款、逾時、別人的訂單、別的行程的訂單都不算。
