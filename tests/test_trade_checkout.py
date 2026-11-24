@@ -4,7 +4,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from conftest import CART_API, CHECKOUT_API, ROOT, add_to_cart, auth_header, checkout, live_promotion
-from test_seed import _paid_by_order
+from test_seed import EMAIL, _paid_by_order
 
 
 def _cart_id(db, user) -> str:
@@ -162,6 +162,62 @@ def test_payable_treats_zero_discount_price_as_no_promo(api, db, make_user, make
     assert summary["payable"] == summary["total_price"]
 
 
+def _insert_attempt(db, user, order_id, *, result_time_sql, age_seconds):
+    db.execute(
+        "INSERT INTO payment (user_id, order_id, payment_method, payment_status, result_time, created_at) "
+        f"VALUES (%s, %s, 'credit_card', 0, {result_time_sql}, now() - make_interval(secs => %s))",
+        (user["user_id"], order_id, age_seconds),
+    )
+
+
+def test_summary_expires_when_payment_attempt_has_result(api, db, make_user, make_tour):
+    user = make_user()
+    order_id = checkout(api, user, [make_tour()])
+    _age_order(db, order_id)
+    _insert_attempt(db, user, order_id, result_time_sql="now()", age_seconds=0)
+    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 4
+    assert _statuses(db, order_id) == (4, {4})
+
+
+def test_summary_expires_when_payment_attempt_past_trade_limit(api, db, make_user, make_tour):
+    user = make_user()
+    order_id = checkout(api, user, [make_tour()])
+    _age_order(db, order_id)
+    _insert_attempt(db, user, order_id, result_time_sql="NULL", age_seconds=11 * 60)
+    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 4
+    assert _statuses(db, order_id) == (4, {4})
+
+
+def test_summary_does_not_expire_before_deadline(api, db, make_user, make_tour):
+    user = make_user()
+    order_id = checkout(api, user, [make_tour()])
+    _age_order(db, order_id, minutes=59)
+    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == -1
+    assert _statuses(db, order_id) == (-1, {-1})
+
+
+def test_create_order_and_preview_points_concurrently_no_500(api, db, make_user, make_tour):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 1000 WHERE user_id = %s", (user["user_id"],))
+    tour = make_tour()
+    body = {
+        "user": {"name": "測試用戶", "email": user["email"], "address": "台北市測試路1號", "phone_number": "0912345678"},
+        "payment_method": "atm",
+        "discount": {"type": "point", "used_point": 50},
+    }
+    headers = auth_header(user)
+    for round_no in range(8):
+        order_id = checkout(api, user, [tour])
+        cart = _cart_id(db, user)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            preview = pool.submit(
+                api.patch, f"{CHECKOUT_API}/preview/{order_id}", json=body, headers=headers, timeout=15
+            )
+            create = pool.submit(api.post, f"{CHECKOUT_API}/order/{cart}", headers=headers, timeout=15)
+            codes = (preview.result().status_code, create.result().status_code)
+        assert 500 not in codes, (round_no, codes)
+
+
 NODE_PAYABLE = """
 const { pool } = require('./src/config/database');
 const { computePayable } = require('./src/utils/trade');
@@ -184,12 +240,15 @@ const { computePayable } = require('./src/utils/trade');
 
 def test_payable_matches_seed_paid_orders(db):
     """唯讀：在 backend 容器內以 ROLLBACK 交易呼叫 computePayable，與 test_seed 的實付定義比對。"""
-    expected = {(email, title): int(paid) for email, title, paid, _, _ in _paid_by_order(db)}
+    seed_emails = set(EMAIL.values())
+    expected = {(email, title): int(paid) for email, title, paid, _, _ in _paid_by_order(db) if email in seed_emails}
     assert len(expected) == 15
     order_ids = {}
     for order_id, email, title in db.execute(
         'SELECT o.order_id::text, u.email, t.title FROM orders o JOIN "user" u USING (user_id) '
-        "JOIN order_item oi USING (order_id) JOIN tour t ON t.tour_id = oi.tour_id WHERE o.payment_status = 1"
+        "JOIN order_item oi USING (order_id) JOIN tour t ON t.tour_id = oi.tour_id "
+        "WHERE o.payment_status = 1 AND u.email = ANY(%s)",
+        (list(EMAIL.values()),),
     ).fetchall():
         order_ids[order_id] = (email, title)
     assert len(order_ids) == 15

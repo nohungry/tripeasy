@@ -1,0 +1,36 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 18 items
+
+tests/test_trade_checkout.py::test_create_order_includes_every_cart_item PASSED [  5%]
+tests/test_trade_checkout.py::test_create_order_snapshots_promo_price PASSED [ 11%]
+tests/test_trade_checkout.py::test_create_order_empty_cart_is_400 PASSED [ 16%]
+tests/test_trade_checkout.py::test_create_order_cancels_previous_pending PASSED [ 22%]
+tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending PASSED [ 27%]
+tests/test_trade_checkout.py::test_create_order_keeps_cart PASSED        [ 33%]
+tests/test_trade_checkout.py::test_other_users_cart_is_404 PASSED        [ 38%]
+tests/test_trade_checkout.py::test_other_users_summary_is_404 PASSED     [ 44%]
+tests/test_trade_checkout.py::test_other_users_userinfo_is_404 PASSED    [ 50%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order PASSED  [ 55%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_order_with_payment_in_progress PASSED [ 61%]
+tests/test_trade_checkout.py::test_summary_get_point_is_floor_of_payable PASSED [ 66%]
+tests/test_trade_checkout.py::test_payable_treats_zero_discount_price_as_no_promo PASSED [ 72%]
+tests/test_trade_checkout.py::test_summary_expires_when_payment_attempt_has_result PASSED [ 77%]
+tests/test_trade_checkout.py::test_summary_expires_when_payment_attempt_past_trade_limit PASSED [ 83%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_before_deadline PASSED [ 88%]
+tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500 FAILED [ 94%]
+tests/test_trade_checkout.py::test_payable_matches_seed_paid_orders PASSED [100%]
+
+=================================== FAILURES ===================================
+___________ test_create_order_and_preview_points_concurrently_no_500 ___________
+tests/test_trade_checkout.py:218: in test_create_order_and_preview_points_concurrently_no_500
+    assert 500 not in codes, (round_no, codes)
+E   AssertionError: (0, (200, 500))
+E   assert 500 not in (200, 500)
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500
+========================= 1 failed, 17 passed in 3.05s =========================
