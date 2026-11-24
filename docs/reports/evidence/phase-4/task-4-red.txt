@@ -1,0 +1,82 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 13 items
+
+tests/test_trade_cart.py::test_cart_add_does_not_leak_connections PASSED [  7%]
+tests/test_trade_cart.py::test_cart_patch_and_delete_do_not_leak_connections PASSED [ 15%]
+tests/test_trade_cart.py::test_create_order_does_not_leak_connections PASSED [ 23%]
+tests/test_trade_cart.py::test_cart_list_returns_cart_item_id FAILED     [ 30%]
+tests/test_trade_cart.py::test_cart_summary_counts_all_pages FAILED      [ 38%]
+tests/test_trade_cart.py::test_cart_add_same_item_merges_quantity FAILED [ 46%]
+tests/test_trade_cart.py::test_cart_add_unlisted_tour_is_404 FAILED      [ 53%]
+tests/test_trade_cart.py::test_cart_add_past_date_is_400 FAILED          [ 61%]
+tests/test_trade_cart.py::test_cart_add_impossible_date_is_400 FAILED    [ 69%]
+tests/test_trade_cart.py::test_cart_add_offset_datetime_is_400 FAILED    [ 76%]
+tests/test_trade_cart.py::test_cart_patch_other_users_item_is_404 FAILED [ 84%]
+tests/test_trade_cart.py::test_cart_delete_other_users_item_is_404 FAILED [ 92%]
+tests/test_trade_cart.py::test_cart_list_uses_live_promo_price PASSED    [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_cart_list_returns_cart_item_id ______________________
+tests/test_trade_cart.py:85: in test_cart_list_returns_cart_item_id
+    assert re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", items[0]["cart_item_id"])
+E   KeyError: 'cart_item_id'
+______________________ test_cart_summary_counts_all_pages ______________________
+tests/test_trade_cart.py:94: in test_cart_summary_counts_all_pages
+    assert body["summary"]["total_items"] == 3
+E   assert 2 == 3
+___________________ test_cart_add_same_item_merges_quantity ____________________
+tests/test_trade_cart.py:102: in test_cart_add_same_item_merges_quantity
+    assert add_to_cart(api, user, tour, people=2).status_code == 201
+E   AssertionError: assert 404 == 201
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = add_to_cart(<conftest.Api object at 0x70c729f2ae40>, {'email': 'p0-e34d9ba6@example.com', 'role': 'User', 'user_id': '3f57e5ca-953a-4aaa-b94d-3d33b6f2f989'}, {'item': 'travel', 'status': 1, 'title': 'p3-e102155e', 'tour_id': 'a58dab39-13dc-4d1f-818f-f1ec21cec116', ...}, people=2)
+______________________ test_cart_add_unlisted_tour_is_404 ______________________
+tests/test_trade_cart.py:113: in test_cart_add_unlisted_tour_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"success","message":"加入購物車成功"}
+E   assert 201 == 404
+E    +  where 201 = <Response [201]>.status_code
+________________________ test_cart_add_past_date_is_400 ________________________
+tests/test_trade_cart.py:120: in test_cart_add_past_date_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"加入購物車成功"}
+E   assert 201 == 400
+E    +  where 201 = <Response [201]>.status_code
+_____________________ test_cart_add_impossible_date_is_400 _____________________
+tests/test_trade_cart.py:128: in test_cart_add_impossible_date_is_400
+    assert "出發日期" in message
+E   AssertionError: assert '出發日期' in '旅程結束時間不能早於開始時間'
+_____________________ test_cart_add_offset_datetime_is_400 _____________________
+tests/test_trade_cart.py:136: in test_cart_add_offset_datetime_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"加入購物車成功"}
+E   assert 201 == 400
+E    +  where 201 = <Response [201]>.status_code
+___________________ test_cart_patch_other_users_item_is_404 ____________________
+tests/test_trade_cart.py:162: in test_cart_patch_other_users_item_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"success","message":"購物車項目修改成功"}
+E   assert 200 == 404
+E    +  where 200 = <Response [200]>.status_code
+___________________ test_cart_delete_other_users_item_is_404 ___________________
+tests/test_trade_cart.py:173: in test_cart_delete_other_users_item_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"success","message":"移除購物車項目成功"}
+E   assert 200 == 404
+E    +  where 200 = <Response [200]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_cart_list_returns_cart_item_id - KeyErr...
+FAILED tests/test_trade_cart.py::test_cart_summary_counts_all_pages - assert ...
+FAILED tests/test_trade_cart.py::test_cart_add_same_item_merges_quantity - As...
+FAILED tests/test_trade_cart.py::test_cart_add_unlisted_tour_is_404 - Asserti...
+FAILED tests/test_trade_cart.py::test_cart_add_past_date_is_400 - AssertionEr...
+FAILED tests/test_trade_cart.py::test_cart_add_impossible_date_is_400 - Asser...
+FAILED tests/test_trade_cart.py::test_cart_add_offset_datetime_is_400 - Asser...
+FAILED tests/test_trade_cart.py::test_cart_patch_other_users_item_is_404 - As...
+FAILED tests/test_trade_cart.py::test_cart_delete_other_users_item_is_404 - A...
+========================= 9 failed, 4 passed in 2.83s ==========================

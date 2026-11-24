@@ -302,14 +302,30 @@ def purge_leftovers(db):
 def make_tour(db):
     created: list[str] = []
 
-    def _make(item: str = "travel", status: int = 1, with_detail: bool = True, title: str | None = None) -> dict:
+    def _make(
+        item: str = "travel",
+        status: int = 1,
+        with_detail: bool = True,
+        title: str | None = None,
+        *,
+        price: int | None = None,
+        start_date: datetime.date | None = None,
+        end_date: datetime.date | None = None,
+    ) -> dict:
         if with_detail and item not in ("travel", "spot"):
             raise ValueError(f"item={item!r} 不能建立 tour_detail（只允許 travel／spot）")
         title = title or f"{TEST_TOUR_PREFIX}{uuid.uuid4().hex[:8]}"
         assert title.startswith(TEST_TOUR_PREFIX), title
         tour_type = "tourgroup" if item == "travel" else "backpacker"
-        # tour_start_date／tour_end_date 刻意不傳（保持 NULL）
-        row = insert(db, "tour", type=tour_type, item=item, status=status, title=title)
+        # price／tour_start_date／tour_end_date 預設不傳（price 用 dbfactory 預設、日期保持 NULL）
+        extra = {}
+        if price is not None:
+            extra["price"] = price
+        if start_date is not None:
+            extra["tour_start_date"] = start_date
+        if end_date is not None:
+            extra["tour_end_date"] = end_date
+        row = insert(db, "tour", type=tour_type, item=item, status=status, title=title, **extra)
         tour_id = str(row["tour_id"])
         created.append(tour_id)
         if with_detail:
