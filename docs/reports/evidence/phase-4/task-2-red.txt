@@ -1,0 +1,71 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 19 items
+
+tests/test_migrations.py::test_flyway_applied_v1_to_v5 FAILED            [  5%]
+tests/test_migrations.py::test_all_v1_tables_exist PASSED                [ 10%]
+tests/test_migrations.py::test_flyway_applied_views_functions PASSED     [ 15%]
+tests/test_migrations.py::test_v3_applied PASSED                         [ 21%]
+tests/test_migrations.py::test_user_password_is_nullable PASSED          [ 26%]
+tests/test_migrations.py::test_user_email_lower_unique_index PASSED      [ 31%]
+tests/test_migrations.py::test_email_case_duplicate_rejected PASSED      [ 36%]
+tests/test_migrations.py::test_v4_applied PASSED                         [ 42%]
+tests/test_migrations.py::test_review_user_tour_unique_index PASSED      [ 47%]
+tests/test_migrations.py::test_review_duplicate_user_tour_rejected PASSED [ 52%]
+tests/test_migrations.py::test_web_reviews_not_limited_by_unique_index PASSED [ 57%]
+tests/test_migrations.py::test_review_rating_check[0-False] PASSED       [ 63%]
+tests/test_migrations.py::test_review_rating_check[6-False] PASSED       [ 68%]
+tests/test_migrations.py::test_review_rating_check[1-True] PASSED        [ 73%]
+tests/test_migrations.py::test_review_rating_check[5-True] PASSED        [ 78%]
+tests/test_migrations.py::test_payment_merchant_order_no_column FAILED   [ 84%]
+tests/test_migrations.py::test_payment_merchant_order_no_unique FAILED   [ 89%]
+tests/test_migrations.py::test_payment_one_paid_per_order FAILED         [ 94%]
+tests/test_migrations.py::test_seed_payments_have_null_merchant_order_no FAILED [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_flyway_applied_v1_to_v5 _________________________
+tests/test_migrations.py:21: in test_flyway_applied_v1_to_v5
+    assert {r[0] for r in rows} >= {"1", "2", "3", "4", "5"}
+E   AssertionError: assert {'1', '2', '3', '4'} >= {'1', '2', '3', '4', '5'}
+E     
+E     Extra items in the right set:
+E     '5'
+____________________ test_payment_merchant_order_no_column _____________________
+tests/test_migrations.py:131: in test_payment_merchant_order_no_column
+    assert row == ("character varying", 30, "YES")
+E   AssertionError: assert None == ('character varying', 30, 'YES')
+____________________ test_payment_merchant_order_no_unique _____________________
+tests/test_migrations.py:141: in test_payment_merchant_order_no_unique
+    _payment(tx, user, order, payment_status=0, merchant_order_no=None)  # 兩列 NULL 不報錯
+tests/test_migrations.py:135: in _payment
+    return insert(tx, "payment", user_id=user["user_id"], order_id=order["order_id"], **cols)
+tests/dbfactory.py:111: in insert
+    cur.execute(stmt, list(values.values()))
+.venv/lib/python3.13/site-packages/psycopg/cursor.py:97: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedColumn: column "merchant_order_no" of relation "payment" does not exist
+E   LINE 1: ...ayment" ("user_id", "order_id", "payment_status", "merchant_...
+E                                                                ^
+_______________________ test_payment_one_paid_per_order ________________________
+tests/test_migrations.py:155: in test_payment_one_paid_per_order
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+E   Failed: DID NOT RAISE <class 'psycopg.errors.UniqueViolation'>
+________________ test_seed_payments_have_null_merchant_order_no ________________
+tests/test_migrations.py:161: in test_seed_payments_have_null_merchant_order_no
+    total, non_null = db.execute(
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedColumn: column "merchant_order_no" does not exist
+E   LINE 1: SELECT count(*), count(merchant_order_no) FROM payment
+E                                  ^
+=========================== short test summary info ============================
+FAILED tests/test_migrations.py::test_flyway_applied_v1_to_v5 - AssertionErro...
+FAILED tests/test_migrations.py::test_payment_merchant_order_no_column - Asse...
+FAILED tests/test_migrations.py::test_payment_merchant_order_no_unique - psyc...
+FAILED tests/test_migrations.py::test_payment_one_paid_per_order - Failed: DI...
+FAILED tests/test_migrations.py::test_seed_payments_have_null_merchant_order_no
+========================= 5 failed, 14 passed in 0.23s =========================

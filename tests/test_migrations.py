@@ -1,4 +1,4 @@
-"""確認 Flyway 已套用 V1–V4 與 R__views_functions，並且 V1 的 25 張表都存在；V3、V4 的表格約束。"""
+"""確認 Flyway 已套用 V1–V5 與 R__views_functions，並且 V1 的 25 張表都存在；V3、V4、V5 的表格約束。"""
 import psycopg
 import pytest
 
@@ -13,12 +13,12 @@ EXPECTED_TABLES = {
 }
 
 
-def test_flyway_applied_v1_to_v4(db):
+def test_flyway_applied_v1_to_v5(db):
     rows = db.execute(
-        "SELECT version, success FROM flyway_schema_history "
-        "WHERE version IS NOT NULL ORDER BY installed_rank"
+        "SELECT version FROM flyway_schema_history "
+        "WHERE version IS NOT NULL AND success"
     ).fetchall()
-    assert rows == [("1", True), ("2", True), ("3", True), ("4", True)]
+    assert {r[0] for r in rows} >= {"1", "2", "3", "4", "5"}
 
 
 def test_all_v1_tables_exist(db):
@@ -121,3 +121,45 @@ def test_review_rating_check(tx, rating, ok):
         with pytest.raises(psycopg.errors.CheckViolation) as exc:
             insert(tx, "review", user_id=user["user_id"], tour_id=None, type="web", rating=rating)
         assert exc.value.diag.constraint_name == "review_rating_range"
+
+
+def test_payment_merchant_order_no_column(db):
+    row = db.execute(
+        "SELECT data_type, character_maximum_length, is_nullable FROM information_schema.columns "
+        "WHERE table_name = 'payment' AND column_name = 'merchant_order_no'"
+    ).fetchone()
+    assert row == ("character varying", 30, "YES")
+
+
+def _payment(tx, user, order, **cols):
+    return insert(tx, "payment", user_id=user["user_id"], order_id=order["order_id"], **cols)
+
+
+def test_payment_merchant_order_no_unique(tx):
+    user = insert(tx, "user")
+    order = insert(tx, "orders", user_id=user["user_id"], payment_status=0)
+    _payment(tx, user, order, payment_status=0, merchant_order_no=None)  # 兩列 NULL 不報錯
+    _payment(tx, user, order, payment_status=0, merchant_order_no=None)
+    _payment(tx, user, order, payment_status=0, merchant_order_no="TE-UNIQ-1")
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+        _payment(tx, user, order, payment_status=0, merchant_order_no="TE-UNIQ-1")
+    assert exc.value.diag.constraint_name == "payment_merchant_order_no_key"
+
+
+def test_payment_one_paid_per_order(tx):
+    user = insert(tx, "user")
+    order = insert(tx, "orders", user_id=user["user_id"], payment_status=1)
+    _payment(tx, user, order, payment_status=0)  # 未付款可並存
+    _payment(tx, user, order, payment_status=0)
+    _payment(tx, user, order, payment_status=1)
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+        _payment(tx, user, order, payment_status=1)
+    assert exc.value.diag.constraint_name == "payment_order_paid_key"
+
+
+def test_seed_payments_have_null_merchant_order_no(db):
+    total, non_null = db.execute(
+        "SELECT count(*), count(merchant_order_no) FROM payment"
+    ).fetchone()
+    assert total == 15
+    assert non_null == 0
