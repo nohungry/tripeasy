@@ -222,6 +222,30 @@ def checkout(api, user, tours: list[dict]) -> str:
     return r.json()["data"]["order_id"]
 
 
+DISCOUNT_API = "/api/v1/user/trade/discounts"
+
+
+def preview(api, user, order_id, discount: dict | None = None):
+    """PATCH 結帳預覽（固定地址、電話、信用卡）；discount 為 None 時不帶該欄位。回傳 requests.Response。"""
+    body = {
+        "user": {"name": "測試用戶", "email": user["email"], "address": "台北市測試路1號", "phone_number": "0912345678"},
+        "payment_method": "credit_card",
+    }
+    if discount is not None:
+        body["discount"] = discount
+    return api.patch(f"{CHECKOUT_API}/preview/{order_id}", json=body, headers=auth_header(user), timeout=10)
+
+
+def trial_discount(api, user, order_id, body: dict):
+    """POST 折扣試算（不寫入）。"""
+    return api.post(f"{DISCOUNT_API}/{order_id}", json=body, headers=auth_header(user), timeout=10)
+
+
+def cancel_discount(api, user, order_id):
+    """GET 取消折扣（釋放保留）。"""
+    return api.get(f"{DISCOUNT_API}/{order_id}", headers=auth_header(user), timeout=10)
+
+
 CAPTCHA_TTL_MS = 5 * 60 * 1000
 
 
@@ -272,6 +296,7 @@ TEST_EMAIL_PREFIXES: tuple[str, ...] = (
     "p0-", "e2e-", "factory-", "a.", "g.", "mixed.", "nobody.", "val.", "race.", "pref.", "lower.", "dup.", "co.", "mock.",
 )  # fmt: skip
 TEST_TOUR_PREFIX = "p3-"
+TEST_COUPON_PREFIX = "P4"
 
 
 def delete_tour(db, tour_id: str) -> None:
@@ -288,8 +313,14 @@ def delete_tour(db, tour_id: str) -> None:
     db.execute("DELETE FROM tour WHERE tour_id = %s", p)
 
 
+def delete_coupon(db, coupon_id: str) -> None:
+    """先刪 user_coupon 再刪 coupon。"""
+    db.execute("DELETE FROM user_coupon WHERE coupon_id = %s", (coupon_id,))
+    db.execute("DELETE FROM coupon WHERE coupon_id = %s", (coupon_id,))
+
+
 def purge_leftover_test_data(db) -> dict:
-    """刪除前次測試殘留的測試會員與測試行程（先會員後行程）。"""
+    """刪除前次測試殘留的測試會員、測試行程與測試優惠券（先會員、行程，最後優惠券）。"""
     user_ids = [
         str(user_id)
         for user_id, email in db.execute('SELECT user_id, lower(email) FROM "user"').fetchall()
@@ -305,7 +336,15 @@ def purge_leftover_test_data(db) -> dict:
     ]
     for tour_id in tour_ids:
         delete_tour(db, tour_id)
-    return {"users": len(user_ids), "tours": len(tour_ids)}
+    coupon_ids = [
+        str(r[0])
+        for r in db.execute(
+            "SELECT coupon_id FROM coupon WHERE starts_with(code, %s)", (TEST_COUPON_PREFIX,)
+        ).fetchall()
+    ]
+    for coupon_id in coupon_ids:
+        delete_coupon(db, coupon_id)
+    return {"users": len(user_ids), "tours": len(tour_ids), "coupons": len(coupon_ids)}
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -360,6 +399,30 @@ def live_promotion(db, make_tour) -> dict:
         (t["tour_id"],),
     )  # notification 由 make_tour teardown 的 delete_tour 清除
     return t
+
+
+@pytest.fixture
+def make_coupon(db):
+    created: list[str] = []
+
+    def _make(user: dict | None = None, discount: int = 100, expire_in_days: int = 30, status: int = 0) -> dict:
+        """建立 coupon（code = P4 + 4 碼大寫十六進位）；user 不為 None 時一併綁定 user_coupon（status、order_id NULL）。"""
+        code = TEST_COUPON_PREFIX + uuid.uuid4().hex[:4].upper()
+        (coupon_id,) = db.execute(
+            "INSERT INTO coupon (code, discount, description, expire_date) "
+            "VALUES (%s, %s, %s, now() + make_interval(days => %s)) RETURNING coupon_id",
+            (code, discount, "P4 測試優惠券", expire_in_days),
+        ).fetchone()
+        created.append(str(coupon_id))
+        if user is not None:
+            db.execute(
+                "INSERT INTO user_coupon (user_id, coupon_id, status) VALUES (%s, %s, %s)",
+                (user["user_id"], coupon_id, status),
+            )
+        return {"coupon_id": str(coupon_id), "code": code, "discount": discount}
+
+    yield _make
+    _cleanup_all(created, lambda coupon_id: delete_coupon(db, coupon_id))
 
 
 @pytest.fixture
