@@ -503,22 +503,87 @@ def test_other_users_coupon_is_404(api, make_user, make_tour, make_coupon):
     assert (r.status_code, r.json()["message"]) == (404, "查無此優惠卷")
 
 
+def _wait_until(predicate, timeout=10.0, interval=0.05):
+    import time
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        time.sleep(interval)
+    return False
+
+
 def test_preview_same_coupon_concurrently_reserves_once(api, db, make_user, make_tour, make_order, make_coupon):
+    """決定性：先用另一條連線鎖住 user_coupon 列，兩個 preview 都卡在鎖上後才放行。"""
+    import psycopg
+
+    from conftest import _db_params
+
     user = make_user()
     coupon = make_coupon(user)
     tour = make_tour(price=1000)
     # API 不會讓同一會員同時有兩張未付款訂單，兩張 -1 訂單以 DB 直接建立
     orders = [make_order(user, tour["tour_id"], payment_status=-1)["order_id"] for _ in range(2)]
+    before = {order_id: _order_discount(db, order_id) for order_id in orders}
     discount = {"type": "coupon", "coupon_id": coupon["coupon_id"]}
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        futures = [pool.submit(preview, api, user, order_id, discount) for order_id in orders]
-        results = [f.result() for f in futures]
-    codes = sorted(r.status_code for r in results)
-    assert codes == [200, 409], [r.text for r in results]
-    loser = next(r for r in results if r.status_code == 409)
-    assert loser.json()["message"] == "優惠券已被其他訂單保留"
-    status, reserved_order = _user_coupon(db, user, coupon)
-    assert status == -1 and reserved_order in orders
+
+    def waiting_on_coupon_lock():
+        (n,) = db.execute(
+            "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' "
+            "AND query ILIKE '%%user_coupon%%FOR UPDATE%%' AND pid <> pg_backend_pid()"
+        ).fetchone()
+        return n
+
+    locker = psycopg.connect(**_db_params())
+    try:
+        locker.execute(
+            "SELECT user_coupon_id FROM user_coupon WHERE user_id = %s AND coupon_id = %s FOR UPDATE",
+            (user["user_id"], coupon["coupon_id"]),
+        )
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = {order_id: pool.submit(preview, api, user, order_id, discount) for order_id in orders}
+            both_waiting = _wait_until(lambda: waiting_on_coupon_lock() >= 2)
+            locker.rollback()
+            results = {order_id: f.result() for order_id, f in futures.items()}
+    finally:
+        locker.close()
+    assert both_waiting, "兩個 preview 沒有同時卡在 user_coupon 的列鎖上"
+    codes = sorted(r.status_code for r in results.values())
+    assert codes == [200, 409], [r.text for r in results.values()]
+    winner = next(o for o, r in results.items() if r.status_code == 200)
+    loser = next(o for o, r in results.items() if r.status_code == 409)
+    assert results[loser].json()["message"] == "優惠券已被其他訂單保留"
+    assert _user_coupon(db, user, coupon) == (-1, winner)
+    assert _order_discount(db, loser) == before[loser]
+
+
+def test_preview_resend_same_coupon_same_order_is_200(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    discount = {"type": "coupon", "coupon_id": coupon["coupon_id"]}
+    assert preview(api, user, order_id, discount).status_code == 200
+    r = preview(api, user, order_id, discount)
+    assert r.status_code == 200, r.text
+    assert _user_coupon(db, user, coupon) == (-1, order_id)
+    r = preview(api, user, order_id.upper(), discount)
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["discount_price"] == r.json()["data"]["payable"] == 900
+    assert _user_coupon(db, user, coupon) == (-1, order_id)
+
+
+def test_preview_without_discount_releases_reservation(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
+    r = preview(api, user, order_id, None)
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["discount_price"] is None
+    assert r.json()["data"]["payable"] == 1000
+    assert _user_coupon(db, user, coupon) == (0, None)
+    assert _order_discount(db, order_id) == ("none", None)
 
 
 def test_preview_on_expired_order_is_409(api, db, make_user, make_tour, make_coupon):

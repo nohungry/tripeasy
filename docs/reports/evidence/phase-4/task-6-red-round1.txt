@@ -1,0 +1,65 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 46 items
+
+tests/test_trade_checkout.py::test_create_order_includes_every_cart_item PASSED [  2%]
+tests/test_trade_checkout.py::test_create_order_snapshots_promo_price PASSED [  4%]
+tests/test_trade_checkout.py::test_create_order_empty_cart_is_400 PASSED [  6%]
+tests/test_trade_checkout.py::test_create_order_cancels_previous_pending PASSED [  8%]
+tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending PASSED [ 10%]
+tests/test_trade_checkout.py::test_create_order_keeps_cart PASSED        [ 13%]
+tests/test_trade_checkout.py::test_other_users_cart_is_404 PASSED        [ 15%]
+tests/test_trade_checkout.py::test_other_users_summary_is_404 PASSED     [ 17%]
+tests/test_trade_checkout.py::test_other_users_userinfo_is_404 PASSED    [ 19%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order PASSED  [ 21%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_order_with_payment_in_progress PASSED [ 23%]
+tests/test_trade_checkout.py::test_summary_get_point_is_floor_of_payable PASSED [ 26%]
+tests/test_trade_checkout.py::test_payable_treats_zero_discount_price_as_no_promo PASSED [ 28%]
+tests/test_trade_checkout.py::test_summary_expires_when_payment_attempt_has_result PASSED [ 30%]
+tests/test_trade_checkout.py::test_summary_expires_when_payment_attempt_past_trade_limit PASSED [ 32%]
+tests/test_trade_checkout.py::test_summary_does_not_expire_before_deadline PASSED [ 34%]
+tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500 PASSED [ 36%]
+tests/test_trade_checkout.py::test_payable_matches_seed_paid_orders PASSED [ 39%]
+tests/test_trade_checkout.py::test_coupon_subtracts_amount_on_promo_subtotal PASSED [ 41%]
+tests/test_trade_checkout.py::test_trial_discount_does_not_write PASSED  [ 43%]
+tests/test_trade_checkout.py::test_point_must_be_multiple_of_five PASSED [ 45%]
+tests/test_trade_checkout.py::test_point_reserves_and_limits_balance PASSED [ 47%]
+tests/test_trade_checkout.py::test_discount_must_leave_one_dollar PASSED [ 50%]
+tests/test_trade_checkout.py::test_coupon_reserved_by_other_order_is_409 PASSED [ 52%]
+tests/test_trade_checkout.py::test_preview_change_discount_releases_previous PASSED [ 54%]
+tests/test_trade_checkout.py::test_cancel_discount_releases_coupon PASSED [ 56%]
+tests/test_trade_checkout.py::test_cancel_discount_releases_points PASSED [ 58%]
+tests/test_trade_checkout.py::test_negative_balance_means_zero_available_points PASSED [ 60%]
+tests/test_trade_checkout.py::test_preview_other_users_order_is_404 PASSED [ 63%]
+tests/test_trade_checkout.py::test_trial_discount_other_users_order_is_404 PASSED [ 65%]
+tests/test_trade_checkout.py::test_cancel_discount_other_users_order_is_404 PASSED [ 67%]
+tests/test_trade_checkout.py::test_used_and_expired_coupon_rejected PASSED [ 69%]
+tests/test_trade_checkout.py::test_other_users_coupon_is_404 PASSED      [ 71%]
+tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once PASSED [ 73%]
+tests/test_trade_checkout.py::test_preview_resend_same_coupon_same_order_is_200 FAILED [ 76%]
+tests/test_trade_checkout.py::test_preview_without_discount_releases_reservation PASSED [ 78%]
+tests/test_trade_checkout.py::test_preview_on_expired_order_is_409 PASSED [ 80%]
+tests/test_trade_checkout.py::test_preview_on_paid_order_is_409 PASSED   [ 82%]
+tests/test_trade_checkout.py::test_expire_releases_point_reservation PASSED [ 84%]
+tests/test_trade_checkout.py::test_create_new_order_releases_point_reservation PASSED [ 86%]
+tests/test_trade_checkout.py::test_create_new_order_releases_coupon_reservation PASSED [ 89%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order_releases_coupon PASSED [ 91%]
+tests/test_trade_checkout.py::test_cancel_discount_on_paid_order_is_409 PASSED [ 93%]
+tests/test_trade_checkout.py::test_cancel_discount_on_expired_order_is_409 PASSED [ 95%]
+tests/test_trade_checkout.py::test_preview_while_payment_in_progress_is_409 PASSED [ 97%]
+tests/test_trade_checkout.py::test_cancel_discount_while_payment_in_progress_is_409 PASSED [100%]
+
+=================================== FAILURES ===================================
+______________ test_preview_resend_same_coupon_same_order_is_200 _______________
+tests/test_trade_checkout.py:571: in test_preview_resend_same_coupon_same_order_is_200
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"優惠券已被其他訂單保留"}
+E   assert 409 == 200
+E    +  where 409 = <Response [409]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_preview_resend_same_coupon_same_order_is_200
+========================= 1 failed, 45 passed in 6.21s =========================
