@@ -116,9 +116,10 @@
 **哪些 API 會順便判斷逾時**：`GET /checkout/summary`、`PATCH /checkout/preview`、`POST /trade/discounts`、`POST /newebpay/payment`。發現逾時就把訂單與項目轉成 4、釋放保留，然後回 409（summary 回 200 並顯示逾時狀態）。notify 不判斷（§5.5）。
 
 **付款進行中不判逾時（使用者定 8-d）**：
-- `POST /newebpay/payment` 在 TradeInfo 帶藍新的交易時限參數（暫定 `TradeLimit`，例如 600 秒；**計畫階段要對照藍新 MPG 官方文件確認參數名稱與範圍**），並把這次付款嘗試的截止時間（`payment.created_at` ＋ 時限）作為判斷依據，不新增欄位。
+- `POST /newebpay/payment` 在 TradeInfo 帶藍新的交易時限參數（`TradeLimit`，600 秒；2026-11-24 以 MPG 技術串接手冊 1.1.1 副本與多個 SDK 查證：整數、60–900 秒、0 或不帶＝不限制、倒數到 0 交易失敗；P7 以最新版官方手冊複核），並把這次付款嘗試的截止時間（`payment.created_at` ＋ 時限）作為判斷依據，不新增欄位。
 - 逾時判斷 ＝ 已超過訂單期限 **且** 沒有「截止時間還沒到」的付款嘗試。有進行中的付款時，不轉 4。
-- `POST /newebpay/payment` 只在剩餘的訂單期限 ≥ 交易時限時才接受；不足時回 409，避免付款時限跨過訂單期限太多。【Claude 定】
+- **付款進行中**的定義：`payment.payment_status = 0 AND result_time IS NULL AND created_at + TradeLimit 秒 > now()`。已收到失敗通知（`result_time` 已寫）的嘗試視為已結束，不算進行中。【主對話 2026-11-24 同意】
+- 訂單期限內都可以送出付款；付款時限可以跨過訂單期限（最多多出一個交易時限），這段期間靠「付款進行中不判逾時」保護。【Claude 定，2026-11-24 修訂：原本「剩餘期限 ≥ 交易時限才接受」的規則會讓本條永遠用不到，已移除】
 - mock-newebpay 要實作交易時限：超過時限才按付款，就顯示「交易逾時」，不送成功的 notify。
 - 已知限制：藍新的通知延遲超過交易時限、而期間又有人查詢訂單，訂單會先轉 4；之後的成功通知照 §5.5 第 7 步只記錄，需人工退款（P6 後台）。
 
@@ -165,7 +166,7 @@
   - 點數：1 點折 0.8 元（契約 #3），**只接受 5 的倍數**（不符合回 400，前端輸入框以 5 為單位），折抵金額因此一定是整數【使用者定 Q3】。可用點數為 `user_level.travel_point` 減去其他未付款訂單的 `減少_確認中`。保留時寫一筆 `point_record`（`type = '減少_確認中'`）。折抵後應付金額至少 1 元。
   - 重送 preview 改變折扣時，先釋放舊的保留再寫新的。
 - `GET /trade/discounts/:order_id`：取消折扣（沿用既有路由與方法），釋放保留。
-- **使用者可用的優惠券清單**：現有 `routes/coupons.js` 都是管理員用的（builder check 已確認）。新增一支使用者用的清單 API，資料取自契約的 `user_couponList` view。
+- **使用者可用的優惠券清單**：~~新增一支使用者用的清單 API~~ 沿用既有的 `GET /api/v1/user/userinfo/pointslevel`（見 §16）。
 
 ### 5.5 藍新（`/api/v1/user/newebpay`）
 - `POST /payment`：只接受 `order_id`。**`MerchantOrderNo`、`Amt`、`ItemDesc`、`NotifyURL`、`ReturnURL` 全部放進加密的 TradeInfo**（現況 `newebpay.js:91–97,115–120` 把它們當明文 hidden 欄位送出，藍新規格要求放在 TradeInfo 內，而且明文欄位可被竄改）。訂單要屬於使用者、狀態為 0、沒有逾時。由後端算出 `Amt`，產生新的 `merchant_order_no`（≤30 字元，例如 `T` ＋ 日期時間 ＋ 亂數），寫一筆 `payment`（status 0），回傳自動送出的付款表單。**表單內容要做 HTML 跳脫**（總 spec P4 列：`ItemDesc` 直接來自 DB 的商品標題）。
@@ -282,3 +283,18 @@ P1 的 ruling「`delete_user` 只清 3/11 張外鍵表」：builder check 發現
 - mock-newebpay 付款頁的樣式。
 - 付款結果頁的輪詢間隔與次數。
 - 使用者優惠券清單 API 的路徑（若需要新增）。
+
+## 16. 計畫階段修訂（2026-11-24）
+
+寫實作計畫（`docs/superpowers/plans/2026-11-24-p4-trade.md`）時讀碼與主對話裁決的結果，取代上文對應處：
+
+1. **使用者可用優惠券清單沿用 `GET /api/v1/user/userinfo/pointslevel`**（`backend/src/routes/userProfile.js:32`，回傳點數餘額與 `status = 0` 且未過期的券，保留中的 -1 自動排除），不新增 API；取代 §5.4 最後一點。理由：沿用既有程式碼。
+2. **`TradeLimit` 已查證**：MPG 技術串接手冊 1.1.1 副本與多個 SDK——整數、60–900 秒、0 或不帶＝不限制、倒數到 0 交易失敗；本專案用 600。P7 以最新版官方手冊複核。
+3. **沒有促銷的項目 `order_item.discount_price` 寫 NULL**（現況 `checkout.js:28–32` 寫 0，與契約 :212 不符）。應付金額計算時 `discount_price = 0` 視同 NULL，避免舊資料算出 0 元。
+4. **TradeInfo 補齊藍新 MPG 必要欄位**：除 §5.5 列出的 5 個欄位外，`MerchantID`、`RespondType`、`TimeStamp`、`Version`、`Email`、`TradeLimit`、`CREDIT` 也放進 TradeInfo；表單只留 `MerchantID`、`TradeInfo`、`TradeSha`、`Version`。
+5. **移除「剩餘期限 ≥ 交易時限才接受付款」的規則**（§3.1 已修訂）：訂單期限內都可送出付款，靠「付款進行中不判逾時」保護。
+6. **付款進行中**的定義含 `result_time IS NULL`（§3.1）。
+7. **seed 的未付款訂單（#16 alice -1、#17 bob 0）在展示環境第一次被查詢時會轉成逾時（4）**：屬本 spec 正常行為，接受；測試靠「seed 帳號唯讀」約束不觸發（對 seed 訂單呼叫 summary、preview、試算／取消折扣、建單、付款都算寫入）。`tests/test_api_smoke.py` 的 summary smoke 測試改用自建訂單。報告附錄 B 記錄。
+8. **`tests/test_async_errors.py` 換路由**：它原本用 `POST /newebpay/payment` 空 body 當「try 外拋錯回 500」的案例，P4 修好後會回 400，需改用其他仍在 try 外拋錯的 handler。
+9. **P3 測試斷言的錯誤訊息隨 §10 修改**：搜尋 400 訊息改成中文標籤（不含 API 參數名）時，同步更新 `tests/test_product_read.py` 與 `e2e/test_product_flow.py` 的斷言。
+
