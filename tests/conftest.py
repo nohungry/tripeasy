@@ -15,6 +15,7 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
+import newebpay as nb
 from dbfactory import insert
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -453,3 +454,54 @@ def make_order(db):
         db.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
 
     _cleanup_all(created, _delete)
+
+
+# ---- P4 付款輔助（Task 8 起；多個測試檔共用）
+
+PAYMENT_API = "/api/v1/user/newebpay/payment"
+NOTIFY_API = "/api/v1/user/newebpay/notify"
+SUMMARY_API = "/api/v1/user/checkout/summary"
+
+
+def ready_order(api, db, make_user, make_tour, discount=None, *, price=1000, people=1, user=None, tour=None):
+    """建單並 preview（訂單進入 0）；回傳 (user, order_id)。"""
+    user = user or make_user()
+    tour = tour or make_tour(price=price)
+    assert add_to_cart(api, user, tour, people=people).status_code == 201
+    order_id = checkout(api, user, [])
+    r = preview(api, user, order_id, discount)
+    assert r.status_code == 200, r.text
+    return user, order_id
+
+
+def start_payment(api, user, order_id, noise=None):
+    """POST /payment；回傳 (merchant_order_no, amt, 表單欄位)。"""
+    r = api.post(PAYMENT_API, headers=auth_header(user), json={"order_id": order_id, **(noise or {})}, timeout=10)
+    assert r.status_code == 200, r.text
+    _, fields = nb.parse_payment_form(r.text)
+    trade = nb.decode_trade_info(fields)
+    return trade["MerchantOrderNo"], int(trade["Amt"]), fields
+
+
+def notify(api, fields):
+    return api.post(NOTIFY_API, data=fields, timeout=10)
+
+
+def success_notify(mon, amt, **kw):
+    return nb.build_notify(mon, amt, **kw)
+
+
+def order_status(db, order_id):
+    order = db.execute("SELECT payment_status FROM orders WHERE order_id = %s", (order_id,)).fetchone()[0]
+    items = {r[0] for r in db.execute("SELECT payment_status FROM order_item WHERE order_id = %s", (order_id,))}
+    return order, items
+
+
+def travel_point(db, user):
+    return db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0]
+
+
+def summary(api, user, order_id):
+    r = api.get(f"{SUMMARY_API}/{order_id}", headers=auth_header(user), timeout=10)
+    assert r.status_code == 200, r.text
+    return r.json()["data"]["summary"]

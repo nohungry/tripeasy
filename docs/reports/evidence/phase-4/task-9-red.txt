@@ -1,0 +1,110 @@
+FFFFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+___________________ test_refund_point_order_restores_balance ___________________
+tests/test_trade_refund.py:62: in test_refund_point_order_restores_balance
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_refund_coupon_order_releases_coupon ___________________
+tests/test_trade_refund.py:80: in test_refund_coupon_order_releases_coupon
+    assert refund(api, admin, order_id).status_code == 200
+E   AssertionError: assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-3501fda8@example.com', 'role': 'admin', 'user_id': '3c4ec873-ea9f-470b-a541-9cd495dc96f3'}, 'f4b374ca-5ba1-400a-b643-121fa8d8ac05')
+_____________________ test_refund_allows_negative_balance ______________________
+tests/test_trade_refund.py:98: in test_refund_allows_negative_balance
+    assert refund(api, admin, order_id).status_code == 200
+E   AssertionError: assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-c5e5e389@example.com', 'role': 'admin', 'user_id': '1e7684a5-3da5-4321-820e-63b16765d94f'}, '4ef6bed2-1732-41df-ab0f-8711b29e2d94')
+___________________________ test_refund_twice_is_409 ___________________________
+tests/test_trade_refund.py:105: in test_refund_twice_is_409
+    assert refund(api, admin, order_id).status_code == 200
+E   AssertionError: assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-f5c4c395@example.com', 'role': 'admin', 'user_id': 'b1724c0c-f44b-41f9-92ab-be25ea4fa6f5'}, '94476c38-afc7-4ca5-8540-0e4f55af8565')
+____________________ test_refund_non_paid_status_is_409[-1] ____________________
+tests/test_trade_refund.py:121: in test_refund_non_paid_status_is_409
+    assert r.status_code == 409
+E   assert 404 == 409
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_refund_non_paid_status_is_409[0] _____________________
+tests/test_trade_refund.py:121: in test_refund_non_paid_status_is_409
+    assert r.status_code == 409
+E   assert 404 == 409
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_refund_non_paid_status_is_409[2] _____________________
+tests/test_trade_refund.py:121: in test_refund_non_paid_status_is_409
+    assert r.status_code == 409
+E   assert 404 == 409
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_refund_non_paid_status_is_409[4] _____________________
+tests/test_trade_refund.py:121: in test_refund_non_paid_status_is_409
+    assert r.status_code == 409
+E   assert 404 == 409
+E    +  where 404 = <Response [404]>.status_code
+_______________________ test_refund_unknown_order_is_404 _______________________
+tests/test_trade_refund.py:131: in test_refund_unknown_order_is_404
+    assert r.json()["message"] == "查無此訂單項目"
+E   AssertionError: assert '找不到此網站' == '查無此訂單項目'
+E     
+E     - 查無此訂單項目
+E     + 找不到此網站
+_________________________ test_refund_bad_uuid_is_400 __________________________
+tests/test_trade_refund.py:136: in test_refund_bad_uuid_is_400
+    assert refund(api, admin, "not-a-uuid").status_code == 400
+E   AssertionError: assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-3cab451a@example.com', 'role': 'admin', 'user_id': 'f78d2ae3-2fcb-4077-ad78-2cb99a9c9e14'}, 'not-a-uuid')
+_________________________ test_refund_by_member_is_403 _________________________
+tests/test_trade_refund.py:141: in test_refund_by_member_is_403
+    assert refund(api, user, order_id).status_code == 403
+E   AssertionError: assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-436c25cd@example.com', 'role': 'User', 'user_id': 'c8e87959-6b7d-40a0-95a2-647217c177dd'}, '76344fba-6ad9-4bdd-9c27-779b653a4064')
+_______________________ test_refund_without_token_is_401 _______________________
+tests/test_trade_refund.py:147: in test_refund_without_token_is_401
+    assert api.post(refund_url(order_id), timeout=10).status_code == 401
+E   AssertionError: assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = post('/api/v1/admin/orders/d424709c-9dc0-422d-a821-66ff8da0ba4b/refund', timeout=10)
+E    +      where post = <conftest.Api object at 0x7a3236103230>.post
+E    +      and   '/api/v1/admin/orders/d424709c-9dc0-422d-a821-66ff8da0ba4b/refund' = refund_url('d424709c-9dc0-422d-a821-66ff8da0ba4b')
+________________ test_refunded_order_revokes_review_eligibility ________________
+tests/test_trade_refund.py:157: in test_refunded_order_revokes_review_eligibility
+    assert refund(api, admin, order_id).status_code == 200
+E   AssertionError: assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-c05bfafa@example.com', 'role': 'admin', 'user_id': '2ea2fdff-618d-4d8e-8fdf-96a413d19a63'}, 'f22bdb23-2821-4c0c-9189-4c843e36f5dc')
+_____________ test_refunded_coupon_order_summary_shows_amount_paid _____________
+tests/test_trade_refund.py:172: in test_refunded_coupon_order_summary_shows_amount_paid
+    assert refund(api, admin, order_id).status_code == 200
+E   AssertionError: assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+E    +    where <Response [404]> = refund(<conftest.Api object at 0x7a3236103230>, {'email': 'p0-deb4adaa@example.com', 'role': 'admin', 'user_id': '668db00f-bd2a-4de7-801e-b5ff4320e208'}, '178bf999-f7e7-4bd6-bebc-c4b519404af5')
+________________ test_refund_and_duplicate_notify_concurrently _________________
+tests/test_trade_refund.py:199: in test_refund_and_duplicate_notify_concurrently
+    assert codes == (200, 200), codes
+E   AssertionError: (404, 200)
+E   assert (404, 200) == (200, 200)
+E     
+E     At index 0 diff: 404 != 200
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED tests/test_trade_refund.py::test_refund_point_order_restores_balance
+FAILED tests/test_trade_refund.py::test_refund_coupon_order_releases_coupon
+FAILED tests/test_trade_refund.py::test_refund_allows_negative_balance - Asse...
+FAILED tests/test_trade_refund.py::test_refund_twice_is_409 - AssertionError:...
+FAILED tests/test_trade_refund.py::test_refund_non_paid_status_is_409[-1] - a...
+FAILED tests/test_trade_refund.py::test_refund_non_paid_status_is_409[0] - as...
+FAILED tests/test_trade_refund.py::test_refund_non_paid_status_is_409[2] - as...
+FAILED tests/test_trade_refund.py::test_refund_non_paid_status_is_409[4] - as...
+FAILED tests/test_trade_refund.py::test_refund_unknown_order_is_404 - Asserti...
+FAILED tests/test_trade_refund.py::test_refund_bad_uuid_is_400 - AssertionErr...
+FAILED tests/test_trade_refund.py::test_refund_by_member_is_403 - AssertionEr...
+FAILED tests/test_trade_refund.py::test_refund_without_token_is_401 - Asserti...
+FAILED tests/test_trade_refund.py::test_refunded_order_revokes_review_eligibility
+FAILED tests/test_trade_refund.py::test_refunded_coupon_order_summary_shows_amount_paid
+FAILED tests/test_trade_refund.py::test_refund_and_duplicate_notify_concurrently
+15 failed in 2.05s

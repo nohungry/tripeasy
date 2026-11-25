@@ -19,13 +19,19 @@ from conftest import (
     auth_header,
     checkout,
     live_promotion,
+    NOTIFY_API,
+    notify,
+    order_status,
     preview,
+    ready_order,
+    start_payment,
+    success_notify,
+    summary,
+    travel_point,
 )
 
 PAYMENT_API = "/api/v1/user/newebpay/payment"
-NOTIFY_API = "/api/v1/user/newebpay/notify"
 RETURN_API = "/api/v1/user/newebpay/return"
-SUMMARY_API = "/api/v1/user/checkout/summary"
 FRONTEND_PATH = os.getenv("FRONTEND_PATH", "http://localhost:5173")
 MOCK_BASE = os.getenv("TEST_MOCK_NEWEBPAY_BASE", "http://localhost:8095")
 MOCK_PAY = f"{MOCK_BASE}/MPG/pay"
@@ -34,42 +40,8 @@ MOCK_PAY = f"{MOCK_BASE}/MPG/pay"
 # ------------------------------------------------------------------ helpers
 
 
-def ready_order(api, db, make_user, make_tour, discount=None, *, price=1000, people=1, user=None, tour=None):
-    """建單並 preview（訂單進入 0）；回傳 (user, order_id)。"""
-    user = user or make_user()
-    tour = tour or make_tour(price=price)
-    assert add_to_cart(api, user, tour, people=people).status_code == 201
-    order_id = checkout(api, user, [])
-    r = preview(api, user, order_id, discount)
-    assert r.status_code == 200, r.text
-    return user, order_id
-
-
-def start_payment(api, user, order_id, noise=None):
-    """POST /payment；回傳 (merchant_order_no, amt, 表單欄位)。"""
-    r = api.post(PAYMENT_API, headers=auth_header(user), json={"order_id": order_id, **(noise or {})}, timeout=10)
-    assert r.status_code == 200, r.text
-    _, fields = nb.parse_payment_form(r.text)
-    trade = nb.decode_trade_info(fields)
-    return trade["MerchantOrderNo"], int(trade["Amt"]), fields
-
-
-def notify(api, fields):
-    return api.post(NOTIFY_API, data=fields, timeout=10)
-
-
-def success_notify(mon, amt, **kw):
-    return nb.build_notify(mon, amt, **kw)
-
-
 def failure_notify(mon, amt):
     return nb.build_notify(mon, amt, status="MPG03009", message="交易失敗")
-
-
-def order_status(db, order_id):
-    order = db.execute("SELECT payment_status FROM orders WHERE order_id = %s", (order_id,)).fetchone()[0]
-    items = {r[0] for r in db.execute("SELECT payment_status FROM order_item WHERE order_id = %s", (order_id,))}
-    return order, items
 
 
 def payment_row(db, mon):
@@ -82,16 +54,6 @@ def payment_row(db, mon):
 
 def reward_rows(db, order_id):
     return [r[0] for r in db.execute("SELECT point FROM point_record WHERE order_id = %s AND type = '新增'", (order_id,))]
-
-
-def travel_point(db, user):
-    return db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0]
-
-
-def summary(api, user, order_id):
-    r = api.get(f"{SUMMARY_API}/{order_id}", headers=auth_header(user), timeout=10)
-    assert r.status_code == 200, r.text
-    return r.json()["data"]["summary"]
 
 
 def age_order(db, order_id, minutes):
