@@ -33,6 +33,7 @@ scripts/ci.sh        # 啟動全部服務並跑測試
 | P1 路由、seed、DB 契約 | `phase-1` | `phase-0` | [phase-1.md](docs/reports/phase-1.md) |
 | P2 會員 | `phase-2` | `phase-2` | [phase-2.md](docs/reports/phase-2.md) |
 | P3 商品 | `phase-3` | `phase-3` | [phase-3.md](docs/reports/phase-3.md) |
+| P4 交易 | `phase-4` | `phase-4` | [phase-4.md](docs/reports/phase-4.md) |
 
 ## 文件
 

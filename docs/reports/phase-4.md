@@ -1,5 +1,5 @@
 # Phase 4：交易（購物車、結帳、折扣、藍新付款本機模擬、退款 API）
-> 2026-11-25（**定稿**；使用者已審閱初稿並核可） · backend tag `phase-4`（待 Step 5：合併、tag、GitHub Actions；起點 `06ded19`，分支最後一個 commit `237f63b`） · frontend tag `phase-4`（待 Step 5；起點 `ae9b824`，分支最後一個 commit `e075222`） · 總覽 tag `phase-4`（待 Step 5；起點 `5377fe9`＝與 `main` 的 merge-base，分支最後一個 commit 見 `git log phase-4`）
+> 2026-11-25（**定稿**；使用者已審閱初稿並核可） · backend tag `phase-4`＝`main` 合併 commit `0e3b192`（起點 `06ded19`，分支最後一個 commit `237f63b`） · frontend tag `phase-4`＝`dev` 合併 commit `bfd20f0`（起點 `ae9b824`，分支最後一個 commit `e075222`） · 總覽 tag `phase-4`＝`main` 的合併 commit（起點 `5377fe9`＝與 `main` 的 merge-base） · GitHub Actions：`phase-4` 分支 run 45575573073 成功（798 passed，173.59s）
 >
 > 本報告依 `docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md` §5 範本與 `docs/reports/phase-3.md` 的格式撰寫。設計見 `docs/superpowers/specs/2026-11-24-p4-trade-design.md`（以下稱「P4 spec」），計畫見 `docs/superpowers/plans/2026-11-24-p4-trade.md`。引用一律以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
@@ -281,7 +281,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | 第 2 次（保留 volume） | 782 | 0 | 0 | 203.02s | 210s | 0 |
 | 最終修正波後（§1.16；backend `237f63b`、frontend `e075222`；保留 volume） | **798**（+16：F1 4、F4 4、F5 6〔5 個 payment 參數化＋1 個原始碼掃描〕、e2e 2） | 0 | 0 | 199.88s | — | 0 |
 
-測試數量變化：**505 passed、0 xfailed（P3 最終）→ 798 passed、0 xfailed、0 skipped（P4，最終修正波後、保留 volume；乾淨 volume〔`down -v`〕的 782 是修正波前的兩次實跑，798 = 782 + 修正波新增的 16）**。各 Task 結束時 `scripts/ci.sh` 的 passed 數（取自 ledger）：Task 1：438（pytest）、Task 7：578、Task 8：614→624→628、Task 9：643→646、Task 10：683→720→746→761、Task 11：765→768、Task 12：777→781→782。CI（GitHub Actions）的 run 編號待 Step 5 push 後補入。
+測試數量變化：**505 passed、0 xfailed（P3 最終）→ 798 passed、0 xfailed、0 skipped（P4，最終修正波後、保留 volume；乾淨 volume〔`down -v`〕的 782 是修正波前的兩次實跑，798 = 782 + 修正波新增的 16）**。各 Task 結束時 `scripts/ci.sh` 的 passed 數（取自 ledger）：Task 1：438（pytest）、Task 7：578、Task 8：614→624→628、Task 9：643→646、Task 10：683→720→746→761、Task 11：765→768、Task 12：777→781→782。CI（GitHub Actions）：合併前 `phase-4` 分支 run 45575573073 成功，798 passed（173.59s，環境由 `.env.example` 建立）。
 
 ## 4. 操作指南
 
@@ -294,7 +294,7 @@ git clone -b "$(grep FRONTEND_REF refs.env | cut -d= -f2)" https://github.com/no
 scripts/ci.sh        # 啟動全部服務並跑測試
 ```
 
-目前 `refs.env` 是 `BACKEND_REF=phase-4`、`FRONTEND_REF=phase-4`（在合併前是分支名；Step 5 合併後 `phase-4` 會是 tag，同 `phase-3.md` §4.1 的說明）。`.env` 由 `.env.example` 複製，**這個版本新增三組設定**：藍新金鑰與網址（指向本機 mock，假金鑰）、`ORDER_PAYMENT_TIMEOUT_MINUTES=60`、`NEWEBPAY_TRADE_LIMIT_SECONDS=600`。舊的 `.env` 需要手動同步，或刪掉後讓 `scripts/ci.sh` 重新複製。服務網址：前端 http://localhost:5173、backend http://localhost:3000、mock-newebpay http://localhost:8095（`/health`）、Mailpit http://localhost:8025。
+目前 `refs.env` 是 `BACKEND_REF=phase-4`、`FRONTEND_REF=phase-4`（合併後 `phase-4` 分支已刪除，指向同名 tag，同 `phase-3.md` §4.1 的說明）。`.env` 由 `.env.example` 複製，**這個版本新增三組設定**：藍新金鑰與網址（指向本機 mock，假金鑰）、`ORDER_PAYMENT_TIMEOUT_MINUTES=60`、`NEWEBPAY_TRADE_LIMIT_SECONDS=600`。舊的 `.env` 需要手動同步，或刪掉後讓 `scripts/ci.sh` 重新複製。服務網址：前端 http://localhost:5173、backend http://localhost:3000、mock-newebpay http://localhost:8095（`/health`）、Mailpit http://localhost:8025。
 
 ### 4.2 測試帳號
 
