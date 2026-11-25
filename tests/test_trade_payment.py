@@ -665,3 +665,14 @@ def test_no_signature_bypass_switch():
         if "createDecipheriv" in text and rel != "utils/newebpay.js":
             offenders.append(f"{rel}: createDecipheriv")
     assert not offenders, offenders
+
+
+# ---- F5：/payment 參數訊息走共用格式化
+
+@pytest.mark.parametrize("body", [[], {}, {"order_id": ""}, {"order_id": "x"}, {"order_id": 5}], ids=["array", "missing", "empty", "not-uuid", "number"])
+def test_payment_bad_body_is_400_without_raw_names(api, make_user, body):
+    user = make_user()
+    r = api.post(PAYMENT_API, headers=auth_header(user), json=body, timeout=5)
+    assert r.status_code == 400, r.text
+    message = r.json()["message"]
+    assert "order_id" not in message and '"' not in message

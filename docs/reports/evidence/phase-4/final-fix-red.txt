@@ -1,0 +1,151 @@
+# P4 最終審查修正 紅燈（修正前）
+$ uv run pytest tests/test_trade_checkout.py tests/test_trade_payment.py tests/test_validator_sweep.py -q --tb=short -k "stale or taken_down or past_start or valid_cart or in_progress or bad_body or joi or newebpay or middlewares"
+...FFF.FFF...FFFFFF...F.                                                 [100%]
+=================================== FAILURES ===================================
+__________________ test_create_order_rejects_taken_down_tour ___________________
+tests/test_trade_checkout.py:740: in test_create_order_rejects_taken_down_tour
+    assert (r.status_code, r.json()["message"]) == (409, CART_STALE)
+E   AssertionError: assert (200, '訂單產生成功') == (409, '購物車中有已...日的項目，請移除後再結帳')
+E     
+E     At index 0 diff: 200 != 409
+E     Use -v to get more diff
+__________________ test_create_order_rejects_past_start_date ___________________
+tests/test_trade_checkout.py:752: in test_create_order_rejects_past_start_date
+    assert (r.status_code, r.json()["message"]) == (409, CART_STALE)
+E   AssertionError: assert (200, '訂單產生成功') == (409, '購物車中有已...日的項目，請移除後再結帳')
+E     
+E     At index 0 diff: 200 != 409
+E     Use -v to get more diff
+__________ test_create_order_stale_item_keeps_previous_pending_order ___________
+tests/test_trade_checkout.py:762: in test_create_order_stale_item_keeps_previous_pending_order
+    assert _post_order(api, db, user).status_code == 409
+E   AssertionError: assert 200 == 409
+E    +  where 200 = <Response [200]>.status_code
+E    +    where <Response [200]> = _post_order(<conftest.Api object at 0x760aa5396120>, <psycopg.Connection [IDLE] (host=localhost user=tripeasy_admin001 database=tripeasy_db001) at 0x760aa53963c0>, {'email': 'p0-c72f90cc@example.com', 'role': 'User', 'user_id': '5cffe092-b55d-4d36-828d-9f1175b2a1e7'})
+___________ test_preview_same_coupon_while_payment_in_progress_is_ok ___________
+tests/test_trade_checkout.py:783: in test_preview_same_coupon_while_payment_in_progress_is_ok
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"付款進行中，請稍後再試"}
+E   assert 409 == 200
+E    +  where 409 = <Response [409]>.status_code
+___________ test_preview_same_points_while_payment_in_progress_is_ok ___________
+tests/test_trade_checkout.py:799: in test_preview_same_points_while_payment_in_progress_is_ok
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"付款進行中，請稍後再試"}
+E   assert 409 == 200
+E    +  where 409 = <Response [409]>.status_code
+____ test_preview_same_none_while_payment_in_progress_updates_contact_only _____
+tests/test_trade_checkout.py:812: in test_preview_same_none_while_payment_in_progress_updates_contact_only
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"付款進行中，請稍後再試"}
+E   assert 409 == 200
+E    +  where 409 = <Response [409]>.status_code
+____________ test_payment_bad_body_is_400_without_raw_names[array] _____________
+tests/test_trade_payment.py:678: in test_payment_bad_body_is_400_without_raw_names
+    assert "order_id" not in message and '"' not in message
+E   assert ('order_id' not in '"value" mus... type object'
+E     
+E     'order_id' is contained here:
+E       "value" must be of type object and '"' not in '"value" mus... type object'
+E     
+E     '"' is contained here:
+E       "value" must be of type object
+E     ? +)
+___________ test_payment_bad_body_is_400_without_raw_names[missing] ____________
+tests/test_trade_payment.py:678: in test_payment_bad_body_is_400_without_raw_names
+    assert "order_id" not in message and '"' not in message
+E   AssertionError: assert ('order_id' not in '「order_id」為必填欄位'
+E     
+E     'order_id' is contained here:
+E       「order_id」為必填欄位)
+____________ test_payment_bad_body_is_400_without_raw_names[empty] _____________
+tests/test_trade_payment.py:678: in test_payment_bad_body_is_400_without_raw_names
+    assert "order_id" not in message and '"' not in message
+E   AssertionError: assert ('order_id' not in '「order_id」為必填欄位'
+E     
+E     'order_id' is contained here:
+E       「order_id」為必填欄位)
+___________ test_payment_bad_body_is_400_without_raw_names[not-uuid] ___________
+tests/test_trade_payment.py:678: in test_payment_bad_body_is_400_without_raw_names
+    assert "order_id" not in message and '"' not in message
+E   AssertionError: assert ('order_id' not in '「order_id」必須是有效的 UUID 格式'
+E     
+E     'order_id' is contained here:
+E       「order_id」必須是有效的 UUID 格式
+E     ?  ++++++++)
+____________ test_payment_bad_body_is_400_without_raw_names[number] ____________
+tests/test_trade_payment.py:678: in test_payment_bad_body_is_400_without_raw_names
+    assert "order_id" not in message and '"' not in message
+E   AssertionError: assert ('order_id' not in '「order_id」必須是文字'
+E     
+E     'order_id' is contained here:
+E       「order_id」必須是文字)
+_________________ test_hostile_matrix_has_no_joi_default_leaks _________________
+tests/test_validator_sweep.py:83: in test_hostile_matrix_has_no_joi_default_leaks
+    assert proc.returncode == 0, proc.stderr
+E   AssertionError: [eval]:52
+E       const r0 = schema.validate(clone(valid)); if (r0.error) leaks.push([label, 'BASE INVALID', r0.error.details[0].message]);
+E                         ^
+E     
+E     TypeError: Cannot read properties of undefined (reading 'validate')
+E         at [eval]:52:21
+E         at runScriptInThisContext (node:internal/vm:209:10)
+E         at node:internal/process/execution:449:12
+E         at [eval]-wrapper:6:24
+E         at runScriptInContext (node:internal/process/execution:447:60)
+E         at evalFunction (node:internal/process/execution:87:30)
+E         at evalScript (node:internal/process/execution:99:3)
+E         at node:internal/main/eval_string:74:3
+E     
+E     Node.js v22.14.0
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'compose', 'exec', '-T', 'backend', 'node', '-e', '\nconst b = process.cwd() + \'/src...t evalScript (node:internal/process/execution:99:3)\n    at node:internal/main/eval_string:74:3\n\nNode.js v22.14.0\n").returncode
+_____ test_middlewares_read_joi_errors_only_through_user_message[newebpay] _____
+tests/test_validator_sweep.py:116: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(563, 570), match='details'>
+E    +  where <re.Match object; span=(563, 570), match='details'> = <function search at 0x760aaa8e49a0>('\\bdetails\\b|\\.message\\b', "const Joi = require('joi');\nconst resStatus = require('../../utils/resStatus.js');\n\n\nconst paymentSchema = Joi.ob...e: error.details?.[0]?.message || '欄位驗證錯誤' });\n  }\n  next();\n}\n\nmodule.exports = {\n  post_newebpayPayment,\n};\n")
+E    +    where <function search at 0x760aaa8e49a0> = re.search
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_create_order_rejects_taken_down_tour
+FAILED tests/test_trade_checkout.py::test_create_order_rejects_past_start_date
+FAILED tests/test_trade_checkout.py::test_create_order_stale_item_keeps_previous_pending_order
+FAILED tests/test_trade_checkout.py::test_preview_same_coupon_while_payment_in_progress_is_ok
+FAILED tests/test_trade_checkout.py::test_preview_same_points_while_payment_in_progress_is_ok
+FAILED tests/test_trade_checkout.py::test_preview_same_none_while_payment_in_progress_updates_contact_only
+FAILED tests/test_trade_payment.py::test_payment_bad_body_is_400_without_raw_names[array]
+FAILED tests/test_trade_payment.py::test_payment_bad_body_is_400_without_raw_names[missing]
+FAILED tests/test_trade_payment.py::test_payment_bad_body_is_400_without_raw_names[empty]
+FAILED tests/test_trade_payment.py::test_payment_bad_body_is_400_without_raw_names[not-uuid]
+FAILED tests/test_trade_payment.py::test_payment_bad_body_is_400_without_raw_names[number]
+FAILED tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay]
+13 failed, 11 passed, 95 deselected in 3.49s
+
+$ uv run pytest e2e/test_trade_flow.py -q --tb=short -k "reserved_coupon or negative_points"
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_retry_with_reserved_coupon_amount_matches_submit[chromium] ________
+e2e/test_trade_flow.py:481: in test_retry_with_reserved_coupon_amount_matches_submit
+    expect(shown).to_have_text("NT$900")  # 畫面金額必須與實際送出的折扣一致
+E   AssertionError: Locator expected to have text 'NT$900'
+E   Actual value: NT$1,000 
+E   Call log:
+E       14 × locator resolved to <span data-v-5adc1611="" data-testid="pay-payable" class="fw-bold fs-5 text-danger">NT$1,000</span>
+E   
+E   Aria snapshot:
+________________ test_negative_points_display_as_zero[chromium] ________________
+e2e/test_trade_flow.py:498: in test_negative_points_display_as_zero
+    expect(page.get_by_text("可用積分 0 點")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E   
+E   Aria snapshot:
+=========================== short test summary info ============================
+FAILED e2e/test_trade_flow.py::test_retry_with_reserved_coupon_amount_matches_submit[chromium]
+FAILED e2e/test_trade_flow.py::test_negative_points_display_as_zero[chromium]
+2 failed, 19 deselected in 12.29s

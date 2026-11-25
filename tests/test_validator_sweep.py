@@ -15,6 +15,7 @@ SWEEP_JS = r"""
 const b = process.cwd() + '/src/utils/Validator/';
 const cart = require(b + 'cart_Validator.js'), disc = require(b + 'discounts_Validatior.js');
 const co = require(b + 'checkout_Vaildator.js'), prod = require(b + 'product_Validator.js');
+const np = require(process.cwd() + '/src/middlewares/newebpay/index.js');
 let userMessage = null;
 try { userMessage = require(b + 'joiMessage.js').userMessage; } catch (e) {}
 const real = typeof userMessage === 'function';
@@ -38,6 +39,7 @@ const targets = [
  ['co.orderID', co.orderIDSchema, { order_id: uuid }, queryVals, ['order_id']],
  ['co.post atm', co.postSchema, { user: { ...U }, payment_method: 'atm', discount: { type: 'point', used_point: 1 }, agree_terms: true }, bodyVals, ['user', 'user.name', 'user.email', 'user.address', 'user.phone_number', 'payment_method', 'installment', 'discount', 'discount.type', 'discount.coupon_id', 'discount.used_point', 'agree_terms']],
  ['co.post cc+coupon', co.postSchema, { user: { ...U }, payment_method: 'credit_card', installment: 3, discount: { type: 'coupon', coupon_id: uuid } }, bodyVals, ['installment', 'discount.coupon_id', 'discount.used_point', 'discount.type', 'payment_method']],
+ ['np.payment', np.paymentSchema, { order_id: uuid }, bodyVals, ['order_id']],
  ['prod.query(search)', prod.queryschema, { page: '1', limit: '10', sort_by: 'date', order: 'asc', lang: 'zh-TW' }, queryVals, ['type', 'item', 'tag', 'country', 'region', 'min_price', 'max_price', 'start_date', 'end_date', 'keyword', 'duration', 'page', 'limit', 'sort_by', 'order', 'lang']],
 ];
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -104,7 +106,7 @@ def _strip_comments(src: str) -> str:
     return re.sub(r"//[^\n]*", "", src)
 
 
-@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "product.get_tourData"])
+@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData"])
 def test_middlewares_read_joi_errors_only_through_user_message(name):
     if name == "product.get_tourData":
         src = _search_handler_source()

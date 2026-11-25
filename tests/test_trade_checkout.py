@@ -716,3 +716,109 @@ def test_cancel_discount_while_payment_in_progress_is_409(api, db, make_user, ma
     assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
     assert _user_coupon(db, user, coupon) == (-1, order_id)
     assert _order_discount(db, order_id) == before
+
+
+# ---- 最終審查修正 F1：建單重驗購物車項目
+
+CART_STALE = "購物車中有已下架或已過出發日的項目，請移除後再結帳"
+
+
+def _post_order(api, db, user):
+    return api.post(f"{CHECKOUT_API}/order/{_cart_id(db, user)}", headers=auth_header(user), timeout=5)
+
+
+def _order_count(db, user):
+    return db.execute("SELECT count(*) FROM orders WHERE user_id = %s", (user["user_id"],)).fetchone()[0]
+
+
+def test_create_order_rejects_taken_down_tour(api, db, make_user, make_tour):
+    user = make_user()
+    tour = make_tour(price=1000)
+    assert add_to_cart(api, user, tour).status_code == 201
+    db.execute("UPDATE tour SET status = 0 WHERE tour_id = %s", (tour["tour_id"],))
+    r = _post_order(api, db, user)
+    assert (r.status_code, r.json()["message"]) == (409, CART_STALE)
+    assert _order_count(db, user) == 0
+
+
+def test_create_order_rejects_past_start_date(api, db, make_user, make_tour):
+    user = make_user()
+    tour = make_tour(price=1000)
+    assert add_to_cart(api, user, tour).status_code == 201
+    db.execute(
+        "UPDATE cart_item SET start_date = now() - interval '3 days' WHERE cart_id = %s", (_cart_id(db, user),)
+    )
+    r = _post_order(api, db, user)
+    assert (r.status_code, r.json()["message"]) == (409, CART_STALE)
+    assert _order_count(db, user) == 0
+
+
+def test_create_order_stale_item_keeps_previous_pending_order(api, db, make_user, make_tour):
+    user = make_user()
+    first = checkout(api, user, [make_tour(price=1000)])
+    stale = make_tour(price=1000)
+    assert add_to_cart(api, user, stale).status_code == 201
+    db.execute("UPDATE tour SET status = 0 WHERE tour_id = %s", (stale["tour_id"],))
+    assert _post_order(api, db, user).status_code == 409
+    assert db.execute("SELECT payment_status FROM orders WHERE order_id = %s", (first,)).fetchone()[0] == -1
+
+
+def test_create_order_valid_cart_still_ok(api, db, make_user, make_tour):
+    user = make_user()
+    tour = make_tour(price=1000)
+    assert add_to_cart(api, user, tour).status_code == 201
+    assert _post_order(api, db, user).status_code == 200
+
+
+# ---- F4：付款進行中，同折扣的預覽可通過且不動保留
+
+def test_preview_same_coupon_while_payment_in_progress_is_ok(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
+    before = _order_discount(db, order_id)
+    _start_payment(db, user, order_id)
+    r = preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]})
+    assert r.status_code == 200, r.text
+    assert _user_coupon(db, user, coupon) == (-1, order_id)
+    assert _order_discount(db, order_id) == before
+
+
+def test_preview_same_points_while_payment_in_progress_is_ok(api, db, make_user, make_tour):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "point", "used_point": 50}).status_code == 200
+    rows = lambda: db.execute(
+        "SELECT point_id, point FROM point_record WHERE order_id = %s AND type = '減少_確認中'", (order_id,)
+    ).fetchall()
+    before = rows()
+    _start_payment(db, user, order_id)
+    r = preview(api, user, order_id, {"type": "point", "used_point": 50})
+    assert r.status_code == 200, r.text
+    assert rows() == before
+    r = preview(api, user, order_id, {"type": "point", "used_point": 55})
+    assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
+    assert rows() == before
+
+
+def test_preview_same_none_while_payment_in_progress_updates_contact_only(api, db, make_user, make_tour):
+    user = make_user()
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id).status_code == 200
+    _start_payment(db, user, order_id)
+    r = preview(api, user, order_id)
+    assert r.status_code == 200, r.text
+    assert _order_discount(db, order_id) == ("none", None)
+
+
+def test_preview_other_discount_while_payment_in_progress_still_409(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id).status_code == 200
+    _start_payment(db, user, order_id)
+    r = preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]})
+    assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
+    assert _user_coupon(db, user, coupon) == (0, None)

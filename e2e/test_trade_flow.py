@@ -437,3 +437,62 @@ def test_load_failure_shows_message(page: Page, make_user, make_tour):
     expect(page.get_by_text("資料載入失敗，請重新整理頁面")).to_be_visible()
     page.get_by_role("button", name="OK").click()  # 先關掉後端錯誤框（開著時背景頁面不在 a11y 樹內）
     expect(page.get_by_role("button", name="確認並前往付款")).to_be_disabled()
+
+
+# ---- 最終審查修正
+
+CHECKOUT_API = f"{API_BASE}/api/v1/user/checkout"
+
+
+def _api_reserved_order(db, user: dict, tour: dict, discount: dict | None) -> str:
+    """用 API 建單並 preview（保留折扣），回傳 order_id；之後以網址直接開結帳頁，等同重新付款。"""
+    _api_add(user, tour)
+    (cart_id,) = db.execute("SELECT cart_id FROM cart WHERE user_id = %s", (user["user_id"],)).fetchone()
+    res = requests.post(f"{CHECKOUT_API}/order/{cart_id}", headers=auth_header(user), timeout=5)
+    assert res.status_code == 200, res.text
+    order_id = res.json()["data"]["order_id"]
+    body = {
+        "user": {"name": "測試用戶", "email": user["email"], "address": "台北市測試路1號", "phone_number": "0912345678"},
+        "payment_method": "credit_card",
+    }
+    if discount:
+        body["discount"] = discount
+    res = requests.patch(f"{CHECKOUT_API}/preview/{order_id}", json=body, headers=auth_header(user), timeout=10)
+    assert res.status_code == 200, res.text
+    return order_id
+
+
+def test_retry_with_reserved_coupon_amount_matches_submit(page: Page, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    coupon = make_coupon(user, discount=100)
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    order_id = _api_reserved_order(db, user, tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]})
+    _login(page, user)
+    _open(page, f"#/pay?order={order_id}")
+    expect(page.get_by_label("email")).not_to_have_value("")
+    expect(page.get_by_role("radio", name="優惠卷")).to_be_checked()
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$900")
+    page.get_by_role("radio", name="旅遊積分").check()
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
+    page.get_by_role("radio", name="優惠卷").check()
+    shown = page.get_by_test_id("pay-payable")
+    expect(shown).to_have_text("NT$900")  # 畫面金額必須與實際送出的折扣一致
+    _fill_contact(page)
+    _pay_and_reach_mock(page)
+    expect(page.get_by_text("金額：900")).to_be_visible()
+
+
+def test_negative_points_display_as_zero(page: Page, db, make_user, make_tour):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = -30 WHERE user_id = %s", (user["user_id"],))
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    expect(page.get_by_label("email")).not_to_have_value("")
+    page.get_by_role("radio", name="旅遊積分").check()
+    expect(page.get_by_text("可用積分 0 點")).to_be_visible()
