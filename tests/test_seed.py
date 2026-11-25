@@ -1,5 +1,6 @@
 """spec 3.2：fakedata 改寫成 Flyway repeatable migration，可以重複執行。"""
 import json
+import math
 import re
 import uuid
 from collections import Counter, defaultdict
@@ -272,9 +273,9 @@ class Order(NamedTuple):
 # 第 9 項的 20 張訂單
 ORDERS = [Order(*row) for row in (
     (1, "alice", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "none", None),
-    (2, "bob", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "coupon", 44990),
+    (2, "bob", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "coupon", 40490),
     (3, "carol", HOKKAIDO, 1, 1, 45000, 40500, "credit_card", "none", None),
-    (4, "alice", MALDIVES, 1, 1, 98000, 83300, "credit_card", "coupon", 97700),
+    (4, "alice", MALDIVES, 1, 1, 98000, 83300, "credit_card", "coupon", 83000),
     (5, "carol", MALDIVES, 1, 1, 98000, 83300, "atm", "none", None),
     (6, "bob", NZ, 1, 1, 85000, None, "credit_card", "coupon", 84700),
     (7, "alice", KAOHSIUNG, 1, 2, 8400, None, "credit_card", "point", 8200),
@@ -535,23 +536,26 @@ def test_seed_payment_status_coverage(db):
 
 def test_seed_points_follow_rules(db):
     rows = db.execute(
-        "SELECT o.total_price, o.discount_price, o.discount_type, pr.type, pr.point, pr.user_id = o.user_id"
+        "SELECT o.discount_price, o.discount_type, pr.type, pr.point, pr.user_id = o.user_id,"
+        " (SELECT sum(COALESCE(NULLIF(oi.discount_price, 0), oi.total_price)) FROM order_item oi"
+        "  WHERE oi.order_id = o.order_id) AS promo_subtotal"
         " FROM point_record pr JOIN orders o USING (order_id)"
     ).fetchall()
-    assert Counter(r[3] for r in rows) == {"新增": 15, "減少": 3}
-    assert all(r[5] for r in rows), "point_record.user_id 必須是訂單的使用者"
+    assert Counter(r[2] for r in rows) == {"新增": 15, "減少": 3}
+    assert all(r[4] for r in rows), "point_record.user_id 必須是訂單的使用者"
     # 每張已付款訂單恰好 1 筆新增
     per_order = db.execute(
         "SELECT o.payment_status, count(pr.point_id) FROM orders o"
         " LEFT JOIN point_record pr ON pr.order_id = o.order_id AND pr.type = '新增' GROUP BY o.order_id, o.payment_status"
     ).fetchall()
     assert sorted(per_order) == sorted([(1, 1)] * 15 + [(s, 0) for s in (-1, 0, 2, 3, 4)])
-    for total, discount, discount_type, kind, point, _ in rows:
+    for discount, discount_type, kind, point, _, promo_subtotal in rows:
         if kind == "新增":
-            assert abs(point - total * 0.1) < 0.01
+            paid = discount if discount is not None else promo_subtotal  # 實付
+            assert point == math.floor(paid * 0.1)
         else:
             assert discount_type == "point" and point < 0
-            assert abs(-point * 0.8 - (total - discount)) < 0.01
+            assert abs(-point * 0.8 - (promo_subtotal - discount)) < 0.01
     # 每張已付款訂單 1 筆新增；未付款等狀態沒有點數
     rows = db.execute(
         "SELECT o.payment_status, pr.type, count(*) FROM point_record pr JOIN orders o USING (order_id)"
@@ -568,6 +572,51 @@ def test_seed_points_follow_rules(db):
     ).fetchall()) == {EMAIL["alice"]: 1500, EMAIL["bob"]: 3000, EMAIL["carol"]: 800}
 
 
+def _paid_by_order(db):
+    """{(email, 行程 title): 實付}；實付 = orders.discount_price，NULL 時取 Σ COALESCE(NULLIF(item.discount_price, 0), item.total_price)。"""
+    rows = db.execute(
+        'SELECT u.email, t.title, COALESCE(o.discount_price, sum(COALESCE(NULLIF(oi.discount_price, 0), oi.total_price))),'
+        " o.discount_price, p.discount_price"
+        ' FROM orders o JOIN "user" u USING (user_id) JOIN order_item oi USING (order_id)'
+        " JOIN tour t ON t.tour_id = oi.tour_id LEFT JOIN payment p ON p.order_id = o.order_id"
+        " WHERE o.payment_status = 1 GROUP BY o.order_id, u.email, t.title, o.discount_price, p.discount_price"
+    ).fetchall()
+    return rows
+
+
+def test_seed_reward_points_by_paid_amount(db):
+    expected = {
+        (1, "alice", HOKKAIDO): 4050, (2, "bob", HOKKAIDO): 4049, (3, "carol", HOKKAIDO): 4050,
+        (4, "alice", MALDIVES): 8300, (5, "carol", MALDIVES): 8330, (6, "bob", NZ): 8470,
+        (7, "alice", KAOHSIUNG): 820, (8, "bob", KAOHSIUNG): 1260, (9, "carol", OSAKA): 2968,
+        (10, "alice", SEOUL): 1900, (11, "carol", SEOUL): 950, (12, "bob", PARIS): 2200,
+        (13, "bob", BANGKOK): 1760, (14, "carol", BANGKOK): 900, (15, "alice", OKINAWA): 1760,
+    }
+    actual = {
+        (email, title): point for email, title, point in db.execute(
+            'SELECT u.email, t.title, pr.point FROM point_record pr JOIN "user" u USING (user_id)'
+            " JOIN orders o USING (order_id) JOIN order_item oi USING (order_id)"
+            " JOIN tour t ON t.tour_id = oi.tour_id WHERE pr.type = '新增'"
+        ).fetchall()
+    }
+    assert actual == {(EMAIL[user], title): point for (_, user, title), point in expected.items()}
+
+
+def test_seed_payment_amount_matches_paid(db):
+    rows = _paid_by_order(db)
+    assert len(rows) == 15
+    for email, title, paid, order_discount, payment_discount in rows:
+        # payment.discount_price 與 orders.discount_price 同值（NULL 就 NULL）；有值時就是實付
+        assert payment_discount == order_discount, (email, title)
+        if payment_discount is not None:
+            assert payment_discount == paid
+    assert {(e, t): d for e, t, _, _, d in rows if d is not None} == {
+        (EMAIL["bob"], HOKKAIDO): 40490, (EMAIL["alice"], MALDIVES): 83000,
+        (EMAIL["bob"], NZ): 84700, (EMAIL["alice"], KAOHSIUNG): 8200,
+        (EMAIL["carol"], OSAKA): 29680, (EMAIL["bob"], BANGKOK): 17600,
+    }
+
+
 def test_seed_user_coupons_point_to_rebuilt_orders(db):
     rows = db.execute(
         'SELECT u.email, c.code, uc.status, o.order_id IS NOT NULL, t.title, o.total_price'
@@ -581,9 +630,10 @@ def test_seed_user_coupons_point_to_rebuilt_orders(db):
         (EMAIL["alice"], "VIP300", 1, True, MALDIVES, 98000),  # 訂單 #4
         (EMAIL["carol"], "TRV010", 0, False, None, None),
     ], key=str)
-    # 優惠卷折抵：orders.discount_price = total_price - coupon.discount
+    # 優惠卷折抵：orders.discount_price = 促銷後金額 - coupon.discount
     rows = db.execute(
-        "SELECT o.total_price - c.discount, o.discount_price, o.discount_type"
+        "SELECT (SELECT sum(COALESCE(NULLIF(oi.discount_price, 0), oi.total_price)) FROM order_item oi"
+        " WHERE oi.order_id = o.order_id) - c.discount, o.discount_price, o.discount_type"
         " FROM user_coupon uc JOIN orders o USING (order_id) JOIN coupon c USING (coupon_id)"
     ).fetchall()
     assert all(a == b and kind == "coupon" for a, b, kind in rows) and len(rows) == 3

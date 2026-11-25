@@ -1,0 +1,96 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 58 items
+
+tests/test_trade_payment.py::test_payment_amount_from_backend PASSED     [  1%]
+tests/test_trade_payment.py::test_payment_trade_info_contains_required_fields PASSED [  3%]
+tests/test_trade_payment.py::test_payment_form_never_contains_raw_item_desc PASSED [  5%]
+tests/test_trade_payment.py::test_payment_new_merchant_order_no_each_attempt PASSED [  6%]
+tests/test_trade_payment.py::test_payment_other_users_order_is_404 PASSED [  8%]
+tests/test_trade_payment.py::test_payment_requires_order_id PASSED       [ 10%]
+tests/test_trade_payment.py::test_payment_requires_pending_status PASSED [ 12%]
+tests/test_trade_payment.py::test_payment_allowed_near_deadline_and_not_expired_while_in_progress PASSED [ 13%]
+tests/test_trade_payment.py::test_payment_on_overdue_order_is_409 PASSED [ 15%]
+tests/test_trade_payment.py::test_notify_bad_sha_changes_nothing PASSED  [ 17%]
+tests/test_trade_payment.py::test_notify_missing_fields_is_400 PASSED    [ 18%]
+tests/test_trade_payment.py::test_notify_undecryptable_trade_info_is_400 PASSED [ 20%]
+tests/test_trade_payment.py::test_notify_amount_mismatch_rejected PASSED [ 22%]
+tests/test_trade_payment.py::test_notify_unknown_merchant_order_no_is_400 PASSED [ 24%]
+tests/test_trade_payment.py::test_notify_duplicate_settles_once PASSED   [ 25%]
+tests/test_trade_payment.py::test_notify_concurrent_duplicates_settle_once PASSED [ 27%]
+tests/test_trade_payment.py::test_notify_success_settles_coupon_order PASSED [ 29%]
+tests/test_trade_payment.py::test_notify_success_settles_point_order PASSED [ 31%]
+tests/test_trade_payment.py::test_notify_success_keeps_unrelated_cart_items PASSED [ 32%]
+tests/test_trade_payment.py::test_paid_order_item_enables_review PASSED  [ 34%]
+tests/test_trade_payment.py::test_reward_floors_non_multiple_of_ten PASSED [ 36%]
+tests/test_trade_payment.py::test_notify_failure_keeps_order_pending PASSED [ 37%]
+tests/test_trade_payment.py::test_retry_after_failure_settles PASSED     [ 39%]
+tests/test_trade_payment.py::test_success_on_expired_order_is_recorded_only PASSED [ 41%]
+tests/test_trade_payment.py::test_second_successful_attempt_is_recorded_not_settled PASSED [ 43%]
+tests/test_trade_payment.py::test_success_after_cancel_is_recorded_only PASSED [ 44%]
+tests/test_trade_payment.py::test_order_expires_after_attempt_deadline PASSED [ 46%]
+tests/test_trade_payment.py::test_return_redirects_to_result_page PASSED [ 48%]
+tests/test_trade_payment.py::test_return_bad_sha_redirects_without_order PASSED [ 50%]
+tests/test_trade_payment.py::test_payment_through_mock_gateway_settles PASSED [ 51%]
+tests/test_trade_payment.py::test_mock_timeout_sends_no_notify PASSED    [ 53%]
+tests/test_trade_payment.py::test_success_after_cancel_with_discount_is_recorded_only PASSED [ 55%]
+tests/test_trade_payment.py::test_success_after_expiry_with_discount_is_recorded_only PASSED [ 56%]
+tests/test_trade_payment.py::test_payment_past_order_deadline_with_attempt_in_progress_is_409 PASSED [ 58%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[600-600] PASSED [ 60%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5-60] PASSED [ 62%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5000-900] PASSED [ 63%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[0-600] PASSED [ 65%]
+tests/test_trade_payment.py::test_zero_reward_writes_no_point_record PASSED [ 67%]
+tests/test_trade_payment.py::test_failure_notify_after_cancel_with_discount_is_recorded_only FAILED [ 68%]
+tests/test_trade_payment.py::test_cart_patch_locks_cart_before_cart_item FAILED [ 70%]
+tests/test_trade_payment.py::test_cart_delete_locks_cart_before_cart_item FAILED [ 72%]
+tests/test_trade_payment.py::test_settlement_locks_cart_before_cart_item PASSED [ 74%]
+tests/test_trade_payment.py::test_no_signature_bypass_switch PASSED      [ 75%]
+tests/test_mock_newebpay.py::test_mock_health PASSED                     [ 77%]
+tests/test_mock_newebpay.py::test_mock_rejects_bad_sha PASSED            [ 79%]
+tests/test_mock_newebpay.py::test_mock_payment_page_escapes_item_desc PASSED [ 81%]
+tests/test_mock_newebpay.py::test_mock_success_posts_signed_notify_and_returns PASSED [ 82%]
+tests/test_mock_newebpay.py::test_mock_fail_status PASSED                [ 84%]
+tests/test_mock_newebpay.py::test_mock_refuses_after_trade_limit PASSED  [ 86%]
+tests/test_mock_newebpay.py::test_mock_pays_within_trade_limit_without_clock_override PASSED [ 87%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_is_clamped_to_60 PASSED [ 89%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_is_clamped_to_900 PASSED [ 91%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_times_out_after_60 PASSED [ 93%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_not_clamped_below_900 PASSED [ 94%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_zero_means_no_limit PASSED [ 96%]
+tests/test_mock_newebpay.py::test_mock_session_cannot_pay_twice PASSED   [ 98%]
+tests/test_mock_newebpay.py::test_newebpay_helper_round_trip PASSED      [100%]
+
+=================================== FAILURES ===================================
+_______ test_failure_notify_after_cancel_with_discount_is_recorded_only ________
+tests/test_trade_payment.py:586: in test_failure_notify_after_cancel_with_discount_is_recorded_only
+    assert notify(api, failure_notify(mon, amt)).status_code == 200
+E   AssertionError: assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+E    +    where <Response [400]> = notify(<conftest.Api object at 0x735fbb3038c0>, {'MerchantID': 'MS000000000', 'Status': 'MPG03009', 'TradeInfo': '43002afd3101bd4e5dc57a274d84dc4a8301db43972952ab1e0e77b1064d9625b8b982f9ac4662ee1d00ea8ac945023188c24c85c74e6eab162f51a4ad9425fd3976a20ebc6d7d3b490996cb3cd165d2bb1f6624ed3a73ef4258a8059319886a9aa897272df9a421d8f632246390bf81558e485421e71c66b330482f903c3bf9266b70385b4c456062dc9ca00849fbcb5912545a4ab3e496e22c5047a9b198e5ae0c80312b9aa75184562736a75139e635e9d858227a82f0c295b40995150c3396eb622b157b6bfdbb54ab4194e659c04e586efb566c06497e0e4f57ea9b6abd2020e591f8f65283bf0b4ff0aad8fd52', 'TradeSha': '77208A032BF2DB2918440F7B91D290FF89EEB166CF5676ACA5808E333AAFFCEA', ...})
+E    +      where {'MerchantID': 'MS000000000', 'Status': 'MPG03009', 'TradeInfo': '43002afd3101bd4e5dc57a274d84dc4a8301db43972952ab1e0e77b1064d9625b8b982f9ac4662ee1d00ea8ac945023188c24c85c74e6eab162f51a4ad9425fd3976a20ebc6d7d3b490996cb3cd165d2bb1f6624ed3a73ef4258a8059319886a9aa897272df9a421d8f632246390bf81558e485421e71c66b330482f903c3bf9266b70385b4c456062dc9ca00849fbcb5912545a4ab3e496e22c5047a9b198e5ae0c80312b9aa75184562736a75139e635e9d858227a82f0c295b40995150c3396eb622b157b6bfdbb54ab4194e659c04e586efb566c06497e0e4f57ea9b6abd2020e591f8f65283bf0b4ff0aad8fd52', 'TradeSha': '77208A032BF2DB2918440F7B91D290FF89EEB166CF5676ACA5808E333AAFFCEA', ...} = failure_notify('T261125032459A7886143', 900)
+_________________ test_cart_patch_locks_cart_before_cart_item __________________
+tests/test_trade_payment.py:643: in test_cart_patch_locks_cart_before_cart_item
+    r = _assert_waits_on_cart_not_cart_item(
+tests/test_trade_payment.py:617: in _assert_waits_on_cart_not_cart_item
+    probe.execute("SELECT 1 FROM cart_item WHERE cart_item_id = %s FOR UPDATE NOWAIT", (cart_item_id,))
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.LockNotAvailable: could not obtain lock on row in relation "cart_item"
+_________________ test_cart_delete_locks_cart_before_cart_item _________________
+tests/test_trade_payment.py:659: in test_cart_delete_locks_cart_before_cart_item
+    r = _assert_waits_on_cart_not_cart_item(
+tests/test_trade_payment.py:617: in _assert_waits_on_cart_not_cart_item
+    probe.execute("SELECT 1 FROM cart_item WHERE cart_item_id = %s FOR UPDATE NOWAIT", (cart_item_id,))
+.venv/lib/python3.13/site-packages/psycopg/connection.py:251: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.LockNotAvailable: could not obtain lock on row in relation "cart_item"
+=========================== short test summary info ============================
+FAILED tests/test_trade_payment.py::test_failure_notify_after_cancel_with_discount_is_recorded_only
+FAILED tests/test_trade_payment.py::test_cart_patch_locks_cart_before_cart_item
+FAILED tests/test_trade_payment.py::test_cart_delete_locks_cart_before_cart_item
+======================== 3 failed, 55 passed in 10.56s =========================

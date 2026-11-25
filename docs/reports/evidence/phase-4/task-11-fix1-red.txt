@@ -1,0 +1,30 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 8 items
+
+e2e/test_trade_flow.py::test_add_to_cart_from_detail[chromium] PASSED    [ 12%]
+e2e/test_trade_flow.py::test_guest_add_to_cart_goes_to_login[chromium] PASSED [ 25%]
+e2e/test_trade_flow.py::test_cart_page_lists_and_updates[chromium] PASSED [ 37%]
+e2e/test_trade_flow.py::test_empty_cart_message[chromium] PASSED         [ 50%]
+e2e/test_trade_flow.py::test_checkout_button_creates_order[chromium] PASSED [ 62%]
+e2e/test_trade_flow.py::test_add_hotel_to_cart_with_room_type[chromium] PASSED [ 75%]
+e2e/test_trade_flow.py::test_hotel_without_rooms_not_orderable[chromium] PASSED [ 87%]
+e2e/test_trade_flow.py::test_payment_error_shows_backend_message[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+______________ test_payment_error_shows_backend_message[chromium] ______________
+e2e/test_trade_flow.py:175: in test_payment_error_shows_backend_message
+    expect(page.locator(".swal2-html-container")).to_have_text("訂單狀態不允許此操作")
+E   AssertionError: Locator expected to have text '訂單狀態不允許此操作'
+E   Actual value: 無法連線到伺服器，請檢查網路後再試一次。 
+E   Call log:
+E       14 × locator resolved to <div id="swal2-html-container" class="swal2-html-container">無法連線到伺服器，請檢查網路後再試一次。</div>
+E   
+E   Aria snapshot:
+=========================== short test summary info ============================
+FAILED e2e/test_trade_flow.py::test_payment_error_shows_backend_message[chromium]
+========================= 1 failed, 7 passed in 9.44s ==========================

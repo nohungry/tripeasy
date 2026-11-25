@@ -1,0 +1,163 @@
+# 注意：此為連帶失敗紅燈——test 1 耗盡 pool 後，test 2、3 首次 add 即逾時
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 3 items
+
+tests/test_trade_cart.py::test_cart_add_does_not_leak_connections FAILED [ 33%]
+tests/test_trade_cart.py::test_cart_patch_and_delete_do_not_leak_connections FAILED [ 66%]
+tests/test_trade_cart.py::test_create_order_does_not_leak_connections FAILED [100%]
+
+=================================== FAILURES ===================================
+___________________ test_cart_add_does_not_leak_connections ____________________
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:540: in _make_request
+    response = conn.getresponse()
+.venv/lib/python3.13/site-packages/urllib3/connection.py:638: in getresponse
+    httplib_response = super().getresponse()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:1459: in getresponse
+    response.begin()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:336: in begin
+    version, status, reason = self._read_status()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:297: in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/socket.py:723: in readinto
+    return self._sock.recv_into(b)
+E   TimeoutError: timed out
+
+The above exception was the direct cause of the following exception:
+.venv/lib/python3.13/site-packages/requests/adapters.py:667: in send
+    resp = conn.urlopen(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:847: in urlopen
+    retries = retries.increment(
+.venv/lib/python3.13/site-packages/urllib3/util/retry.py:510: in increment
+    raise reraise(type(error), error, _stacktrace)
+.venv/lib/python3.13/site-packages/urllib3/util/util.py:39: in reraise
+    raise value
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:793: in urlopen
+    response = self._make_request(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:542: in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:373: in _raise_timeout
+    raise ReadTimeoutError(
+E   urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=5)
+
+During handling of the above exception, another exception occurred:
+tests/test_trade_cart.py:42: in test_cart_add_does_not_leak_connections
+    r = add_to_cart(api, user, make_tour())  # 同會員每次加新行程（重複行程會被 middleware 擋）
+tests/test_trade_cart.py:23: in add_to_cart
+    return api.post(f"{CART}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
+.venv/lib/python3.13/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+tests/conftest.py:50: in request
+    return super().request(method, url, *args, **kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+.venv/lib/python3.13/site-packages/requests/adapters.py:713: in send
+    raise ReadTimeout(e, request=request)
+E   requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=5)
+______________ test_cart_patch_and_delete_do_not_leak_connections ______________
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:540: in _make_request
+    response = conn.getresponse()
+.venv/lib/python3.13/site-packages/urllib3/connection.py:638: in getresponse
+    httplib_response = super().getresponse()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:1459: in getresponse
+    response.begin()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:336: in begin
+    version, status, reason = self._read_status()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:297: in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/socket.py:723: in readinto
+    return self._sock.recv_into(b)
+E   TimeoutError: timed out
+
+The above exception was the direct cause of the following exception:
+.venv/lib/python3.13/site-packages/requests/adapters.py:667: in send
+    resp = conn.urlopen(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:847: in urlopen
+    retries = retries.increment(
+.venv/lib/python3.13/site-packages/urllib3/util/retry.py:510: in increment
+    raise reraise(type(error), error, _stacktrace)
+.venv/lib/python3.13/site-packages/urllib3/util/util.py:39: in reraise
+    raise value
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:793: in urlopen
+    response = self._make_request(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:542: in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:373: in _raise_timeout
+    raise ReadTimeoutError(
+E   urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=5)
+
+During handling of the above exception, another exception occurred:
+tests/test_trade_cart.py:50: in test_cart_patch_and_delete_do_not_leak_connections
+    assert add_to_cart(api, user, tour).status_code == 201
+tests/test_trade_cart.py:23: in add_to_cart
+    return api.post(f"{CART}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
+.venv/lib/python3.13/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+tests/conftest.py:50: in request
+    return super().request(method, url, *args, **kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+.venv/lib/python3.13/site-packages/requests/adapters.py:713: in send
+    raise ReadTimeout(e, request=request)
+E   requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=5)
+_________________ test_create_order_does_not_leak_connections __________________
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:540: in _make_request
+    response = conn.getresponse()
+.venv/lib/python3.13/site-packages/urllib3/connection.py:638: in getresponse
+    httplib_response = super().getresponse()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:1459: in getresponse
+    response.begin()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:336: in begin
+    version, status, reason = self._read_status()
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/http/client.py:297: in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/socket.py:723: in readinto
+    return self._sock.recv_into(b)
+E   TimeoutError: timed out
+
+The above exception was the direct cause of the following exception:
+.venv/lib/python3.13/site-packages/requests/adapters.py:667: in send
+    resp = conn.urlopen(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:847: in urlopen
+    retries = retries.increment(
+.venv/lib/python3.13/site-packages/urllib3/util/retry.py:510: in increment
+    raise reraise(type(error), error, _stacktrace)
+.venv/lib/python3.13/site-packages/urllib3/util/util.py:39: in reraise
+    raise value
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:793: in urlopen
+    response = self._make_request(
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:542: in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:373: in _raise_timeout
+    raise ReadTimeoutError(
+E   urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=5)
+
+During handling of the above exception, another exception occurred:
+tests/test_trade_cart.py:75: in test_create_order_does_not_leak_connections
+    assert add_to_cart(api, user, make_tour()).status_code == 201
+tests/test_trade_cart.py:23: in add_to_cart
+    return api.post(f"{CART}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
+.venv/lib/python3.13/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+tests/conftest.py:50: in request
+    return super().request(method, url, *args, **kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+.venv/lib/python3.13/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+.venv/lib/python3.13/site-packages/requests/adapters.py:713: in send
+    raise ReadTimeout(e, request=request)
+E   requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=5)
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_cart_add_does_not_leak_connections - re...
+FAILED tests/test_trade_cart.py::test_cart_patch_and_delete_do_not_leak_connections
+FAILED tests/test_trade_cart.py::test_create_order_does_not_leak_connections
+============================== 3 failed in 15.92s ==============================

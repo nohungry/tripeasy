@@ -341,9 +341,9 @@ ON CONFLICT DO NOTHING;
 ---- 17. 訂單大項目資料 "orders"
 INSERT INTO orders (order_id, user_id, address, phone, payment_type, discount_type, payment_status, total_price, discount_price, created_at, updated_at) VALUES
 ('b294a0bd-a29b-40c9-8228-721c0e31899e', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'none', 1, 45000, NULL, CURRENT_TIMESTAMP - INTERVAL '9 days', CURRENT_TIMESTAMP - INTERVAL '9 days'),
-('271f2096-cf89-428c-8087-5647fdc99339', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 'coupon', 1, 45000, 44990, CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
+('271f2096-cf89-428c-8087-5647fdc99339', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 'coupon', 1, 45000, 40490, CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
 ('b020fdc5-5c7d-419d-b24f-fde477c82d27', '568ed618-7b23-4b88-a2fb-d519d1176a63', '台中市西區公益路321巷9號', '0987654321', 'credit_card', 'none', 1, 45000, NULL, CURRENT_TIMESTAMP - INTERVAL '7 days', CURRENT_TIMESTAMP - INTERVAL '7 days'),
-('e3447913-9796-456b-a66b-dce3aafbbb8b', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'coupon', 1, 98000, 97700, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
+('e3447913-9796-456b-a66b-dce3aafbbb8b', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'coupon', 1, 98000, 83000, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
 ('14dcadc5-26be-4868-8b84-c6651b2452a5', '568ed618-7b23-4b88-a2fb-d519d1176a63', '台中市西區公益路321巷9號', '0987654321', 'atm', 'none', 1, 98000, NULL, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
 ('ffc9a14e-0f11-43ce-9b7a-588c52ca02dc', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 'coupon', 1, 85000, 84700, CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '30 days'),
 ('9fa3756a-2625-4c3e-8581-d44f032c5894', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'point', 1, 8400, 8200, CURRENT_TIMESTAMP - INTERVAL '29 days', CURRENT_TIMESTAMP - INTERVAL '29 days'),
@@ -389,9 +389,9 @@ ON CONFLICT DO NOTHING;
 ---- 19. 付款紀錄資料 "payment"
 INSERT INTO payment (payment_id, user_id, order_id, address, phone, payment_method, payment_status, discount_price, return_data, return_time, result_info, result_time) VALUES
 ('d6c1c3cc-f053-43c1-b3ad-8f4ed98049d1', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'b294a0bd-a29b-40c9-8228-721c0e31899e', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, NULL, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"b294a0bd-a29b-40c9-8228-721c0e31899e","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
-('49384278-8601-48b8-bfd0-6522fef40c69', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '271f2096-cf89-428c-8087-5647fdc99339', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 1, 44990, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"271f2096-cf89-428c-8087-5647fdc99339","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
+('49384278-8601-48b8-bfd0-6522fef40c69', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '271f2096-cf89-428c-8087-5647fdc99339', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 1, 40490, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"271f2096-cf89-428c-8087-5647fdc99339","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 ('d43ee26a-d43c-4037-a2ad-f323fa494bde', '568ed618-7b23-4b88-a2fb-d519d1176a63', 'b020fdc5-5c7d-419d-b24f-fde477c82d27', '台中市西區公益路321巷9號', '0987654321', 'credit_card', 1, NULL, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"b020fdc5-5c7d-419d-b24f-fde477c82d27","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
-('73293871-9662-48ab-ba11-cfde7d6daf01', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'e3447913-9796-456b-a66b-dce3aafbbb8b', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, 97700, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"e3447913-9796-456b-a66b-dce3aafbbb8b","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
+('73293871-9662-48ab-ba11-cfde7d6daf01', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'e3447913-9796-456b-a66b-dce3aafbbb8b', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, 83000, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"e3447913-9796-456b-a66b-dce3aafbbb8b","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 ('8d56d512-6076-4323-8d28-26f3b9e4399a', '568ed618-7b23-4b88-a2fb-d519d1176a63', '14dcadc5-26be-4868-8b84-c6651b2452a5', '台中市西區公益路321巷9號', '0987654321', 'atm', 1, NULL, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"14dcadc5-26be-4868-8b84-c6651b2452a5","PaymentType":"atm","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 ('b06cdd7d-5e55-453a-8ee2-175a651a0bb3', 'c35f34c3-337f-410b-b57a-e439a7ba969b', 'ffc9a14e-0f11-43ce-9b7a-588c52ca02dc', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 1, 84700, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"ffc9a14e-0f11-43ce-9b7a-588c52ca02dc","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 ('dfab36ad-cd7e-4a49-b93c-f53487ef8eef', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '9fa3756a-2625-4c3e-8581-d44f032c5894', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, 8200, '{"Status":"SUCCESS","Result":{"MerchantOrderNo":"9fa3756a-2625-4c3e-8581-d44f032c5894","PaymentType":"credit_card","Message":"付款成功"}}', CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
@@ -455,19 +455,19 @@ ON CONFLICT DO NOTHING;
 
 ---- 24. 會員旅遊積分資料 "point_record"
 INSERT INTO point_record (point_id, user_id, order_id, type, point) VALUES
-('6508e89a-3909-4f01-b3a6-9448742270b4', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'b294a0bd-a29b-40c9-8228-721c0e31899e', '新增', 4500),
-('e0224c2b-17d7-4607-819d-c2c9e4d6f82a', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '271f2096-cf89-428c-8087-5647fdc99339', '新增', 4500),
-('e9320070-7c73-450d-a609-3d5a4377b4e1', '568ed618-7b23-4b88-a2fb-d519d1176a63', 'b020fdc5-5c7d-419d-b24f-fde477c82d27', '新增', 4500),
-('859854e8-67df-4ba6-9e44-d8f29e729e3f', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'e3447913-9796-456b-a66b-dce3aafbbb8b', '新增', 9800),
-('c2e92131-bea7-4d6c-8aa8-0d22afd244f0', '568ed618-7b23-4b88-a2fb-d519d1176a63', '14dcadc5-26be-4868-8b84-c6651b2452a5', '新增', 9800),
-('d05b5f14-dc9c-46bf-be61-d61fb2e36e23', 'c35f34c3-337f-410b-b57a-e439a7ba969b', 'ffc9a14e-0f11-43ce-9b7a-588c52ca02dc', '新增', 8500),
-('c98d3462-24af-4843-91bb-4aab3450403c', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '9fa3756a-2625-4c3e-8581-d44f032c5894', '新增', 840),
+('6508e89a-3909-4f01-b3a6-9448742270b4', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'b294a0bd-a29b-40c9-8228-721c0e31899e', '新增', 4050),
+('e0224c2b-17d7-4607-819d-c2c9e4d6f82a', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '271f2096-cf89-428c-8087-5647fdc99339', '新增', 4049),
+('e9320070-7c73-450d-a609-3d5a4377b4e1', '568ed618-7b23-4b88-a2fb-d519d1176a63', 'b020fdc5-5c7d-419d-b24f-fde477c82d27', '新增', 4050),
+('859854e8-67df-4ba6-9e44-d8f29e729e3f', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'e3447913-9796-456b-a66b-dce3aafbbb8b', '新增', 8300),
+('c2e92131-bea7-4d6c-8aa8-0d22afd244f0', '568ed618-7b23-4b88-a2fb-d519d1176a63', '14dcadc5-26be-4868-8b84-c6651b2452a5', '新增', 8330),
+('d05b5f14-dc9c-46bf-be61-d61fb2e36e23', 'c35f34c3-337f-410b-b57a-e439a7ba969b', 'ffc9a14e-0f11-43ce-9b7a-588c52ca02dc', '新增', 8470),
+('c98d3462-24af-4843-91bb-4aab3450403c', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '9fa3756a-2625-4c3e-8581-d44f032c5894', '新增', 820),
 ('a7535753-3071-47e3-aa5e-10517e57f337', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '991f0bb9-e8fd-47b4-9019-6fbd7952dbe1', '新增', 1260),
-('3e4d7e77-c3a4-4fcd-8e85-97368f2b7dcb', '568ed618-7b23-4b88-a2fb-d519d1176a63', '3a2ca85d-2384-40a7-b970-69821733277a', '新增', 3000),
+('3e4d7e77-c3a4-4fcd-8e85-97368f2b7dcb', '568ed618-7b23-4b88-a2fb-d519d1176a63', '3a2ca85d-2384-40a7-b970-69821733277a', '新增', 2968),
 ('10fa2f28-7dd3-461d-b107-d975b5a91afa', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 'c50b5a31-084a-4071-a1bc-ed84b2dfdf03', '新增', 1900),
 ('7d0617b9-2393-4d77-bd15-e0fe12afedfb', '568ed618-7b23-4b88-a2fb-d519d1176a63', '5a8d9174-3da6-4cb7-b3f6-ceb395dfba50', '新增', 950),
 ('883cdeba-5f5e-4312-b563-710a5be44c77', 'c35f34c3-337f-410b-b57a-e439a7ba969b', 'a1efba0e-62f7-4234-91ce-25eb8caa57ce', '新增', 2200),
-('a1aac1f9-57cb-48a0-8f30-09dbd6ecf264', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '7650668e-16e8-4107-a63c-56e49805705a', '新增', 1800),
+('a1aac1f9-57cb-48a0-8f30-09dbd6ecf264', 'c35f34c3-337f-410b-b57a-e439a7ba969b', '7650668e-16e8-4107-a63c-56e49805705a', '新增', 1760),
 ('63031429-2f23-4ca3-a5f6-a0204a8416b5', '568ed618-7b23-4b88-a2fb-d519d1176a63', '229652ef-084a-411d-8564-614aefe78256', '新增', 900),
 ('055a5db4-342e-43fa-90ef-bf5cfec262ab', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '75ae017f-9925-4728-98cc-f4cdf1e726f3', '新增', 1760),
 ('88d8e7b9-a3f8-4fb9-9f72-58e1d30d7a7a', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', '9fa3756a-2625-4c3e-8581-d44f032c5894', '減少', -250),

@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- ./.venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 44 items / 43 deselected / 1 selected
+
+tests/test_trade_payment.py::test_no_signature_bypass_switch PASSED      [100%]
+
+======================= 1 passed, 43 deselected in 0.07s =======================

@@ -1,0 +1,145 @@
+FFFFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+_________________ test_hostile_matrix_has_no_joi_default_leaks _________________
+tests/test_validator_sweep.py:86: in test_hostile_matrix_has_no_joi_default_leaks
+    assert result["leaks"] == [], (result["real"], len(result["leaks"]), result["leaks"][:10])
+E   AssertionError: (False, 74, [['cart.base travel', 'people=Infinity', '"people" cannot be infinity'], ['cart.base travel', 'people=-Inf...ams', 'ROOT=null', '"value" must be of type object'], ['cart.params', 'ROOT=', '"value" must be of type object'], ...])
+E   assert [['cart.base ...object'], ...] == []
+E     
+E     Left contains 74 more items, first extra item: ['cart.base travel', 'people=Infinity', '"people" cannot be infinity']
+E     Use -v to get more diff
+_______ test_middlewares_read_joi_errors_only_through_user_message[cart] _______
+tests/test_validator_sweep.py:114: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(493, 500), match='details'>
+E    +  where <re.Match object; span=(493, 500), match='details'> = <function search at 0x7594a3698860>('\\bdetails\\b|\\.message\\b', "const resStatus = require('../../utils/resStatus.js');\nconst { pool } = require('../../config/database');\n\nconst c...\n\n  next();\n}\n\nmodule.exports = {\n  post_userCart,\n  delete_userCart,\n  patch_userCart,\n  get_userCart,\n};\n")
+E    +    where <function search at 0x7594a3698860> = re.search
+____ test_middlewares_read_joi_errors_only_through_user_message[discounts] _____
+tests/test_validator_sweep.py:114: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(438, 445), match='details'>
+E    +  where <re.Match object; span=(438, 445), match='details'> = <function search at 0x7594a3698860>('\\bdetails\\b|\\.message\\b', "const resStatus = require('../../utils/resStatus.js');\n\nconst discounts_Validatior = require('../../utils/Validator...ge: message,\n    });\n    return;\n  }\n\n  next();\n}\n\nmodule.exports = {\n  postDiscounts,\n  getDiscounts,\n};\n")
+E    +    where <function search at 0x7594a3698860> = re.search
+_____ test_middlewares_read_joi_errors_only_through_user_message[checkout] _____
+tests/test_validator_sweep.py:114: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(354, 361), match='details'>
+E    +  where <re.Match object; span=(354, 361), match='details'> = <function search at 0x7594a3698860>('\\bdetails\\b|\\.message\\b', "const resStatus = require('../../utils/resStatus');\nconst { pool } = require('../../config/database');\n\nconst chec...nmodule.exports = {\n  post_userOrder,\n  get_userOrderPrfile,\n  patch_userOrderPreview,\n  get_userCheckOrder,\n};\n")
+E    +    where <function search at 0x7594a3698860> = re.search
+_ test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] _
+tests/test_validator_sweep.py:114: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(190, 197), match='details'>
+E    +  where <re.Match object; span=(190, 197), match='details'> = <function search at 0x7594a3698860>('\\bdetails\\b|\\.message\\b', "async function get_tourData(req, res, next) {\n  const { error: queryError } = product_Validator.queryschema.validate...tatus({\n      res: res,\n      status: 400,\n      message: message,\n    });\n    return;\n  }\n\n  next();\n}\n\n\n")
+E    +    where <function search at 0x7594a3698860> = re.search
+_____________________ test_http_installment_unsafe_string ______________________
+tests/test_validator_sweep.py:138: in test_http_installment_unsafe_string
+    _assert_fallback(_preview(api, make_user(), {"user": USER, "payment_method": "credit_card", "installment": "9007199254740993"}))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"installment...a safe number' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "installment" must be a safe number
+_______________________ test_http_json_1e400_cart_people _______________________
+tests/test_validator_sweep.py:143: in test_http_json_1e400_cart_people
+    _assert_fallback(_raw(api, "POST", f"{CART_API}/{uuid.uuid4()}", make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"people" cannot be infinity' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "people" cannot be infinity
+_____________________ test_http_json_1e400_discount_point ______________________
+tests/test_validator_sweep.py:148: in test_http_json_1e400_discount_point
+    _assert_fallback(_raw(api, "POST", f"{DISCOUNT_API}/{uuid.uuid4()}", make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"discount.po...t be infinity' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "discount.point" cannot be infinity
+___________________ test_http_json_1e400_checkout_used_point ___________________
+tests/test_validator_sweep.py:153: in test_http_json_1e400_checkout_used_point
+    _assert_fallback(_raw(api, "PATCH", f"{CHECKOUT_API}/preview/{uuid.uuid4()}", make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"discount.us...t be infinity' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "discount.used_point" cannot be infinity
+______________________ test_http_checkout_empty_coupon_id ______________________
+tests/test_validator_sweep.py:157: in test_http_checkout_empty_coupon_id
+    _assert_fallback(_preview(api, make_user(), {"user": USER, "payment_method": "atm", "discount": {"type": "coupon", "coupon_id": ""}}))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"discount.co...d to be empty' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "discount.coupon_id" is not allowed to be empty
+_________ test_http_checkout_unknown_keys_and_array_root[root-unknown] _________
+tests/test_validator_sweep.py:171: in test_http_checkout_unknown_keys_and_array_root
+    _assert_fallback(_preview(api, make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"foo" is not allowed' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "foo" is not allowed
+_________ test_http_checkout_unknown_keys_and_array_root[user-unknown] _________
+tests/test_validator_sweep.py:171: in test_http_checkout_unknown_keys_and_array_root
+    _assert_fallback(_preview(api, make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"user.foo" is not allowed' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "user.foo" is not allowed
+_______ test_http_checkout_unknown_keys_and_array_root[discount-unknown] _______
+tests/test_validator_sweep.py:171: in test_http_checkout_unknown_keys_and_array_root
+    _assert_fallback(_preview(api, make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"discount.fo...s not allowed' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "discount.foo" is not allowed
+__________ test_http_checkout_unknown_keys_and_array_root[root-array] __________
+tests/test_validator_sweep.py:171: in test_http_checkout_unknown_keys_and_array_root
+    _assert_fallback(_preview(api, make_user(), body))
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"value" must...f type object' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "value" must be of type object
+______________________ test_http_search_unknown_query_key ______________________
+tests/test_validator_sweep.py:176: in test_http_search_unknown_query_key
+    _assert_fallback(r)
+tests/test_validator_sweep.py:133: in _assert_fallback
+    assert r.json()["message"] == FALLBACK
+E   assert '"foo" is not allowed' == '輸入的資料格式不正確'
+E     
+E     - 輸入的資料格式不正確
+E     + "foo" is not allowed
+=========================== short test summary info ============================
+FAILED tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart]
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts]
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout]
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData]
+FAILED tests/test_validator_sweep.py::test_http_installment_unsafe_string - a...
+FAILED tests/test_validator_sweep.py::test_http_json_1e400_cart_people - asse...
+FAILED tests/test_validator_sweep.py::test_http_json_1e400_discount_point - a...
+FAILED tests/test_validator_sweep.py::test_http_json_1e400_checkout_used_point
+FAILED tests/test_validator_sweep.py::test_http_checkout_empty_coupon_id - as...
+FAILED tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-unknown]
+FAILED tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[user-unknown]
+FAILED tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown]
+FAILED tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array]
+FAILED tests/test_validator_sweep.py::test_http_search_unknown_query_key - as...
+15 failed in 0.79s

@@ -1,0 +1,316 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 45 items
+
+tests/test_trade_payment.py::test_payment_amount_from_backend FAILED     [  2%]
+tests/test_trade_payment.py::test_payment_trade_info_contains_required_fields FAILED [  4%]
+tests/test_trade_payment.py::test_payment_form_never_contains_raw_item_desc FAILED [  6%]
+tests/test_trade_payment.py::test_payment_new_merchant_order_no_each_attempt FAILED [  8%]
+tests/test_trade_payment.py::test_payment_other_users_order_is_404 FAILED [ 11%]
+tests/test_trade_payment.py::test_payment_requires_order_id FAILED       [ 13%]
+tests/test_trade_payment.py::test_payment_requires_pending_status FAILED [ 15%]
+tests/test_trade_payment.py::test_payment_allowed_near_deadline_and_not_expired_while_in_progress FAILED [ 17%]
+tests/test_trade_payment.py::test_payment_on_overdue_order_is_409 FAILED [ 20%]
+tests/test_trade_payment.py::test_notify_bad_sha_changes_nothing FAILED  [ 22%]
+tests/test_trade_payment.py::test_notify_missing_fields_is_400 PASSED    [ 24%]
+tests/test_trade_payment.py::test_notify_undecryptable_trade_info_is_400 PASSED [ 26%]
+tests/test_trade_payment.py::test_notify_amount_mismatch_rejected FAILED [ 28%]
+tests/test_trade_payment.py::test_notify_unknown_merchant_order_no_is_400 FAILED [ 31%]
+tests/test_trade_payment.py::test_notify_duplicate_settles_once FAILED   [ 33%]
+tests/test_trade_payment.py::test_notify_concurrent_duplicates_settle_once FAILED [ 35%]
+tests/test_trade_payment.py::test_notify_success_settles_coupon_order FAILED [ 37%]
+tests/test_trade_payment.py::test_notify_success_settles_point_order FAILED [ 40%]
+tests/test_trade_payment.py::test_notify_success_keeps_unrelated_cart_items FAILED [ 42%]
+tests/test_trade_payment.py::test_paid_order_item_enables_review FAILED  [ 44%]
+tests/test_trade_payment.py::test_reward_floors_non_multiple_of_ten FAILED [ 46%]
+tests/test_trade_payment.py::test_notify_failure_keeps_order_pending FAILED [ 48%]
+tests/test_trade_payment.py::test_retry_after_failure_settles FAILED     [ 51%]
+tests/test_trade_payment.py::test_success_on_expired_order_is_recorded_only FAILED [ 53%]
+tests/test_trade_payment.py::test_second_successful_attempt_is_recorded_not_settled FAILED [ 55%]
+tests/test_trade_payment.py::test_success_after_cancel_is_recorded_only FAILED [ 57%]
+tests/test_trade_payment.py::test_order_expires_after_attempt_deadline FAILED [ 60%]
+tests/test_trade_payment.py::test_return_redirects_to_result_page FAILED [ 62%]
+tests/test_trade_payment.py::test_return_bad_sha_redirects_without_order FAILED [ 64%]
+tests/test_trade_payment.py::test_payment_through_mock_gateway_settles FAILED [ 66%]
+tests/test_trade_payment.py::test_mock_timeout_sends_no_notify FAILED    [ 68%]
+tests/test_trade_payment.py::test_no_signature_bypass_switch FAILED      [ 71%]
+tests/test_async_errors.py::test_rejection_outside_try_returns_500_and_server_survives PASSED [ 73%]
+tests/test_mock_newebpay.py::test_mock_health PASSED                     [ 75%]
+tests/test_mock_newebpay.py::test_mock_rejects_bad_sha PASSED            [ 77%]
+tests/test_mock_newebpay.py::test_mock_payment_page_escapes_item_desc PASSED [ 80%]
+tests/test_mock_newebpay.py::test_mock_success_posts_signed_notify_and_returns PASSED [ 82%]
+tests/test_mock_newebpay.py::test_mock_fail_status PASSED                [ 84%]
+tests/test_mock_newebpay.py::test_mock_refuses_after_trade_limit PASSED  [ 86%]
+tests/test_mock_newebpay.py::test_mock_pays_within_trade_limit_without_clock_override PASSED [ 88%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_is_clamped_to_60 FAILED [ 91%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_is_clamped_to_900 FAILED [ 93%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_zero_means_no_limit PASSED [ 95%]
+tests/test_mock_newebpay.py::test_mock_session_cannot_pay_twice PASSED   [ 97%]
+tests/test_mock_newebpay.py::test_newebpay_helper_round_trip PASSED      [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_payment_amount_from_backend _______________________
+tests/test_trade_payment.py:106: in test_payment_amount_from_backend
+    mon, amt, _ = start_payment(
+E   TypeError: start_payment() got multiple values for argument 'user'
+_______________ test_payment_trade_info_contains_required_fields _______________
+tests/test_trade_payment.py:115: in test_payment_trade_info_contains_required_fields
+    assert r.status_code == 200
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+________________ test_payment_form_never_contains_raw_item_desc ________________
+tests/test_trade_payment.py:139: in test_payment_form_never_contains_raw_item_desc
+    assert r.status_code == 200
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_______________ test_payment_new_merchant_order_no_each_attempt ________________
+tests/test_trade_payment.py:147: in test_payment_new_merchant_order_no_each_attempt
+    first, _, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+____________________ test_payment_other_users_order_is_404 _____________________
+tests/test_trade_payment.py:158: in test_payment_other_users_order_is_404
+    assert r.status_code == 404
+E   assert 500 == 404
+E    +  where 500 = <Response [500]>.status_code
+________________________ test_payment_requires_order_id ________________________
+tests/test_trade_payment.py:167: in test_payment_requires_order_id
+    assert r.status_code == 400
+E   assert 500 == 400
+E    +  where 500 = <Response [500]>.status_code
+_____________________ test_payment_requires_pending_status _____________________
+tests/test_trade_payment.py:174: in test_payment_requires_pending_status
+    assert r.status_code == 409
+E   assert 500 == 409
+E    +  where 500 = <Response [500]>.status_code
+_____ test_payment_allowed_near_deadline_and_not_expired_while_in_progress _____
+tests/test_trade_payment.py:181: in test_payment_allowed_near_deadline_and_not_expired_while_in_progress
+    start_payment(api, user, order_id)  # 期限內即使剩不到一個 TradeLimit 也可付款
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_____________________ test_payment_on_overdue_order_is_409 _____________________
+tests/test_trade_payment.py:192: in test_payment_on_overdue_order_is_409
+    assert r.status_code == 409
+E   assert 500 == 409
+E    +  where 500 = <Response [500]>.status_code
+_____________________ test_notify_bad_sha_changes_nothing ______________________
+tests/test_trade_payment.py:202: in test_notify_bad_sha_changes_nothing
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_____________________ test_notify_amount_mismatch_rejected _____________________
+tests/test_trade_payment.py:225: in test_notify_amount_mismatch_rejected
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_________________ test_notify_unknown_merchant_order_no_is_400 _________________
+tests/test_trade_payment.py:235: in test_notify_unknown_merchant_order_no_is_400
+    assert notify(api, success_notify("T-no-such-order", 100)).status_code == 400
+E   AssertionError: assert 500 == 400
+E    +  where 500 = <Response [500]>.status_code
+E    +    where <Response [500]> = notify(<conftest.Api object at 0x70450fd038c0>, {'MerchantID': 'MS000000000', 'Status': 'SUCCESS', 'TradeInfo': '878679be81f62593ce3b3fa665391f72f9e73ea2d2b89f7dc75b96d21f6adbd7d771ad4b0ff161658af2b9e0f243b8816bd1b29df56e2ee68d959ccd2f0e6829b0025c74d2f8157a090db81c9511302d3848cf81215fdd8c5abe1feb7a47b3010d353ba95cd17eb6e900a12ac9340c2d613e337d2a574e490f731b3d8ac26580d1be813af6ea6cc5ebc0250288c5267d9589e260ee8868b5246b02d85198b5a031f31a28ecc0edae978b25b0780556e1d8196149817107bd06ab67c646665fc27d9979d6b2d98a8d3bde0f3a32c0e956932a2b24af76cde23a10dc3cc6d9f7028599b3ef45cf09bb87f5de90b6766295', 'TradeSha': 'AB6B96E5B2F25F95088C634E4952824D3EB9B66F9648530ABD9FEAB2366A50AC', ...})
+E    +      where {'MerchantID': 'MS000000000', 'Status': 'SUCCESS', 'TradeInfo': '878679be81f62593ce3b3fa665391f72f9e73ea2d2b89f7dc75b96d21f6adbd7d771ad4b0ff161658af2b9e0f243b8816bd1b29df56e2ee68d959ccd2f0e6829b0025c74d2f8157a090db81c9511302d3848cf81215fdd8c5abe1feb7a47b3010d353ba95cd17eb6e900a12ac9340c2d613e337d2a574e490f731b3d8ac26580d1be813af6ea6cc5ebc0250288c5267d9589e260ee8868b5246b02d85198b5a031f31a28ecc0edae978b25b0780556e1d8196149817107bd06ab67c646665fc27d9979d6b2d98a8d3bde0f3a32c0e956932a2b24af76cde23a10dc3cc6d9f7028599b3ef45cf09bb87f5de90b6766295', 'TradeSha': 'AB6B96E5B2F25F95088C634E4952824D3EB9B66F9648530ABD9FEAB2366A50AC', ...} = success_notify('T-no-such-order', 100)
+______________________ test_notify_duplicate_settles_once ______________________
+tests/test_trade_payment.py:240: in test_notify_duplicate_settles_once
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+________________ test_notify_concurrent_duplicates_settle_once _________________
+tests/test_trade_payment.py:250: in test_notify_concurrent_duplicates_settle_once
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+___________________ test_notify_success_settles_coupon_order ___________________
+tests/test_trade_payment.py:276: in test_notify_success_settles_coupon_order
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+___________________ test_notify_success_settles_point_order ____________________
+tests/test_trade_payment.py:304: in test_notify_success_settles_point_order
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+________________ test_notify_success_keeps_unrelated_cart_items ________________
+tests/test_trade_payment.py:318: in test_notify_success_keeps_unrelated_cart_items
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_____________________ test_paid_order_item_enables_review ______________________
+tests/test_trade_payment.py:331: in test_paid_order_item_enables_review
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+____________________ test_reward_floors_non_multiple_of_ten ____________________
+tests/test_trade_payment.py:340: in test_reward_floors_non_multiple_of_ten
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+___________________ test_notify_failure_keeps_order_pending ____________________
+tests/test_trade_payment.py:356: in test_notify_failure_keeps_order_pending
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_______________________ test_retry_after_failure_settles _______________________
+tests/test_trade_payment.py:369: in test_retry_after_failure_settles
+    first, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+________________ test_success_on_expired_order_is_recorded_only ________________
+tests/test_trade_payment.py:384: in test_success_on_expired_order_is_recorded_only
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+____________ test_second_successful_attempt_is_recorded_not_settled ____________
+tests/test_trade_payment.py:396: in test_second_successful_attempt_is_recorded_not_settled
+    first, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+__________________ test_success_after_cancel_is_recorded_only __________________
+tests/test_trade_payment.py:409: in test_success_after_cancel_is_recorded_only
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+__________________ test_order_expires_after_attempt_deadline ___________________
+tests/test_trade_payment.py:419: in test_order_expires_after_attempt_deadline
+    start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_____________________ test_return_redirects_to_result_page _____________________
+tests/test_trade_payment.py:432: in test_return_redirects_to_result_page
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_________________ test_return_bad_sha_redirects_without_order __________________
+tests/test_trade_payment.py:442: in test_return_bad_sha_redirects_without_order
+    mon, amt, _ = start_payment(api, user, order_id)
+tests/test_trade_payment.py:45: in start_payment
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+__________________ test_payment_through_mock_gateway_settles ___________________
+tests/test_trade_payment.py:473: in test_payment_through_mock_gateway_settles
+    resp = _go_through_mock(api, user, order_id, "success")
+tests/test_trade_payment.py:455: in _go_through_mock
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+______________________ test_mock_timeout_sends_no_notify _______________________
+tests/test_trade_payment.py:482: in test_mock_timeout_sends_no_notify
+    resp = _go_through_mock(api, user, order_id, "success", headers={"X-Mock-Now": str(time.time() + 3600)})
+tests/test_trade_payment.py:455: in _go_through_mock
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_______________________ test_no_signature_bypass_switch ________________________
+tests/test_trade_payment.py:513: in test_no_signature_bypass_switch
+    assert not offenders, offenders
+E   AssertionError: ['controllers/newebpay.js: createDecipheriv']
+E   assert not ['controllers/newebpay.js: createDecipheriv']
+_____________ test_mock_trade_limit_below_minimum_is_clamped_to_60 _____________
+tests/test_mock_newebpay.py:132: in test_mock_trade_limit_below_minimum_is_clamped_to_60
+    assert "交易逾時" not in resp.text
+E   assert '交易逾時' not in '<!doctype h...body></html>'
+E     
+E     '交易逾時' is contained here:
+E       <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>藍新金流（mock）</title></head><body><h1>交易逾時</h1></body></html>
+E     ?                                                                                                           ++++
+____________ test_mock_trade_limit_above_maximum_is_clamped_to_900 _____________
+tests/test_mock_newebpay.py:141: in test_mock_trade_limit_above_maximum_is_clamped_to_900
+    assert "交易逾時" in resp.text
+E   assert '交易逾時' in '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>藍新金流（mock）</title></head><body><form id="return" method="post" action="http://localhost:3000/api/v1/user/newebpay/return"><input type="hidden" name="Status" value="SUCCESS"><input type="hidden" name="MerchantID" value="MS000000000"><input type="hidden" name="Version" value="2.0"><input type="hidden" name="TradeInfo" value="64da178c5fb4a0c0551eefa72c8abe2d106d12ef1d7d740c1ad2f38841d280cbdc146bb88c994526e06180c4ca155a3670cf5c2feff8d3f3b8772de93c5184035108d59144ecef39281f449200544d48f2d63e95fff3dba761ed6ee19689b9276747874d69022b26465f2b20d042548367f412806f71968b190e92634df7bd42c8bc7b6dda9c3c6f1a720f005e1a08da0d2215a052c957de52288b99743799d02e3a192c065f083bd17409d364d0f4dc7abcf63c7c96e5f48a27fcdf585f656ceb202011a180fe51e76fb008d35dc257a6538266a3e35fb47175229865884e5d"><input type="hidden" name="TradeSha" value="F9E8A7C0E85D5D5AE6DB0995504E1F35CBF998A6BB6D64E587ECB4EB546075CE"><noscript><button type="submit">返回商店</button></noscript></form><script>document.getElementById(\'return\').submit();</script></body></html>'
+E    +  where '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>藍新金流（mock）</title></head><body><form id="return" method="post" action="http://localhost:3000/api/v1/user/newebpay/return"><input type="hidden" name="Status" value="SUCCESS"><input type="hidden" name="MerchantID" value="MS000000000"><input type="hidden" name="Version" value="2.0"><input type="hidden" name="TradeInfo" value="64da178c5fb4a0c0551eefa72c8abe2d106d12ef1d7d740c1ad2f38841d280cbdc146bb88c994526e06180c4ca155a3670cf5c2feff8d3f3b8772de93c5184035108d59144ecef39281f449200544d48f2d63e95fff3dba761ed6ee19689b9276747874d69022b26465f2b20d042548367f412806f71968b190e92634df7bd42c8bc7b6dda9c3c6f1a720f005e1a08da0d2215a052c957de52288b99743799d02e3a192c065f083bd17409d364d0f4dc7abcf63c7c96e5f48a27fcdf585f656ceb202011a180fe51e76fb008d35dc257a6538266a3e35fb47175229865884e5d"><input type="hidden" name="TradeSha" value="F9E8A7C0E85D5D5AE6DB0995504E1F35CBF998A6BB6D64E587ECB4EB546075CE"><noscript><button type="submit">返回商店</button></noscript></form><script>document.getElementById(\'return\').submit();</script></body></html>' = <Response [200]>.text
+=========================== short test summary info ============================
+FAILED tests/test_trade_payment.py::test_payment_amount_from_backend - TypeEr...
+FAILED tests/test_trade_payment.py::test_payment_trade_info_contains_required_fields
+FAILED tests/test_trade_payment.py::test_payment_form_never_contains_raw_item_desc
+FAILED tests/test_trade_payment.py::test_payment_new_merchant_order_no_each_attempt
+FAILED tests/test_trade_payment.py::test_payment_other_users_order_is_404 - a...
+FAILED tests/test_trade_payment.py::test_payment_requires_order_id - assert 5...
+FAILED tests/test_trade_payment.py::test_payment_requires_pending_status - as...
+FAILED tests/test_trade_payment.py::test_payment_allowed_near_deadline_and_not_expired_while_in_progress
+FAILED tests/test_trade_payment.py::test_payment_on_overdue_order_is_409 - as...
+FAILED tests/test_trade_payment.py::test_notify_bad_sha_changes_nothing - Ass...
+FAILED tests/test_trade_payment.py::test_notify_amount_mismatch_rejected - As...
+FAILED tests/test_trade_payment.py::test_notify_unknown_merchant_order_no_is_400
+FAILED tests/test_trade_payment.py::test_notify_duplicate_settles_once - Asse...
+FAILED tests/test_trade_payment.py::test_notify_concurrent_duplicates_settle_once
+FAILED tests/test_trade_payment.py::test_notify_success_settles_coupon_order
+FAILED tests/test_trade_payment.py::test_notify_success_settles_point_order
+FAILED tests/test_trade_payment.py::test_notify_success_keeps_unrelated_cart_items
+FAILED tests/test_trade_payment.py::test_paid_order_item_enables_review - Ass...
+FAILED tests/test_trade_payment.py::test_reward_floors_non_multiple_of_ten - ...
+FAILED tests/test_trade_payment.py::test_notify_failure_keeps_order_pending
+FAILED tests/test_trade_payment.py::test_retry_after_failure_settles - Assert...
+FAILED tests/test_trade_payment.py::test_success_on_expired_order_is_recorded_only
+FAILED tests/test_trade_payment.py::test_second_successful_attempt_is_recorded_not_settled
+FAILED tests/test_trade_payment.py::test_success_after_cancel_is_recorded_only
+FAILED tests/test_trade_payment.py::test_order_expires_after_attempt_deadline
+FAILED tests/test_trade_payment.py::test_return_redirects_to_result_page - As...
+FAILED tests/test_trade_payment.py::test_return_bad_sha_redirects_without_order
+FAILED tests/test_trade_payment.py::test_payment_through_mock_gateway_settles
+FAILED tests/test_trade_payment.py::test_mock_timeout_sends_no_notify - Asser...
+FAILED tests/test_trade_payment.py::test_no_signature_bypass_switch - Asserti...
+FAILED tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_is_clamped_to_60
+FAILED tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_is_clamped_to_900
+======================== 32 failed, 13 passed in 4.40s =========================

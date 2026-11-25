@@ -1,0 +1,211 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 40 items / 15 deselected / 25 selected
+
+tests/test_trade_checkout.py::test_summary_get_point_is_floor_of_payable PASSED [  4%]
+tests/test_trade_checkout.py::test_payable_treats_zero_discount_price_as_no_promo PASSED [  8%]
+tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500 PASSED [ 12%]
+tests/test_trade_checkout.py::test_coupon_subtracts_amount_on_promo_subtotal FAILED [ 16%]
+tests/test_trade_checkout.py::test_trial_discount_does_not_write FAILED  [ 20%]
+tests/test_trade_checkout.py::test_point_must_be_multiple_of_five FAILED [ 24%]
+tests/test_trade_checkout.py::test_point_reserves_and_limits_balance FAILED [ 28%]
+tests/test_trade_checkout.py::test_discount_must_leave_one_dollar FAILED [ 32%]
+tests/test_trade_checkout.py::test_coupon_reserved_by_other_order_is_409 FAILED [ 36%]
+tests/test_trade_checkout.py::test_preview_change_discount_releases_previous FAILED [ 40%]
+tests/test_trade_checkout.py::test_cancel_discount_releases_coupon FAILED [ 44%]
+tests/test_trade_checkout.py::test_cancel_discount_releases_points FAILED [ 48%]
+tests/test_trade_checkout.py::test_negative_balance_means_zero_available_points PASSED [ 52%]
+tests/test_trade_checkout.py::test_preview_other_users_order_is_404 FAILED [ 56%]
+tests/test_trade_checkout.py::test_trial_discount_other_users_order_is_404 FAILED [ 60%]
+tests/test_trade_checkout.py::test_cancel_discount_other_users_order_is_404 FAILED [ 64%]
+tests/test_trade_checkout.py::test_used_and_expired_coupon_rejected PASSED [ 68%]
+tests/test_trade_checkout.py::test_other_users_coupon_is_404 PASSED      [ 72%]
+tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once FAILED [ 76%]
+tests/test_trade_checkout.py::test_preview_on_expired_order_is_409 FAILED [ 80%]
+tests/test_trade_checkout.py::test_preview_on_paid_order_is_409 FAILED   [ 84%]
+tests/test_trade_checkout.py::test_expire_releases_point_reservation PASSED [ 88%]
+tests/test_trade_checkout.py::test_create_new_order_releases_point_reservation PASSED [ 92%]
+tests/test_trade_checkout.py::test_create_new_order_releases_coupon_reservation PASSED [ 96%]
+tests/test_trade_checkout.py::test_summary_expires_overdue_order_releases_coupon PASSED [100%]
+
+=================================== FAILURES ===================================
+________________ test_coupon_subtracts_amount_on_promo_subtotal ________________
+tests/test_trade_checkout.py:325: in test_coupon_subtracts_amount_on_promo_subtotal
+    assert r.json()["data"]["payable"] == 1700
+E   KeyError: 'payable'
+______________________ test_trial_discount_does_not_write ______________________
+tests/test_trade_checkout.py:338: in test_trial_discount_does_not_write
+    assert summary["payable"] == 1700
+E   KeyError: 'payable'
+_____________________ test_point_must_be_multiple_of_five ______________________
+tests/test_trade_checkout.py:350: in test_point_must_be_multiple_of_five
+    assert (r.status_code, r.json()["message"]) == (400, "旅遊積分必須是 5 的倍數")
+E   AssertionError: assert (200, '資料更新成功') == (400, '旅遊積分必須是 5 的倍數')
+E     
+E     At index 0 diff: 200 != 400
+E     
+E     Full diff:
+E       (
+E     -     400,
+E     ?     ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+____________________ test_point_reserves_and_limits_balance ____________________
+tests/test_trade_checkout.py:364: in test_point_reserves_and_limits_balance
+    assert r.json()["data"]["payable"] == 1000 - 80
+E   KeyError: 'payable'
+_____________________ test_discount_must_leave_one_dollar ______________________
+tests/test_trade_checkout.py:376: in test_discount_must_leave_one_dollar
+    assert (r.status_code, r.json()["message"]) == (400, "折抵後金額至少需 1 元")
+E   AssertionError: assert (200, '資料更新成功') == (400, '折抵後金額至少需 1 元')
+E     
+E     At index 0 diff: 200 != 400
+E     
+E     Full diff:
+E       (
+E     -     400,
+E     ?     ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+__________________ test_coupon_reserved_by_other_order_is_409 __________________
+tests/test_trade_checkout.py:402: in test_coupon_reserved_by_other_order_is_409
+    assert (r.status_code, r.json()["message"]) == (409, "優惠券已被其他訂單保留")
+E   AssertionError: assert (200, '資料更新成功') == (409, '優惠券已被其他訂單保留')
+E     
+E     At index 0 diff: 200 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+________________ test_preview_change_discount_releases_previous ________________
+tests/test_trade_checkout.py:413: in test_preview_change_discount_releases_previous
+    assert _user_coupon(db, user, coupon) == (0, None)
+E   AssertionError: assert (-1, 'd74e32a...3077d8b47bf8') == (0, None)
+E     
+E     At index 0 diff: -1 != 0
+E     
+E     Full diff:
+E       (
+E     -     0,
+E     ?     ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+_____________________ test_cancel_discount_releases_coupon _____________________
+tests/test_trade_checkout.py:425: in test_cancel_discount_releases_coupon
+    assert r.json()["data"]["summary"]["payable"] == 1000
+E   KeyError: 'payable'
+_____________________ test_cancel_discount_releases_points _____________________
+tests/test_trade_checkout.py:437: in test_cancel_discount_releases_points
+    assert _reserved_points(db, order_id) == []
+E   assert [-50] == []
+E     
+E     Left contains one more item: -50
+E     
+E     Full diff:
+E     - []
+E     + [
+E     +     -50,
+E     + ]
+____________________ test_preview_other_users_order_is_404 _____________________
+tests/test_trade_checkout.py:456: in test_preview_other_users_order_is_404
+    assert (r.status_code, r.json()["message"]) == (404, NOT_OWNER)
+E   AssertionError: assert (500, '伺服器錯誤') == (404, '查無此訂單項目')
+E     
+E     At index 0 diff: 500 != 404
+E     
+E     Full diff:
+E       (
+E     -     404,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+_________________ test_trial_discount_other_users_order_is_404 _________________
+tests/test_trade_checkout.py:467: in test_trial_discount_other_users_order_is_404
+    assert (r.status_code, r.json()["message"]) == (404, NOT_OWNER)
+E   AssertionError: assert (400, '查無訂單編號') == (404, '查無此訂單項目')
+E     
+E     At index 0 diff: 400 != 404
+E     
+E     Full diff:
+E       (
+E     -     404,
+E     ?       ^...
+E     
+E     ...Full output truncated (7 lines hidden), use '-vv' to show
+________________ test_cancel_discount_other_users_order_is_404 _________________
+tests/test_trade_checkout.py:477: in test_cancel_discount_other_users_order_is_404
+    assert (r.status_code, r.json()["message"]) == (404, NOT_OWNER)
+E   AssertionError: assert (400, '查無訂單編號') == (404, '查無此訂單項目')
+E     
+E     At index 0 diff: 400 != 404
+E     
+E     Full diff:
+E       (
+E     -     404,
+E     ?       ^...
+E     
+E     ...Full output truncated (7 lines hidden), use '-vv' to show
+_____________ test_preview_same_coupon_concurrently_reserves_once ______________
+tests/test_trade_checkout.py:517: in test_preview_same_coupon_concurrently_reserves_once
+    assert codes == [200, 409], [r.text for r in results]
+E   AssertionError: ['{"status":"success","message":"資料更新成功","data":{"order_id":"a424738b-da4a-4ec2-9443-52e28c8bf637","total_price":1000,"discount_price":100000}}', '{"status":"success","message":"資料更新成功","data":{"order_id":"d6361e8a-3d06-4c4b-9840-566cc150a737","total_price":1000,"discount_price":100000}}']
+E   assert [200, 200] == [200, 409]
+E     
+E     At index 1 diff: 200 != 409
+E     
+E     Full diff:
+E       [
+E           200,
+E     -     409,...
+E     
+E     ...Full output truncated (4 lines hidden), use '-vv' to show
+_____________________ test_preview_on_expired_order_is_409 _____________________
+tests/test_trade_checkout.py:532: in test_preview_on_expired_order_is_409
+    assert (r.status_code, r.json()["message"]) == (409, "訂單已逾時")
+E   AssertionError: assert (200, '資料更新成功') == (409, '訂單已逾時')
+E     
+E     At index 0 diff: 200 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+______________________ test_preview_on_paid_order_is_409 _______________________
+tests/test_trade_checkout.py:542: in test_preview_on_paid_order_is_409
+    assert (r.status_code, r.json()["message"]) == (409, "訂單狀態不允許此操作")
+E   AssertionError: assert (500, '伺服器錯誤') == (409, '訂單狀態不允許此操作')
+E     
+E     At index 0 diff: 500 != 409
+E     
+E     Full diff:
+E       (
+E     -     409,
+E     ?     ^ ^...
+E     
+E     ...Full output truncated (5 lines hidden), use '-vv' to show
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_coupon_subtracts_amount_on_promo_subtotal
+FAILED tests/test_trade_checkout.py::test_trial_discount_does_not_write - Key...
+FAILED tests/test_trade_checkout.py::test_point_must_be_multiple_of_five - As...
+FAILED tests/test_trade_checkout.py::test_point_reserves_and_limits_balance
+FAILED tests/test_trade_checkout.py::test_discount_must_leave_one_dollar - As...
+FAILED tests/test_trade_checkout.py::test_coupon_reserved_by_other_order_is_409
+FAILED tests/test_trade_checkout.py::test_preview_change_discount_releases_previous
+FAILED tests/test_trade_checkout.py::test_cancel_discount_releases_coupon - K...
+FAILED tests/test_trade_checkout.py::test_cancel_discount_releases_points - a...
+FAILED tests/test_trade_checkout.py::test_preview_other_users_order_is_404 - ...
+FAILED tests/test_trade_checkout.py::test_trial_discount_other_users_order_is_404
+FAILED tests/test_trade_checkout.py::test_cancel_discount_other_users_order_is_404
+FAILED tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once
+FAILED tests/test_trade_checkout.py::test_preview_on_expired_order_is_409 - A...
+FAILED tests/test_trade_checkout.py::test_preview_on_paid_order_is_409 - Asse...
+================= 15 failed, 10 passed, 15 deselected in 3.49s =================

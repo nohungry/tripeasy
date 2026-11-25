@@ -1,6 +1,6 @@
 """P1b Task 7：seed 資料走得通 21 個物件中所有「讀取」API 的冒煙測試。
 
-只做 GET，不寫入資料。每個測試：HTTP 200、資料非空、契約列出的欄位名稱出現在第一筆資料裡
+只呼叫 GET 讀取 API（唯一例外：結帳 summary 的測試用 fixture 自建會員、行程與訂單，測完清除；seed 資料不被寫入）。每個測試：HTTP 200、資料非空、契約列出的欄位名稱出現在第一筆資料裡
 （`SELECT *` 原樣輸出的 API 直接對 tests/db_contract.py；controller 轉成英文 key 的 API 對 controller 的 key）。
 寫入購物車才會呼叫的 hotel_booking／restaurant_booking／restaurant_isclosed／restaurant_business_parsed
 由 test_views_b.py 的行為測試負責，這裡不涵蓋。
@@ -10,7 +10,7 @@ GET /collection/info/all 送兩次回應（第一次回應完整，requests 只�
 結帳 GET /summary 對沒有項目的訂單 500 等。
 """
 import pytest
-from conftest import auth_header, live_promotion
+from conftest import auth_header, checkout, live_promotion
 from db_contract import OBJECTS
 from test_seed import SEED_USERS
 
@@ -341,15 +341,10 @@ def test_admin_user_coupon_list(api, bob_h, alice):
 # ------------------------------------------------------------- 結帳摘要：user_orderList（alice 未付款訂單）
 
 
-def test_checkout_summary_unpaid_order(api, db, alice, alice_h):
-    row = db.execute(
-        "SELECT o.order_id FROM orders o WHERE o.user_id = %s AND o.payment_status = -1 "
-        "AND EXISTS (SELECT 1 FROM order_item oi WHERE oi.order_id = o.order_id) LIMIT 1",
-        (alice["user_id"],),
-    ).fetchone()
-    assert row, "seed 裡 alice 沒有未付款且有項目的訂單"
-    order_id = str(row[0])
-    r = api.get(f"{BASE}/user/checkout/summary/{order_id}", headers=alice_h)
+def test_checkout_summary_unpaid_order(api, make_user, make_tour):
+    user = make_user()
+    order_id = checkout(api, user, [make_tour()])
+    r = api.get(f"{BASE}/user/checkout/summary/{order_id}", headers=auth_header(user))
     assert r.status_code == 200, r.text
     data = r.json()["data"]
     assert_has_keys(data, ["user", "payment_method", "discount", "orders", "summary"])

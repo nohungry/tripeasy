@@ -26,6 +26,7 @@ wait_for backend    http://localhost:3000/api/v1/health
 wait_for frontend   http://localhost:5173/
 wait_for mailpit    http://localhost:8025/api/v1/info
 wait_for mock-oauth http://localhost:8090/google/.well-known/openid-configuration
+wait_for mock-newebpay http://localhost:8095/health
 
 uv sync --frozen
 if [ -n "${CI:-}" ]; then

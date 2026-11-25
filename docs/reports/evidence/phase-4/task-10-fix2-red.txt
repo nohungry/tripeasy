@@ -1,0 +1,221 @@
+........FFF................FF..............FF..............F.........FFF [ 58%]
+FFFFFFFF...............................FFFFFFFF....                      [100%]
+=================================== FAILURES ===================================
+_ test_cart_list_query_messages[{'page': '1e30'}-\u300c\u9801\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:69: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   assert '"page" must be a safe number' == '「頁數」數值超出範圍'
+E     
+E     - 「頁數」數值超出範圍
+E     + "page" must be a safe number
+_ test_cart_list_query_messages[{'limit': '1e30'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:69: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   assert '"limit" must...a safe number' == '「每頁筆數」數值超出範圍'
+E     
+E     - 「每頁筆數」數值超出範圍
+E     + "limit" must be a safe number
+_ test_cart_list_query_messages[{'foo': '1'}-\u8acb\u6c42\u53c3\u6578\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:69: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   assert '"foo" is not allowed' == '請求參數含有不支援的欄位'
+E     
+E     - 請求參數含有不支援的欄位
+E     + "foo" is not allowed
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1e+30, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:160: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"people" mus...a safe number' == '「人數」數值超出範圍'
+E     
+E     - 「人數」數值超出範圍
+E     + "people" must be a safe number
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': '9007199254740993', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:160: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"people" mus...a safe number' == '「人數」數值超出範圍'
+E     
+E     - 「人數」數值超出範圍
+E     + "people" must be a safe number
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1e+30, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:168: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"people" mus...a safe number' == '「人數」數值超出範圍'
+E     
+E     - 「人數」數值超出範圍
+E     + "people" must be a safe number
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': '9007199254740993', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:168: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"people" mus...a safe number' == '「人數」數值超出範圍'
+E     
+E     - 「人數」數值超出範圍
+E     + "people" must be a safe number
+_ test_discount_body_messages[{'type': 'point', 'discount': {'point': 1e+30}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:199: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount.po...a safe number' == '「旅遊積分」數值超出範圍'
+E     
+E     - 「旅遊積分」數值超出範圍
+E     + "discount.point" must be a safe number
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': {'type': 'point', 'used_point': 1e+30}}-\u65c5\u904a\u7a4d\u5206\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount.us...a safe number' == '旅遊積分數值超出範圍'
+E     
+E     - 旅遊積分數值超出範圍
+E     + "discount.used_point" must be a safe number
+_ test_checkout_preview_body_messages[{'user': None, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u8cc7\u6599\u5fc5\u9808\u662f\u7269\u4ef6] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user" must ...f type object' == '使用者資料必須是物件'
+E     
+E     - 使用者資料必須是物件
+E     + "user" must be of type object
+_ test_checkout_preview_body_messages[{'user': {}, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u540d\u7a31\u70ba\u5fc5\u586b\u6b04\u4f4d] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.name" is required' == '使用者名稱為必填欄位'
+E     
+E     - 使用者名稱為必填欄位
+E     + "user.name" is required
+_ test_checkout_preview_body_messages[{'user': {'name': None, 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u540d\u7a31\u5fc5\u9808\u662f\u6587\u5b57] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.name" must be a string' == '使用者名稱必須是文字'
+E     
+E     - 使用者名稱必須是文字
+E     + "user.name" must be a string
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': None, 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-Email \u5fc5\u9808\u662f\u6587\u5b57] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.email"...t be a string' == 'Email 必須是文字'
+E     
+E     - Email 必須是文字
+E     + "user.email" must be a string
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': '', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-Email \u70ba\u5fc5\u586b\u6b04\u4f4d] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.email"...d to be empty' == 'Email 為必填欄位'
+E     
+E     - Email 為必填欄位
+E     + "user.email" is not allowed to be empty
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u5730\u5740\u70ba\u5fc5\u586b\u6b04\u4f4d] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.addres...d to be empty' == '地址為必填欄位'
+E     
+E     - 地址為必填欄位
+E     + "user.address" is not allowed to be empty
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': None}, 'payment_method': 'atm'}-\u96fb\u8a71\u5fc5\u9808\u662f\u6587\u5b57] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.phone_...t be a string' == '電話必須是文字'
+E     
+E     - 電話必須是文字
+E     + "user.phone_number" must be a string
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': ''}, 'payment_method': 'atm'}-\u96fb\u8a71\u70ba\u5fc5\u586b\u6b04\u4f4d] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"user.phone_...d to be empty' == '電話為必填欄位'
+E     
+E     - 電話為必填欄位
+E     + "user.phone_number" is not allowed to be empty
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': None}-\u512a\u60e0\u5167\u5bb9\u5fc5\u9808\u662f\u7269\u4ef6] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount" m...f type object' == '優惠內容必須是物件'
+E     
+E     - 優惠內容必須是物件
+E     + "discount" must be of type object
+_ test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': {'type': 'point', 'coupon_id': []}}-\u512a\u60e0\u5238\u4ee3\u78bc\u5fc5\u9808\u662f\u6587\u5b57] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount.co...t be a string' == '優惠券代碼必須是文字'
+E     
+E     - 優惠券代碼必須是文字
+E     + "discount.coupon_id" must be a string
+_ test_search_messages_have_no_param_names[{'item': ''}-\u300c\u5c0f\u5206\u985e\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"item" is no...d to be empty' == '「小分類」不可為空'
+E     
+E     - 「小分類」不可為空
+E     + "item" is not allowed to be empty
+_ test_search_messages_have_no_param_names[{'country': ''}-\u300c\u570b\u5bb6\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"country" is...d to be empty' == '「國家」不可為空'
+E     
+E     - 「國家」不可為空
+E     + "country" is not allowed to be empty
+_ test_search_messages_have_no_param_names[{'region': ''}-\u300c\u5730\u5340\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"region" is ...d to be empty' == '「地區」不可為空'
+E     
+E     - 「地區」不可為空
+E     + "region" is not allowed to be empty
+_ test_search_messages_have_no_param_names[{'min_price': '1e30'}-\u300c\u6700\u4f4e\u50f9\u683c\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"min_price" ...a safe number' == '「最低價格」數值超出範圍'
+E     
+E     - 「最低價格」數值超出範圍
+E     + "min_price" must be a safe number
+_ test_search_messages_have_no_param_names[{'max_price': '1e30'}-\u300c\u6700\u9ad8\u50f9\u683c\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"max_price" ...a safe number' == '「最高價格」數值超出範圍'
+E     
+E     - 「最高價格」數值超出範圍
+E     + "max_price" must be a safe number
+_ test_search_messages_have_no_param_names[{'duration': '1e30'}-\u300c\u5929\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"duration" m...a safe number' == '「天數」數值超出範圍'
+E     
+E     - 「天數」數值超出範圍
+E     + "duration" must be a safe number
+_ test_search_messages_have_no_param_names[{'page': '1e30'}-\u300c\u9801\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"page" must be a safe number' == '「頁數」數值超出範圍'
+E     
+E     - 「頁數」數值超出範圍
+E     + "page" must be a safe number
+_ test_search_messages_have_no_param_names[{'limit': '1e30'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] _
+tests/test_product_read.py:368: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"limit" must...a safe number' == '「每頁筆數」數值超出範圍'
+E     
+E     - 「每頁筆數」數值超出範圍
+E     + "limit" must be a safe number
+=========================== short test summary info ============================
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'page': '1e30'}-\u300c\u9801\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'limit': '1e30'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'foo': '1'}-\u8acb\u6c42\u53c3\u6578\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1e+30, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': '9007199254740993', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1e+30, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': '9007199254740993', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 1e+30}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': {'type': 'point', 'used_point': 1e+30}}-\u65c5\u904a\u7a4d\u5206\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': None, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u8cc7\u6599\u5fc5\u9808\u662f\u7269\u4ef6]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {}, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u540d\u7a31\u70ba\u5fc5\u586b\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': None, 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u540d\u7a31\u5fc5\u9808\u662f\u6587\u5b57]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': None, 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-Email \u5fc5\u9808\u662f\u6587\u5b57]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': '', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-Email \u70ba\u5fc5\u586b\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u5730\u5740\u70ba\u5fc5\u586b\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': None}, 'payment_method': 'atm'}-\u96fb\u8a71\u5fc5\u9808\u662f\u6587\u5b57]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': ''}, 'payment_method': 'atm'}-\u96fb\u8a71\u70ba\u5fc5\u586b\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': None}-\u512a\u60e0\u5167\u5bb9\u5fc5\u9808\u662f\u7269\u4ef6]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': {'type': 'point', 'coupon_id': []}}-\u512a\u60e0\u5238\u4ee3\u78bc\u5fc5\u9808\u662f\u6587\u5b57]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'item': ''}-\u300c\u5c0f\u5206\u985e\u300d\u4e0d\u53ef\u70ba\u7a7a]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'country': ''}-\u300c\u570b\u5bb6\u300d\u4e0d\u53ef\u70ba\u7a7a]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'region': ''}-\u300c\u5730\u5340\u300d\u4e0d\u53ef\u70ba\u7a7a]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'min_price': '1e30'}-\u300c\u6700\u4f4e\u50f9\u683c\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'max_price': '1e30'}-\u300c\u6700\u9ad8\u50f9\u683c\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'duration': '1e30'}-\u300c\u5929\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'page': '1e30'}-\u300c\u9801\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'limit': '1e30'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d]
+27 failed, 96 passed in 4.80s

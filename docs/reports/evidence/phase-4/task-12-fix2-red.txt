@@ -1,0 +1,34 @@
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+_________________ test_submit_disabled_until_loaded[chromium] __________________
+e2e/test_trade_flow.py:354: in test_submit_disabled_until_loaded
+    expect(page.get_by_role("radio", name=name)).to_be_disabled()
+E   AssertionError: Locator expected to be disabled
+E   Actual value: enabled 
+E   Call log:
+E     - Expect "to_be_disabled" get_by_role("radio", name="不使用") with timeout 5000ms
+E     - waiting for get_by_role("radio", name="不使用")
+E       14 × locator resolved to <input type="radio" value="none" data-v-5adc1611="" id="discount-none" name="discountType" class="form-check-input"/>
+E          - unexpected value "enabled"
+E   
+E   Aria snapshot:
+E   - radio "不使用" [checked]
+__________________ test_load_failure_shows_message[chromium] ___________________
+e2e/test_trade_flow.py:437: in test_load_failure_shows_message
+    expect(page.get_by_text("資料載入失敗，請重新整理頁面")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("資料載入失敗，請重新整理頁面") with timeout 5000ms
+E     - waiting for get_by_text("資料載入失敗，請重新整理頁面")
+E   
+E   Aria snapshot:
+E   - dialog "error":
+E     - heading "error" [level=2]
+E     - text: 伺服器錯誤
+E     - button "OK"
+=========================== short test summary info ============================
+FAILED e2e/test_trade_flow.py::test_submit_disabled_until_loaded[chromium] - ...
+FAILED e2e/test_trade_flow.py::test_load_failure_shows_message[chromium] - As...
+2 failed, 1 passed, 16 deselected in 12.29s

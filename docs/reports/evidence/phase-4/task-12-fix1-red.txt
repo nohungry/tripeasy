@@ -1,0 +1,312 @@
+.FFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_________________ test_submit_disabled_until_loaded[chromium] __________________
+e2e/test_trade_flow.py:349: in test_submit_disabled_until_loaded
+    expect(page.get_by_role("button", name="確認並前往付款")).to_be_disabled()
+E   AssertionError: Locator expected to be disabled
+E   Actual value: enabled 
+E   Call log:
+E     - Expect "to_be_disabled" get_by_role("button", name="確認並前往付款") with timeout 5000ms
+E     - waiting for get_by_role("button", name="確認並前往付款")
+E       14 × locator resolved to <button type="submit" data-v-5adc1611="" class="btn btn-dark mt-4 w-100"> 確認並前往付款 </button>
+E          - unexpected value "enabled"
+E   
+E   Aria snapshot:
+E   - button "確認並前往付款"
+_________ test_coupon_without_available_coupon_resets_amount[chromium] _________
+e2e/test_trade_flow.py:373: in test_coupon_without_available_coupon_resets_amount
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
+E   AssertionError: Locator expected to have text 'NT$1,000'
+E   Actual value: NT$920 
+E   Call log:
+E     - Expect "to_have_text" get_by_test_id("pay-payable") with timeout 5000ms
+E     - waiting for get_by_test_id("pay-payable")
+E       14 × locator resolved to <span data-v-5adc1611="" data-testid="pay-payable" class="fw-bold fs-5 text-danger">NT$920</span>
+E          - unexpected value "NT$920"
+E   
+E   Aria snapshot:
+E   - text: NT$920
+__________________ test_result_page_refunded_order[chromium] ___________________
+e2e/test_trade_flow.py:382: in test_result_page_refunded_order
+    expect(page.get_by_text("訂單已退款")).to_be_visible(timeout=5000)
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("訂單已退款") with timeout 5000ms
+E     - waiting for get_by_text("訂單已退款")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/pay/result#"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/pay/result#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/pay/result#"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "付款結果" [level=3]
+E   - paragraph: 確認付款結果中…
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________ test_stale_discount_trial_response_is_ignored[chromium] ____________
+e2e/test_trade_flow.py:414: in test_stale_discount_trial_response_is_ignored
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
+E   AssertionError: Locator expected to have text 'NT$1,000'
+E   Actual value: NT$900 
+E   Call log:
+E     - Expect "to_have_text" get_by_test_id("pay-payable") with timeout 5000ms
+E     - waiting for get_by_test_id("pay-payable")
+E       14 × locator resolved to <span data-v-5adc1611="" data-testid="pay-payable" class="fw-bold fs-5 text-danger">NT$900</span>
+E          - unexpected value "NT$900"
+E   
+E   Aria snapshot:
+E   - text: NT$900
+=========================== short test summary info ============================
+FAILED e2e/test_trade_flow.py::test_submit_disabled_until_loaded[chromium] - ...
+FAILED e2e/test_trade_flow.py::test_coupon_without_available_coupon_resets_amount[chromium]
+FAILED e2e/test_trade_flow.py::test_result_page_refunded_order[chromium] - As...
+FAILED e2e/test_trade_flow.py::test_stale_discount_trial_response_is_ignored[chromium]
+4 failed, 1 passed, 13 deselected in 25.95s

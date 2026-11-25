@@ -1,0 +1,93 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 31 items
+
+tests/test_seed.py::test_flyway_applied_seed PASSED                      [  3%]
+tests/test_seed.py::test_seed_loaded_every_table PASSED                  [  6%]
+tests/test_seed.py::test_seed_is_rerunnable PASSED                       [  9%]
+tests/test_seed.py::test_seed_file_is_generated_from_source PASSED       [ 12%]
+tests/test_seed.py::test_seed_user_can_login PASSED                      [ 16%]
+tests/test_seed.py::test_seed_roles_match_authorize_roles PASSED         [ 19%]
+tests/test_seed.py::test_seed_admin_passes_authorize_roles PASSED        [ 22%]
+tests/test_seed.py::test_seed_dates_are_relative_to_load_day PASSED      [ 25%]
+tests/test_seed.py::test_seed_uses_local_placeholder_images PASSED       [ 29%]
+tests/test_seed.py::test_seed_primary_keys_are_v4 PASSED                 [ 32%]
+tests/test_seed.py::test_seed_natural_keys_are_not_duplicated PASSED     [ 35%]
+tests/test_seed.py::test_seed_coupon_codes_match_validator PASSED        [ 38%]
+tests/test_seed.py::test_seed_one_cart_per_user PASSED                   [ 41%]
+tests/test_seed.py::test_seed_foreign_keys_follow_column_owner PASSED    [ 45%]
+tests/test_seed.py::test_seed_source_ids_are_all_remapped PASSED         [ 48%]
+tests/test_seed.py::test_seed_home_sections_have_two_pages PASSED        [ 51%]
+tests/test_seed.py::test_seed_search_list_has_two_pages PASSED           [ 54%]
+tests/test_seed.py::test_seed_rankings_are_distinct PASSED               [ 58%]
+tests/test_seed.py::test_seed_promotions_cover_in_and_out_of_period PASSED [ 61%]
+tests/test_seed.py::test_seed_travel_tours_have_distinct_start_dates PASSED [ 64%]
+tests/test_seed.py::test_seed_cart_items_start_in_future PASSED          [ 67%]
+tests/test_seed.py::test_seed_favorite_times_are_distinct PASSED         [ 70%]
+tests/test_seed.py::test_seed_orders_match_contract FAILED               [ 74%]
+tests/test_seed.py::test_seed_promo_orders_fall_inside_promo_window PASSED [ 77%]
+tests/test_seed.py::test_seed_alice_paid_orders_newest_first PASSED      [ 80%]
+tests/test_seed.py::test_seed_payment_status_coverage PASSED             [ 83%]
+tests/test_seed.py::test_seed_points_follow_rules FAILED                 [ 87%]
+tests/test_seed.py::test_seed_reward_points_by_paid_amount FAILED        [ 90%]
+tests/test_seed.py::test_seed_payment_amount_matches_paid FAILED         [ 93%]
+tests/test_seed.py::test_seed_user_coupons_point_to_rebuilt_orders PASSED [ 96%]
+tests/test_seed.py::test_seed_web_reviews_for_home PASSED                [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_seed_orders_match_contract ________________________
+tests/test_seed.py:475: in test_seed_orders_match_contract
+    assert r[2:] == want, f"#{o.n}：{r[2:]} != {want}"
+E   AssertionError: #2：(1, 1, 1, 45000.0, 45000.0, 40500.0, 'credit_card', 'coupon', 44990.0, '高雄市鼓山區美術館路45號', '0912345678', 8, 8) != (1, 1, 1, 45000, 45000, 40500, 'credit_card', 'coupon', 40490, '高雄市鼓山區美術館路45號', '0912345678', 8, 8)
+E   assert (1, 1, 1, 450... 40500.0, ...) == (1, 1, 1, 450...0, 40500, ...)
+E     
+E     At index 8 diff: 44990.0 != 40490
+E     
+E     Full diff:
+E       (
+E           1,
+E           1,...
+E     
+E     ...Full output truncated (21 lines hidden), use '-vv' to show
+________________________ test_seed_points_follow_rules _________________________
+tests/test_seed.py:555: in test_seed_points_follow_rules
+    assert point == math.floor(paid * 0.1)
+E   assert 4500 == 4050
+E    +  where 4050 = <built-in function floor>((40500.0 * 0.1))
+E    +    where <built-in function floor> = math.floor
+____________________ test_seed_reward_points_by_paid_amount ____________________
+tests/test_seed.py:602: in test_seed_reward_points_by_paid_amount
+    assert actual == {(EMAIL[user], title): point for (_, user, title), point in expected.items()}
+E   AssertionError: assert {('alice@exam...'): 9800, ...} == {('alice@exam...'): 8300, ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Differing items:
+E     {('alice@example.com', '北海道雪景 5 日深度遊'): 4500} != {('alice@example.com', '北海道雪景 5 日深度遊'): 4050}
+E     {('bob@example.com', '紐西蘭壯麗景觀自駕遊'): 8500} != {('bob@example.com', '紐西蘭壯麗景觀自駕遊'): 8470}
+E     {('carol@example.com', '大阪美食自由行'): 3000} != {('carol@example.com', '大阪美食自由行'): 2968}
+E     {('carol@example.com', '馬爾地夫蜜月天堂 6 日'): 9800} != {('carol@example.com', '馬爾地夫蜜月天堂 6 日'): 8330}...
+E     
+E     ...Full output truncated (51 lines hidden), use '-vv' to show
+____________________ test_seed_payment_amount_matches_paid _____________________
+tests/test_seed.py:613: in test_seed_payment_amount_matches_paid
+    assert {(e, t): d for e, t, _, _, d in rows if d is not None} == {
+E   AssertionError: assert {('alice@exam... 17600.0, ...} == {('alice@exam...): 17600, ...}
+E     
+E     Omitting 4 identical items, use -vv to show
+E     Differing items:
+E     {('bob@example.com', '北海道雪景 5 日深度遊'): 44990.0} != {('bob@example.com', '北海道雪景 5 日深度遊'): 40490}
+E     {('alice@example.com', '馬爾地夫蜜月天堂 6 日'): 97700.0} != {('alice@example.com', '馬爾地夫蜜月天堂 6 日'): 83000}
+E     
+E     Full diff:...
+E     
+E     ...Full output truncated (22 lines hidden), use '-vv' to show
+=========================== short test summary info ============================
+FAILED tests/test_seed.py::test_seed_orders_match_contract - AssertionError: ...
+FAILED tests/test_seed.py::test_seed_points_follow_rules - assert 4500 == 4050
+FAILED tests/test_seed.py::test_seed_reward_points_by_paid_amount - Assertion...
+FAILED tests/test_seed.py::test_seed_payment_amount_matches_paid - AssertionE...
+========================= 4 failed, 27 passed in 0.63s =========================

@@ -104,9 +104,9 @@ INSERT INTO "notification" (notification_id, tour_id, type, start_date, end_date
 ---- 17. 訂單大項目資料 "orders"（取代來源檔的 5 列）
 INSERT INTO orders (order_id, user_id, address, phone, payment_type, discount_type, payment_status, total_price, discount_price, created_at, updated_at) VALUES
 ('extra-order-01', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'none', 1, 45000, NULL, CURRENT_TIMESTAMP - INTERVAL '9 days', CURRENT_TIMESTAMP - INTERVAL '9 days'),
-('extra-order-02', 'b2c3d4e5-f678-90ab-cdef-234567890abc', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 'coupon', 1, 45000, 44990, CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
+('extra-order-02', 'b2c3d4e5-f678-90ab-cdef-234567890abc', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 'coupon', 1, 45000, 40490, CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
 ('extra-order-03', 'c3d4e5f6-7890-abcd-ef12-34567890abcd', '台中市西區公益路321巷9號', '0987654321', 'credit_card', 'none', 1, 45000, NULL, CURRENT_TIMESTAMP - INTERVAL '7 days', CURRENT_TIMESTAMP - INTERVAL '7 days'),
-('extra-order-04', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'coupon', 1, 98000, 97700, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
+('extra-order-04', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'coupon', 1, 98000, 83000, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
 ('extra-order-05', 'c3d4e5f6-7890-abcd-ef12-34567890abcd', '台中市西區公益路321巷9號', '0987654321', 'atm', 'none', 1, 98000, NULL, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
 ('extra-order-06', 'b2c3d4e5-f678-90ab-cdef-234567890abc', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 'coupon', 1, 85000, 84700, CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '30 days'),
 ('extra-order-07', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 'point', 1, 8400, 8200, CURRENT_TIMESTAMP - INTERVAL '29 days', CURRENT_TIMESTAMP - INTERVAL '29 days'),
@@ -150,9 +150,9 @@ INSERT INTO order_item (order_item_id, order_id, tour_id, total_price, discount_
 ---- 19. 付款紀錄資料 "payment"
 INSERT INTO payment (payment_id, user_id, order_id, address, phone, payment_method, payment_status, discount_price, return_data, return_time, result_info, result_time) VALUES
 (uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-01', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, NULL, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
-(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-02', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 1, 44990, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
+(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-02', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 1, 40490, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 (uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-03', '台中市西區公益路321巷9號', '0987654321', 'credit_card', 1, NULL, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
-(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-04', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, 97700, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
+(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-04', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, 83000, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 (uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-05', '台中市西區公益路321巷9號', '0987654321', 'atm', 1, NULL, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 (uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-06', '高雄市鼓山區美術館路45號', '0912345678', 'credit_card', 1, 84700, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
 (uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-07', '台北市中山區南京東路3段123號', '0987654321', 'credit_card', 1, 8200, NULL, CURRENT_TIMESTAMP, '付款成功', CURRENT_TIMESTAMP),
@@ -178,19 +178,19 @@ INSERT INTO "favorite" (favorite_id, user_id, tour_id, created_at, updated_at) V
 
 ---- 24. 會員旅遊積分資料 "point_record"（取代來源檔的 2 列）
 INSERT INTO point_record (point_id, user_id, order_id, type, point) VALUES
-(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-01', '新增', 4500),
-(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-02', '新增', 4500),
-(uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-03', '新增', 4500),
-(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-04', '新增', 9800),
-(uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-05', '新增', 9800),
-(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-06', '新增', 8500),
-(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-07', '新增', 840),
+(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-01', '新增', 4050),
+(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-02', '新增', 4049),
+(uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-03', '新增', 4050),
+(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-04', '新增', 8300),
+(uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-05', '新增', 8330),
+(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-06', '新增', 8470),
+(uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-07', '新增', 820),
 (uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-08', '新增', 1260),
-(uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-09', '新增', 3000),
+(uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-09', '新增', 2968),
 (uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-10', '新增', 1900),
 (uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-11', '新增', 950),
 (uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-12', '新增', 2200),
-(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-13', '新增', 1800),
+(uuid_generate_v4(), 'b2c3d4e5-f678-90ab-cdef-234567890abc', 'extra-order-13', '新增', 1760),
 (uuid_generate_v4(), 'c3d4e5f6-7890-abcd-ef12-34567890abcd', 'extra-order-14', '新增', 900),
 (uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-15', '新增', 1760),
 (uuid_generate_v4(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'extra-order-07', '減少', -250),

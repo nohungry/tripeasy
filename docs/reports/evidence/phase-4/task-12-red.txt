@@ -1,0 +1,134 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+________________________ test_trade_main_flow[chromium] ________________________
+e2e/test_trade_flow.py:229: in test_trade_main_flow
+    page.get_by_test_id("coupon-select").select_option(value=coupon["coupon_id"])
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:13201: in select_option
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:779: in select_option
+    return await self._frame.select_option(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:1051: in select_option
+    await self._channel.selectOption(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:398: in _mapped
+    return mapper(await awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.select_option: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_test_id("coupon-select")
+__________________ test_payment_failure_then_retry[chromium] ___________________
+e2e/test_trade_flow.py:253: in test_payment_failure_then_retry
+    _pay_and_reach_mock(page)
+e2e/test_trade_flow.py:201: in _pay_and_reach_mock
+    page.get_by_role("button", name="確認並前往付款").click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="確認並前往付款")
+________________________ test_pay_with_points[chromium] ________________________
+e2e/test_trade_flow.py:277: in test_pay_with_points
+    page.get_by_role("radio", name="旅遊積分").check()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:10897: in check
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:197: in check
+    return await self._frame.check(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:1129: in check
+    await self._channel.check(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.check: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("radio", name="旅遊積分")
+___________ test_point_input_rejects_non_multiple_of_five[chromium] ____________
+e2e/test_trade_flow.py:298: in test_point_input_rejects_non_multiple_of_five
+    page.get_by_role("radio", name="旅遊積分").check()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:10897: in check
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:197: in check
+    return await self._frame.check(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:1129: in check
+    await self._channel.check(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.check: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("radio", name="旅遊積分")
+_________________ test_mock_page_shows_escaped_title[chromium] _________________
+e2e/test_trade_flow.py:314: in test_mock_page_shows_escaped_title
+    _pay_and_reach_mock(page)
+e2e/test_trade_flow.py:201: in _pay_and_reach_mock
+    page.get_by_role("button", name="確認並前往付款").click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="確認並前往付款")
+______________ test_pay_without_order_redirects_to_cart[chromium] ______________
+e2e/test_trade_flow.py:323: in test_pay_without_order_redirects_to_cart
+    page.wait_for_url("**/#/cart")
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:21479: in wait_for_url
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:713: in wait_for_url
+    return await self._main_frame.wait_for_url(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:356: in wait_for_url
+    await self.wait_for_navigation(url=url, wait_until=wait_until, timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:285: in rest
+    navigated_event: "channels.FrameNavigatedEvent" = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.wait_for_url: Timeout 30000ms exceeded.
+E   =========================== logs ===========================
+E   waiting for navigation to "**/#/cart" until "load"
+E     navigated to "http://localhost:5173/#/pay"
+E   ============================================================
+=========================== short test summary info ============================
+FAILED e2e/test_trade_flow.py::test_trade_main_flow[chromium] - playwright._i...
+FAILED e2e/test_trade_flow.py::test_payment_failure_then_retry[chromium] - pl...
+FAILED e2e/test_trade_flow.py::test_pay_with_points[chromium] - playwright._i...
+FAILED e2e/test_trade_flow.py::test_point_input_rejects_non_multiple_of_five[chromium]
+FAILED e2e/test_trade_flow.py::test_mock_page_shows_escaped_title[chromium]
+FAILED e2e/test_trade_flow.py::test_pay_without_order_redirects_to_cart[chromium]
+6 failed, 8 deselected in 186.25s (0:03:06)

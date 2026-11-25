@@ -161,7 +161,9 @@ def test_detail_food_has_no_empty_menu_or_opening(api, db, make_tour):
     insert(db, "restaurant_business", restaurant_id=rs["restaurant_id"], week="p3-週一")
     r = _detail(api, t["tour_id"])
     assert r.status_code == 200, r.text
-    feature = r.json()["data"]["feature"]
+    data = r.json().get("data")
+    assert data is not None, r.text
+    feature = data["feature"]
     assert len(feature["menu"]) == 2
     assert sorted(m["name"] for m in feature["menu"]) == sorted(["p3-菜甲", "p3-菜乙"])
     assert len(feature["opening"]) == 1
@@ -175,7 +177,9 @@ def test_detail_food_without_menu_or_opening_has_empty_lists(api, db, make_tour)
     insert(db, "restaurant", tour_id=t["tour_id"])
     r = _detail(api, t["tour_id"])
     assert r.status_code == 200, r.text
-    feature = r.json()["data"]["feature"]
+    data = r.json().get("data")
+    assert data is not None, r.text
+    feature = data["feature"]
     assert feature["menu"] == []
     assert feature["opening"] == []
 
@@ -196,7 +200,8 @@ def test_hidden_shares_include_title(api, db, make_user, make_tour):
         f"{TOUR}/{t['tour_id']}/hidden-shares", params={"page": 1, "limit": 10, "lang": "zh-TW"}
     )
     assert r.status_code == 200, r.text
-    rows = r.json()["data"]
+    rows = r.json().get("data")
+    assert rows is not None, r.text
     assert rows
     assert rows[0]["title"] == "p3 標題"
 
@@ -216,7 +221,8 @@ def test_reviews_average_and_pagination(api, db, make_user, make_tour):
     url = f"{TOUR}/{t['tour_id']}/reviews"
     r1 = api.get(url, params={"page": 1, "limit": 2, "lang": "zh-TW"})
     assert r1.status_code == 200, r1.text
-    d1 = r1.json()["data"]
+    d1 = r1.json().get("data")
+    assert d1 is not None, r1.text
     assert len(d1["reviews"]) == 2
     assert [x["rating"] for x in d1["reviews"]] == [4, 4]
     dates = [x["create_date"] for x in d1["reviews"]]
@@ -224,7 +230,8 @@ def test_reviews_average_and_pagination(api, db, make_user, make_tour):
     assert d1["average_rating"] == 4.3
     r2 = api.get(url, params={"page": 2, "limit": 2, "lang": "zh-TW"})
     assert r2.status_code == 200, r2.text
-    d2 = r2.json()["data"]
+    d2 = r2.json().get("data")
+    assert d2 is not None, r2.text
     assert len(d2["reviews"]) == 1
     assert d2["reviews"][0]["rating"] == 5
 
@@ -307,4 +314,57 @@ def test_search_end_date_before_tour_end_excludes_it(api, db):
 def test_search_duration_exceeding_range_is_400(api):
     r = api.get(SEARCH, params={"start_date": "2027-01-01", "end_date": "2027-01-05", "duration": 6, **PAGING, "page": 1, "limit": 10})
     assert r.status_code == 400
-    assert "duration" in r.text and "涵蓋" in r.text
+    assert r.json()["message"] == "「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）"
+
+
+def test_search_impossible_date_is_400(api):
+    r = _search(api, start_date="2027-02-30", end_date="2027-03-05")
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「出發日期」必須是 YYYY-MM-DD 的合法日期"
+    r = _search(api, start_date="2027-02-01", end_date="2027-02-30")
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「結束日期」必須是 YYYY-MM-DD 的合法日期"
+
+
+def test_search_offset_date_is_400(api):
+    r = _search(api, start_date="2027-01-10T00:00:00+08:00", end_date="2027-01-12")
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「出發日期」必須是 YYYY-MM-DD 的合法日期"
+    r = _search(api, start_date="2027-01-10", end_date="2027-01-12T00:00:00+08:00")
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「結束日期」必須是 YYYY-MM-DD 的合法日期"
+
+
+@pytest.mark.parametrize(
+    "params, expected",
+    [
+        ({"start_date": "2027-01-10", "end_date": "2027-01-01"}, "「出發日期」不可晚於「結束日期」"),
+        ({"min_price": -1, "max_price": -5}, "「最低價格」不可大於「最高價格」"),
+        ({"min_price": "abc"}, "「最低價格」必須是數字"),
+        ({"duration": 99, "start_date": "2027-01-01", "end_date": "2027-01-05"},
+         "「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）"),
+        ({"duration": "x"}, "「天數」必須是數字"),
+        ({"keyword": ""}, "「關鍵字」不可為空"),
+        ({"item": ""}, "「小分類」不可為空"),
+        ({"country": ""}, "「國家」不可為空"),
+        ({"region": ""}, "「地區」不可為空"),
+        ({"min_price": "1e30"}, "「最低價格」數值超出範圍"),
+        ({"max_price": "1e30"}, "「最高價格」數值超出範圍"),
+        ({"duration": "1e30"}, "「天數」數值超出範圍"),
+        ({"page": "1e30"}, "「頁數」數值超出範圍"),
+        ({"limit": "1e30"}, "「每頁筆數」數值超出範圍"),
+        ({"limit": 0}, "「每頁筆數」必須大於等於 1"),
+        ({"page": 0}, "「頁數」必須大於等於 1"),
+        ({"sort_by": "zzz"}, "「排序欄位」僅能為 price 或 date"),
+        ({"order": "zzz"}, "「排序方向」僅能為 asc 或 desc"),
+    ],
+    ids=lambda v: str(v),
+)
+def test_search_messages_have_no_param_names(api, params, expected):
+    query = {"page": 1, "limit": 10, **PAGING, **params}
+    r = api.get(SEARCH, params=query)
+    assert r.status_code == 400, r.text
+    message = r.json()["message"]
+    assert message == expected
+    for name in ("start_date", "end_date", "min_price", "max_price", "duration", "limit", "page", "sort_by", "order", "keyword", "country", "region"):
+        assert name not in message, (name, message)

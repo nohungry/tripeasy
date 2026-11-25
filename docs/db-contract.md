@@ -216,9 +216,9 @@
 | # | 使用者 | 行程 | `payment_status` | `quantity` | `total_price` | `order_item.discount_price` | `payment_type` | `discount_type` | `orders.discount_price` |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | alice | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `none` | `NULL` |
-| 2 | bob | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `coupon` | 44990（`TRV010`，45000 − 10） |
+| 2 | bob | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `coupon` | 40490（`TRV010`，促銷後 40500 − 10） |
 | 3 | carol | 北海道雪景 5 日深度遊 | 1 | 1 | 45000 | 40500 | `credit_card` | `none` | `NULL` |
-| 4 | alice | 馬爾地夫蜜月天堂 6 日 | 1 | 1 | 98000 | 83300 | `credit_card` | `coupon` | 97700（`VIP300`，98000 − 300） |
+| 4 | alice | 馬爾地夫蜜月天堂 6 日 | 1 | 1 | 98000 | 83300 | `credit_card` | `coupon` | 83000（`VIP300`，促銷後 83300 − 300） |
 | 5 | carol | 馬爾地夫蜜月天堂 6 日 | 1 | 1 | 98000 | 83300 | `atm` | `none` | `NULL` |
 | 6 | bob | 紐西蘭壯麗景觀自駕遊 | 1 | 1 | 85000 | `NULL` | `credit_card` | `coupon` | 84700（`VIP300`，85000 − 300） |
 | 7 | alice | 高雄夜市美食攻略 | 1 | 2 | 8400 | `NULL` | `credit_card` | `point` | 8200（用 250 點） |
@@ -238,9 +238,9 @@
 
 - 價格依據：行程 `price`（來源檔 `:204–:403` 的 tour 區段）北海道 45000、馬爾地夫 98000、義大利 72000、紐西蘭 85000、大阪 15000、高雄 4200、巴黎 22000、首爾 9500、曼谷 9000，加上第 3 項固定的沖繩 8800；`total_price` 都是整數且為 10 的倍數。
 - 篩選結果（#6 定案 B，只含 `order_item.payment_status = 1`）：`user_orders`／`user_order_item` 對 alice 5 筆（#1、#4、#7、#10、#15）、bob 5 筆（#2、#6、#8、#12、#13）、carol 5 筆（#3、#5、#9、#11、#14）。#16、#17 的狀態落在 #5 定案 C（`IN (-1, 0, 1)`）的範圍內，#18、#19、#20 不在；`hotel_booking`／`restaurant_booking` 只數住宿與餐廳類項目，且訂單項目的出發日期由 Task 3 決定，所以這裡不定 `booking_count` 的目標值。
-- 折抵的基底：優惠卷與點數都以 `total_price` 為基底，不與促銷價疊加（`checkout.js:155,165`），所以訂單 #2 的 `orders.discount_price` 44990 高於 `order_item.discount_price` 40500 是照 controller 行為，不是錯誤。
+- 折抵的基底（使用者 2026-11-24 定，P4 spec §12 Q1-b）：優惠卷與點數都以促銷後金額為基底（`order_item.discount_price` 不為 NULL 且不為 0 時取它，否則 `total_price`，加總），所以訂單 #2 的 `orders.discount_price` ＝ 40500 − 10 ＝ 40490、#4 ＝ 83300 − 300 ＝ 83000（舊 controller `checkout.js:155,165` 以 `total_price` 為基底，P4 起改掉）。「實付」＝ `orders.discount_price` 不為 NULL 時取它，否則 Σ `COALESCE(NULLIF(order_item.discount_price, 0), order_item.total_price)`。
 - 訂單時間：`orders.created_at` 與其 `order_item.created_at` ＝ 載入時間減 N 天，20 筆兩兩不同，讓 `user_orders` 的 `ORDER BY orders.created_at DESC`（#45）可測。帶促銷價的訂單必須落在該促銷期間內（#13：促銷價是下單當時有效的價格）：北海道的 #1、#2、#3 ＝ −9、−8、−7 天（期間 −10～+20 天），馬爾地夫的 #4、#5 ＝ −4、−3 天（期間 −5～+25 天）；其餘 #6～#20 ＝ −（36 − #）天，即 #6 −30 天、#7 −29、#8 −28 … #20 −16 天。alice 已付款訂單由新到舊依序為 #4（−4）、#1（−9）、#15（−21）、#10（−26）、#7（−29）。
-- `user_coupon`（4 列，來源檔 `:911` 起）只改 `order_id` 與 `status` 的對應，`status` 不變：bob 的 `TRV010` → 訂單 #2（`status 1`）、bob 的 `VIP300` → 訂單 #6（`1`）、alice 的 `VIP300` → 訂單 #4（`1`）、carol 的 `TRV010` 未使用（`order_id` 為 `NULL`，`0`）。`orders.discount_price` ＝ `total_price − coupon.discount`（#1 定案 B：折抵金額；與 `checkout.js:165` 同為折後應付金額）。
+- `user_coupon`（4 列，來源檔 `:911` 起）只改 `order_id` 與 `status` 的對應，`status` 不變：bob 的 `TRV010` → 訂單 #2（`status 1`）、bob 的 `VIP300` → 訂單 #6（`1`）、alice 的 `VIP300` → 訂單 #4（`1`）、carol 的 `TRV010` 未使用（`order_id` 為 `NULL`，`0`）。`orders.discount_price` ＝ 促銷後金額 − `coupon.discount`（#1 定案 B：折抵後應付金額；舊 controller `checkout.js:165` 以 `total_price` 為基底，P4 起改為促銷後，使用者 2026-11-24 定 Q1-b）。
 
 `payment`（15 筆，每張 `payment_status = 1` 的訂單 #1～#15 各 1 筆，其餘訂單沒有——#18（已取消）、#19（已退款）刻意不建 `payment`，只滿足「已付款的訂單有 1 筆」；欄位順序與值的寫法照 `controllers/newebpay.js:182–199`，V1 `payment` 表 `V1:308–323`）：
 
@@ -251,7 +251,8 @@
 | `address`、`phone` | 同該訂單的 `orders.address`、`orders.phone` |
 | `payment_method` | 同該訂單的 `orders.payment_type`（`newebpay.js:194` 寫 `result.PaymentType`；seed 自定值，非藍新實際格式，真實的 `PaymentType` 是 `CREDIT` 之類的代碼） |
 | `payment_status` | `1` |
-| `discount_price` | 同該訂單的 `orders.discount_price`（`NULL` 就寫 `NULL`，`newebpay.js:196`） |
+| `merchant_order_no` | `NULL`（V5 新增，seed 不填） |
+| `discount_price` | 同該訂單的 `orders.discount_price`（`NULL` 就寫 `NULL`，`newebpay.js:196`）。seed 的 `payment.discount_price` 沿用舊規則（與 `orders.discount_price` 同值，無折扣為 `NULL`）；P4 起新建的 `payment` 寫入應付金額（P4 spec §6） |
 | `return_data` | seed 自定值，非藍新實際格式：JSON 字串 `{"Status":"SUCCESS","Result":{"MerchantOrderNo":"<該訂單的 order_id>","PaymentType":"<payment_method>","Message":"付款成功"}}` |
 | `return_time`、`result_time` | 載入時間 |
 | `result_info` | `付款成功` |
@@ -259,15 +260,15 @@
 
 **10. 點數（#2、#3）**
 
-`point_record` 共 18 筆，來源檔 `:906–:907` 的 2 筆（`新增 1610`、`減少 -436`，對應一張未付款訂單，與 #3 規則不符）刪除，改為下表。取整：每張訂單的 `total_price` 都是 10 的倍數，所以「10%」恰為整數，不需要取整規則（#3 沒有指定取整方式，見下方說明）。
+`point_record` 共 18 筆，來源檔 `:906–:907` 的 2 筆（`新增 1610`、`減少 -436`，對應一張未付款訂單，與 #3 規則不符）刪除，改為下表。回饋按實付金額 × 10%，無條件捨去（使用者 2026-11-24 定）。
 
-- **`新增`（15 筆）**：每張 `payment_status = 1` 的訂單（#1～#15）各 1 筆，`point` ＝ `total_price × 0.1`，`order_id` ＝ 該訂單：
+- **`新增`（15 筆）**：每張 `payment_status = 1` 的訂單（#1～#15）各 1 筆，`point` ＝ `floor(實付 × 0.1)`，`order_id` ＝ 該訂單：
 
   | 訂單 | #1 | #2 | #3 | #4 | #5 | #6 | #7 | #8 | #9 | #10 | #11 | #12 | #13 | #14 | #15 |
   |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-  | `point` | 4500 | 4500 | 4500 | 9800 | 9800 | 8500 | 840 | 1260 | 3000 | 1900 | 950 | 2200 | 1800 | 900 | 1760 |
+  | `point` | 4050 | 4049 | 4050 | 8300 | 8330 | 8470 | 820 | 1260 | 2968 | 1900 | 950 | 2200 | 1760 | 900 | 1760 |
 
-- **`減少`（3 筆）**：只有 `discount_type = 'point'` 的訂單，`point` 為負值，`|point| × 0.8 ＝ total_price − orders.discount_price`（#3 定案 A，`checkout.js:165`）：
+- **`減少`（3 筆）**：只有 `discount_type = 'point'` 的訂單，`point` 為負值，`|point| × 0.8 ＝ 促銷後金額 − orders.discount_price`（#7、#9、#13 無促銷，等於 `total_price`）（#3 定案 A，`checkout.js:165`）：
 
   | 訂單 | 使用者 | `point` | `total_price` | `discount_price` | 驗算 |
   |---|---|---|---|---|---|
@@ -285,7 +286,7 @@
 **12. 說明：本節沒有定案、由 Task 3 或使用者另行處理的事**
 
 - `cart.total_price` 與購物車內項目的金額不一致（來源檔既有），本節不處理，也不 assert。
-- #3 只定了 1 點折 0.8 元與 10% 回饋，沒有指定 10% 的取整方式；本節用 10 的倍數的金額避開。日後改金額時若出現非 10 的倍數，要先請使用者定取整方式。
+- 回饋取整：無條件捨去（使用者 2026-11-24 定）。
 - 新增的 13 個行程只定了 `type`、`item`、`title`、`status`、促銷與少數欄位；它們的 `tour_detail`、`hotel`／`hotel_room`、`restaurant` 等子表是否補、補多少，由 Task 3 決定。沒有子表的行程，詳情頁會走到契約已記錄的「function 回 0 列時 `product.js:209` TypeError」（§4.2 末段），不影響本節的任何斷言。
 
 ## 1. A 組：商品與首頁
@@ -1756,7 +1757,7 @@
 | 1 | `"user".password` 改為可為 NULL（`ALTER COLUMN password DROP NOT NULL`） | §2.1：Google 新註冊不再共用預設密碼；NULL 讓寫漏時 `bcrypt.compare` 失敗而非放行，且 DB 層看得見「沒有密碼」。 | `tests/test_migrations.py::test_user_password_is_nullable` |
 | 2 | 唯一索引 `user_email_lower_key ON "user" (lower(email))` | §2.2：email 不分大小寫唯一，擋掉大小寫不同的重複帳號與併發註冊；撞到時（`23505`）回 409。 | `test_migrations.py::test_user_email_lower_unique_index`、`test_email_case_duplicate_rejected`；`test_member_auth.py::test_signup_normalizes_email`、`test_signup_duplicate_differs_by_case_is_409`、`test_signup_concurrent_same_email_only_one_succeeds`、`test_login_email_is_case_insensitive`、`test_login_lowercase_matches_mixed_case_stored_email`、`test_forgetpw_matches_mixed_case_stored_email`、`test_signup_lowercase_conflicts_with_mixed_case_stored_email`、`test_checkout_preview_email_lookup_is_case_insensitive`（結帳預覽，backend `middlewares/checkout/index.js`） |
 
-V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applied_v1_to_v4` 檢查。V3 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變（`test_user_fk_tables_list_is_complete` 把關）。
+V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applied_v1_to_v5` 檢查。V3 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變（`test_user_fk_tables_list_is_complete` 把關）。
 
 ## 6. P3 表格約束（V4）
 
@@ -1767,7 +1768,32 @@ V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applie
 | 1 | 部分唯一索引 `review_user_tour_key ON review (user_id, tour_id) WHERE tour_id IS NOT NULL` | §3.3、§4.1：每位會員對每個行程只能有一則評論，併發下由 DB 擋住（撞到時 `23505` 回 409，P3 Task 6 實作）；`tour_id` 為 NULL 的 `web` 評論不受限。 | `tests/test_migrations.py::test_review_user_tour_unique_index`、`test_review_duplicate_user_tour_rejected`、`test_web_reviews_not_limited_by_unique_index`（對照組） |
 | 2 | CHECK `review_rating_range CHECK (rating BETWEEN 1 AND 5)` | §4.1：評分只能是 1–5（V1 只有 `DEFAULT 1`，沒有範圍限制）。 | `test_migrations.py::test_review_rating_check`（0、6 被拒；1、5 通過） |
 
-V4 套用狀態由 `test_migrations.py::test_v4_applied` 與 `test_flyway_applied_v1_to_v4` 檢查。V4 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變。
+V4 套用狀態由 `test_migrations.py::test_v4_applied` 與 `test_flyway_applied_v1_to_v5` 檢查。V4 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變。
+
+V5 套用狀態由 `test_migrations.py::test_flyway_applied_v1_to_v5` 檢查。
+
+### P4 表格約束（V5）
+
+`backend/migrations/V5__p4_trade.sql`（P4 spec §3）對 `payment` 新增一欄與兩項約束。不回填資料（seed 的 15 筆 `payment` 的 `merchant_order_no` 皆為 NULL），不改 view，所以 `R__views_functions.sql` 與 §1–§3 的契約型別都不受影響。
+
+| # | 變更 | 理由（P4 spec §3） | 對應測試 |
+|---|---|---|---|
+| 1 | 欄位 `payment.merchant_order_no VARCHAR(30) NULL` ＋ UNIQUE 約束 `payment_merchant_order_no_key (merchant_order_no)` | 付款編號（藍新 `MerchantOrderNo`）一對一對應一筆付款；NULL 不受唯一限制（seed 與舊資料為 NULL）。 | `test_migrations.py::test_payment_merchant_order_no_column`、`test_payment_merchant_order_no_unique`、`test_seed_payments_have_null_merchant_order_no` |
+| 2 | 部分唯一索引 `payment_order_paid_key ON payment (order_id) WHERE payment_status = 1` | 每張訂單最多一筆成功付款，併發重複通知由 DB 擋住；`payment_status = 0` 的列可並存。 | `test_migrations.py::test_payment_one_paid_per_order` |
+
+`payment` 欄位新增：`merchant_order_no`（`character varying(30)`，可為 NULL）。
+
+seed 的 `payment`（§0.1 第 9 項）與 `point_record`（§0.1 第 10 項）不受 V5 影響：`merchant_order_no` 一律 NULL，且 seed 沒有 `退款退回`／`退款收回` 的列。
+
+`point_record.type` 值域新增兩個值（P4 spec §3 第 3 點；不是 DB 約束，`type` 仍是 VARCHAR(50) NOT NULL）：`退款退回`：`point` 為正數，退還使用的點數；`退款收回`：`point` 為負數，收回回饋點數。既有值為 `新增`、`減少`、`減少_確認中`。
+
+**寫入時機**（`backend/src/utils/trade.js::refundOrder`，管理員退款 `POST /api/v1/admin/orders/:order_id/refund`，P4 spec §7）：只在訂單由 1 轉 3 的同一個交易內寫入，每張訂單最多各一筆（只有狀態 1 的訂單可退款，退款不會重複）。
+- `退款退回`（`point` 為正）：該訂單 `減少` 列的點數絕對值加總 > 0 才寫，同時加回 `user_level.travel_point`。
+- `退款收回`（`point` 為負）：該訂單 `新增`（回饋）列的點數加總 > 0 才寫，同時從 `travel_point` 扣除；回饋已被花掉時餘額允許為負（P4 spec Q2，`travel_point` 無 CHECK 約束）。
+- 原本的 `減少`、`新增` 列保留不動（流水帳）；`user_coupon` 同時還原為 `status = 0`、`order_id = NULL`；`payment` 列不改。
+- 已退款訂單的 `computePayable` 取該單成功付款（`payment_status = 1`）的 `discount_price` 作為應付金額（券已釋放，不能再從保留紀錄推算）。
+- 備援：已退款但沒有成功付款列（`payment_status = 1`，或其 `discount_price` 為 NULL；例如 seed 的已退款訂單 #19）時，`computePayable` 走原本的計算（不折抵）。
+- `travel_point` 為負時，折抵流程回報的可用點數（`user_point`、`remaining_point`）視為 0；儲存的餘額維持負數（P4 spec Q2）。
 
 ### 購買資格（非 DB 物件）
 

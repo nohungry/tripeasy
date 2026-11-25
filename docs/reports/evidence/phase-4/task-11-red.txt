@@ -1,0 +1,179 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 5 items
+
+e2e/test_trade_flow.py::test_add_to_cart_from_detail[chromium] FAILED    [ 20%]
+e2e/test_trade_flow.py::test_guest_add_to_cart_goes_to_login[chromium] FAILED [ 40%]
+e2e/test_trade_flow.py::test_cart_page_lists_and_updates[chromium] FAILED [ 60%]
+e2e/test_trade_flow.py::test_empty_cart_message[chromium] FAILED         [ 80%]
+e2e/test_trade_flow.py::test_checkout_button_creates_order[chromium] FAILED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_add_to_cart_from_detail[chromium] ____________________
+e2e/test_trade_flow.py:50: in test_add_to_cart_from_detail
+    page.get_by_label("人數").fill("2")
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11664: in fill
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:352: in fill
+    return await self._frame.fill(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:736: in fill
+    return await self._channel.fill(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E   Call log:
+________________ test_guest_add_to_cart_goes_to_login[chromium] ________________
+e2e/test_trade_flow.py:65: in test_guest_add_to_cart_goes_to_login
+    page.get_by_role("button", name="加入購物車").click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E       2 × waiting for element to be visible, enabled and stable
+E       2 × waiting for element to be visible, enabled and stable
+E       58 × waiting for element to be visible, enabled and stable
+E          - element is not enabled
+E        - retrying click action
+E          - waiting 500ms
+__________________ test_cart_page_lists_and_updates[chromium] __________________
+e2e/test_trade_flow.py:77: in test_cart_page_lists_and_updates
+    expect(page.get_by_test_id("cart-item")).to_have_count(2)
+E   AssertionError: Locator expected to have count '2'
+E   Actual value: 0 
+E   Call log:
+E       14 × locator resolved to 0 elements
+E          - unexpected value "0"
+______________________ test_empty_cart_message[chromium] _______________________
+e2e/test_trade_flow.py:90: in test_empty_cart_message
+    expect(page.get_by_text("購物車是空的")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E   - list:
+E   - link "登出":
+E   - heading "TripEasy" [level=1]:
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E   - list:
+E   - link "登出":
+E   - heading "TripEasy" [level=1]:
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E   - list:
+E   - link "登出":
+E   - navigation "breadcrumb":
+E   - heading "購物車" [level=3]
+E   - text: 景點/行程圖片 美國大峽谷 旅行團 NT$ 20,800NT$ 18,800 預約開始日期：2025-10-15 預約結束日期：2025-10-18 2 人 NT$37,600
+E   - link "":
+E   - link "":
+E   - text: 共 1 個行程 總金額 NT$37,600
+E   - link "購買":
+E   - link "TripEasy":
+E   - list:
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E   - list:
+E   - list:
+E   - list:
+E   - list:
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - link "TripEasy":
+E   - list:
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E   - list:
+E   - list:
+E   - list:
+E   - list:
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+_________________ test_checkout_button_creates_order[chromium] _________________
+e2e/test_trade_flow.py:100: in test_checkout_button_creates_order
+    page.get_by_role("button", name="去結帳").click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+=========================== short test summary info ============================
+FAILED e2e/test_trade_flow.py::test_add_to_cart_from_detail[chromium] - playw...
+FAILED e2e/test_trade_flow.py::test_guest_add_to_cart_goes_to_login[chromium]
+FAILED e2e/test_trade_flow.py::test_cart_page_lists_and_updates[chromium] - A...
+FAILED e2e/test_trade_flow.py::test_empty_cart_message[chromium] - AssertionE...
+FAILED e2e/test_trade_flow.py::test_checkout_button_creates_order[chromium]
+======================== 5 failed in 102.26s (0:01:42) =========================

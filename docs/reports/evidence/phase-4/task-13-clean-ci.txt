@@ -1,0 +1,22 @@
+# P4 Task 13 Step 2：乾淨環境驗證（scripts/ci.sh 連跑兩次）
+# 第 1 次在使用者執行 docker compose down -v 之後；第 2 次保留 volume。日期 2026-11-25
+
+== run 1 ==
+✅ backend
+✅ frontend
+✅ mailpit
+✅ mock-oauth
+✅ mock-newebpay
+======================= 782 passed in 218.29s (0:03:38) ========================
+run1 exit=0 wall_seconds=251
+
+== run 2 ==
+✅ backend
+✅ frontend
+✅ mailpit
+✅ mock-oauth
+✅ mock-newebpay
+======================= 782 passed in 203.02s (0:03:23) ========================
+run2 exit=0 wall_seconds=210
+
+xfailed=0 skipped=0（兩次的 pytest 最終行皆無 xfailed／skipped）

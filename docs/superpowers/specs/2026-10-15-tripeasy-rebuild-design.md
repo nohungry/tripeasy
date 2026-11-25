@@ -79,7 +79,7 @@
 | 圖片儲存 | `storage.upload(buffer, path) → url` | `local`：存到 volume，由 Express 提供靜態檔 | `firebase` |
 | 寄信 | `mailer.send({to, subject, html})` | `smtp` → Mailpit | `sendgrid` |
 | Google OAuth | token 和 userinfo 的網址可設定 | `mock-oauth2-server` | 真的 Google |
-| 藍新 | 原本就用環境變數 | 測試環境，notify 由 pytest 模擬 POST | 待 P7 討論 |
+| 藍新 | 原本就用環境變數 | `mock-newebpay` 模擬藍新（假付款頁＋自簽 notify），pytest 另外直接自簽 notify | P7 接真的藍新測試商店 |
 
 - Firebase 改成第一次用到才初始化，不再因為缺金鑰在開機時 crash。
 - 前端 `loginPage.vue:154-158`：client_id 和**授權網址**（現在寫死 `accounts.google.com`）都改讀環境變數，`VITE_Redirect_BASE` 也補進 `.env.development`。
@@ -87,7 +87,6 @@
 - **風險**：`navikt/mock-oauth2-server` 還沒在這個專案驗證過。P0 先做可行性測試，行不通就改用免費的 Google 測試 client。測試時要確認：
   - token 裡要帶 `name` 和 `email` 兩個 claim，因為 `user.name` 是 NOT NULL，`userinfo/index.js:170` 也要求 email。
   - issuer 的 hostname 在瀏覽器（localhost）和容器之間（service name）要一致。
-- 真正走一次付款流程時，用 cloudflared tunnel 讓藍新的 notify 打得進本機。
 
 ### 2.3 測試與 CI 骨架
 - `tests/conftest.py` 管理 base_url 和 DB 連線。第一批測試是 `/api/v1/health`，加上一個 CORS 冒煙測試：帶 `Origin: http://localhost:5173` 時，response 要有正確的 `Access-Control-Allow-Origin`。
@@ -152,7 +151,7 @@
 | P3 商品 | 列表、搜尋、詳情、評論、隱藏玩法（**補上新增功能**：只有購買過的會員能寫評論和分享隱藏玩法） | 路由 bug 已在 P1 修好 |
 | P4 交易 | 購物車 → 結帳 → 折扣 / 優惠券 → 藍新付款 | 金額被前端竄改；notify 沒做冪等和金額檢查；訂單編號長度；**`/newebpay/return` 的 handler 是空的，請求會卡住**（`newebpay.js:235-237`）；**付款表單沒有做 HTML 跳脫**（`newebpay.js:103-125`，ItemDesc 直接來自 DB 的商品標題） |
 | P5 會員中心 | 收藏、訂單、點數、通知設定 | 點數規則照 P1 契約中確認的語意 |
-| P6 後台 | 商品 CRUD、促銷、優惠券、會員 / 角色、自動下架排程、**異動通知**（`routes/admin.js:41-50`）、**客服：會員送出聯絡表單 → admin 在後台檢視和回覆 → 回覆時發站內通知並寄信（Mailpit）** | 排程沒有 handler；客服的後端完全沒有，要新增 1 張表和 API（新的 migration） |
+| P6 後台 | 商品 CRUD、促銷、優惠券、會員 / 角色、自動下架排程、**異動通知**（`routes/admin.js:41-50`）、**訂單管理（列表、詳情、退款按鈕，呼叫 P4 的退款 API）**、**逾時訂單排程**、**客服：會員送出聯絡表單 → admin 在後台檢視和回覆 → 回覆時發站內通知並寄信（Mailpit）** | 排程沒有 handler；客服的後端完全沒有，要新增 1 張表和 API（新的 migration） |
 
 - **權限**：付款、自動設定、點數等級的 API 限定 `authRole('User')`（`routes/newebpay.js:12`、`automation.js:11`、`userProfile.js:32`）。**維持原設計**，admin 不結帳，結帳流程一律用一般會員帳號測試。
 
@@ -212,3 +211,4 @@
 - 原本的候選方案是 Neon（DB）、Render 或 Zeabur（後端）、GitHub Pages（前端），**還沒定案**。
 - 跨網域需要的 cookie 和 CORS 設定，已在 4.3 先做成可設定的。
 - 到 P6 完成前會再開一次 brainstorming 決定 P7。
+- **待辦**：P7 接真的藍新測試商店；真正走一次付款流程時，用 cloudflared tunnel 讓藍新的 notify 打得進本機（原 §2.2 的說明移到這裡）。

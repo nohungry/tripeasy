@@ -28,6 +28,7 @@ mock_google_code = _tests_conftest.mock_google_code
 make_user = _tests_conftest.make_user
 make_tour = _tests_conftest.make_tour
 make_order = _tests_conftest.make_order
+make_coupon = _tests_conftest.make_coupon
 live_promotion = _tests_conftest.live_promotion
 purge_leftovers = _tests_conftest.purge_leftovers
 delete_user = _tests_conftest.delete_user

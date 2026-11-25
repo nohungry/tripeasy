@@ -15,6 +15,7 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
+import newebpay as nb
 from dbfactory import insert
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -189,6 +190,63 @@ def auth_header(user: dict) -> dict:
     return {"Authorization": f"Bearer {login_token(user)}"}
 
 
+CART_API = "/api/v1/user/trade/cart"
+
+
+def add_to_cart(api, user, tour, people=1, start_date=None, end_date=None):
+    """POST 加入購物車。tour 是 make_tour 回傳的 dict（取其 tour_id、type、item），不是 tour_id 字串。
+    start_date／end_date 為 YYYY-MM-DD，預設明天、後天；回傳 requests.Response。"""
+    today = datetime.date.today()
+    start_date = start_date or (today + datetime.timedelta(days=1)).isoformat()
+    end_date = end_date or (today + datetime.timedelta(days=2)).isoformat()
+    body = {
+        "type": tour["type"],
+        "item": tour["item"],
+        "people": people,
+        "options": {"start_date": start_date, "end_date": end_date},
+    }
+    return api.post(f"{CART_API}/{tour['tour_id']}", json=body, headers=auth_header(user), timeout=5)
+
+
+CHECKOUT_API = "/api/v1/user/checkout"
+
+
+def checkout(api, user, tours: list[dict]) -> str:
+    """依序把每個行程（make_tour 回傳的 dict）加入購物車，再用該會員的購物車建單；回傳 order_id。"""
+    for tour in tours:
+        r = add_to_cart(api, user, tour)
+        assert r.status_code == 201, r.text
+    with psycopg.connect(**_db_params(), autocommit=True) as conn:
+        (cart_id,) = conn.execute("SELECT cart_id FROM cart WHERE user_id = %s", (user["user_id"],)).fetchone()
+    r = api.post(f"{CHECKOUT_API}/order/{cart_id}", headers=auth_header(user), timeout=5)
+    assert r.status_code == 200, r.text
+    return r.json()["data"]["order_id"]
+
+
+DISCOUNT_API = "/api/v1/user/trade/discounts"
+
+
+def preview(api, user, order_id, discount: dict | None = None):
+    """PATCH 結帳預覽（固定地址、電話、信用卡）；discount 為 None 時不帶該欄位。回傳 requests.Response。"""
+    body = {
+        "user": {"name": "測試用戶", "email": user["email"], "address": "台北市測試路1號", "phone_number": "0912345678"},
+        "payment_method": "credit_card",
+    }
+    if discount is not None:
+        body["discount"] = discount
+    return api.patch(f"{CHECKOUT_API}/preview/{order_id}", json=body, headers=auth_header(user), timeout=10)
+
+
+def trial_discount(api, user, order_id, body: dict):
+    """POST 折扣試算（不寫入）。"""
+    return api.post(f"{DISCOUNT_API}/{order_id}", json=body, headers=auth_header(user), timeout=10)
+
+
+def cancel_discount(api, user, order_id):
+    """GET 取消折扣（釋放保留）。"""
+    return api.get(f"{DISCOUNT_API}/{order_id}", headers=auth_header(user), timeout=10)
+
+
 CAPTCHA_TTL_MS = 5 * 60 * 1000
 
 
@@ -239,6 +297,7 @@ TEST_EMAIL_PREFIXES: tuple[str, ...] = (
     "p0-", "e2e-", "factory-", "a.", "g.", "mixed.", "nobody.", "val.", "race.", "pref.", "lower.", "dup.", "co.", "mock.",
 )  # fmt: skip
 TEST_TOUR_PREFIX = "p3-"
+TEST_COUPON_PREFIX = "P4"
 
 
 def delete_tour(db, tour_id: str) -> None:
@@ -255,8 +314,14 @@ def delete_tour(db, tour_id: str) -> None:
     db.execute("DELETE FROM tour WHERE tour_id = %s", p)
 
 
+def delete_coupon(db, coupon_id: str) -> None:
+    """先刪 user_coupon 再刪 coupon。"""
+    db.execute("DELETE FROM user_coupon WHERE coupon_id = %s", (coupon_id,))
+    db.execute("DELETE FROM coupon WHERE coupon_id = %s", (coupon_id,))
+
+
 def purge_leftover_test_data(db) -> dict:
-    """刪除前次測試殘留的測試會員與測試行程（先會員後行程）。"""
+    """刪除前次測試殘留的測試會員、測試行程與測試優惠券（先會員、行程，最後優惠券）。"""
     user_ids = [
         str(user_id)
         for user_id, email in db.execute('SELECT user_id, lower(email) FROM "user"').fetchall()
@@ -272,7 +337,15 @@ def purge_leftover_test_data(db) -> dict:
     ]
     for tour_id in tour_ids:
         delete_tour(db, tour_id)
-    return {"users": len(user_ids), "tours": len(tour_ids)}
+    coupon_ids = [
+        str(r[0])
+        for r in db.execute(
+            "SELECT coupon_id FROM coupon WHERE starts_with(code, %s)", (TEST_COUPON_PREFIX,)
+        ).fetchall()
+    ]
+    for coupon_id in coupon_ids:
+        delete_coupon(db, coupon_id)
+    return {"users": len(user_ids), "tours": len(tour_ids), "coupons": len(coupon_ids)}
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -284,14 +357,30 @@ def purge_leftovers(db):
 def make_tour(db):
     created: list[str] = []
 
-    def _make(item: str = "travel", status: int = 1, with_detail: bool = True, title: str | None = None) -> dict:
+    def _make(
+        item: str = "travel",
+        status: int = 1,
+        with_detail: bool = True,
+        title: str | None = None,
+        *,
+        price: int | None = None,
+        start_date: datetime.date | None = None,
+        end_date: datetime.date | None = None,
+    ) -> dict:
         if with_detail and item not in ("travel", "spot"):
             raise ValueError(f"item={item!r} 不能建立 tour_detail（只允許 travel／spot）")
         title = title or f"{TEST_TOUR_PREFIX}{uuid.uuid4().hex[:8]}"
         assert title.startswith(TEST_TOUR_PREFIX), title
         tour_type = "tourgroup" if item == "travel" else "backpacker"
-        # tour_start_date／tour_end_date 刻意不傳（保持 NULL）
-        row = insert(db, "tour", type=tour_type, item=item, status=status, title=title)
+        # price／tour_start_date／tour_end_date 預設不傳（price 用 dbfactory 預設、日期保持 NULL）
+        extra = {}
+        if price is not None:
+            extra["price"] = price
+        if start_date is not None:
+            extra["tour_start_date"] = start_date
+        if end_date is not None:
+            extra["tour_end_date"] = end_date
+        row = insert(db, "tour", type=tour_type, item=item, status=status, title=title, **extra)
         tour_id = str(row["tour_id"])
         created.append(tour_id)
         if with_detail:
@@ -311,6 +400,30 @@ def live_promotion(db, make_tour) -> dict:
         (t["tour_id"],),
     )  # notification 由 make_tour teardown 的 delete_tour 清除
     return t
+
+
+@pytest.fixture
+def make_coupon(db):
+    created: list[str] = []
+
+    def _make(user: dict | None = None, discount: int = 100, expire_in_days: int = 30, status: int = 0) -> dict:
+        """建立 coupon（code = P4 + 4 碼大寫十六進位）；user 不為 None 時一併綁定 user_coupon（status、order_id NULL）。"""
+        code = TEST_COUPON_PREFIX + uuid.uuid4().hex[:4].upper()
+        (coupon_id,) = db.execute(
+            "INSERT INTO coupon (code, discount, description, expire_date) "
+            "VALUES (%s, %s, %s, now() + make_interval(days => %s)) RETURNING coupon_id",
+            (code, discount, "P4 測試優惠券", expire_in_days),
+        ).fetchone()
+        created.append(str(coupon_id))
+        if user is not None:
+            db.execute(
+                "INSERT INTO user_coupon (user_id, coupon_id, status) VALUES (%s, %s, %s)",
+                (user["user_id"], coupon_id, status),
+            )
+        return {"coupon_id": str(coupon_id), "code": code, "discount": discount}
+
+    yield _make
+    _cleanup_all(created, lambda coupon_id: delete_coupon(db, coupon_id))
 
 
 @pytest.fixture
@@ -341,3 +454,54 @@ def make_order(db):
         db.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
 
     _cleanup_all(created, _delete)
+
+
+# ---- P4 付款輔助（Task 8 起；多個測試檔共用）
+
+PAYMENT_API = "/api/v1/user/newebpay/payment"
+NOTIFY_API = "/api/v1/user/newebpay/notify"
+SUMMARY_API = "/api/v1/user/checkout/summary"
+
+
+def ready_order(api, db, make_user, make_tour, discount=None, *, price=1000, people=1, user=None, tour=None):
+    """建單並 preview（訂單進入 0）；回傳 (user, order_id)。"""
+    user = user or make_user()
+    tour = tour or make_tour(price=price)
+    assert add_to_cart(api, user, tour, people=people).status_code == 201
+    order_id = checkout(api, user, [])
+    r = preview(api, user, order_id, discount)
+    assert r.status_code == 200, r.text
+    return user, order_id
+
+
+def start_payment(api, user, order_id, noise=None):
+    """POST /payment；回傳 (merchant_order_no, amt, 表單欄位)。"""
+    r = api.post(PAYMENT_API, headers=auth_header(user), json={"order_id": order_id, **(noise or {})}, timeout=10)
+    assert r.status_code == 200, r.text
+    _, fields = nb.parse_payment_form(r.text)
+    trade = nb.decode_trade_info(fields)
+    return trade["MerchantOrderNo"], int(trade["Amt"]), fields
+
+
+def notify(api, fields):
+    return api.post(NOTIFY_API, data=fields, timeout=10)
+
+
+def success_notify(mon, amt, **kw):
+    return nb.build_notify(mon, amt, **kw)
+
+
+def order_status(db, order_id):
+    order = db.execute("SELECT payment_status FROM orders WHERE order_id = %s", (order_id,)).fetchone()[0]
+    items = {r[0] for r in db.execute("SELECT payment_status FROM order_item WHERE order_id = %s", (order_id,))}
+    return order, items
+
+
+def travel_point(db, user):
+    return db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0]
+
+
+def summary(api, user, order_id):
+    r = api.get(f"{SUMMARY_API}/{order_id}", headers=auth_header(user), timeout=10)
+    assert r.status_code == 200, r.text
+    return r.json()["data"]["summary"]
