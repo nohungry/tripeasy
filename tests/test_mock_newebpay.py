@@ -110,12 +110,41 @@ def test_mock_fail_status():
 
 def test_mock_refuses_after_trade_limit():
     _, page = _open_payment_page(TradeLimit="60")
-    resp = _pay(
-        _session_id(page.text), "success", headers={"X-Mock-Now": str(int(time.time()) + 61)}
-    )
+    resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 120)})
     assert resp.status_code == 200
     assert "交易逾時" in resp.text
     assert "<form" not in resp.text
+
+
+def test_mock_pays_within_trade_limit_without_clock_override():
+    _, page = _open_payment_page(TradeLimit="60")
+    resp = _pay(_session_id(page.text), "success")
+    assert resp.status_code == 200
+    assert "交易逾時" not in resp.text
+    action, _ = nb.parse_payment_form(resp.text)
+    assert action == RETURN_URL
+
+
+def test_mock_trade_limit_below_minimum_is_clamped_to_60():
+    # TradeLimit=1 視為 60：30 秒後仍可付款
+    _, page = _open_payment_page(TradeLimit="1")
+    resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 30)})
+    assert "交易逾時" not in resp.text
+    action, _ = nb.parse_payment_form(resp.text)
+    assert action == RETURN_URL
+
+
+def test_mock_trade_limit_above_maximum_is_clamped_to_900():
+    # TradeLimit=5000 視為 900：1000 秒後逾時
+    _, page = _open_payment_page(TradeLimit="5000")
+    resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 1000)})
+    assert "交易逾時" in resp.text
+
+
+def test_mock_trade_limit_zero_means_no_limit():
+    _, page = _open_payment_page(TradeLimit="0")
+    resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 100000)})
+    assert "交易逾時" not in resp.text
 
 
 def test_mock_session_cannot_pay_twice():
