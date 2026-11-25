@@ -1,0 +1,16 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+______________________ test_return_accepts_gateway_origin ______________________
+tests/test_cors_gateway.py:28: in test_return_accepts_gateway_origin
+    assert r.status_code == 302
+E   assert 500 == 302
+E    +  where 500 = <Response [500]>.status_code
+______________________ test_notify_accepts_gateway_origin ______________________
+tests/test_cors_gateway.py:36: in test_notify_accepts_gateway_origin
+    assert r.status_code == 200
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_cors_gateway.py::test_return_accepts_gateway_origin - asser...
+FAILED tests/test_cors_gateway.py::test_notify_accepts_gateway_origin - asser...
+2 failed, 1 passed in 0.32s
