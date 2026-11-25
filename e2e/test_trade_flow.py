@@ -75,12 +75,14 @@ def test_cart_page_lists_and_updates(page: Page, make_user, make_tour):
     _login(page, user)
     _open(page, "#/cart")
     expect(page.get_by_test_id("cart-item")).to_have_count(2)
-    expect(page.get_by_text("NT$3,000", exact=True)).to_be_visible()
-    _row(page, tour_a).get_by_label("人數").fill("2")
-    expect(page.get_by_text("NT$4,000", exact=True)).to_be_visible()
+    expect(page.get_by_test_id("cart-total")).to_have_text("NT$3,000")
+    people = _row(page, tour_a).get_by_label("人數")
+    people.fill("2")
+    people.blur()  # 人數於 change 事件（離開欄位）時才送出
+    expect(page.get_by_test_id("cart-total")).to_have_text("NT$4,000")
     _row(page, tour_b).get_by_role("button", name="移除").click()
     expect(page.get_by_test_id("cart-item")).to_have_count(1)
-    expect(page.get_by_text("NT$2,000", exact=True)).to_be_visible()
+    expect(page.get_by_test_id("cart-total")).to_have_text("NT$2,000")
 
 
 def test_empty_cart_message(page: Page, make_user):
