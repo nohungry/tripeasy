@@ -9,6 +9,7 @@ dependencies = [
   "PyJWT==2.9.0",
   "python-dotenv==1.0.1",
   "pytest-playwright==0.5.2",
+  "cryptography==50.0.2",
 ]
 
 [tool.uv]

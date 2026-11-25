@@ -45,6 +45,12 @@ services:
     environment:
       JSON_CONFIG: '{"interactiveLogin": true}'
 
+  mock-newebpay:
+    build: ./mock-newebpay
+    env_file: .env
+    ports:
+      - '8095:8080'
+
   backend:
     build:
       context: ./backend
@@ -56,6 +62,8 @@ services:
       mailpit:
         condition: service_started
       mock-oauth:
+        condition: service_started
+      mock-newebpay:
         condition: service_started
     ports:
       - '${PORT:-3000}:${PORT:-3000}'
