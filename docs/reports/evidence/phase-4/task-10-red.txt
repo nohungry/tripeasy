@@ -1,0 +1,321 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFF.............FFFFFFFFFFFF.....F...             [100%]
+=================================== FAILURES ===================================
+____________________ test_cart_post_invalid_tour_id_message ____________________
+tests/test_validator_messages.py:35: in test_cart_post_invalid_tour_id_message
+    assert r.json()["message"] == "「旅遊項目編號」必須是有效的 UUID 格式"
+E   AssertionError: assert '「tour_id」必須是有效的 UUID 格式' == '「旅遊項目編號」必須是有效的 UUID 格式'
+E     
+E     - 「旅遊項目編號」必須是有效的 UUID 格式
+E     + 「tour_id」必須是有效的 UUID 格式
+___________________ test_cart_delete_invalid_item_id_message ___________________
+tests/test_validator_messages.py:42: in test_cart_delete_invalid_item_id_message
+    assert r.json()["message"] == "「購物車項目編號」必須是有效的 UUID 格式"
+E   AssertionError: assert '「cart_item_id」必須是有效的 UUID 格式' == '「購物車項目編號」必須是有效的 UUID 格式'
+E     
+E     - 「購物車項目編號」必須是有效的 UUID 格式
+E     + 「cart_item_id」必須是有效的 UUID 格式
+___________________ test_cart_patch_invalid_item_id_message ____________________
+tests/test_validator_messages.py:48: in test_cart_patch_invalid_item_id_message
+    assert r.json()["message"] == "「購物車項目編號」必須是有效的 UUID 格式"
+E   assert '"type" is required' == '「購物車項目編號」必須是有效的 UUID 格式'
+E     
+E     - 「購物車項目編號」必須是有效的 UUID 格式
+E     + "type" is required
+_ test_cart_list_query_messages[{'page': 0}-\u300c\u9801\u6578\u300d\u81f3\u5c11\u662f 1] _
+tests/test_validator_messages.py:66: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '「page」至少是 1' == '「頁數」至少是 1'
+E     
+E     - 「頁數」至少是 1
+E     + 「page」至少是 1
+_ test_cart_list_query_messages[{'page': 'x'}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] _
+tests/test_validator_messages.py:66: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '「page」必須是數字' == '「頁數」必須是數字'
+E     
+E     - 「頁數」必須是數字
+E     + 「page」必須是數字
+_ test_cart_list_query_messages[{'page': 1.5}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578] _
+tests/test_validator_messages.py:66: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '「page」必須是整數' == '「頁數」必須是整數'
+E     
+E     - 「頁數」必須是整數
+E     + 「page」必須是整數
+_ test_cart_list_query_messages[{'limit': 0}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u81f3\u5c11\u662f 1] _
+tests/test_validator_messages.py:66: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '「limit」至少是 1' == '「每頁筆數」至少是 1'
+E     
+E     - 「每頁筆數」至少是 1
+E     + 「limit」至少是 1
+_ test_cart_list_query_messages[{'limit': 'x'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] _
+tests/test_validator_messages.py:66: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '「limit」必須是數字' == '「每頁筆數」必須是數字'
+E     
+E     - 「每頁筆數」必須是數字
+E     + 「limit」必須是數字
+_ test_cart_list_query_messages[{'lang': 'fr-FR'}-\u300c\u8a9e\u8a00\u300d\u50c5\u652f\u63f4\uff1azh-TW, en-US] _
+tests/test_validator_messages.py:66: in test_cart_list_query_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '「lang」僅支援：zh-TW, en-US' == '「語言」僅支援：zh-TW, en-US'
+E     
+E     - 「語言」僅支援：zh-TW, en-US
+E     ?  ^^
+E     + 「lang」僅支援：zh-TW, en-US
+E     ?  ^^^^
+_________________ test_cart_list_without_paging_uses_defaults __________________
+tests/test_validator_messages.py:74: in test_cart_list_without_paging_uses_defaults
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+__________________ test_cart_list_empty_without_paging_is_200 __________________
+tests/test_validator_messages.py:82: in test_cart_list_empty_without_paging_is_200
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+_________________________ test_cart_post_combo_message _________________________
+tests/test_validator_messages.py:88: in test_cart_post_combo_message
+    assert r.json()["message"] == "「大分類」與「小分類」的組合不合法"
+E   AssertionError: assert '「type」與「item」的組合不合法' == '「大分類」與「小分類」的組合不合法'
+E     
+E     - 「大分類」與「小分類」的組合不合法
+E     + 「type」與「item」的組合不合法
+_____________ test_cart_post_type_item_mismatch_with_tour_message ______________
+tests/test_validator_messages.py:97: in test_cart_post_type_item_mismatch_with_tour_message
+    assert r.json()["message"] == "「大分類」與「小分類」的組合不合法"
+E   AssertionError: assert '「type」與「item」的組合不合法' == '「大分類」與「小分類」的組合不合法'
+E     
+E     - 「大分類」與「小分類」的組合不合法
+E     + 「type」與「item」的組合不合法
+____________________ test_cart_post_options_missing_message ____________________
+tests/test_validator_messages.py:105: in test_cart_post_options_missing_message
+    assert r.json()["message"] == "請提供「選項」設定"
+E   AssertionError: assert '請提供 options 設定' == '請提供「選項」設定'
+E     
+E     - 請提供「選項」設定
+E     + 請提供 options 設定
+_____________________ test_cart_post_options_null_message ______________________
+tests/test_validator_messages.py:111: in test_cart_post_options_null_message
+    assert r.json()["message"] == "「選項」不可為 null"
+E   AssertionError: assert '「options」不可為 null' == '「選項」不可為 null'
+E     
+E     - 「選項」不可為 null
+E     + 「options」不可為 null
+_ test_discount_body_messages[{'discount': {'coupon': 'ABC123'}}-\u8acb\u586b\u5beb\u300c\u512a\u60e0\u65b9\u5f0f\u300d] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'type 為必填欄位' == '請填寫「優惠方式」'
+E     
+E     - 請填寫「優惠方式」
+E     + type 為必填欄位
+_ test_discount_body_messages[{'type': 'zzz', 'discount': {'coupon': 'ABC123'}}-\u300c\u512a\u60e0\u65b9\u5f0f\u300d\u53ea\u80fd\u662f\u512a\u60e0\u5238\u6216\u65c5\u904a\u7a4d\u5206] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'type 只能是 coupon 或 point' == '「優惠方式」只能是優惠券或旅遊積分'
+E     
+E     - 「優惠方式」只能是優惠券或旅遊積分
+E     + type 只能是 coupon 或 point
+_ test_discount_body_messages[{'type': 'coupon'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'discount 為必填欄位' == '「優惠內容」為必填欄位'
+E     
+E     - 「優惠內容」為必填欄位
+E     + discount 為必填欄位
+_ test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'abc'}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u5fc5\u9808\u662f 6 \u78bc\u5927\u5beb\u82f1\u6578\u7d44\u5408] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'coupon 必須是 6 碼大寫英數組合' == '「優惠券代碼」必須是 6 碼大寫英數組合'
+E     
+E     - 「優惠券代碼」必須是 6 碼大寫英數組合
+E     + coupon 必須是 6 碼大寫英數組合
+_ test_discount_body_messages[{'type': 'point', 'discount': {'point': 'x'}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6578\u5b57] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'point 必須是數字' == '「旅遊積分」必須是數字'
+E     
+E     - 「旅遊積分」必須是數字
+E     + point 必須是數字
+_ test_discount_body_messages[{'type': 'point', 'discount': {'point': 1.5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6574\u6578] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'point 必須是整數' == '「旅遊積分」必須是整數'
+E     
+E     - 「旅遊積分」必須是整數
+E     + point 必須是整數
+_ test_discount_body_messages[{'type': 'point', 'discount': {'point': -5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6700\u5c0f\u503c\u70ba 0] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'point 最小值為 0' == '「旅遊積分」最小值為 0'
+E     
+E     - 「旅遊積分」最小值為 0
+E     + point 最小值為 0
+_ test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'point': 5}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u53ea\u80fd\u64c7\u4e00\u586b\u5beb] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert 'coupon 與 point 只能擇一填寫' == '「優惠券代碼」與「旅遊積分」只能擇一填寫'
+E     
+E     - 「優惠券代碼」與「旅遊積分」只能擇一填寫
+E     + coupon 與 point 只能擇一填寫
+_ test_discount_body_messages[{'type': 'coupon', 'discount': {}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u64c7\u4e00\u586b\u5beb] _
+tests/test_validator_messages.py:134: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount" m...oupon, point]' == '「優惠券代碼」與「旅遊積分」必須擇一填寫'
+E     
+E     - 「優惠券代碼」與「旅遊積分」必須擇一填寫
+E     + "discount" must contain at least one of [coupon, point]
+____________________ test_discount_invalid_order_id_message ____________________
+tests/test_validator_messages.py:143: in test_discount_invalid_order_id_message
+    assert r.json()["message"] == "「訂單編號」必須是有效的 UUID 格式"
+E   AssertionError: assert '「order_id」必須是有效的 UUID 格式' == '「訂單編號」必須是有效的 UUID 格式'
+E     
+E     - 「訂單編號」必須是有效的 UUID 格式
+E     + 「order_id」必須是有效的 UUID 格式
+____________________ test_checkout_invalid_order_id_message ____________________
+tests/test_validator_messages.py:156: in test_checkout_invalid_order_id_message
+    assert r.json()["message"] == "「訂單編號」必須是有效的 UUID 格式", url
+E   AssertionError: /api/v1/user/checkout/userinfo/not-a-uuid
+E   assert '「order_id」必須是有效的 UUID 格式' == '「訂單編號」必須是有效的 UUID 格式'
+E     
+E     - 「訂單編號」必須是有效的 UUID 格式
+E     + 「order_id」必須是有效的 UUID 格式
+_________________ test_search_duration_exceeding_range_is_400 __________________
+tests/test_product_read.py:317: in test_search_duration_exceeding_range_is_400
+    assert r.json()["message"] == "「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）"
+E   AssertionError: assert '「duration」不可...天數（目前區間共 5 天）' == '「天數」不可大於出發日期...天數（目前區間共 5 天）'
+E     
+E     - 「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）
+E     + 「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 5 天）
+______________________ test_search_impossible_date_is_400 ______________________
+tests/test_product_read.py:322: in test_search_impossible_date_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 400
+E    +  where 500 = <Response [500]>.status_code
+________________________ test_search_offset_date_is_400 ________________________
+tests/test_product_read.py:331: in test_search_offset_date_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"查無此旅遊項目"}
+E   assert 200 == 400
+E    +  where 200 = <Response [200]>.status_code
+_ test_search_messages_have_no_param_names[{'start_date': '2027-01-10', 'end_date': '2027-01-01'}-\u300c\u51fa\u767c\u65e5\u671f\u300d\u4e0d\u53ef\u665a\u65bc\u300c\u7d50\u675f\u65e5\u671f\u300d] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「start_date」不可大於「end_date」' == '「出發日期」不可晚於「結束日期」'
+E     
+E     - 「出發日期」不可晚於「結束日期」
+E     + 「start_date」不可大於「end_date」
+_ test_search_messages_have_no_param_names[{'min_price': -1, 'max_price': -5}-\u300c\u6700\u4f4e\u50f9\u683c\u300d\u4e0d\u53ef\u5927\u65bc\u300c\u6700\u9ad8\u50f9\u683c\u300d] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「min_price」不可大於「max_price」' == '「最低價格」不可大於「最高價格」'
+E     
+E     - 「最低價格」不可大於「最高價格」
+E     + 「min_price」不可大於「max_price」
+_ test_search_messages_have_no_param_names[{'min_price': 'abc'}-\u300c\u6700\u4f4e\u50f9\u683c\u300d\u5fc5\u9808\u662f\u6578\u5b57] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「min_price」必須是數字' == '「最低價格」必須是數字'
+E     
+E     - 「最低價格」必須是數字
+E     + 「min_price」必須是數字
+_ test_search_messages_have_no_param_names[{'duration': 99, 'start_date': '2027-01-01', 'end_date': '2027-01-05'}-\u300c\u5929\u6578\u300d\u4e0d\u53ef\u5927\u65bc\u51fa\u767c\u65e5\u671f\u5230\u7d50\u675f\u65e5\u671f\u6db5\u84cb\u7684\u5929\u6578\uff08\u76ee\u524d\u5340\u9593\u5171 5 \u5929\uff09] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「duration」不可...天數（目前區間共 5 天）' == '「天數」不可大於出發日期...天數（目前區間共 5 天）'
+E     
+E     - 「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）
+E     + 「duration」不可大於「start_date」到「end_date」涵蓋的天數（目前區間共 5 天）
+_ test_search_messages_have_no_param_names[{'duration': 'x'}-\u300c\u5929\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「duration」必須是數字' == '「天數」必須是數字'
+E     
+E     - 「天數」必須是數字
+E     + 「duration」必須是數字
+_ test_search_messages_have_no_param_names[{'limit': 0}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u5fc5\u9808\u5927\u65bc\u7b49\u65bc 1] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「limit」必須大於等於 1' == '「每頁筆數」必須大於等於 1'
+E     
+E     - 「每頁筆數」必須大於等於 1
+E     + 「limit」必須大於等於 1
+_ test_search_messages_have_no_param_names[{'page': 0}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u5927\u65bc\u7b49\u65bc 1] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「page」必須大於等於 1' == '「頁數」必須大於等於 1'
+E     
+E     - 「頁數」必須大於等於 1
+E     ?  ^^
+E     + 「page」必須大於等於 1
+E     ?  ^^^^
+_ test_search_messages_have_no_param_names[{'sort_by': 'zzz'}-\u300c\u6392\u5e8f\u6b04\u4f4d\u300d\u50c5\u80fd\u70ba price \u6216 date] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「sort_by」僅能為 price 或 date' == '「排序欄位」僅能為 price 或 date'
+E     
+E     - 「排序欄位」僅能為 price 或 date
+E     ?  ^^^^
+E     + 「sort_by」僅能為 price 或 date
+E     ?  ^^^^^^^
+_ test_search_messages_have_no_param_names[{'order': 'zzz'}-\u300c\u6392\u5e8f\u65b9\u5411\u300d\u50c5\u80fd\u70ba asc \u6216 desc] _
+tests/test_product_read.py:356: in test_search_messages_have_no_param_names
+    assert message == expected
+E   AssertionError: assert '「order」僅能為 asc 或 desc' == '「排序方向」僅能為 asc 或 desc'
+E     
+E     - 「排序方向」僅能為 asc 或 desc
+E     ?  ^^^^
+E     + 「order」僅能為 asc 或 desc
+E     ?  ^^^^^
+_______ test_search_invalid_price_range_shows_backend_message[chromium] ________
+e2e/test_product_flow.py:315: in test_search_invalid_price_range_shows_backend_message
+    assert message == "「最低價格」不可大於「最高價格」"
+E   AssertionError: assert '「min_price」不可大於「max_price」' == '「最低價格」不可大於「最高價格」'
+E     
+E     - 「最低價格」不可大於「最高價格」
+E     + 「min_price」不可大於「max_price」
+=========================== short test summary info ============================
+FAILED tests/test_validator_messages.py::test_cart_post_invalid_tour_id_message
+FAILED tests/test_validator_messages.py::test_cart_delete_invalid_item_id_message
+FAILED tests/test_validator_messages.py::test_cart_patch_invalid_item_id_message
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'page': 0}-\u300c\u9801\u6578\u300d\u81f3\u5c11\u662f 1]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'page': 'x'}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'page': 1.5}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'limit': 0}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u81f3\u5c11\u662f 1]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'limit': 'x'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57]
+FAILED tests/test_validator_messages.py::test_cart_list_query_messages[{'lang': 'fr-FR'}-\u300c\u8a9e\u8a00\u300d\u50c5\u652f\u63f4\uff1azh-TW, en-US]
+FAILED tests/test_validator_messages.py::test_cart_list_without_paging_uses_defaults
+FAILED tests/test_validator_messages.py::test_cart_list_empty_without_paging_is_200
+FAILED tests/test_validator_messages.py::test_cart_post_combo_message - Asser...
+FAILED tests/test_validator_messages.py::test_cart_post_type_item_mismatch_with_tour_message
+FAILED tests/test_validator_messages.py::test_cart_post_options_missing_message
+FAILED tests/test_validator_messages.py::test_cart_post_options_null_message
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'discount': {'coupon': 'ABC123'}}-\u8acb\u586b\u5beb\u300c\u512a\u60e0\u65b9\u5f0f\u300d]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'zzz', 'discount': {'coupon': 'ABC123'}}-\u300c\u512a\u60e0\u65b9\u5f0f\u300d\u53ea\u80fd\u662f\u512a\u60e0\u5238\u6216\u65c5\u904a\u7a4d\u5206]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'abc'}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u5fc5\u9808\u662f 6 \u78bc\u5927\u5beb\u82f1\u6578\u7d44\u5408]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 'x'}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6578\u5b57]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 1.5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6574\u6578]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': -5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6700\u5c0f\u503c\u70ba 0]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'point': 5}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u53ea\u80fd\u64c7\u4e00\u586b\u5beb]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u64c7\u4e00\u586b\u5beb]
+FAILED tests/test_validator_messages.py::test_discount_invalid_order_id_message
+FAILED tests/test_validator_messages.py::test_checkout_invalid_order_id_message
+FAILED tests/test_product_read.py::test_search_duration_exceeding_range_is_400
+FAILED tests/test_product_read.py::test_search_impossible_date_is_400 - Asser...
+FAILED tests/test_product_read.py::test_search_offset_date_is_400 - Assertion...
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'start_date': '2027-01-10', 'end_date': '2027-01-01'}-\u300c\u51fa\u767c\u65e5\u671f\u300d\u4e0d\u53ef\u665a\u65bc\u300c\u7d50\u675f\u65e5\u671f\u300d]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'min_price': -1, 'max_price': -5}-\u300c\u6700\u4f4e\u50f9\u683c\u300d\u4e0d\u53ef\u5927\u65bc\u300c\u6700\u9ad8\u50f9\u683c\u300d]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'min_price': 'abc'}-\u300c\u6700\u4f4e\u50f9\u683c\u300d\u5fc5\u9808\u662f\u6578\u5b57]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'duration': 99, 'start_date': '2027-01-01', 'end_date': '2027-01-05'}-\u300c\u5929\u6578\u300d\u4e0d\u53ef\u5927\u65bc\u51fa\u767c\u65e5\u671f\u5230\u7d50\u675f\u65e5\u671f\u6db5\u84cb\u7684\u5929\u6578\uff08\u76ee\u524d\u5340\u9593\u5171 5 \u5929\uff09]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'duration': 'x'}-\u300c\u5929\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'limit': 0}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u5fc5\u9808\u5927\u65bc\u7b49\u65bc 1]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'page': 0}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u5927\u65bc\u7b49\u65bc 1]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'sort_by': 'zzz'}-\u300c\u6392\u5e8f\u6b04\u4f4d\u300d\u50c5\u80fd\u70ba price \u6216 date]
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'order': 'zzz'}-\u300c\u6392\u5e8f\u65b9\u5411\u300d\u50c5\u80fd\u70ba asc \u6216 desc]
+FAILED e2e/test_product_flow.py::test_search_invalid_price_range_shows_backend_message[chromium]
+39 failed, 21 passed, 43 deselected in 7.52s

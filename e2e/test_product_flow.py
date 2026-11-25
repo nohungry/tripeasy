@@ -312,6 +312,7 @@ def test_search_invalid_price_range_shows_backend_message(page: Page):
         page.get_by_role("button", name="搜尋", exact=True).click()
     assert info.value.status == 400
     message = info.value.json()["message"]
+    assert message == "「最低價格」不可大於「最高價格」"
     expect(page.get_by_text(message, exact=True)).to_be_visible()
     expect(page.get_by_text("載入失敗", exact=False)).to_have_count(0)
 
