@@ -1792,6 +1792,8 @@ seed 的 `payment`（§0.1 第 9 項）與 `point_record`（§0.1 第 10 項）�
 - `退款收回`（`point` 為負）：該訂單 `新增`（回饋）列的點數加總 > 0 才寫，同時從 `travel_point` 扣除；回饋已被花掉時餘額允許為負（P4 spec Q2，`travel_point` 無 CHECK 約束）。
 - 原本的 `減少`、`新增` 列保留不動（流水帳）；`user_coupon` 同時還原為 `status = 0`、`order_id = NULL`；`payment` 列不改。
 - 已退款訂單的 `computePayable` 取該單成功付款（`payment_status = 1`）的 `discount_price` 作為應付金額（券已釋放，不能再從保留紀錄推算）。
+- 備援：已退款但沒有成功付款列（`payment_status = 1`，或其 `discount_price` 為 NULL；例如 seed 的已退款訂單 #19）時，`computePayable` 走原本的計算（不折抵）。
+- `travel_point` 為負時，折抵流程回報的可用點數（`user_point`、`remaining_point`）視為 0；儲存的餘額維持負數（P4 spec Q2）。
 
 ### 購買資格（非 DB 物件）
 
