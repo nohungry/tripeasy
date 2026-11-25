@@ -179,6 +179,7 @@
   5. **金額核對（只在訂單為 0 時進行）**：`Amt` 不等於 `computePayable` 的應付金額時，記錄到 `payment.result_info`，訂單不改，回 400。
   6. `Status` 不是 SUCCESS：只記錄（寫 `result_info`、`result_time`，§3.1 付款失敗），訂單維持原狀。
   7. `Status = SUCCESS`：`payment` → 1，訂單與所有項目 → 1，執行結算（§6），清購物車。整段在同一個交易內。
+  - **與程式註解的編號對照**：backend `controllers/newebpay.js` 的 notify 註解仍使用舊步驟編號 7／4／6／5，分別對應本 spec 的步驟 4／5／6／7（程式註解改號延至 P5）。
   - notify **不做逾時判斷**：只要訂單仍是 0 就照常結算；搭配 §3.1「付款進行中不判逾時」，期限內付款的訂單不會先被轉成 4。
 - **2026-11-25 修訂（Task 8 審查）**：§3.1「訂單期限內都可以送出付款」指**訂單自己的期限**（`created_at` ＋ `ORDER_PAYMENT_TIMEOUT_MINUTES`）：期限已過時 `POST /payment` 一律回 409 `訂單已逾時`，即使有付款進行中也不再新增付款嘗試（否則每次重付都能延長訂單）。「付款進行中不判逾時」只保護既有的那次嘗試，狀態轉 4 仍由 `expireIfOverdue` 負責。
 - `POST /return`：補上 handler。不改任何資料（只有 notify 能改狀態），302 導向前端的付款結果頁並帶上訂單編號。前端網址用環境變數設定。

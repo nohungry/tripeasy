@@ -13,7 +13,7 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 
 | 項目 | 結果 |
 |---|---|
-| 測試數量 | **505 passed、0 xfailed（P3 結束，`phase-3.md` 附錄 C）→ 798 passed、0 xfailed、0 skipped**（最終修正波後，在最終 head 以 `scripts/ci.sh` 實跑；修正波前乾淨環境連跑兩次皆 782，見 §3.3）。淨增 293 個測試 |
+| 測試數量 | **505 passed、0 xfailed（P3 結束，`phase-3.md` 附錄 C）→ 798 passed、0 xfailed、0 skipped**（**798** 是最終修正波後、保留 volume 的實跑；**782** 是修正波前 `down -v` 乾淨環境連跑兩次的結果，見 §3.3；基準：總覽 `150b95b`、backend `237f63b`、frontend `e075222`）。淨增 293 個測試 |
 | xfail／skip | 皆為 0（P3 已清空，P4 沒有新增） |
 | 新增服務 | `mock-newebpay`（`node:22-alpine`、不用 npm 套件，`mock-newebpay/server.js`）：假付款頁、驗簽、伺服器端自簽 notify、交易時限 |
 | 後端 | 修正購物車／結帳／折扣／藍新 controller 的既有缺陷（§1.1–§1.8）；新增 migration `V5`（§1.9）；結算與鎖順序集中在 `src/utils/trade.js`、`src/utils/newebpay.js`；新增管理員退款 API（§1.10）；藍新 notify／return 對 CORS 白名單的例外（§1.11）；驗證訊息改中文標籤並以共用函式收斂（§1.12） |
@@ -281,7 +281,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | 第 2 次（保留 volume） | 782 | 0 | 0 | 203.02s | 210s | 0 |
 | 最終修正波後（§1.16；backend `237f63b`、frontend `e075222`；保留 volume） | **798**（+16：F1 4、F4 4、F5 6〔5 個 payment 參數化＋1 個原始碼掃描〕、e2e 2） | 0 | 0 | 199.88s | — | 0 |
 
-測試數量變化：**505 passed、0 xfailed（P3 最終）→ 798 passed、0 xfailed、0 skipped（P4，最終 head）**。各 Task 結束時 `scripts/ci.sh` 的 passed 數（取自 ledger）：Task 1：438（pytest）、Task 7：578、Task 8：614→624→628、Task 9：643→646、Task 10：683→720→746→761、Task 11：765→768、Task 12：777→781→782。CI（GitHub Actions）的 run 編號待 Step 5 push 後補入。
+測試數量變化：**505 passed、0 xfailed（P3 最終）→ 798 passed、0 xfailed、0 skipped（P4，最終修正波後、保留 volume；乾淨 volume〔`down -v`〕的 782 是修正波前的兩次實跑，798 = 782 + 修正波新增的 16）**。各 Task 結束時 `scripts/ci.sh` 的 passed 數（取自 ledger）：Task 1：438（pytest）、Task 7：578、Task 8：614→624→628、Task 9：643→646、Task 10：683→720→746→761、Task 11：765→768、Task 12：777→781→782。CI（GitHub Actions）的 run 編號待 Step 5 push 後補入。
 
 ## 4. 操作指南
 
@@ -306,18 +306,18 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 
 ### 4.3 手動實測
 
-> **未實測說明**：本節的步驟尚未由報告撰寫者實跑；同一條主線有 E2E 覆蓋（`e2e/test_trade_flow.py::test_trade_main_flow`），退款有 `tests/test_trade_refund.py` 覆蓋。請使用者審閱時實跑，結果寫回本節或標註仍未實測。
+> **實測於 2026-11-25**：以下步驟已由實作者照字面在 headless Chromium（Playwright）與 curl 實跑一遍，並依實跑結果修正文字（原稿漏了姓名與偏好欄位、註冊後不會自動登入等）。**唯一未實測**：步驟 6 的「付款失敗」分支（以 `e2e/test_trade_flow.py::test_payment_failure_then_retry` 覆蓋）。實測紀錄見 ledger 的 `final-docs-report.md`。
 
-前提：在總覽 repo 根目錄、服務已啟動（`docker compose up -d`），且 `e2e-manual-demo@example.com` 這個 email 符合 `TEST_EMAIL_PREFIXES`，下次執行 pytest 時 session 開頭會被 purge。
+前提：在總覽 repo 根目錄（`login()` 用 `uv run python`）、服務已啟動（`docker compose up -d`），且 `e2e-manual-demo@example.com` 這個 email 符合 `TEST_EMAIL_PREFIXES`（前綴 `e2e-`、結尾 `@example.com`），下次執行 pytest 時 session 開頭會被 purge。
 
 **(1) 用自建帳號走一次 mock 付款**
 
-1. 開 http://localhost:5173/#/admin/register，註冊 `e2e-manual-demo@example.com`，**密碼必須填 `Tripeasy123`**（符合註冊規則，且與下方 (2) 的 `login()` 使用的密碼相同；填別的密碼，curl 登入會 401），登入。
-2. 開首頁或搜尋頁選一個行程進詳情頁，「人數」填 1，出發日期選未來日期（過去日期會被後端 400），按「加入購物車」，看到「已加入購物車」。
-3. 開 `#/cart`：改人數，總金額應隨之更新（不是寫死的 NT$37,600）；按「去結帳」。
-4. 在結帳頁確認 email 預填、填收件資料（姓名 2–10 字元）；選「優惠卷」或「旅遊積分」（二選一；新帳號沒有券與點數，可略過），確認「應付金額」。
-5. 按「確認並前往付款」，瀏覽器被導到 http://localhost:8095 的 mock 付款頁，顯示金額與商品說明。按「付款成功」。
-6. 回到 `#/pay/result?order=…`：顯示「付款成功」與獲得的旅遊積分（實付 × 10% 無條件捨去）；再開 `#/cart`，購物車已清空。若改按「付款失敗」，訂單維持待付款，可從結帳頁重新付款。
+1. 開 http://localhost:5173/#/admin/register，姓名填「展示用戶」（2–10 字元）、email 填 `e2e-manual-demo@example.com`，**密碼必須填 `Tripeasy123`**（符合註冊規則，且與下方 (2) 的 `login()` 使用的密碼相同；填別的密碼，curl 登入會 401），三個「請選擇」的偏好下拉選單各選一個不同的選項（必填），按「加入會員」，出現「註冊成功」。**註冊不會自動登入**：再開 http://localhost:5173/#/admin/login 用同組 email／密碼登入，出現「登入成功」（停留在登入頁，不會跳轉，直接開下一步的網址即可）。
+2. 開首頁或搜尋頁選一個行程進詳情頁（實測用 `#/tour/<tour_id>` 直接開 seed 的旅遊行程「北海道雪景 5 日深度遊」，`tour_id` 為 `c35e011b-ffe4-48ea-8511-9f27ef0d5d69`，單價 NT$40,500），「人數」填 1，「出發日期」選未來日期（過去日期會被後端 400；旅遊類行程不必填結束日期），按「加入購物車」，看到「已加入購物車」。
+3. 開 `#/cart`：把人數改成 2 並離開欄位（人數於離開欄位時才送出），總金額應隨之更新（實測 NT$40,500 → NT$81,000，不是寫死的 NT$37,600）；按「去結帳」，網址變為 `#/pay?order=…`。
+4. 在結帳頁確認 email 預填、填收件資料（全名 2–10 字元、地址、連絡電話，例如「展示用戶」、「台北市測試路1號」、`0912345678`）；選「優惠卷」或「旅遊積分」（二選一；新帳號沒有券與點數，可略過），確認「應付金額」。
+5. 按「確認並前往付款」，瀏覽器被導到 http://localhost:8095/MPG/mpg_gateway 的 mock 付款頁，顯示訂單編號、金額（實測 `金額：81000`）與商品名稱。按「付款成功」。
+6. 回到 `#/pay/result?order=…`：顯示「付款成功」、「應付金額 NT$81,000」與「獲得旅遊積分 8100 點」（實付 × 10% 無條件捨去）；結果頁需數秒才會顯示結果（腳本等了 6 秒）；再開 `#/cart`，顯示「購物車是空的」。若改按「付款失敗」，訂單維持待付款，可從結帳頁重新付款（此分支未實測，見上方說明）。
 
 **(2) 退款（curl；token 用 login API 取得，不從 localStorage 拿）**
 
@@ -344,7 +344,7 @@ curl -s -w '\n%{http_code}\n' -X POST "http://localhost:3000/api/v1/admin/orders
   -H "Authorization: Bearer $(login bob@example.com)"
 ```
 
-預期：第一個 403，第二個 200（訊息「退款成功」，回應含 `payment_status: 3`），第三個 409。之後以自建帳號開 `#/pay/result?order=$ORDER`，顯示「訂單已退款」。若看到 401，代表 login 失敗（token 為空字串），檢查帳號密碼；`$ORDER` 為空代表付款尚未成功。
+預期（實測輸出一致）：第一個 403（「您沒有權限進行此操作」），第二個 200（訊息「退款成功」，`data` 含 `payment_status: 3`、`returned_point: 0`、`clawed_back: 8100`），第三個 409（「只有已付款的訂單可以退款」）。之後以自建帳號登入瀏覽器，開 `#/pay/result?order=$ORDER`（`$ORDER` 請換成實際的訂單編號），顯示「訂單已退款」。若自建帳號重複走了多次 (1)，`$ORDER` 只取最新一筆已付款訂單，其餘已付款訂單不受影響，purge 時一併刪除。若看到 401，代表 login 失敗（token 為空字串），檢查帳號密碼；`$ORDER` 為空代表付款尚未成功。
 
 **注意**：自建帳號在被 purge 之前會讓 `user`、`user_level`、`point_record`、`orders`、`order_item`、`payment`、`cart` 等表的計數多出來；若在 pytest 執行途中手動建立，`tests/test_seed.py` 會紅。
 
@@ -352,7 +352,7 @@ curl -s -w '\n%{http_code}\n' -X POST "http://localhost:3000/api/v1/admin/orders
 
 ### A. 變更檔案清單
 
-統計基準（最終 head：總覽 `phase-4` 的最後一個 commit、backend `237f63b`、frontend `e075222`）：總覽 `main..phase-4`（61 個檔案，+8615／−97，含 evidence 與文件）、backend `main..phase-4`（24 個檔案，+1528／−828）、frontend `dev..phase-4`（6 個檔案，+693／−129）。以下略去 evidence 檔案（`docs/reports/evidence/phase-4/` 28 個，其中 `final-fix-red.txt` 為最終修正波新增， `task-13-clean-ci.txt` 與 `task-13-no-bypass.txt` 為 Task 13 新增）。
+統計基準（as of 總覽 `150b95b`、backend `237f63b`、frontend `e075222`；總覽數字以 `git diff --shortstat main..HEAD` 在 `150b95b` 計算，**不含**本次「§4.3 實測修正」文件 commit）：總覽 `main..phase-4`（61 個檔案，+8617／−98，含 evidence 與文件）、backend `main..phase-4`（24 個檔案，+1528／−828）、frontend `dev..phase-4`（6 個檔案，+693／−129）。以下略去 evidence 檔案（`docs/reports/evidence/phase-4/` 28 個，其中 `final-fix-red.txt` 為最終修正波新增， `task-13-clean-ci.txt` 與 `task-13-no-bypass.txt` 為 Task 13 新增）。
 
 **backend**（`github.com/nohungry/tripeasy-backend`，`main..phase-4`）
 - 新增：`migrations/V5__p4_trade.sql`、`src/utils/trade.js`（結算、鎖、逾時、退款、`computePayable`）、`src/utils/newebpay.js`（加解密、簽章、跳脫）、`src/utils/dateRules.js`、`src/utils/Validator/joiMessage.js`
@@ -384,7 +384,7 @@ seed 的未付款訂單 #16（alice，-1）、#17（bob，0）在展示環境第
 
 **B.4 ledger 標「P5 以後」或 final review 待決的項目**
 - **交易與資料**：cart 沒有 `UNIQUE(user_id)`（併發首次加入可能建出兩個 cart）；PATCH 沒有比對 item（飯店可繞過空房檢查）、合併／PATCH 未重查空房、PATCH 後合併鍵可能重複；`catch` 內 `ROLLBACK` 丟例外則 `next` 不被呼叫、`release` 未帶 error（Task 1）；`userinfo.js` 的 Google 登入 `FOR UPDATE` 會員列可能與外鍵 `KEY SHARE` 同類衝突（Task 5，行號取自審查當時的 SHA，未重新核對）；`discounts.js` 的 `user_point` 未扣其他待付款訂單已保留的點數（既有）；`admin.js:273` 的 admin 解除優惠券綁定可刪掉被保留（-1）的券（→ P6）；checkout 讀 `cart_item` 未加鎖；read 路徑（summary、試算、取消折扣）持有 `orders FOR UPDATE` 至 COMMIT。
-- **金額與退款**：會員中心的點數顯示在退款後會出現原始的負 `travel_point`（`userinfo.js` 多處，Q2 的顯示範圍尚未決定，Task 9 ledger 標「final review／ask user」）；`payment.discount_price` 在 seed 列沿用舊規則，報表若用它算營收，seed 列要 fallback。
+- **金額與退款**：會員中心的點數顯示在退款後會出現原始的負 `travel_point`（`userinfo.js` 多處；使用者裁決：會員中心一律顯示 0，與結帳頁一致；實作延至 P5）；`payment.discount_price` 在 seed 列沿用舊規則，報表若用它算營收，seed 列要 fallback。
 - **驗證訊息**：`product_Validator.js` 的 hidden-share `tour_id` 等、purchases／promotion／home 的 validator 仍含參數名；`test_product_write.py:523` 仍斷言 `「tour_id」`；`cartIDSchema` 的 `cart_id` 訊息（ledger 標 final review）；訊息措辭不一致、無共用標籤常數；`POST /user/collection/info/not-a-uuid` 回 500（`test_async_errors.py` 依賴它）；product 的 `product_Validator.js:555` admin 訊息含 ASCII `"`，在擴大 `userMessage` 之前必須先改。
 - **後端其他缺陷**：food 空位檢查讀 `options.start_time`，但 food schema 只允許 `start_date`，所以 `restaurant_booking` 永遠不檢查容量；購物車列表 `ORDER BY cart_id` 順序不穩；超過 50 項時列表與 summary 不符。
 - **前端**：結果頁任何錯誤都顯示「查無訂單」且不重試；已付款／已取消的訂單仍可開付款表單；重試時地址與電話沒有預填；點數 0 時仍送 `used_point: 0`；`submit` 只 await 點擊當下進行中的試算；「同意接收促銷訊息」checkbox 已移除（它沒有綁定、後端也沒有對應欄位；frontend `27f241d` 移除，之後未還原；還原延至 P5）；`blur` 與 `change` 事件可能吞掉下一次點擊；人數 2.7 靜默變 2；購物車過期項目 PATCH 400 沒有說明。
@@ -394,7 +394,7 @@ seed 的未付款訂單 #16（alice，-1）、#17（bob，0）在展示環境第
 **B.4a 最終審查新增的已知限制**
 - **PKCS7 區塊大小**：mock 與 backend 的 TradeInfo 加解密都用 Node 內建的 16-byte PKCS7（AES-256-CBC）；藍新官方手冊的填充規則尚未對照，P7 接真實測試商店前必須以官方手冊複核（opus M-7）。
 - **折扣欄位不重設**：`orders.discount_type`／`discount_price` 在訂單逾時或被取消後不重設（保留已釋放，欄位仍留舊值；金額一律來自 `computePayable`，不受影響）→ P5／P6。
-- **會員中心的負點數顯示**：退款扣回回饋後 `travel_point` 可為負（Q2）；結帳頁已顯示為 0（F3），`userinfo.js` 會員中心的顯示範圍等使用者決定。
+- **會員中心的負點數顯示**：退款扣回回饋後 `travel_point` 可為負（Q2）；結帳頁已顯示為 0（F3）。使用者裁決：會員中心（`userinfo.js`）也一律顯示 0，與結帳頁一致；實作延至 P5。
 - **回饋公式有兩份**：summary 的 `get_point` 與 `settlePaidOrder` 各算一次 `floor(payable × 0.1)`，目前相同；保留。
 - **測試穩健性**：`NOWAIT` 測試的固定 1.5 秒等待及其他小項（P5）；Google 登入的名稱未套用 2–10 字元規則（P5）。
 
