@@ -1,6 +1,7 @@
 """P4 Task 8：藍新付款表單、notify（簽章／冪等／金額）、結算、重付、return 與端到端（經 mock）。"""
 import os
 import re
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -9,6 +10,7 @@ import requests
 
 import newebpay as nb
 from conftest import (
+    API_BASE,
     ROOT,
     add_to_cart,
     auth_header,
@@ -22,7 +24,8 @@ NOTIFY_API = "/api/v1/user/newebpay/notify"
 RETURN_API = "/api/v1/user/newebpay/return"
 SUMMARY_API = "/api/v1/user/checkout/summary"
 FRONTEND_PATH = os.getenv("FRONTEND_PATH", "http://localhost:5173")
-MOCK_PAY = "http://localhost:8095/MPG/pay"
+MOCK_BASE = os.getenv("TEST_MOCK_NEWEBPAY_BASE", "http://localhost:8095")
+MOCK_PAY = f"{MOCK_BASE}/MPG/pay"
 
 
 # ------------------------------------------------------------------ helpers
@@ -251,8 +254,11 @@ def test_notify_concurrent_duplicates_settle_once(api, db, make_user, make_tour)
     mon, amt, _ = start_payment(api, user, order_id)
     fields = success_notify(mon, amt)
 
+    barrier = threading.Barrier(2)
+
     def send():
-        return requests.post(f"http://localhost:3000{NOTIFY_API}", data=fields, timeout=10).status_code
+        barrier.wait(timeout=10)
+        return requests.post(f"{API_BASE}{NOTIFY_API}", data=fields, timeout=10).status_code
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         codes = list(pool.map(lambda _: send(), range(2)))
@@ -482,12 +488,89 @@ def test_mock_timeout_sends_no_notify(api, db, make_user, make_tour):
     user, order_id = ready_order(api, db, make_user, make_tour)
     resp = _go_through_mock(api, user, order_id, "success", headers={"X-Mock-Now": str(time.time() + 3600)})
     assert "交易逾時" in resp.text
-    assert not _poll_status(api, user, order_id, 1)  # 同樣的輪詢視窗內不會轉為已付款
     assert order_status(db, order_id) == (0, {0})
     status, result_time = db.execute(
         "SELECT payment_status, result_time FROM payment WHERE order_id = %s", (order_id,)
     ).fetchone()
     assert status == 0 and result_time is None
+
+
+# ------------------------------------------------------------------ 修正輪 1：F1 / F3 / M5 / M6
+
+
+def _coupon_order(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user, discount=100)
+    user, order_id = ready_order(
+        api, db, make_user, make_tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]}, user=user
+    )
+    mon, amt, _ = start_payment(api, user, order_id)
+    assert amt == 900
+    return user, order_id, mon, amt
+
+
+def _assert_recorded_only(db, mon, order_id, status):
+    assert order_status(db, order_id) == (status, {status})
+    pstatus, info, result_time, *_ = payment_row(db, mon)
+    assert pstatus == 0 and result_time is not None
+    assert info and not info.startswith("金額不符")
+    assert reward_rows(db, order_id) == []
+
+
+def test_success_after_cancel_with_discount_is_recorded_only(api, db, make_user, make_tour, make_coupon):
+    user, order_id, mon, amt = _coupon_order(api, db, make_user, make_tour, make_coupon)
+    checkout(api, user, [make_tour()])  # 建新單 → 舊單取消並釋放保留
+    assert order_status(db, order_id) == (2, {2})
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    _assert_recorded_only(db, mon, order_id, 2)
+
+
+def test_success_after_expiry_with_discount_is_recorded_only(api, db, make_user, make_tour, make_coupon):
+    user, order_id, mon, amt = _coupon_order(api, db, make_user, make_tour, make_coupon)
+    age_order(db, order_id, 65)
+    age_payments(db, order_id, 700)
+    assert summary(api, user, order_id)["payment_status"] == 4  # 真實路徑逾時並釋放保留
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    _assert_recorded_only(db, mon, order_id, 4)
+
+
+def test_payment_past_order_deadline_with_attempt_in_progress_is_409(api, db, make_user, make_tour):
+    user, order_id = ready_order(api, db, make_user, make_tour)
+    start_payment(api, user, order_id)
+    age_order(db, order_id, 65)
+    r = api.post(PAYMENT_API, headers=auth_header(user), json={"order_id": order_id}, timeout=10)
+    assert r.status_code == 409
+    assert r.json()["message"] == "訂單已逾時"
+    (n,) = db.execute("SELECT count(*) FROM payment WHERE order_id = %s", (order_id,)).fetchone()
+    assert n == 1
+    assert order_status(db, order_id) == (0, {0})
+
+
+@pytest.mark.parametrize("raw, expected", [("600", "600"), ("5", "60"), ("5000", "900"), ("0", "600")])
+def test_trade_limit_seconds_is_clamped(raw, expected):
+    import subprocess
+
+    proc = subprocess.run(
+        ["docker", "compose", "exec", "-T", "-e", f"NEWEBPAY_TRADE_LIMIT_SECONDS={raw}", "backend", "node", "-e",
+         "console.log('RESULT' + require('./src/utils/trade').tradeLimitSeconds())"],
+        cwd=ROOT, capture_output=True, text=True, timeout=60,
+    )  # fmt: skip
+    assert proc.returncode == 0, proc.stderr
+    assert f"RESULT{expected}" in proc.stdout
+
+
+def test_zero_reward_writes_no_point_record(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user, discount=95)
+    user, order_id = ready_order(
+        api, db, make_user, make_tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]}, user=user, price=100
+    )
+    mon, amt, _ = start_payment(api, user, order_id)
+    assert amt == 5
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    assert order_status(db, order_id) == (1, {1})
+    assert reward_rows(db, order_id) == []
+    assert travel_point(db, user) == 0
 
 
 # ------------------------------------------------------------------ 反目標

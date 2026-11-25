@@ -1,5 +1,6 @@
 """mock-newebpay：驗簽、付款頁、簽 notify、交易時限，以及 Python 簽章工具。"""
 import json
+import os
 import re
 import time
 from urllib.parse import urlencode
@@ -9,7 +10,7 @@ import requests
 
 import newebpay as nb
 
-MOCK_BASE = "http://localhost:8095"
+MOCK_BASE = os.getenv("TEST_MOCK_NEWEBPAY_BASE", "http://localhost:8095")
 GATEWAY = f"{MOCK_BASE}/MPG/mpg_gateway"
 PAY = f"{MOCK_BASE}/MPG/pay"
 NOTIFY_URL = "http://backend:3000/api/v1/health"
@@ -139,6 +140,18 @@ def test_mock_trade_limit_above_maximum_is_clamped_to_900():
     _, page = _open_payment_page(TradeLimit="5000")
     resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 1000)})
     assert "交易逾時" in resp.text
+
+
+def test_mock_trade_limit_below_minimum_times_out_after_60():
+    _, page = _open_payment_page(TradeLimit="1")
+    resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 120)})
+    assert "交易逾時" in resp.text
+
+
+def test_mock_trade_limit_above_maximum_not_clamped_below_900():
+    _, page = _open_payment_page(TradeLimit="5000")
+    resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 800)})
+    assert "交易逾時" not in resp.text
 
 
 def test_mock_trade_limit_zero_means_no_limit():

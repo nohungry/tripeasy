@@ -1,0 +1,100 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 54 items
+
+tests/test_trade_payment.py::test_payment_amount_from_backend PASSED     [  1%]
+tests/test_trade_payment.py::test_payment_trade_info_contains_required_fields PASSED [  3%]
+tests/test_trade_payment.py::test_payment_form_never_contains_raw_item_desc PASSED [  5%]
+tests/test_trade_payment.py::test_payment_new_merchant_order_no_each_attempt PASSED [  7%]
+tests/test_trade_payment.py::test_payment_other_users_order_is_404 PASSED [  9%]
+tests/test_trade_payment.py::test_payment_requires_order_id PASSED       [ 11%]
+tests/test_trade_payment.py::test_payment_requires_pending_status PASSED [ 12%]
+tests/test_trade_payment.py::test_payment_allowed_near_deadline_and_not_expired_while_in_progress PASSED [ 14%]
+tests/test_trade_payment.py::test_payment_on_overdue_order_is_409 PASSED [ 16%]
+tests/test_trade_payment.py::test_notify_bad_sha_changes_nothing PASSED  [ 18%]
+tests/test_trade_payment.py::test_notify_missing_fields_is_400 PASSED    [ 20%]
+tests/test_trade_payment.py::test_notify_undecryptable_trade_info_is_400 PASSED [ 22%]
+tests/test_trade_payment.py::test_notify_amount_mismatch_rejected PASSED [ 24%]
+tests/test_trade_payment.py::test_notify_unknown_merchant_order_no_is_400 PASSED [ 25%]
+tests/test_trade_payment.py::test_notify_duplicate_settles_once PASSED   [ 27%]
+tests/test_trade_payment.py::test_notify_concurrent_duplicates_settle_once PASSED [ 29%]
+tests/test_trade_payment.py::test_notify_success_settles_coupon_order PASSED [ 31%]
+tests/test_trade_payment.py::test_notify_success_settles_point_order PASSED [ 33%]
+tests/test_trade_payment.py::test_notify_success_keeps_unrelated_cart_items PASSED [ 35%]
+tests/test_trade_payment.py::test_paid_order_item_enables_review PASSED  [ 37%]
+tests/test_trade_payment.py::test_reward_floors_non_multiple_of_ten PASSED [ 38%]
+tests/test_trade_payment.py::test_notify_failure_keeps_order_pending PASSED [ 40%]
+tests/test_trade_payment.py::test_retry_after_failure_settles PASSED     [ 42%]
+tests/test_trade_payment.py::test_success_on_expired_order_is_recorded_only PASSED [ 44%]
+tests/test_trade_payment.py::test_second_successful_attempt_is_recorded_not_settled PASSED [ 46%]
+tests/test_trade_payment.py::test_success_after_cancel_is_recorded_only PASSED [ 48%]
+tests/test_trade_payment.py::test_order_expires_after_attempt_deadline PASSED [ 50%]
+tests/test_trade_payment.py::test_return_redirects_to_result_page PASSED [ 51%]
+tests/test_trade_payment.py::test_return_bad_sha_redirects_without_order PASSED [ 53%]
+tests/test_trade_payment.py::test_payment_through_mock_gateway_settles PASSED [ 55%]
+tests/test_trade_payment.py::test_mock_timeout_sends_no_notify PASSED    [ 57%]
+tests/test_trade_payment.py::test_success_after_cancel_with_discount_is_recorded_only FAILED [ 59%]
+tests/test_trade_payment.py::test_success_after_expiry_with_discount_is_recorded_only FAILED [ 61%]
+tests/test_trade_payment.py::test_payment_past_order_deadline_with_attempt_in_progress_is_409 FAILED [ 62%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[600-600] PASSED [ 64%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5-60] FAILED [ 66%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5000-900] FAILED [ 68%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[0-600] PASSED [ 70%]
+tests/test_trade_payment.py::test_zero_reward_writes_no_point_record PASSED [ 72%]
+tests/test_trade_payment.py::test_no_signature_bypass_switch PASSED      [ 74%]
+tests/test_mock_newebpay.py::test_mock_health PASSED                     [ 75%]
+tests/test_mock_newebpay.py::test_mock_rejects_bad_sha PASSED            [ 77%]
+tests/test_mock_newebpay.py::test_mock_payment_page_escapes_item_desc PASSED [ 79%]
+tests/test_mock_newebpay.py::test_mock_success_posts_signed_notify_and_returns PASSED [ 81%]
+tests/test_mock_newebpay.py::test_mock_fail_status PASSED                [ 83%]
+tests/test_mock_newebpay.py::test_mock_refuses_after_trade_limit PASSED  [ 85%]
+tests/test_mock_newebpay.py::test_mock_pays_within_trade_limit_without_clock_override PASSED [ 87%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_is_clamped_to_60 PASSED [ 88%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_is_clamped_to_900 PASSED [ 90%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_times_out_after_60 PASSED [ 92%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_not_clamped_below_900 PASSED [ 94%]
+tests/test_mock_newebpay.py::test_mock_trade_limit_zero_means_no_limit PASSED [ 96%]
+tests/test_mock_newebpay.py::test_mock_session_cannot_pay_twice PASSED   [ 98%]
+tests/test_mock_newebpay.py::test_newebpay_helper_round_trip PASSED      [100%]
+
+=================================== FAILURES ===================================
+___________ test_success_after_cancel_with_discount_is_recorded_only ___________
+tests/test_trade_payment.py:524: in test_success_after_cancel_with_discount_is_recorded_only
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+E   AssertionError: assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+E    +    where <Response [400]> = notify(<conftest.Api object at 0x7038a5b07a10>, {'MerchantID': 'MS000000000', 'Status': 'SUCCESS', 'TradeInfo': '878679be81f62593ce3b3fa665391f72f9e73ea2d2b89f7dc75b96d21f6adbd7d771ad4b0ff161658af2b9e0f243b8816bd1b29df56e2ee68d959ccd2f0e6829b0025c74d2f8157a090db81c9511302d3848cf81215fdd8c5abe1feb7a47b3017977fa3a687dd007571a5e6724be5a97dd5df6a32353a913ad5975a53f797dfa1f37de0302e53e2eb603aca45238b3263b7826de01e350b86078261cc30a08a589b4cf80368a196b27c879dd50b0b0c863f48edb1ae9175b878b6ba129987b013c46120cbd2d3dccb18537d8727731860cb926462b49b2c78bf0b7e7a32ea080157320ac3f224a3ee919ff60fe8a355d', 'TradeSha': 'CE6784C8D9A186ABFB62159B227414E04AF45384AA7A674C26A0A38CFF1920DE', ...})
+E    +      where {'MerchantID': 'MS000000000', 'Status': 'SUCCESS', 'TradeInfo': '878679be81f62593ce3b3fa665391f72f9e73ea2d2b89f7dc75b96d21f6adbd7d771ad4b0ff161658af2b9e0f243b8816bd1b29df56e2ee68d959ccd2f0e6829b0025c74d2f8157a090db81c9511302d3848cf81215fdd8c5abe1feb7a47b3017977fa3a687dd007571a5e6724be5a97dd5df6a32353a913ad5975a53f797dfa1f37de0302e53e2eb603aca45238b3263b7826de01e350b86078261cc30a08a589b4cf80368a196b27c879dd50b0b0c863f48edb1ae9175b878b6ba129987b013c46120cbd2d3dccb18537d8727731860cb926462b49b2c78bf0b7e7a32ea080157320ac3f224a3ee919ff60fe8a355d', 'TradeSha': 'CE6784C8D9A186ABFB62159B227414E04AF45384AA7A674C26A0A38CFF1920DE', ...} = success_notify('T26112503064694E9EADB', 900)
+___________ test_success_after_expiry_with_discount_is_recorded_only ___________
+tests/test_trade_payment.py:533: in test_success_after_expiry_with_discount_is_recorded_only
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+E   AssertionError: assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+E    +    where <Response [400]> = notify(<conftest.Api object at 0x7038a5b07a10>, {'MerchantID': 'MS000000000', 'Status': 'SUCCESS', 'TradeInfo': '878679be81f62593ce3b3fa665391f72f9e73ea2d2b89f7dc75b96d21f6adbd7d771ad4b0ff161658af2b9e0f243b8816bd1b29df56e2ee68d959ccd2f0e6829b0025c74d2f8157a090db81c9511302d3848cf81215fdd8c5abe1feb7a47b3017977fa3a687dd007571a5e6724be5a97885c11103b349a7e7f548663bf7a6b54da3d443ca683e5d66cde237ccd02270286638190e50e9591406630cc391595d26a92bdf4fbb39c8b81166b655043f3e819fbefea2fab457406cbc702c51fecb6cb40d0f06cbe1bb639d3fe5ebb28d3898127f45bbd13c70538f6f9902408060e0b38317e2f944f5e0e2a9857a87a304a', 'TradeSha': '1C5C9D4011E59CDB9BDC597EEBBEBB1E835B0662F3D0EB175F93E3293A1D56F6', ...})
+E    +      where {'MerchantID': 'MS000000000', 'Status': 'SUCCESS', 'TradeInfo': '878679be81f62593ce3b3fa665391f72f9e73ea2d2b89f7dc75b96d21f6adbd7d771ad4b0ff161658af2b9e0f243b8816bd1b29df56e2ee68d959ccd2f0e6829b0025c74d2f8157a090db81c9511302d3848cf81215fdd8c5abe1feb7a47b3017977fa3a687dd007571a5e6724be5a97885c11103b349a7e7f548663bf7a6b54da3d443ca683e5d66cde237ccd02270286638190e50e9591406630cc391595d26a92bdf4fbb39c8b81166b655043f3e819fbefea2fab457406cbc702c51fecb6cb40d0f06cbe1bb639d3fe5ebb28d3898127f45bbd13c70538f6f9902408060e0b38317e2f944f5e0e2a9857a87a304a', 'TradeSha': '1C5C9D4011E59CDB9BDC597EEBBEBB1E835B0662F3D0EB175F93E3293A1D56F6', ...} = success_notify('T2611250306467E31A020', 900)
+_______ test_payment_past_order_deadline_with_attempt_in_progress_is_409 _______
+tests/test_trade_payment.py:542: in test_payment_past_order_deadline_with_attempt_in_progress_is_409
+    assert r.status_code == 409
+E   assert 200 == 409
+E    +  where 200 = <Response [200]>.status_code
+__________________ test_trade_limit_seconds_is_clamped[5-60] ___________________
+tests/test_trade_payment.py:559: in test_trade_limit_seconds_is_clamped
+    assert f"RESULT{expected}" in proc.stdout
+E   assert 'RESULT60' in 'RESULT5\n'
+E    +  where 'RESULT5\n' = CompletedProcess(args=['docker', 'compose', 'exec', '-T', '-e', 'NEWEBPAY_TRADE_LIMIT_SECONDS=5', 'backend', 'node', '-e', "console.log('RESULT' + require('./src/utils/trade').tradeLimitSeconds())"], returncode=0, stdout='RESULT5\n', stderr='').stdout
+________________ test_trade_limit_seconds_is_clamped[5000-900] _________________
+tests/test_trade_payment.py:559: in test_trade_limit_seconds_is_clamped
+    assert f"RESULT{expected}" in proc.stdout
+E   assert 'RESULT900' in 'RESULT5000\n'
+E    +  where 'RESULT5000\n' = CompletedProcess(args=['docker', 'compose', 'exec', '-T', '-e', 'NEWEBPAY_TRADE_LIMIT_SECONDS=5000', 'backend', 'node', '-e', "console.log('RESULT' + require('./src/utils/trade').tradeLimitSeconds())"], returncode=0, stdout='RESULT5000\n', stderr='').stdout
+=========================== short test summary info ============================
+FAILED tests/test_trade_payment.py::test_success_after_cancel_with_discount_is_recorded_only
+FAILED tests/test_trade_payment.py::test_success_after_expiry_with_discount_is_recorded_only
+FAILED tests/test_trade_payment.py::test_payment_past_order_deadline_with_attempt_in_progress_is_409
+FAILED tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5-60]
+FAILED tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5000-900]
+========================= 5 failed, 49 passed in 5.64s =========================
