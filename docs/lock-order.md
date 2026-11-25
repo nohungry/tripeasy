@@ -10,14 +10,14 @@
 
 ### 已知例外
 
-**通用規則**：本交易已 `FOR UPDATE` 的那張 `orders` 列，以及該訂單的 `order_item`，寫入時機不受上述順序限制（即使前面已鎖了 `user_coupon`／`point_record`／`user_level`）。無環的理由：`orders` 列已被本交易鎖住，再 UPDATE 不會等鎖；`order_item` 的寫入者（取消、逾時、結算、退款、preview）都會先 `lockOrder`，所以持有本訂單鎖的交易不可能被別人擋在 `order_item` 上。
+**例外 A**：本交易已 `FOR UPDATE` 的那張 `orders` 列，以及該訂單的 `order_item`，寫入時機不受上述順序限制（即使前面已鎖了 `user_coupon`／`point_record`／`user_level`）。無環的理由：`orders` 列已被本交易鎖住，再 UPDATE 不會等鎖；`order_item` 的寫入者（取消、逾時、結算、退款、preview）都會先對該訂單的 `orders` 取 `FOR UPDATE`（取消舊單是走 `cancelPendingOrders`，`utils/trade.js:200-206`，不是 `lockOrder`），所以持有本訂單鎖的交易不可能被別人擋在 `order_item` 上。
 
-實際出現的位置：
+例外 A 實際出現的位置：
 - `controllers/checkout.js:199`（`orders` UPDATE）、`:203`（`setOrderStatus`，`orders`／`order_item`）：前面可能已經過 `reserveDiscount` 的 `user_coupon`／`user_level` 鎖
 - `utils/trade.js:316`：`reserveDiscount` 結尾 `orders` UPDATE，前面已鎖 `user_coupon`（coupon 路徑，`:277`）或 `user_level`（point 路徑，`:288`）
 - `controllers/discounts.js:127`：取消折扣先 `releaseReservations`（`:126`，`point_record`／`user_coupon`）再 UPDATE `orders`
 
-**`reserveDiscount` 的點數路徑**（歸在上述通用規則底下）：先鎖 `user_level`，再碰本訂單的 `point_record`／`user_coupon`。因子資料都限定在已鎖住的那張訂單，不構成循環。
+**例外 B（GC14 原有）**：`reserveDiscount` 的點數路徑先鎖 `user_level`，再碰本訂單的 `point_record`／`user_coupon`。因子資料都限定在已鎖住的那張訂單，不構成循環。
 
 ### 共同前提
 
@@ -76,7 +76,7 @@
 `utils/trade.js:271-320`，呼叫端必須已 `lockOrder`。
 
 - coupon 路徑：`user_coupon` `FOR UPDATE`（`:277`）→ 重新 `evaluateDiscount`（`:280`）→ `releaseReservations`（`:299`；`point_record` DELETE `:108`、`user_coupon` UPDATE `:111`）→ `user_coupon` UPDATE（`:302`）→ `orders` UPDATE（`:316`）
-- point 路徑（已知例外）：`user_level` `FOR UPDATE`，`ORDER BY level_id` 鎖該會員所有列（`:288`）→ 重新 `evaluateDiscount`（`:291`）→ `releaseReservations`（`:299`）→ `point_record` INSERT（`:309`）→ `orders` UPDATE（`:316`）
+- point 路徑（例外 B）：`user_level` `FOR UPDATE`，`ORDER BY level_id` 鎖該會員所有列（`:288`）→ 重新 `evaluateDiscount`（`:291`）→ `releaseReservations`（`:299`）→ `point_record` INSERT（`:309`）→ `orders` UPDATE（`:316`）
 - 為什麼無環：point 路徑持有 `user_level` 時，除了本訂單的子列（只有持有本訂單 `orders` 鎖的交易能動），唯一可能等的是 `point_record` INSERT（`:309`）的外鍵檢查對 `user` 取的 KEY SHARE，它可能在等 Google 登入（`controllers/userinfo.js:155`）；Google 登入之後不會再取任何交易表的鎖，所以不成環。另一張訂單的 `settlePaidOrder`／`refundOrder` 持有的是它自己訂單的子列，等的是 `user_level`，不會反過來等本訂單的子列。多列 `user_level` 鎖定一律 `ORDER BY level_id`，兩個 point 路徑之間順序一致。
 
 ### 5. 發起付款：`POST /newebpay/payment`
@@ -160,7 +160,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 - `controllers/userinfo.js:155`：Google 登入 `user` `FOR UPDATE`（以 email）。不碰交易表，但會擋住交易路徑因外鍵檢查（`point_record`、`payment`、`user_coupon`、`orders` 的 INSERT）對 `user` 取的 KEY SHARE。Google 登入取得 `user` 鎖後不會再取交易相關表的鎖，所以只是排隊、不成環。
 - `controllers/userinfo.js:31`、`:37`、`:209`、`:213`：新會員建立時 INSERT `user_level`／`point_record`，是新列，不與交易競爭。
-- `controllers/userinfo.js:87`：實際走 `pool.query`，不碰交易表。
+- `controllers/userinfo.js:87`：`BEGIN` 開在 `client` 上，但後面的查詢都走 `pool.query`，各自自動提交，不碰交易表。其中 `:92-95` UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 的 `user` 鎖短暫排隊，不成環。
 - `controllers/userProfile.js:52`：UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 建單的 `user` 鎖互相排隊，但後續不取其他鎖，不成環。
 - `controllers/product.js:627`：交易只寫 tour 相關表，不碰交易表。
 - `controllers/admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。
@@ -172,7 +172,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 ## 檢查結果
 
-以字面順序檢查，有三處「後取較前順位的鎖」，皆屬上方「已知例外」的通用規則，無環：
+以字面順序檢查，有三處「後取較前順位的鎖」，分屬上方「已知例外」A 或 B，無環：
 1. `reserveDiscount` coupon 路徑（`utils/trade.js:277` → `:316`）與 point 路徑（`:288` → `:316`、`controllers/checkout.js:199`、`:203`）：先鎖 `user_coupon`／`user_level`，之後寫本訂單的 `orders`／`order_item`。
 2. 取消折扣（`controllers/discounts.js:126` → `:127`）：先動 `point_record`／`user_coupon`，再 UPDATE `orders`。
 3. point 路徑先鎖 `user_level` 再碰本訂單的 `point_record`／`user_coupon`。
