@@ -193,6 +193,8 @@ def _go_checkout_from_cart(page: Page) -> str:
 
 
 def _fill_contact(page: Page) -> None:
+    # make_user 的預設名稱不符合 preview 的名稱規則（2~10 字元、無特殊字元），所以改填合法全名
+    page.get_by_label("全名").fill("測試用戶")
     page.get_by_label("地址").fill("台北市測試路1號")
     page.get_by_label("連絡電話").fill("0912345678")
 
@@ -224,6 +226,7 @@ def test_trade_main_flow(page: Page, db, make_user, make_tour, make_coupon):
     people.blur()
     expect(page.get_by_test_id("cart-total")).to_have_text("NT$2,000")
     order_id = _go_checkout_from_cart(page)
+    expect(page.get_by_label("email")).to_have_value(user["email"])
     _fill_contact(page)
     page.get_by_role("radio", name="優惠卷").check()
     page.get_by_test_id("coupon-select").select_option(value=coupon["coupon_id"])
