@@ -39,9 +39,9 @@ def ready_order(api, db, make_user, make_tour, discount=None, *, price=1000, peo
     return user, order_id
 
 
-def start_payment(api, user, order_id, **noise):
+def start_payment(api, user, order_id, noise=None):
     """POST /payment；回傳 (merchant_order_no, amt, 表單欄位)。"""
-    r = api.post(PAYMENT_API, headers=auth_header(user), json={"order_id": order_id, **noise}, timeout=10)
+    r = api.post(PAYMENT_API, headers=auth_header(user), json={"order_id": order_id, **(noise or {})}, timeout=10)
     assert r.status_code == 200, r.text
     _, fields = nb.parse_payment_form(r.text)
     trade = nb.decode_trade_info(fields)
@@ -104,8 +104,9 @@ def age_payments(db, order_id, seconds):
 def test_payment_amount_from_backend(api, db, make_user, make_tour):
     user, order_id = ready_order(api, db, make_user, make_tour, price=1234)
     mon, amt, _ = start_payment(
-        api, user, order_id, Amt=1, order_items=[{"title": "x", "price": 1}], user={"email": "x@example.com"}
-    )
+        api, user, order_id,
+        {"Amt": 1, "order_items": [{"title": "x", "price": 1}], "user": {"email": "x@example.com"}},
+    )  # fmt: skip
     assert amt == 1234
 
 

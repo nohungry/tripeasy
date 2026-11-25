@@ -106,7 +106,9 @@ async function handleGateway(req, res) {
   } catch (e) {
     return send(res, 400, page('<h1>簽章驗證失敗</h1>'));
   }
-  const limit = parseInt(trade.TradeLimit, 10);
+  // TradeLimit 夾限（共用約定）：> 0 時 1–59 視為 60、> 900 視為 900；0 或不帶 = 不限制
+  const rawLimit = parseInt(trade.TradeLimit, 10);
+  const limit = rawLimit > 0 ? Math.min(Math.max(rawLimit, 60), 900) : 0;
   const id = crypto.randomBytes(16).toString('hex');
   sessions.set(id, {
     id,
