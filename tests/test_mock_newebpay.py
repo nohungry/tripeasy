@@ -152,6 +152,8 @@ def test_mock_trade_limit_above_maximum_not_clamped_below_900():
     _, page = _open_payment_page(TradeLimit="5000")
     resp = _pay(_session_id(page.text), "success", headers={"X-Mock-Now": str(time.time() + 800)})
     assert "交易逾時" not in resp.text
+    action, _ = nb.parse_payment_form(resp.text)
+    assert action == RETURN_URL
 
 
 def test_mock_trade_limit_zero_means_no_limit():

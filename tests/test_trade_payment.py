@@ -1,10 +1,12 @@
 """P4 Task 8：藍新付款表單、notify（簽章／冪等／金額）、結算、重付、return 與端到端（經 mock）。"""
+import datetime
 import os
 import re
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
+import psycopg
 import pytest
 import requests
 
@@ -12,6 +14,7 @@ import newebpay as nb
 from conftest import (
     API_BASE,
     ROOT,
+    _db_params,
     add_to_cart,
     auth_header,
     checkout,
@@ -509,11 +512,11 @@ def _coupon_order(api, db, make_user, make_tour, make_coupon):
     return user, order_id, mon, amt
 
 
-def _assert_recorded_only(db, mon, order_id, status):
+def _assert_recorded_only(db, mon, order_id, status, amt):
     assert order_status(db, order_id) == (status, {status})
     pstatus, info, result_time, *_ = payment_row(db, mon)
     assert pstatus == 0 and result_time is not None
-    assert info and not info.startswith("金額不符")
+    assert info == f"訂單狀態 {status} 收到成功通知：notify={amt}"
     assert reward_rows(db, order_id) == []
 
 
@@ -522,7 +525,7 @@ def test_success_after_cancel_with_discount_is_recorded_only(api, db, make_user,
     checkout(api, user, [make_tour()])  # 建新單 → 舊單取消並釋放保留
     assert order_status(db, order_id) == (2, {2})
     assert notify(api, success_notify(mon, amt)).status_code == 200
-    _assert_recorded_only(db, mon, order_id, 2)
+    _assert_recorded_only(db, mon, order_id, 2, amt)
 
 
 def test_success_after_expiry_with_discount_is_recorded_only(api, db, make_user, make_tour, make_coupon):
@@ -531,7 +534,7 @@ def test_success_after_expiry_with_discount_is_recorded_only(api, db, make_user,
     age_payments(db, order_id, 700)
     assert summary(api, user, order_id)["payment_status"] == 4  # 真實路徑逾時並釋放保留
     assert notify(api, success_notify(mon, amt)).status_code == 200
-    _assert_recorded_only(db, mon, order_id, 4)
+    _assert_recorded_only(db, mon, order_id, 4, amt)
 
 
 def test_payment_past_order_deadline_with_attempt_in_progress_is_409(api, db, make_user, make_tour):
@@ -571,6 +574,111 @@ def test_zero_reward_writes_no_point_record(api, db, make_user, make_tour, make_
     assert order_status(db, order_id) == (1, {1})
     assert reward_rows(db, order_id) == []
     assert travel_point(db, user) == 0
+
+
+# ------------------------------------------------------------------ 修正輪 2：G1 / G2
+
+
+def test_failure_notify_after_cancel_with_discount_is_recorded_only(api, db, make_user, make_tour, make_coupon):
+    user, order_id, mon, amt = _coupon_order(api, db, make_user, make_tour, make_coupon)
+    checkout(api, user, [make_tour()])
+    assert order_status(db, order_id) == (2, {2})
+    assert notify(api, failure_notify(mon, amt)).status_code == 200
+    assert order_status(db, order_id) == (2, {2})
+    pstatus, info, result_time, *_ = payment_row(db, mon)
+    assert pstatus == 0 and result_time is not None
+    assert info and not info.startswith("金額不符")
+
+
+def _cart_item_id_of(db, user, tour):
+    return str(
+        db.execute(
+            "SELECT ci.cart_item_id FROM cart_item ci JOIN cart c ON c.cart_id = ci.cart_id "
+            "WHERE c.user_id = %s AND ci.tour_id = %s",
+            (user["user_id"], tour["tour_id"]),
+        ).fetchone()[0]
+    )
+
+
+def _assert_waits_on_cart_not_cart_item(user, cart_item_id, fire):
+    """鎖順序（cart 先於 cart_item）的決定性檢查。
+
+    測試自己的連線先鎖住該會員的 cart 列；請求在背景執行，必須卡在 cart 上、
+    尚未持有 cart_item 的鎖（第二條連線 NOWAIT 鎖 cart_item 要成功）。回傳請求的 Response。
+    """
+    holder = psycopg.connect(**_db_params())
+    probe = psycopg.connect(**_db_params())
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
+        holder.execute("SELECT cart_id FROM cart WHERE user_id = %s FOR UPDATE", (user["user_id"],))
+        future = pool.submit(fire)
+        with pytest.raises(FutureTimeout):
+            future.result(timeout=1.5)  # 請求還沒完成：正在等 cart 的鎖
+        probe.execute("SELECT 1 FROM cart_item WHERE cart_item_id = %s FOR UPDATE NOWAIT", (cart_item_id,))
+        probe.rollback()  # 立刻放掉
+        holder.rollback()
+        return future.result(timeout=15)
+    finally:
+        holder.rollback()
+        probe.rollback()
+        holder.close()
+        probe.close()
+        pool.shutdown(wait=False)
+
+
+def test_cart_patch_locks_cart_before_cart_item(api, db, make_user, make_tour):
+    user = make_user()
+    tour = make_tour()
+    assert add_to_cart(api, user, tour).status_code == 201
+    item_id = _cart_item_id_of(db, user, tour)
+    body = {
+        "type": tour["type"],
+        "item": tour["item"],
+        "people": 3,
+        "options": {
+            "start_date": (datetime.date.today() + datetime.timedelta(days=1)).isoformat(),
+            "end_date": (datetime.date.today() + datetime.timedelta(days=2)).isoformat(),
+        },
+    }
+    r = _assert_waits_on_cart_not_cart_item(
+        user,
+        item_id,
+        lambda: requests.patch(
+            f"{API_BASE}/api/v1/user/trade/cart/{item_id}", json=body, headers=auth_header(user), timeout=15
+        ),
+    )
+    assert r.status_code == 200, r.text
+    assert db.execute("SELECT quantity FROM cart_item WHERE cart_item_id = %s", (item_id,)).fetchone()[0] == 3
+
+
+def test_cart_delete_locks_cart_before_cart_item(api, db, make_user, make_tour):
+    user = make_user()
+    tour = make_tour()
+    assert add_to_cart(api, user, tour).status_code == 201
+    item_id = _cart_item_id_of(db, user, tour)
+    r = _assert_waits_on_cart_not_cart_item(
+        user,
+        item_id,
+        lambda: requests.delete(
+            f"{API_BASE}/api/v1/user/trade/cart/{item_id}", headers=auth_header(user), timeout=15
+        ),
+    )
+    assert r.status_code == 200, r.text
+    assert db.execute("SELECT count(*) FROM cart_item WHERE cart_item_id = %s", (item_id,)).fetchone()[0] == 0
+
+
+def test_settlement_locks_cart_before_cart_item(api, db, make_user, make_tour):
+    tour = make_tour(price=1000)
+    user, order_id = ready_order(api, db, make_user, make_tour, tour=tour)
+    mon, amt, _ = start_payment(api, user, order_id)
+    item_id = _cart_item_id_of(db, user, tour)
+    fields = success_notify(mon, amt)
+    r = _assert_waits_on_cart_not_cart_item(
+        user, item_id, lambda: requests.post(f"{API_BASE}{NOTIFY_API}", data=fields, timeout=15)
+    )
+    assert r.status_code == 200, r.text
+    assert order_status(db, order_id) == (1, {1})
+    assert db.execute("SELECT count(*) FROM cart_item WHERE cart_item_id = %s", (item_id,)).fetchone()[0] == 0
 
 
 # ------------------------------------------------------------------ 反目標
