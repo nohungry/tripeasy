@@ -348,10 +348,16 @@ def test_submit_disabled_until_loaded(page: Page, make_user, make_tour):
     page.wait_for_url(re.compile(r".*#/pay\?order=.+"))
     expect(page.get_by_role("button", name="確認並前往付款")).to_be_disabled()
     expect(page.get_by_label("email")).to_have_value("")
+    assert held  # 確定 userinfo 請求真的被扣住
+    # 載入完成前，折扣選項也不可操作
+    for name in ("不使用", "優惠卷", "旅遊積分"):
+        expect(page.get_by_role("radio", name=name)).to_be_disabled()
     for route in held:
         route.continue_()
     expect(page.get_by_label("email")).to_have_value(user["email"])
     expect(page.get_by_role("button", name="確認並前往付款")).to_be_enabled()
+    for name in ("不使用", "優惠卷", "旅遊積分"):
+        expect(page.get_by_role("radio", name=name)).to_be_enabled()
 
 
 def test_coupon_without_available_coupon_resets_amount(page: Page, db, make_user, make_tour):
@@ -397,7 +403,7 @@ def test_stale_discount_trial_response_is_ignored(page: Page, make_user, make_to
 
     def handler(route):
         if route.request.method == "POST":
-            held.append(route)  # 先扣住優惠卷試算的回應，製造亂序
+            held.append(route)  # 先扣住優惠卷試算的請求（暫不送出），製造亂序
         else:
             route.continue_()
 
@@ -407,8 +413,26 @@ def test_stale_discount_trial_response_is_ignored(page: Page, make_user, make_to
     with page.expect_response(lambda r: r.request.method == "GET" and "/trade/discounts/" in r.url):
         page.get_by_role("radio", name="不使用").check()
     expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
-    with page.expect_response(lambda r: r.request.method == "POST" and "/trade/discounts/" in r.url):
+    assert held
+    with page.expect_request_finished(lambda r: r.method == "POST" and "/trade/discounts/" in r.url):
         for route in held:
             route.continue_()
     _flush_page(page)
     expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
+
+
+def test_load_failure_shows_message(page: Page, make_user, make_tour):
+    user = make_user()
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    page.route(
+        "**/user/checkout/userinfo/*",
+        lambda route: route.fulfill(status=500, content_type="application/json", body='{"status":"error","message":"伺服器錯誤"}'),
+    )
+    _open(page, "#/cart")
+    page.get_by_role("button", name="去結帳").click()
+    page.wait_for_url(re.compile(r".*#/pay\?order=.+"))
+    expect(page.get_by_text("資料載入失敗，請重新整理頁面")).to_be_visible()
+    expect(page.get_by_role("button", name="確認並前往付款")).to_be_disabled()

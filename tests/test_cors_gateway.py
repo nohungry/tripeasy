@@ -51,3 +51,5 @@ def test_other_routes_still_reject_foreign_origin(api, make_user):
     r = requests.post(f"{API_BASE}{PAYMENT_API}", headers=headers, json={}, timeout=10)
     assert r.status_code == 500  # /payment 與 notify／return 同一個 router，仍受白名單限制
     assert r.json()["message"] == "伺服器錯誤"
+    ok = requests.post(f"{API_BASE}{PAYMENT_API}", headers={**auth_header(user), "Origin": FRONTEND_PATH}, json={}, timeout=10)
+    assert ok.status_code == 400  # 對照：白名單內的來源會進到驗證（缺 order_id），不是 CORS 拒絕
