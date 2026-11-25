@@ -1,0 +1,10 @@
+................F.............................................           [100%]
+=================================== FAILURES ===================================
+________ test_negative_balance_after_refund_shows_zero_available_points ________
+tests/test_trade_refund.py:233: in test_negative_balance_after_refund_shows_zero_available_points
+    assert info["user_point"] == 0 and info["remaining_point"] == 0, info
+E   AssertionError: {'point': 0, 'remaining_point': -100, 'type': 'point', 'user_point': -100}
+E   assert (-100 == 0)
+=========================== short test summary info ============================
+FAILED tests/test_trade_refund.py::test_negative_balance_after_refund_shows_zero_available_points
+1 failed, 61 passed in 12.79s

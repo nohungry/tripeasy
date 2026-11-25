@@ -20,6 +20,7 @@ from conftest import (
     checkout,
     live_promotion,
     NOTIFY_API,
+    PAYMENT_API,
     notify,
     order_status,
     preview,
@@ -30,7 +31,6 @@ from conftest import (
     travel_point,
 )
 
-PAYMENT_API = "/api/v1/user/newebpay/payment"
 RETURN_API = "/api/v1/user/newebpay/return"
 FRONTEND_PATH = os.getenv("FRONTEND_PATH", "http://localhost:5173")
 MOCK_BASE = os.getenv("TEST_MOCK_NEWEBPAY_BASE", "http://localhost:8095")

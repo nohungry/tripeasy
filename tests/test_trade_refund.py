@@ -8,7 +8,10 @@ import requests
 
 from conftest import (
     API_BASE,
+    NOTIFY_API,
     auth_header,
+    checkout,
+    trial_discount,
     live_promotion,
     notify,
     order_status,
@@ -133,7 +136,9 @@ def test_refund_unknown_order_is_404(api, make_user):
 
 def test_refund_bad_uuid_is_400(api, make_user):
     admin = make_user(role="admin")
-    assert refund(api, admin, "not-a-uuid").status_code == 400
+    r = refund(api, admin, "not-a-uuid")
+    assert r.status_code == 400
+    assert r.json()["message"] == "order_id 格式不正確，需為 UUID 格式"
 
 
 def test_refund_by_member_is_403(api, db, make_user, make_tour):
@@ -172,6 +177,63 @@ def test_refunded_coupon_order_summary_shows_amount_paid(api, db, make_user, mak
     assert refund(api, admin, order_id).status_code == 200
     data = summary(api, user, order_id)
     assert data["payable"] == 1700, data
+    assert data["discount_amount"] == 100, data
+
+
+def test_refunded_point_order_summary_shows_amount_paid(api, db, make_user, make_tour):
+    admin = make_user(role="admin")
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    user, order_id, _, amt = paid_order(
+        api, db, make_user, make_tour, {"type": "point", "used_point": 100}, user=user, price=1000
+    )
+    assert amt == 920
+    assert refund(api, admin, order_id).status_code == 200
+    data = summary(api, user, order_id)
+    assert data["payable"] == 920, data
+    assert data["discount_amount"] == 80, data
+
+
+def test_concurrent_refunds_settle_once(api, db, make_user, make_tour):
+    """H1：兩個退款同時送出，只有一個成功（證明 refundOrder 真的鎖了訂單）。"""
+    admin = make_user(role="admin")
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    user, order_id, _, _ = paid_order(
+        api, db, make_user, make_tour, {"type": "point", "used_point": 100}, user=user, price=1000
+    )
+    barrier = threading.Barrier(2, timeout=10)
+
+    def do_refund():
+        barrier.wait()
+        return requests.post(f"{API_BASE}{refund_url(order_id)}", headers=auth_header(admin), timeout=15).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(do_refund) for _ in range(2)]
+        codes = [f.result(timeout=30) for f in futures]
+    assert sorted(codes) == [200, 409], codes
+    assert order_status(db, order_id) == (3, {3})
+    assert refund_rows(db, order_id, "退款收回") == [-92]
+    assert refund_rows(db, order_id, "退款退回") == [100]
+    assert travel_point(db, user) == 100
+
+
+def test_negative_balance_after_refund_shows_zero_available_points(api, db, make_user, make_tour):
+    """H3（Q2）：退款讓餘額為負後，新訂單的折抵資訊顯示 0 點可用，點數折抵被拒；儲存的餘額仍為負。"""
+    admin = make_user(role="admin")
+    user, order_id, _, _ = paid_order(api, db, make_user, make_tour)
+    db.execute("UPDATE user_level SET travel_point = 0 WHERE user_id = %s", (user["user_id"],))
+    assert refund(api, admin, order_id).status_code == 200
+    assert travel_point(db, user) == -100
+
+    new_order = checkout(api, user, [make_tour(price=1000)])
+    r = trial_discount(api, user, new_order, {"type": "point", "discount": {"point": 0}})
+    assert r.status_code == 200, r.text
+    info = r.json()["data"]["discount"]
+    assert info["user_point"] == 0 and info["remaining_point"] == 0, info
+    r = trial_discount(api, user, new_order, {"type": "point", "discount": {"point": 5}})
+    assert (r.status_code, r.json()["message"]) == (409, "超出可使用的點數")
+    assert travel_point(db, user) == -100
 
 
 def test_refund_and_duplicate_notify_concurrently(api, db, make_user, make_tour):
@@ -191,7 +253,7 @@ def test_refund_and_duplicate_notify_concurrently(api, db, make_user, make_tour)
 
     def do_notify():
         barrier.wait()
-        return requests.post(f"{API_BASE}/api/v1/user/newebpay/notify", data=fields, timeout=15).status_code
+        return requests.post(f"{API_BASE}{NOTIFY_API}", data=fields, timeout=15).status_code
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         f_refund, f_notify = pool.submit(do_refund), pool.submit(do_notify)
