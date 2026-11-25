@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import re
 
 import requests
@@ -177,7 +178,7 @@ def test_payment_error_shows_backend_message(page: Page, make_user, make_tour, m
 
 # ---- Task 12：結帳頁、付款結果頁與交易主線
 
-MOCK_BASE = "http://localhost:8095"
+MOCK_BASE = os.getenv("TEST_MOCK_NEWEBPAY_BASE", "http://localhost:8095")
 
 
 def _tour_dates():
@@ -193,6 +194,8 @@ def _go_checkout_from_cart(page: Page) -> str:
 
 
 def _fill_contact(page: Page) -> None:
+    # 初始載入（預填 email）完成後才操作；頁面端「載入前不可送出」由專屬測試 test_submit_disabled_until_loaded 負責
+    expect(page.get_by_label("email")).not_to_have_value("")
     # make_user 的預設名稱不符合 preview 的名稱規則（2~10 字元、無特殊字元），所以改填合法全名
     page.get_by_label("全名").fill("測試用戶")
     page.get_by_label("地址").fill("台北市測試路1號")
@@ -238,6 +241,7 @@ def test_trade_main_flow(page: Page, db, make_user, make_tour, make_coupon):
     expect(page.get_by_text("付款成功")).to_be_visible(timeout=15000)
     expect(page.get_by_text("獲得旅遊積分 190 點")).to_be_visible()
     assert db.execute("SELECT count(*) FROM orders WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == 1
+    assert db.execute("SELECT payment_status FROM orders WHERE order_id = %s", (order_id,)).fetchone()[0] == 1
     assert db.execute("SELECT status FROM user_coupon WHERE coupon_id = %s", (coupon["coupon_id"],)).fetchone()[0] == 1
     assert _payment_rows(db, order_id) == [1]
     _open(page, "#/cart")
@@ -324,3 +328,87 @@ def test_pay_without_order_redirects_to_cart(page: Page, make_user):
     _login(page, user)
     _open(page, "#/pay")
     page.wait_for_url("**/#/cart")
+
+
+def _flush_page(page: Page) -> None:
+    """讓頁面把已收到的回應處理完（兩個 animation frame），不使用固定等待。"""
+    page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+
+
+def test_submit_disabled_until_loaded(page: Page, make_user, make_tour):
+    user = make_user()
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    held = []
+    page.route("**/user/checkout/userinfo/*", lambda route: held.append(route))
+    _open(page, "#/cart")
+    page.get_by_role("button", name="去結帳").click()
+    page.wait_for_url(re.compile(r".*#/pay\?order=.+"))
+    expect(page.get_by_role("button", name="確認並前往付款")).to_be_disabled()
+    expect(page.get_by_label("email")).to_have_value("")
+    for route in held:
+        route.continue_()
+    expect(page.get_by_label("email")).to_have_value(user["email"])
+    expect(page.get_by_role("button", name="確認並前往付款")).to_be_enabled()
+
+
+def test_coupon_without_available_coupon_resets_amount(page: Page, db, make_user, make_tour):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    expect(page.get_by_label("email")).not_to_have_value("")
+    page.get_by_role("radio", name="旅遊積分").check()
+    points = page.get_by_test_id("point-input")
+    points.fill("100")
+    points.blur()
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$920")
+    page.get_by_role("radio", name="優惠卷").check()
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
+
+
+def test_result_page_refunded_order(page: Page, make_user, make_tour, make_order):
+    user = make_user()
+    tour = make_tour(price=1000)
+    order = make_order(user, tour["tour_id"], payment_status=3)
+    _login(page, user)
+    _open(page, f"#/pay/result?order={order['order_id']}")
+    expect(page.get_by_text("訂單已退款")).to_be_visible(timeout=5000)
+    expect(page.get_by_role("button", name="重新付款")).to_have_count(0)
+
+
+def test_stale_discount_trial_response_is_ignored(page: Page, make_user, make_tour, make_coupon):
+    user = make_user()
+    make_coupon(user, discount=100)
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    expect(page.get_by_label("email")).not_to_have_value("")
+    held = []
+
+    def handler(route):
+        if route.request.method == "POST":
+            held.append(route)  # 先扣住優惠卷試算的回應，製造亂序
+        else:
+            route.continue_()
+
+    page.route("**/user/trade/discounts/*", handler)
+    with page.expect_request(lambda r: r.method == "POST" and "/trade/discounts/" in r.url):
+        page.get_by_role("radio", name="優惠卷").check()
+    with page.expect_response(lambda r: r.request.method == "GET" and "/trade/discounts/" in r.url):
+        page.get_by_role("radio", name="不使用").check()
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")
+    with page.expect_response(lambda r: r.request.method == "POST" and "/trade/discounts/" in r.url):
+        for route in held:
+            route.continue_()
+    _flush_page(page)
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,000")

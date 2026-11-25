@@ -16,7 +16,7 @@ from conftest import (
 
 RETURN_API = "/api/v1/user/newebpay/return"
 FRONTEND_PATH = os.getenv("FRONTEND_PATH", "http://localhost:5173")
-FOREIGN = {"Origin": "http://localhost:8095"}
+FOREIGN = {"Origin": os.getenv("TEST_MOCK_NEWEBPAY_BASE", "http://localhost:8095")}
 
 
 def test_return_accepts_gateway_origin(api, db, make_user, make_tour):
@@ -41,6 +41,13 @@ def test_other_routes_still_reject_foreign_origin(api, make_user):
     user = make_user()
     headers = {**auth_header(user), **FOREIGN}
     r = requests.get(f"{API_BASE}/api/v1/user/trade/cart/list", headers=headers, timeout=10)
-    assert r.status_code == 500  # 現況：cors 回「不允許的來源」，由全域錯誤處理轉成 500
+    # 現況：cors 丟「不允許的來源」，全域錯誤處理把沒有 status 的錯誤轉成 500 與通用訊息「伺服器錯誤」
+    assert r.status_code == 500
+    assert r.json()["message"] == "伺服器錯誤"
+    allowed = requests.get(
+        f"{API_BASE}/api/v1/user/trade/cart/list", headers={**auth_header(user), "Origin": FRONTEND_PATH}, timeout=10
+    )
+    assert allowed.status_code == 200  # 對照：白名單內的來源正常
     r = requests.post(f"{API_BASE}{PAYMENT_API}", headers=headers, json={}, timeout=10)
     assert r.status_code == 500  # /payment 與 notify／return 同一個 router，仍受白名單限制
+    assert r.json()["message"] == "伺服器錯誤"
