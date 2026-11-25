@@ -173,9 +173,9 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 ## 檢查結果
 
 以字面順序檢查，有三處「後取較前順位的鎖」，分屬上方「已知例外」A 或 B，無環：
-1. `reserveDiscount` coupon 路徑（`utils/trade.js:277` → `:316`）與 point 路徑（`:288` → `:316`、`controllers/checkout.js:199`、`:203`）：先鎖 `user_coupon`／`user_level`，之後寫本訂單的 `orders`／`order_item`。
-2. 取消折扣（`controllers/discounts.js:126` → `:127`）：先動 `point_record`／`user_coupon`，再 UPDATE `orders`。
-3. point 路徑先鎖 `user_level` 再碰本訂單的 `point_record`／`user_coupon`。
+1. `reserveDiscount` coupon 路徑（`utils/trade.js:277` → `:316`）與 point 路徑（`:288` → `:316`、`controllers/checkout.js:199`、`:203`）：先鎖 `user_coupon`／`user_level`，之後寫本訂單的 `orders`／`order_item`。（例外 A）
+2. 取消折扣（`controllers/discounts.js:126` → `:127`）：先動 `point_record`／`user_coupon`，再 UPDATE `orders`。（例外 A）
+3. point 路徑先鎖 `user_level` 再碰本訂單的 `point_record`／`user_coupon`。（例外 B）
 
 除上述之外沒有鎖順序反向。其他觀察：
 - checkout 建單（第 1 節步驟 2）以不加鎖讀取碰 `cart_item`，不持任何列鎖，不能構成死結。
