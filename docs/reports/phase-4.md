@@ -13,7 +13,7 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 
 | 項目 | 結果 |
 |---|---|
-| 測試數量 | **505 passed、0 xfailed（P3 結束，`phase-3.md` 附錄 C）→ 782 passed、0 xfailed、0 skipped**（`scripts/ci.sh` 乾淨環境連跑兩次，見 §3.3）。淨增 277 個測試 |
+| 測試數量 | **505 passed、0 xfailed（P3 結束，`phase-3.md` 附錄 C）→ 798 passed、0 xfailed、0 skipped**（最終修正波後，在最終 head 以 `scripts/ci.sh` 實跑；修正波前乾淨環境連跑兩次皆 782，見 §3.3）。淨增 293 個測試 |
 | xfail／skip | 皆為 0（P3 已清空，P4 沒有新增） |
 | 新增服務 | `mock-newebpay`（`node:22-alpine`、不用 npm 套件，`mock-newebpay/server.js`）：假付款頁、驗簽、伺服器端自簽 notify、交易時限 |
 | 後端 | 修正購物車／結帳／折扣／藍新 controller 的既有缺陷（§1.1–§1.8）；新增 migration `V5`（§1.9）；結算與鎖順序集中在 `src/utils/trade.js`、`src/utils/newebpay.js`；新增管理員退款 API（§1.10）；藍新 notify／return 對 CORS 白名單的例外（§1.11）；驗證訊息改中文標籤並以共用函式收斂（§1.12） |
@@ -170,7 +170,7 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 | spec §9 以為 `USER_FK_TABLES` 要補表 | builder check 與 Task 1 Step 0b 確認已涵蓋，未改 `conftest.py` 的該常數 |
 | 已退款訂單的 `computePayable` 無定義（Task 5 實作者提出） | Task 9 裁決（§2.2） |
 | 計畫的 `["data"]` 整理與 GC5 衝突 | spec §10 明定納入，視為 GC5 例外（測試整理不需紅燈） |
-| 計畫 T13 的「505」無來源 | 505 來自 `phase-3.md` 附錄 C（最終修正波）；本報告 §0 以實跑的 782 為準 |
+| 計畫 T13 的「505」無來源 | 505 來自 `phase-3.md` 附錄 C（最終修正波）；本報告 §0 以實跑的 798 為準（修正波前為 782） |
 | 總 spec §4 沒有 P7 列 | cloudflared 的待辦改放 §6 的 P7 區塊（總覽 `1b78922`，使用者接受） |
 | spec §5.5 第 7 步修訂註記同時保留舊句與新句 | 最終審查後已就地改寫：notify 步驟重新編號與程式順序一致（原第 7 步現為第 4 步），舊句刪除（§1.16 D2） |
 
@@ -252,14 +252,14 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 
 ### 3.1 測試分層（總 spec §4.2 四層）
 
-下表的數量取自乾淨環境第 1 次 `scripts/ci.sh`（`pytest -v`）的 PASSED 行，依檔案分組（檔內有些測試跨層，以主要目的歸類）：
+下表的數量取自最終修正波後的 `scripts/ci.sh`（`pytest -v`）PASSED 行，依檔案分組（檔內有些測試跨層，以主要目的歸類）：
 
 | 層 | 檔案（passed 數） | 重點 |
 |---|---|---|
-| API 契約 | `tests/test_trade_cart.py`（13）、`tests/test_trade_checkout.py`（46）、`tests/test_trade_refund.py`（18）、`tests/test_validator_messages.py`（80）、`tests/test_validator_sweep.py`（15） | 每支 API 的正常、驗證錯誤、非自己資源回 404、狀態碼；驗證訊息不洩漏參數名 |
-| 安全／金流 | `tests/test_trade_payment.py`（44）、`tests/test_cors_gateway.py`（3）、`tests/test_mock_newebpay.py`（14） | `TradeSha` 錯誤、`Amt` 被竄改、notify 重送與併發只結算一次、前端金額被忽略、`ItemDesc` 的 HTML 跳脫、「backend 沒有跳過簽章或假付款的開關」（`test_no_signature_bypass_switch`，純原始碼掃描，[task-13-no-bypass.txt](evidence/phase-4/task-13-no-bypass.txt)） |
+| API 契約 | `tests/test_trade_cart.py`（13）、`tests/test_trade_checkout.py`（54）、`tests/test_trade_refund.py`（18）、`tests/test_validator_messages.py`（80）、`tests/test_validator_sweep.py`（16） | 每支 API 的正常、驗證錯誤、非自己資源回 404、狀態碼；驗證訊息不洩漏參數名 |
+| 安全／金流 | `tests/test_trade_payment.py`（49）、`tests/test_cors_gateway.py`（3）、`tests/test_mock_newebpay.py`（14） | `TradeSha` 錯誤、`Amt` 被竄改、notify 重送與併發只結算一次、前端金額被忽略、`ItemDesc` 的 HTML 跳脫、「backend 沒有跳過簽章或假付款的開關」（`test_no_signature_bypass_switch`，純原始碼掃描，[task-13-no-bypass.txt](evidence/phase-4/task-13-no-bypass.txt)） |
 | DB 狀態 | `tests/test_migrations.py`（19）、`tests/test_seed.py`（31）、`tests/test_trade_checkout.py`／`test_trade_payment.py`／`test_trade_refund.py` 內的 DB 斷言 | 付款成功後 `orders`、`order_item`、`payment`、`point_record`、`user_level`、`user_coupon`、購物車的值；取消、逾時、退款後的釋放與歸還；V5 部分唯一索引真的擋得住第二筆成功付款；連線洩漏回歸測試 |
-| E2E | `e2e/test_trade_flow.py`（19）；`e2e/test_product_flow.py`（42，含 P3 測試改動） | 主線（登入 → 加入購物車 → 結帳 → 優惠券 → mock 付款 → 結果頁）、付款失敗後重付、用點數付款、載入失敗、最新結果優先 |
+| E2E | `e2e/test_trade_flow.py`（21）；`e2e/test_product_flow.py`（42，含 P3 測試改動） | 主線（登入 → 加入購物車 → 結帳 → 優惠券 → mock 付款 → 結果頁）、付款失敗後重付、用點數付款、載入失敗、最新結果優先 |
 
 ### 3.2 值得一看的技巧
 
@@ -279,8 +279,9 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 |---|---|---|---|---|---|---|
 | 第 1 次（`down -v` 之後，含映像建置） | 782 | 0 | 0 | 218.29s | 251s | 0 |
 | 第 2 次（保留 volume） | 782 | 0 | 0 | 203.02s | 210s | 0 |
+| 最終修正波後（§1.16；backend `237f63b`、frontend `e075222`；保留 volume） | **798**（+16：F1 4、F4 4、F5 6〔5 個 payment 參數化＋1 個原始碼掃描〕、e2e 2） | 0 | 0 | 199.88s | — | 0 |
 
-測試數量變化：**505 passed、0 xfailed（P3 最終）→ 782 passed、0 xfailed、0 skipped（P4）**。各 Task 結束時 `scripts/ci.sh` 的 passed 數（取自 ledger）：Task 1：438（pytest）、Task 7：578、Task 8：614→624→628、Task 9：643→646、Task 10：683→720→746→761、Task 11：765→768、Task 12：777→781→782。CI（GitHub Actions）的 run 編號待 Step 5 push 後補入。
+測試數量變化：**505 passed、0 xfailed（P3 最終）→ 798 passed、0 xfailed、0 skipped（P4，最終 head）**。各 Task 結束時 `scripts/ci.sh` 的 passed 數（取自 ledger）：Task 1：438（pytest）、Task 7：578、Task 8：614→624→628、Task 9：643→646、Task 10：683→720→746→761、Task 11：765→768、Task 12：777→781→782。CI（GitHub Actions）的 run 編號待 Step 5 push 後補入。
 
 ## 4. 操作指南
 
@@ -351,11 +352,11 @@ curl -s -w '\n%{http_code}\n' -X POST "http://localhost:3000/api/v1/admin/orders
 
 ### A. 變更檔案清單
 
-統計基準：總覽 `main..phase-4`（58 個檔案，含 evidence 與文件）、backend `main..phase-4`（24 個檔案，+1481／−829）、frontend `dev..phase-4`（6 個檔案，+683／−128）。以下略去 evidence 檔案（`docs/reports/evidence/phase-4/` 27 個，其中 `task-13-clean-ci.txt` 與 `task-13-no-bypass.txt` 為 Task 13 新增）。
+統計基準（最終 head：總覽 `phase-4` 的最後一個 commit、backend `237f63b`、frontend `e075222`）：總覽 `main..phase-4`（61 個檔案，+8615／−97，含 evidence 與文件）、backend `main..phase-4`（24 個檔案，+1528／−828）、frontend `dev..phase-4`（6 個檔案，+693／−129）。以下略去 evidence 檔案（`docs/reports/evidence/phase-4/` 28 個，其中 `final-fix-red.txt` 為最終修正波新增， `task-13-clean-ci.txt` 與 `task-13-no-bypass.txt` 為 Task 13 新增）。
 
 **backend**（`github.com/nohungry/tripeasy-backend`，`main..phase-4`）
-- 新增：`migrations/V5__p4_trade.sql`、`src/utils/trade.js`（結算、鎖、逾時、退款、`computePayable`）、`src/utils/newebpay.js`（加解密、簽章、跳脫）、`src/utils/dateRules.js`、`src/utils/Validator/joiMessage.js`、`src/utils/Validator/admin_Validator.js`（含退款 schema）
-- 修改：`src/controllers/{cart,checkout,discounts,newebpay,admin}.js`、`src/middlewares/{cart,checkout,discounts,newebpay,admin,product}/index.js`、`src/routes/{newebpay,admin}.js`、`src/server.js`（CORS 例外）、`src/utils/Validator/{cart_Validator,checkout_Vaildator,discounts_Validatior,product_Validator}.js`
+- 新增：`migrations/V5__p4_trade.sql`、`src/utils/trade.js`（結算、鎖、逾時、退款、`computePayable`）、`src/utils/newebpay.js`（加解密、簽章、跳脫）、`src/utils/dateRules.js`、`src/utils/Validator/joiMessage.js`
+- 修改：`src/controllers/{cart,checkout,discounts,newebpay,admin}.js`、`src/middlewares/{cart,checkout,discounts,newebpay,admin,product}/index.js`、`src/routes/{newebpay,admin}.js`、`src/server.js`（CORS 例外）、`src/utils/Validator/{admin_Validator（加退款 schema）,cart_Validator,checkout_Vaildator,discounts_Validatior,product_Validator}.js`
 
 **frontend**（`github.com/nohungry/tripeasy-frontend`，`dev..phase-4`）
 - 新增：`src/views/front/payResult.vue`
