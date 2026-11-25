@@ -1787,6 +1787,12 @@ seed 的 `payment`（§0.1 第 9 項）與 `point_record`（§0.1 第 10 項）�
 
 `point_record.type` 值域新增兩個值（P4 spec §3 第 3 點；不是 DB 約束，`type` 仍是 VARCHAR(50) NOT NULL）：`退款退回`：`point` 為正數，退還使用的點數；`退款收回`：`point` 為負數，收回回饋點數。既有值為 `新增`、`減少`、`減少_確認中`。
 
+**寫入時機**（`backend/src/utils/trade.js::refundOrder`，管理員退款 `POST /api/v1/admin/orders/:order_id/refund`，P4 spec §7）：只在訂單由 1 轉 3 的同一個交易內寫入，每張訂單最多各一筆（只有狀態 1 的訂單可退款，退款不會重複）。
+- `退款退回`（`point` 為正）：該訂單 `減少` 列的點數絕對值加總 > 0 才寫，同時加回 `user_level.travel_point`。
+- `退款收回`（`point` 為負）：該訂單 `新增`（回饋）列的點數加總 > 0 才寫，同時從 `travel_point` 扣除；回饋已被花掉時餘額允許為負（P4 spec Q2，`travel_point` 無 CHECK 約束）。
+- 原本的 `減少`、`新增` 列保留不動（流水帳）；`user_coupon` 同時還原為 `status = 0`、`order_id = NULL`；`payment` 列不改。
+- 已退款訂單的 `computePayable` 取該單成功付款（`payment_status = 1`）的 `discount_price` 作為應付金額（券已釋放，不能再從保留紀錄推算）。
+
 ### 購買資格（非 DB 物件）
 
 - **定義**（P3 spec §4.2 R1）：會員「購買過」某行程，是指存在該會員本人的 `orders`，其 `order_item` 屬於該行程且 `order_item.payment_status = 1`（已付款）。未付款、已取消、已退款、逾時、別人的訂單、別的行程的訂單都不算。
