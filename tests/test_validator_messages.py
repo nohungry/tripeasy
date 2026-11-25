@@ -43,7 +43,7 @@ def test_cart_delete_invalid_item_id_message(api, make_user):
 
 
 def test_cart_patch_invalid_item_id_message(api, make_user):
-    r = api.patch(f"{CART_API}/not-a-uuid", json={"people": 1}, headers=auth_header(make_user()), timeout=5)
+    r = api.patch(f"{CART_API}/not-a-uuid", json=_valid_body(), headers=auth_header(make_user()), timeout=5)
     assert r.status_code == 400, r.text
     assert r.json()["message"] == "「購物車項目編號」必須是有效的 UUID 格式"
 
