@@ -56,6 +56,9 @@ services:
       context: ./backend
       target: dev
     env_file: .env
+    environment:
+      # 購物車／結帳的日期序列化（timestamp 轉 ISO 字串再由前端切片）依賴 UTC，見 ledger
+      TZ: UTC
     depends_on:
       flyway:
         condition: service_completed_successfully
