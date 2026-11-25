@@ -173,3 +173,151 @@ def test_payment_error_shows_backend_message(page: Page, make_user, make_tour, m
         order["order_id"],
     )
     expect(page.locator(".swal2-html-container")).to_have_text("訂單狀態不允許此操作")
+
+
+# ---- Task 12：結帳頁、付款結果頁與交易主線
+
+MOCK_BASE = "http://localhost:8095"
+
+
+def _tour_dates():
+    today = datetime.date.today()
+    return today + datetime.timedelta(days=10), today + datetime.timedelta(days=12)
+
+
+def _go_checkout_from_cart(page: Page) -> str:
+    """在 #/cart 按去結帳，回傳 order_id。"""
+    page.get_by_role("button", name="去結帳").click()
+    page.wait_for_url(re.compile(r".*#/pay\?order=.+"))
+    return page.url.split("order=")[1]
+
+
+def _fill_contact(page: Page) -> None:
+    page.get_by_label("地址").fill("台北市測試路1號")
+    page.get_by_label("連絡電話").fill("0912345678")
+
+
+def _pay_and_reach_mock(page: Page) -> None:
+    page.get_by_role("button", name="確認並前往付款").click()
+    page.wait_for_url(f"{MOCK_BASE}/**")
+
+
+def _payment_rows(db, order_id: str) -> list:
+    return sorted(
+        r[0] for r in db.execute("SELECT payment_status FROM payment WHERE order_id = %s", (order_id,)).fetchall()
+    )
+
+
+def test_trade_main_flow(page: Page, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    coupon = make_coupon(user, discount=100)
+    _login(page, user)
+    _open(page, f"#/tour/{tour['tour_id']}")
+    page.get_by_label("人數").fill("1")
+    page.get_by_role("button", name="加入購物車").click()
+    expect(page.get_by_text("已加入購物車")).to_be_visible()
+    _open(page, "#/cart")
+    people = _row(page, tour).get_by_label("人數")
+    people.fill("2")
+    people.blur()
+    expect(page.get_by_test_id("cart-total")).to_have_text("NT$2,000")
+    order_id = _go_checkout_from_cart(page)
+    _fill_contact(page)
+    page.get_by_role("radio", name="優惠卷").check()
+    page.get_by_test_id("coupon-select").select_option(value=coupon["coupon_id"])
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$1,900")
+    _pay_and_reach_mock(page)
+    expect(page.get_by_text("金額：1900")).to_be_visible()
+    page.get_by_role("button", name="付款成功").click()
+    page.wait_for_url("**/#/pay/result?order=*")
+    expect(page.get_by_text("付款成功")).to_be_visible(timeout=15000)
+    expect(page.get_by_text("獲得旅遊積分 190 點")).to_be_visible()
+    assert db.execute("SELECT count(*) FROM orders WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == 1
+    assert db.execute("SELECT status FROM user_coupon WHERE coupon_id = %s", (coupon["coupon_id"],)).fetchone()[0] == 1
+    assert _payment_rows(db, order_id) == [1]
+    _open(page, "#/cart")
+    expect(page.get_by_text("購物車是空的")).to_be_visible()
+
+
+def test_payment_failure_then_retry(page: Page, db, make_user, make_tour):
+    user = make_user()
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    order_id = _go_checkout_from_cart(page)
+    _fill_contact(page)
+    _pay_and_reach_mock(page)
+    page.get_by_role("button", name="付款失敗").click()
+    page.wait_for_url("**/#/pay/result?order=*")
+    expect(page.get_by_text("付款未完成")).to_be_visible(timeout=20000)
+    page.get_by_role("button", name="重新付款").click()
+    page.wait_for_url(re.compile(r".*#/pay\?order=.+"))
+    _fill_contact(page)
+    _pay_and_reach_mock(page)
+    page.get_by_role("button", name="付款成功").click()
+    page.wait_for_url("**/#/pay/result?order=*")
+    expect(page.get_by_text("付款成功")).to_be_visible(timeout=15000)
+    assert _payment_rows(db, order_id) == [0, 1]
+
+
+def test_pay_with_points(page: Page, db, make_user, make_tour):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    _fill_contact(page)
+    page.get_by_role("radio", name="旅遊積分").check()
+    expect(page.get_by_text("可用積分 100 點")).to_be_visible()
+    points = page.get_by_test_id("point-input")
+    points.fill("100")
+    points.blur()
+    expect(page.get_by_test_id("pay-payable")).to_have_text("NT$920")
+    _pay_and_reach_mock(page)
+    page.get_by_role("button", name="付款成功").click()
+    page.wait_for_url("**/#/pay/result?order=*")
+    expect(page.get_by_text("付款成功")).to_be_visible(timeout=15000)
+    assert db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == 92
+
+
+def test_point_input_rejects_non_multiple_of_five(page: Page, db, make_user, make_tour):
+    user = make_user()
+    db.execute("UPDATE user_level SET travel_point = 100 WHERE user_id = %s", (user["user_id"],))
+    tour = make_tour(price=1000)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    page.get_by_role("radio", name="旅遊積分").check()
+    points = page.get_by_test_id("point-input")
+    points.fill("12")
+    points.blur()
+    expect(page.locator(".swal2-html-container")).to_have_text("旅遊積分必須是 5 的倍數")
+
+
+def test_mock_page_shows_escaped_title(page: Page, make_user, make_tour):
+    user = make_user()
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, title="p3-<b>粗體</b>", start_date=start, end_date=end)
+    _api_add(user, tour)
+    _login(page, user)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    _fill_contact(page)
+    _pay_and_reach_mock(page)
+    expect(page.get_by_text("p3-<b>粗體</b>")).to_be_visible()
+    assert page.locator("b").count() == 0
+
+
+def test_pay_without_order_redirects_to_cart(page: Page, make_user):
+    user = make_user()
+    _login(page, user)
+    _open(page, "#/pay")
+    page.wait_for_url("**/#/cart")
