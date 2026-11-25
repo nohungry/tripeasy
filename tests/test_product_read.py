@@ -345,6 +345,14 @@ def test_search_offset_date_is_400(api):
          "「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）"),
         ({"duration": "x"}, "「天數」必須是數字"),
         ({"keyword": ""}, "「關鍵字」不可為空"),
+        ({"item": ""}, "「小分類」不可為空"),
+        ({"country": ""}, "「國家」不可為空"),
+        ({"region": ""}, "「地區」不可為空"),
+        ({"min_price": "1e30"}, "「最低價格」數值超出範圍"),
+        ({"max_price": "1e30"}, "「最高價格」數值超出範圍"),
+        ({"duration": "1e30"}, "「天數」數值超出範圍"),
+        ({"page": "1e30"}, "「頁數」數值超出範圍"),
+        ({"limit": "1e30"}, "「每頁筆數」數值超出範圍"),
         ({"limit": 0}, "「每頁筆數」必須大於等於 1"),
         ({"page": 0}, "「頁數」必須大於等於 1"),
         ({"sort_by": "zzz"}, "「排序欄位」僅能為 price 或 date"),
@@ -358,5 +366,5 @@ def test_search_messages_have_no_param_names(api, params, expected):
     assert r.status_code == 400, r.text
     message = r.json()["message"]
     assert message == expected
-    for name in ("start_date", "end_date", "min_price", "max_price", "duration", "limit", "page", "sort_by", "order"):
+    for name in ("start_date", "end_date", "min_price", "max_price", "duration", "limit", "page", "sort_by", "order", "keyword", "country", "region"):
         assert name not in message, (name, message)
