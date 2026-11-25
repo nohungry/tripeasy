@@ -398,6 +398,9 @@ seed 的未付款訂單 #16（alice，-1）、#17（bob，0）在展示環境第
 - **回饋公式有兩份**：summary 的 `get_point` 與 `settlePaidOrder` 各算一次 `floor(payable × 0.1)`，目前相同；保留。
 - **測試穩健性**：`NOWAIT` 測試的固定 1.5 秒等待及其他小項（P5）；Google 登入的名稱未套用 2–10 字元規則（P5）。
 
+**B.4b 鎖順序待辦（P5）**
+`cart.js:26-29` 新增購物車的 `SELECT ... FOR UPDATE` 沒有 `ORDER BY cart_id`，`settlePaidOrder`（`trade.js:358`）有；同一會員有兩個 cart 時可能死結（機率低）。修正：POST 也加 `ORDER BY cart_id`，或補 `cart.user_id` 的 `UNIQUE`。詳見 `docs/lock-order.md`「已知問題」。
+
 **B.5 P4 之前就存在、未處理的項目**
 P3 報告附錄 B 的項目（P4 spec §10 之外者）沿用，不在此重列。
 
