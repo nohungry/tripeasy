@@ -1,0 +1,213 @@
+...............FFFFF.F..FFFF.FFFFF.F..FFFF...........FF.F.F..F.......... [ 74%]
+....................F....                                                [100%]
+=================================== FAILURES ===================================
+_ test_cart_post_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"type" is required' == '請填寫「大分類」'
+E     
+E     - 請填寫「大分類」
+E     + "type" is required
+_ test_cart_post_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"type" must ...r, tourgroup]' == '「大分類」僅能為 bac...r 或 tourgroup'
+E     
+E     - 「大分類」僅能為 backpacker 或 tourgroup
+E     + "type" must be one of [backpacker, tourgroup]
+_ test_cart_post_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"type" must ...r, tourgroup]' == '「大分類」僅能為 bac...r 或 tourgroup'
+E     
+E     - 「大分類」僅能為 backpacker 或 tourgroup
+E     + "type" must be one of [backpacker, tourgroup]
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"item" is required' == '請填寫「小分類」'
+E     
+E     - 請填寫「小分類」
+E     + "item" is required
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"item" must ...spot, travel]' == '「小分類」僅能為 hot...spot 或 travel'
+E     
+E     - 「小分類」僅能為 hotel、food、spot 或 travel
+E     + "item" must be one of [hotel, food, spot, travel]
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1.5, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"people" must be an integer' == '「人數」必須是整數'
+E     
+E     - 「人數」必須是整數
+E     + "people" must be an integer
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': 'x'}-\u300c\u9078\u9805\u300d\u5fc5\u9808\u662f\u7269\u4ef6] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"options" mu...f type object' == '「選項」必須是物件'
+E     
+E     - 「選項」必須是物件
+E     + "options" must be of type object
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'foo': 1}}-\u300c\u9078\u9805\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"options.foo" is not allowed' == '「選項」含有不支援的欄位'
+E     
+E     - 「選項」含有不支援的欄位
+E     + "options.foo" is not allowed
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"foo" is not allowed' == '請求內容含有不支援的欄位'
+E     
+E     - 請求內容含有不支援的欄位
+E     + "foo" is not allowed
+_ test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': ''}}-\u300c\u623f\u578b\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_validator_messages.py:155: in test_cart_post_body_messages
+    assert r.json()["message"] == expected
+E   assert '"options.roo...d to be empty' == '「房型」不可為空'
+E     
+E     - 「房型」不可為空
+E     + "options.room_type" is not allowed to be empty
+_ test_cart_patch_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"type" is required' == '請填寫「大分類」'
+E     
+E     - 請填寫「大分類」
+E     + "type" is required
+_ test_cart_patch_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"type" must ...r, tourgroup]' == '「大分類」僅能為 bac...r 或 tourgroup'
+E     
+E     - 「大分類」僅能為 backpacker 或 tourgroup
+E     + "type" must be one of [backpacker, tourgroup]
+_ test_cart_patch_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"type" must ...r, tourgroup]' == '「大分類」僅能為 bac...r 或 tourgroup'
+E     
+E     - 「大分類」僅能為 backpacker 或 tourgroup
+E     + "type" must be one of [backpacker, tourgroup]
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"item" is required' == '請填寫「小分類」'
+E     
+E     - 請填寫「小分類」
+E     + "item" is required
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"item" must ...spot, travel]' == '「小分類」僅能為 hot...spot 或 travel'
+E     
+E     - 「小分類」僅能為 hotel、food、spot 或 travel
+E     + "item" must be one of [hotel, food, spot, travel]
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1.5, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"people" must be an integer' == '「人數」必須是整數'
+E     
+E     - 「人數」必須是整數
+E     + "people" must be an integer
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': 'x'}-\u300c\u9078\u9805\u300d\u5fc5\u9808\u662f\u7269\u4ef6] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"options" mu...f type object' == '「選項」必須是物件'
+E     
+E     - 「選項」必須是物件
+E     + "options" must be of type object
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'foo': 1}}-\u300c\u9078\u9805\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"options.foo" is not allowed' == '「選項」含有不支援的欄位'
+E     
+E     - 「選項」含有不支援的欄位
+E     + "options.foo" is not allowed
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"foo" is not allowed' == '請求內容含有不支援的欄位'
+E     
+E     - 請求內容含有不支援的欄位
+E     + "foo" is not allowed
+_ test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': ''}}-\u300c\u623f\u578b\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_validator_messages.py:163: in test_cart_patch_body_messages
+    assert r.json()["message"] == expected
+E   assert '"options.roo...d to be empty' == '「房型」不可為空'
+E     
+E     - 「房型」不可為空
+E     + "options.room_type" is not allowed to be empty
+_ test_discount_body_messages[{'type': 'coupon', 'discount': 'x'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u5fc5\u9808\u662f\u7269\u4ef6] _
+tests/test_validator_messages.py:198: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount" m...f type object' == '「優惠內容」必須是物件'
+E     
+E     - 「優惠內容」必須是物件
+E     + "discount" must be of type object
+_ test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': ''}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_validator_messages.py:198: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount.co...d to be empty' == '「優惠券代碼」不可為空'
+E     
+E     - 「優惠券代碼」不可為空
+E     + "discount.coupon" is not allowed to be empty
+_ test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'foo': 1}}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:198: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   assert '"discount.fo...s not allowed' == '「優惠內容」含有不支援的欄位'
+E     
+E     - 「優惠內容」含有不支援的欄位
+E     + "discount.foo" is not allowed
+_ test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] _
+tests/test_validator_messages.py:198: in test_discount_body_messages
+    assert r.json()["message"] == expected
+E   assert '"foo" is not allowed' == '請求內容含有不支援的欄位'
+E     
+E     - 請求內容含有不支援的欄位
+E     + "foo" is not allowed
+____________________ test_checkout_invalid_cart_id_message _____________________
+tests/test_validator_messages.py:226: in test_checkout_invalid_cart_id_message
+    assert r.json()["message"] == "「購物車編號」必須是有效的 UUID 格式"
+E   AssertionError: assert '「cart_id」必須是有效的 UUID 格式' == '「購物車編號」必須是有效的 UUID 格式'
+E     
+E     - 「購物車編號」必須是有效的 UUID 格式
+E     + 「cart_id」必須是有效的 UUID 格式
+_ test_search_messages_have_no_param_names[{'keyword': ''}-\u300c\u95dc\u9375\u5b57\u300d\u4e0d\u53ef\u70ba\u7a7a] _
+tests/test_product_read.py:360: in test_search_messages_have_no_param_names
+    assert message == expected
+E   assert '"keyword" is...d to be empty' == '「關鍵字」不可為空'
+E     
+E     - 「關鍵字」不可為空
+E     + "keyword" is not allowed to be empty
+=========================== short test summary info ============================
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1.5, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': 'x'}-\u300c\u9078\u9805\u300d\u5fc5\u9808\u662f\u7269\u4ef6]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'foo': 1}}-\u300c\u9078\u9805\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': ''}}-\u300c\u623f\u578b\u300d\u4e0d\u53ef\u70ba\u7a7a]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1.5, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': 'x'}-\u300c\u9078\u9805\u300d\u5fc5\u9808\u662f\u7269\u4ef6]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'foo': 1}}-\u300c\u9078\u9805\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': ''}}-\u300c\u623f\u578b\u300d\u4e0d\u53ef\u70ba\u7a7a]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': 'x'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u5fc5\u9808\u662f\u7269\u4ef6]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': ''}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u4e0d\u53ef\u70ba\u7a7a]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'foo': 1}}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_checkout_invalid_cart_id_message
+FAILED tests/test_product_read.py::test_search_messages_have_no_param_names[{'keyword': ''}-\u300c\u95dc\u9375\u5b57\u300d\u4e0d\u53ef\u70ba\u7a7a]
+26 failed, 71 passed in 3.07s

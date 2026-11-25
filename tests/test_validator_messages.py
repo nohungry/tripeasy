@@ -64,17 +64,22 @@ def test_cart_list_query_messages(api, make_user, query, expected):
     r = api.get(LIST_URL, params=query, headers=auth_header(make_user()), timeout=5)
     assert r.status_code == 400, r.text
     assert r.json()["message"] == expected
-    _no_raw_names(expected)
+    _no_raw_names(r.json()["message"])
 
 
 def test_cart_list_without_paging_uses_defaults(api, make_user, make_tour):
     user = make_user()
-    assert add_to_cart(api, user, make_tour()).status_code == 201
+    for _ in range(5):
+        assert add_to_cart(api, user, make_tour()).status_code == 201
     r = api.get(LIST_URL, headers=auth_header(user), timeout=5)
     assert r.status_code == 200, r.text
-    data = r.json().get("data")
-    assert data is not None, r.text
-    assert len(data["data"]) == 1
+    body = r.json().get("data")
+    assert body is not None, r.text
+    assert len(body["data"]) == 4  # 預設每頁 4 筆
+    assert body["summary"]["total_items"] == 5
+    r2 = api.get(LIST_URL, params={"page": 2}, headers=auth_header(user), timeout=5)
+    assert r2.status_code == 200, r2.text
+    assert len(r2.json()["data"]["data"]) == 1
 
 
 def test_cart_list_empty_without_paging_is_200(api, make_user):
@@ -111,6 +116,59 @@ def test_cart_post_options_null_message(api, make_user, make_tour):
     assert r.json()["message"] == "「選項」不可為 null"
 
 
+# ---- cart / discounts 的 Joi 內建訊息 ----
+
+def _bad_body(**over):
+    body = _valid_body()
+    for k, v in over.items():
+        if v is _DEL:
+            del body[k]
+        else:
+            body[k] = v
+    return body
+
+
+_DEL = object()
+
+CART_BODY_CASES = [
+    (_bad_body(type=_DEL), "請填寫「大分類」"),
+    (_bad_body(type="zzz"), "「大分類」僅能為 backpacker 或 tourgroup"),
+    (_bad_body(type=5), "「大分類」僅能為 backpacker 或 tourgroup"),
+    (_bad_body(item=_DEL), "請填寫「小分類」"),
+    (_bad_body(item="zzz"), "「小分類」僅能為 hotel、food、spot 或 travel"),
+    (_bad_body(people=_DEL), "請填寫「人數」"),
+    (_bad_body(people=1.5), "「人數」必須是整數"),
+    (_bad_body(people="x"), "「人數」必須是數字"),
+    (_bad_body(people=0), "「人數」至少為 1 人"),
+    (_bad_body(options="x"), "「選項」必須是物件"),
+    (_bad_body(options={**FUTURE, "foo": 1}), "「選項」含有不支援的欄位"),
+    (_bad_body(foo=1), "請求內容含有不支援的欄位"),
+    (_bad_body(item="hotel", options={**FUTURE, "room_type": ""}), "「房型」不可為空"),
+    (_bad_body(item="hotel", options={**FUTURE, "room_type": 5}), "「房型」必須是文字"),
+]
+
+
+@pytest.mark.parametrize("body, expected", CART_BODY_CASES, ids=lambda v: str(v))
+def test_cart_post_body_messages(api, make_user, body, expected):
+    r = _post_cart(api, make_user(), str(uuid.uuid4()), body)
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == expected
+    _no_raw_names(r.json()["message"])
+
+
+@pytest.mark.parametrize("body, expected", CART_BODY_CASES, ids=lambda v: str(v))
+def test_cart_patch_body_messages(api, make_user, body, expected):
+    r = api.patch(f"{CART_API}/{uuid.uuid4()}", json=body, headers=auth_header(make_user()), timeout=5)
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == expected
+    _no_raw_names(r.json()["message"])
+
+
+def test_cart_patch_invalid_item_id_with_bad_body_still_labelled(api, make_user):
+    r = api.patch(f"{CART_API}/not-a-uuid", json=_valid_body(), headers=auth_header(make_user()), timeout=5)
+    assert r.json()["message"] == "「購物車項目編號」必須是有效的 UUID 格式"
+
+
 # ---- discounts ----
 
 @pytest.mark.parametrize(
@@ -125,6 +183,12 @@ def test_cart_post_options_null_message(api, make_user, make_tour):
         ({"type": "point", "discount": {"point": -5}}, "「旅遊積分」最小值為 0"),
         ({"type": "coupon", "discount": {"coupon": "ABC123", "point": 5}}, "「優惠券代碼」與「旅遊積分」只能擇一填寫"),
         ({"type": "coupon", "discount": {}}, "「優惠券代碼」與「旅遊積分」必須擇一填寫"),
+        ({"type": "coupon", "discount": "x"}, "「優惠內容」必須是物件"),
+        ({"type": "coupon", "discount": {"coupon": ""}}, "「優惠券代碼」不可為空"),
+        ({"type": "coupon", "discount": {"coupon": 123456}}, "「優惠券代碼」必須是文字"),
+        ({"type": "coupon", "discount": {"coupon": "ABC123", "foo": 1}}, "「優惠內容」含有不支援的欄位"),
+        ({"type": 5, "discount": {"coupon": "ABC123"}}, "「優惠方式」只能是優惠券或旅遊積分"),
+        ({"type": "coupon", "discount": {"coupon": "ABC123"}, "foo": 1}, "請求內容含有不支援的欄位"),
     ],
     ids=lambda v: str(v),
 )
@@ -132,8 +196,7 @@ def test_discount_body_messages(api, make_user, body, expected):
     r = api.post(f"{DISCOUNT_API}/{uuid.uuid4()}", json=body, headers=auth_header(make_user()), timeout=5)
     assert r.status_code == 400, r.text
     assert r.json()["message"] == expected
-    for name in ("order_id", "discount", "type"):
-        assert name not in expected
+    _no_raw_names(r.json()["message"])
 
 
 def test_discount_invalid_order_id_message(api, make_user):
@@ -155,3 +218,10 @@ def test_checkout_invalid_order_id_message(api, make_user):
         assert r.status_code == 400, (url, r.text)
         assert r.json()["message"] == "「訂單編號」必須是有效的 UUID 格式", url
         assert "order_id" not in r.json()["message"]
+
+
+def test_checkout_invalid_cart_id_message(api, make_user):
+    r = api.post(f"{CHECKOUT_API}/order/not-a-uuid", headers=auth_header(make_user()), timeout=5)
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「購物車編號」必須是有效的 UUID 格式"
+    assert "cart_id" not in r.json()["message"]

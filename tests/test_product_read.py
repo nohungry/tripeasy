@@ -320,16 +320,19 @@ def test_search_duration_exceeding_range_is_400(api):
 def test_search_impossible_date_is_400(api):
     r = _search(api, start_date="2027-02-30", end_date="2027-03-05")
     assert r.status_code == 400, r.text
-    assert "出發日期" in r.json()["message"]
+    assert r.json()["message"] == "「出發日期」必須是 YYYY-MM-DD 的合法日期"
     r = _search(api, start_date="2027-02-01", end_date="2027-02-30")
     assert r.status_code == 400, r.text
-    assert "結束日期" in r.json()["message"]
+    assert r.json()["message"] == "「結束日期」必須是 YYYY-MM-DD 的合法日期"
 
 
 def test_search_offset_date_is_400(api):
     r = _search(api, start_date="2027-01-10T00:00:00+08:00", end_date="2027-01-12")
     assert r.status_code == 400, r.text
-    assert "出發日期" in r.json()["message"]
+    assert r.json()["message"] == "「出發日期」必須是 YYYY-MM-DD 的合法日期"
+    r = _search(api, start_date="2027-01-10", end_date="2027-01-12T00:00:00+08:00")
+    assert r.status_code == 400, r.text
+    assert r.json()["message"] == "「結束日期」必須是 YYYY-MM-DD 的合法日期"
 
 
 @pytest.mark.parametrize(
@@ -341,6 +344,7 @@ def test_search_offset_date_is_400(api):
         ({"duration": 99, "start_date": "2027-01-01", "end_date": "2027-01-05"},
          "「天數」不可大於出發日期到結束日期涵蓋的天數（目前區間共 5 天）"),
         ({"duration": "x"}, "「天數」必須是數字"),
+        ({"keyword": ""}, "「關鍵字」不可為空"),
         ({"limit": 0}, "「每頁筆數」必須大於等於 1"),
         ({"page": 0}, "「頁數」必須大於等於 1"),
         ({"sort_by": "zzz"}, "「排序欄位」僅能為 price 或 date"),
