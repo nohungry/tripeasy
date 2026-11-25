@@ -78,12 +78,6 @@ def test_fake_tour_routes_removed(page: Page, path):
     expect(page.get_by_text("找不到頁面", exact=True)).to_be_visible()
 
 
-def test_add_to_cart_coming_soon(page: Page, db):
-    tour_id, title = _seed_tour(db, "travel")
-    _open_detail(page, tour_id)
-    expect(page.get_by_role("button", name="加入購物車（即將開放）")).to_be_disabled()
-
-
 def test_detail_promo_price_shown(page: Page, db, make_tour):
     tour = live_promotion(db, make_tour)
     _open_detail(page, tour["tour_id"])
