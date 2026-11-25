@@ -1,0 +1,188 @@
+# TripEasy 交易上鎖順序
+
+核對基準：backend `0e3b192`（`git -C backend rev-parse --short HEAD`）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
+
+## 規範順序（P4 計畫 GC14，具約束力）
+
+`user (FOR NO KEY UPDATE, checkout only)` → `orders (FOR UPDATE)` → `payment (FOR UPDATE)` → `orders/order_item` → `user_coupon` / `point_record` → `user_level` → `cart (FOR UPDATE)` → `cart_item`
+
+任何碰 `cart_item` 的交易必須先 `FOR UPDATE` 鎖其所屬 `cart`。
+
+### 已知例外
+
+`reserveDiscount` 的點數路徑先鎖 `user_level`，再碰本訂單的 `point_record`／`user_coupon`。因子資料都限定在已鎖住的那張訂單，不構成循環。
+
+同一理由也涵蓋點數路徑之後對本訂單 `order_item` 與 `orders` 的寫入（`controllers/checkout.js:199`、`:203`、`utils/trade.js:316`）：這些列只有持有該訂單 `orders` 鎖的交易才會動，沒有別的交易會反向取得。
+
+### 共同前提
+
+所有會改訂單狀態、保留或點數的路徑，都先 `lockOrder`（`utils/trade.js:21-30`，`SELECT ... FROM orders WHERE order_id = $1 FOR UPDATE`）。同一張訂單的子列（`order_item`、該訂單的 `user_coupon`／`point_record`）因此只會被持有該訂單鎖的交易修改。下列各節的「無環」判斷都建立在這個前提上。
+
+## 各路徑
+
+### 1. checkout 建單：`POST /checkout/order/:cart_id`
+
+`controllers/checkout.js:19-106`
+
+| 順序 | 表 | 鎖 | 位置 |
+|---|---|---|---|
+| 1 | `user` | `FOR NO KEY UPDATE` | `controllers/checkout.js:29` |
+| 2 | `cart`、`cart_item` | 無（一般讀取，不加鎖；見下方註） | `controllers/checkout.js:31`、`:37-48` |
+| 3 | `orders`（該會員所有 -1／0 訂單，`ORDER BY created_at`） | `FOR UPDATE` | `utils/trade.js:204`（`cancelPendingOrders`，呼叫處 `controllers/checkout.js:55`） |
+| 4 | `orders`／`order_item` | UPDATE（取消） | `utils/trade.js:208` → `setOrderStatus` `:118-127` |
+| 5 | `point_record`、`user_coupon` | DELETE／UPDATE（釋放保留） | `utils/trade.js:209` → `releaseReservations` `:106-116` |
+| 6 | `orders`、`order_item` | INSERT（新單） | `controllers/checkout.js:58`、`:66` |
+
+註：步驟 2 對 `cart_item` 只做不加鎖的讀取（MVCC），不持有任何列鎖，所以不會參與死結；它不遵守「碰 `cart_item` 先鎖 `cart`」的字面規則，但也不會造成順序反向。建單快照可能與併發的購物車編輯有落差，已列為已知限制。
+
+### 2. preview：`PATCH /checkout/preview/:order_id`
+
+`controllers/checkout.js:151-231`（含 `reserveDiscount`，見第 4 節）
+
+1. `orders` `FOR UPDATE`：`controllers/checkout.js:164` → `utils/trade.js:21-30`
+2. `expireIfOverdue`（見第 7 節）：`controllers/checkout.js:166`
+3. 無鎖讀取：`paymentInProgress`（`:175`，`utils/trade.js:147-158`）、`reservationMatches`（`:179`，`utils/trade.js:162-183`，讀 `user_coupon`／`point_record`，付款進行中放行「同折扣」用）、`evaluateDiscount`（`:189`，`utils/trade.js:216-267`）
+4. 非付款進行中時：`reserveDiscount`（`controllers/checkout.js:196`）
+5. `orders` UPDATE：`controllers/checkout.js:199`；`orders`／`order_item` UPDATE：`setOrderStatus` `controllers/checkout.js:203`
+
+### 3. 試算折扣、取消折扣、結帳摘要
+
+三者都只持有 `orders` 鎖，且鎖到 COMMIT（即使不寫入，也會與 notify、付款互相序列化）。
+
+**試算折扣** `POST /trade/discounts/:order_id`：`controllers/discounts.js:25-101`
+- `orders` `FOR UPDATE`：`controllers/discounts.js:36`
+- `expireIfOverdue`：`:38`
+- `evaluateDiscount` 與 `user_level` 餘額讀取皆無鎖：`:47`、`:69`；不寫保留
+
+**取消折扣** `GET /trade/discounts/:order_id`：`controllers/discounts.js:104-154`
+- `orders` `FOR UPDATE`：`controllers/discounts.js:113`
+- `expireIfOverdue`：`:115`；`paymentInProgress`：`:122`（付款進行中回 409）
+- `releaseReservations`（`point_record` → `user_coupon`）：`:126`
+- `orders` UPDATE：`:127`
+
+**結帳摘要** `GET /checkout/order/:order_id`：`controllers/checkout.js:234-326`
+- `orders` `FOR UPDATE`：`controllers/checkout.js:244`，持有到 `:266` COMMIT
+- `expireIfOverdue`：`:246`；其餘皆為讀取
+
+### 4. reserveDiscount
+
+`utils/trade.js:271-320`，呼叫端必須已 `lockOrder`。
+
+- coupon 路徑：`user_coupon` `FOR UPDATE`（`:277`）→ 重新 `evaluateDiscount`（`:280`）→ `releaseReservations`（`:299`；`point_record` DELETE `:108`、`user_coupon` UPDATE `:111`）→ `user_coupon` UPDATE（`:302`）→ `orders` UPDATE（`:316`）
+- point 路徑（已知例外）：`user_level` `FOR UPDATE`，`ORDER BY level_id` 鎖該會員所有列（`:288`）→ 重新 `evaluateDiscount`（`:291`）→ `releaseReservations`（`:299`）→ `point_record` INSERT（`:309`）→ `orders` UPDATE（`:316`）
+- 為什麼無環：point 路徑持有 `user_level` 時，只等本訂單的子列，這些列只有持有本訂單 `orders` 鎖的交易能動。另一張訂單的 `settlePaidOrder`／`refundOrder` 持有的是它自己訂單的子列，等的是 `user_level`，不會反過來等本訂單的子列。多列 `user_level` 鎖定一律 `ORDER BY level_id`，兩個 point 路徑之間順序一致。
+
+### 5. 發起付款：`POST /newebpay/payment`
+
+`controllers/newebpay.js:25-110`
+
+1. `orders` `FOR UPDATE`：`controllers/newebpay.js:34`
+2. `expireIfOverdue`：`:36`；`pastOrderDeadline`：`:45`
+3. 無鎖讀取：`computePayable`（`:49`）、`order_item`／`tour` 標題（`:50`）、`user` email（`:58`）
+4. `payment` INSERT：`:61`（新列，不需先鎖）
+
+### 6. notify
+
+`controllers/newebpay.js:113-213`（驗簽、解密在 `:117-128`，尚未開交易）
+
+共同開頭：
+1. `payment` 以 `merchant_order_no` 查 `order_id`：`controllers/newebpay.js:136`（不加鎖，只為了知道要鎖哪張訂單）
+2. `orders` `FOR UPDATE`：`:147`
+3. `payment` `FOR UPDATE`：`:150`
+4. `payment_status = 1` 已處理：COMMIT 回 200（`:154`）
+
+分支：
+- 訂單不是 0（逾時、取消等）：只 UPDATE `payment`（`:166`），COMMIT
+- 金額不符：只 UPDATE `payment`（`:177`），COMMIT 回 400
+- **失敗通知**（訂單為 0、金額相符）：只 UPDATE `payment`（`:188`），訂單維持原狀
+- **成功通知**（訂單為 0、金額相符）：UPDATE `payment`（`:194`）→ `settlePaidOrder`（`:201`，`utils/trade.js:324-376`）：
+  1. `orders`／`order_item` UPDATE（`setOrderStatus`，`utils/trade.js:329`）
+  2. `user_coupon` UPDATE（`:331`）
+  3. `point_record` UPDATE（`:336`）、INSERT（`:345`）
+  4. `user_level` UPDATE（`:350`；`travel_point` 在 `user_level`，不在 `user`；`point_record` INSERT 對 `user` 只取 FK 的 KEY SHARE，與 checkout 的 `NO KEY UPDATE` 相容）
+  5. `cart` `FOR UPDATE`，該會員所有列 `ORDER BY cart_id`（`:358`）
+  6. `cart_item` DELETE（`:359-367`）
+  7. `cart` UPDATE（重算總額，`:368-373`）
+
+### 7. 逾時轉換：expireIfOverdue
+
+`utils/trade.js:186-196`。目前沒有排程，逾時只在請求碰到訂單時順手轉換（排程屬 P6）。
+
+呼叫端：preview（`controllers/checkout.js:166`）、結帳摘要（`:246`）、試算折扣（`controllers/discounts.js:38`）、取消折扣（`:115`）、發起付款（`controllers/newebpay.js:36`）。notify 不呼叫它。
+
+呼叫前一律已 `lockOrder`。內部依序：`pastOrderDeadline`（讀，`:190`）→ `paymentInProgress`（讀，`:191`）→ `setOrderStatus` 轉 4（`orders`／`order_item` UPDATE，`:193`）→ `releaseReservations`（`point_record` DELETE、`user_coupon` UPDATE，`:194`）。轉換後各呼叫端必須 COMMIT，否則會被回滾。
+
+### 8. 退款 refundOrder
+
+HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；邏輯 `utils/trade.js:380-422`。
+
+1. `orders` `FOR UPDATE`：`utils/trade.js:381`
+2. `orders`／`order_item` UPDATE 轉 3：`:387`
+3. `user_coupon` UPDATE（歸還券）：`:389`
+4. `point_record` 讀取加總（`:394`）、INSERT 退款退回（`:403`）、INSERT 退款收回（`:409`）
+5. `user_level` UPDATE：`:415`
+
+退款不鎖 `payment`、不碰 `cart`／`cart_item`。與 notify 的順序（`orders` → ... → `user_level`）一致，所以退款與重複 notify 併發時，後到者在 `orders` 上等待。
+
+### 9. 購物車
+
+`controllers/cart.js`。三條寫入路徑都遵守「先鎖 `cart`，再碰 `cart_item`」，最後 `recalcCartTotal`（`:5-12`）UPDATE `cart`（已持有鎖）。
+
+**新增** `POST`（`:15-87`）
+1. `cart` `FOR UPDATE`，以 `user_id` 找：`:26-29`；沒有則 INSERT `cart`（`:31`）
+2. `cart_item` `FOR UPDATE`，以合併鍵（同 `tour_id`、`start_date`、`room_type`）找：`:41-47`
+3. `cart_item` UPDATE 數量（`:51`）或 INSERT（`:56`）
+4. `recalcCartTotal`：`:62`
+
+**修改** `PATCH`（`:140-192`）
+1. `cart` `FOR UPDATE OF c`，以 `cart_item_id` 連回所屬 cart：`:150-154`
+2. `cart_item` `FOR UPDATE`：`:156-159`
+3. `cart_item` UPDATE：`:160`
+4. `recalcCartTotal`：`:166`
+
+**刪除** `DELETE`（`:90-137`）
+1. `cart` `FOR UPDATE OF c`，同上：`:99-103`
+2. `cart_item` DELETE：`:105`
+3. `recalcCartTotal`：`:111`
+
+**列表** `GET`：不開交易、不加鎖。
+
+註：`cart` 沒有 `UNIQUE(user_id)`，併發首次加入可能建出兩個 cart；`settlePaidOrder` 因此鎖該會員所有 cart 列。
+
+### 10. 不在交易主線上、但碰到相關表的路徑
+
+- `userinfo.js:155`：Google 登入 `user` `FOR UPDATE`（以 email），不碰交易表。
+- `userinfo.js:31`、`:37`、`:209`、`:213`：新會員建立時 INSERT `user_level`／`point_record`，是新列，不與交易競爭。
+- `admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。
+- `controllers/coupon.js:209`：INSERT `user_coupon`（領券），不開交易。
+
+## 檢查結果
+
+規範順序之下沒有反向的路徑。兩點觀察：
+1. 已知例外（第 4 節 point 路徑）除了 `point_record`／`user_coupon`，也會在持有 `user_level` 時寫本訂單的 `order_item`／`orders`（`controllers/checkout.js:199`、`:203`、`utils/trade.js:316`）。同樣只動已鎖住的那張訂單的列，無環，上方「已知例外」一節已一併說明。
+2. checkout 建單（第 1 節步驟 2）以不加鎖讀取碰 `cart_item`，不持任何列鎖，不能構成死結。
+
+## 對應的測試
+
+總覽 repo `tests/`（以下皆已 grep 確認存在）。
+
+鎖順序的決定性檢查（測試連線先鎖住 `cart`，請求必須卡在 `cart` 上，另一條連線 `NOWAIT` 鎖 `cart_item` 要成功；共用 helper `_assert_waits_on_cart_not_cart_item`）：
+- `tests/test_trade_payment.py::test_cart_patch_locks_cart_before_cart_item`
+- `tests/test_trade_payment.py::test_cart_delete_locks_cart_before_cart_item`
+- `tests/test_trade_payment.py::test_settlement_locks_cart_before_cart_item`
+
+併發與序列化：
+- `tests/test_trade_payment.py::test_notify_concurrent_duplicates_settle_once`：重複 notify 併發，只結算一次
+- `tests/test_trade_refund.py::test_concurrent_refunds_settle_once`：兩個退款併發，一個 200、一個 409
+- `tests/test_trade_refund.py::test_refund_and_duplicate_notify_concurrently`：退款與重複 notify 併發，不 500、點數一致
+- `tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending`：併發建單，只留一張未付款訂單（`user` 列鎖）
+- `tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500`：建單與點數 preview 併發 8 輪，不死結
+- `tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once`：先鎖住 `user_coupon` 列，兩張訂單的 preview 都卡在鎖上，放行後只有一個保留成功
+
+已知缺口：`NOWAIT` 測試等待固定 1.5 秒，慢速 CI 可能誤綠（見 `docs/reports/phase-4.md` 附錄 B）。`user_level` 路徑（point 例外）只有上面的 8 輪併發測試間接覆蓋，沒有決定性的鎖順序測試。
+
+## 維護方式
+
+- 行號會隨程式變動。每個 phase 的計畫第一步，用 `git -C backend rev-parse --short HEAD` 取得 backend 現況，逐條核對本文件的 `file:line`，並更新頂端的核對 commit。
+- 新增或修改任何開交易並碰到上述表的路徑時，必須在本文件補上（或更新）一節：依序列出鎖哪些表、用什麼鎖、`file:line`，並確認符合規範順序；有例外就寫進「已知例外」並說明為什麼無環。
+- 新增碰 `cart_item` 的交易，先鎖所屬 `cart`，並比照 `_assert_waits_on_cart_not_cart_item` 補一個決定性測試。
