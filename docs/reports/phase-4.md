@@ -133,8 +133,8 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 - backend `a81ea11`、`e66c9d4`：新增 `utils/dateRules.js`（`strictDate`、`strictLocalDateTime`、`todayInTaipei`）；日期只接受真實的 `YYYY-MM-DD`、`end_date` 帶時區偏移的規則與購物車 `start_date` 統一；搜尋訊息改中文標籤（`tests/test_product_read.py`、`e2e/test_product_flow.py` 同步）。
 - **共用格式化函式（結構性修正）**：第 1–2 輪逐個欄位補訊息，都沒有收斂（見 §2.2）；第 3 輪改為 `utils/Validator/joiMessage.js` 的 `userMessage()`：取 `details[0].message`，空值、非字串或含 ASCII `"` 就回固定的「輸入的資料格式不正確」（本專案自訂訊息全是中文且用「」；Joi 17 內建預設訊息以 `"label"` 開頭，所以一定含 `"`），不依賴 error code 清單。
 **紅燈**：[task-10-red.txt](evidence/phase-4/task-10-red.txt)（總覽 `dd36b5d`，39 failed、21 passed）；第 1 輪 [task-10-fix1-red.txt](evidence/phase-4/task-10-fix1-red.txt)（`594c783`，26 failed、71 passed）；第 2 輪 [task-10-fix2-red.txt](evidence/phase-4/task-10-fix2-red.txt)（`a0ce49e`，27 failed、96 passed）；第 3 輪 [task-10-fix3-red.txt](evidence/phase-4/task-10-fix3-red.txt)（`ca84cd5`，15 failed；掃描前實測 74 筆洩漏）。
-**綠燈**：backend `e66c9d4`、`c9e3acb`、`efa991f`、`ad01f5f`；`tests/test_validator_sweep.py`（15 passed）在容器內對 14 個 schema 送 1477 筆惡意輸入（null、`[]`、`{}`、`true`、`""`、±1e30、字串、小數、JSON `1e400`…），斷言沒有任何一筆回應含 ASCII 雙引號；`tests/test_validator_messages.py`（80 passed）。
-**殘留**：product 的其他 handler 與 newebpay／purchases／promotion／home 的 validator 仍含參數名（deferred，附錄 B）。`POST /user/collection/info/not-a-uuid` 回 500 是已知的驗證缺陷，`tests/test_async_errors.py` 依賴它（P5）。
+**綠燈**：backend `e66c9d4`、`c9e3acb`、`efa991f`、`ad01f5f`；`tests/test_validator_sweep.py`（Task 10 結束時 15 passed；最終修正波後 16 passed）在容器內對 14 個 schema（最終修正波後 15 個，加入 `/payment` 的 schema）送 1477 筆（最終 1510 筆）惡意輸入（null、`[]`、`{}`、`true`、`""`、±1e30、字串、小數、JSON `1e400`…），斷言沒有任何一筆回應含 ASCII 雙引號；`tests/test_validator_messages.py`（80 passed）。
+**殘留**：product 的其他 handler 與 purchases／promotion／home 的 validator 仍含參數名（deferred，附錄 B；newebpay 的 `/payment` 已於最終修正波 F5 處理）。`POST /user/collection/info/not-a-uuid` 回 500 是已知的驗證缺陷，`tests/test_async_errors.py` 依賴它（P5）。
 
 ### 1.13 前端：購物車、結帳、付款結果頁（P4 spec §8）
 
@@ -162,7 +162,7 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 |---|---|
 | 應付金額公式兩處不同（有／無 `NULLIF(…,0)`） | 兩處都用「0 視同 NULL」（Pre-flight；§1.3） |
 | 計畫的建單鎖 `FOR UPDATE` 會與外鍵檢查死結 | 改 `FOR NO KEY UPDATE`（§2.2） |
-| spec §5.5 第 7 步原只含成功通知，且排在第 4 步金額核對之後；實作與審查顯示順序會讓合法的折扣後通知被判金額不符 | 2026-11-25 兩度修訂 spec：第 7 步擴大為成功與失敗通知皆只記錄，且**先於**金額核對（總覽 `3a3d9fa`、`77658a0`；§2.2） |
+| spec §5.5 第 7 步（舊編號；現為第 4 步）原只含成功通知，且排在第 4 步（舊編號；現為第 5 步）金額核對之後；實作與審查顯示順序會讓合法的折扣後通知被判金額不符 | 2026-11-25 兩度修訂 spec：第 7 步擴大為成功與失敗通知皆只記錄，且**先於**金額核對（總覽 `3a3d9fa`、`77658a0`；§2.2） |
 | spec §3.1「訂單期限內都可送出付款」語意模糊，計畫的演算法會讓重付無限延長訂單 | `POST /payment` 在訂單自己的期限過後一律 409 `訂單已逾時`（spec 同註記補充，§2.2） |
 | 試算 API 先呼叫 `expireIfOverdue`，會寫 DB，與「試算不寫入」衝突 | 逾時轉 4 屬狀態修正、不算折扣寫入（Pre-flight） |
 | 取消折扣 API 沒有狀態檢查，會清掉已付款訂單的折扣欄位 | 加 -1／0 狀態與逾時檢查（`3118941`；Task 6 裁決） |
@@ -176,7 +176,7 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 
 ### 1.16 最終審查修正波（whole-branch review；Task 13 Step 4）
 
-最終審查（reviewer-opus、reviewer-fable 平行、互不看對方結果）皆判「With fixes」。主對話裁決後，在**單一修正波**完成以下項目。紅燈：[final-fix-red.txt](evidence/phase-4/final-fix-red.txt)（13 個 pytest 失敗、2 個 e2e 失敗，皆為斷言失敗；總覽 `5096cfd`）。紅燈測試曾有一支寫錯欄位名（`point_record_id`，實際是 `point_id`），在紅燈 commit 前以暫存 backend 修正還原後重跑確認為斷言失敗，已就地修正並重存 evidence（紅燈 commit 以 amend 更新，未 push）。
+最終審查（reviewer-opus、reviewer-fable 平行、互不看對方結果）皆判「With fixes」。主對話裁決後，在**單一修正波**完成以下項目。紅燈：[final-fix-red.txt](evidence/phase-4/final-fix-red.txt)（13 個 pytest 失敗、2 個 e2e 失敗；總覽 `5096cfd`）。其中 12 個 pytest 與 2 個 e2e 是斷言失敗；惡意輸入矩陣那一個（`test_hostile_matrix_has_no_joi_default_leaks`）是 `TypeError`（`paymentSchema` 尚未匯出，容器內 `schema` 為 undefined），不是偵測到洩漏，屬「測試輔助尚未存在」的紅燈。紅燈測試曾有一支寫錯欄位名（`point_record_id`，實際是 `point_id`），在紅燈 commit 前以暫存 backend 修正還原後重跑確認為斷言失敗，已就地修正並重存 evidence（紅燈 commit 以 amend 更新，未 push）。
 
 | 項目 | 問題 | 修正 | 覆蓋測試 |
 |---|---|---|---|
@@ -186,7 +186,7 @@ P4 的目標：讓「登入 → 詳情頁加入購物車 → 購物車調整數�
 | F4 | 回到結帳頁、什麼都沒改就送出，preview 在付款進行中一律 409 | backend `237f63b`：`utils/trade.js` 新增 `reservationMatches`；付款進行中，要求的折扣與目前保留相同（同類型、同 `coupon_id`／同 `used_point`、或兩邊都沒有）時放行，只更新地址、電話、付款方式，不動保留；不同仍 409「付款進行中，請稍後再試」。只讀、不新增鎖，鎖順序不變（GC14） | `test_preview_same_coupon_while_payment_in_progress_is_ok`、`…_same_points_…`（含「不同點數仍 409、保留不變」）、`…_same_none_…`、`…_other_discount_…_still_409`；既有 `test_preview_while_payment_in_progress_is_409` 維持綠 |
 | F5 | `middlewares/newebpay` 的訊息含 `order_id` 且繞過 `userMessage()` | backend `237f63b`：標籤改「訂單編號」、改走 `userMessage(error)`；匯出 `paymentSchema` | `test_payment_bad_body_is_400_without_raw_names`（`[]`、缺、空字串、非 UUID、數字）；原始碼掃描新增 `newebpay`；惡意輸入矩陣新增 `np.payment` |
 
-文件修正（無紅燈）：D1 本報告（§4.3 密碼、促銷 checkbox、附錄 A、§1.8、標頭、§2.3「觀察」標明為實作者觀察、附錄 B）；D2 P4 spec §5.5 notify 步驟就地改寫（順序與程式一致，刪除「以此為準」與舊 `Status = SUCCESS` 句；「契約現行」改為「已改寫」；§3.1 新增付款進行中的同折扣例外）；D3 計畫 GC14 補 `reserveDiscount` 點數路徑的已知例外、GC9 的 `cryptography` 改為 Task 7；D4 前端路由註解「產品細項頁面(假資料)」改為「結帳填寫付款資料頁」（`tests/test_api_smoke.py` 仍只有 GET，標頭不需改）。
+文件修正（無紅燈）：D1 本報告（§4.3 密碼、促銷 checkbox、附錄 A、§1.8、標頭、§2.3「觀察」標明為實作者觀察、附錄 B）；D2 P4 spec §5.5 notify 步驟就地改寫（順序與程式一致，刪除「以此為準」與舊 `Status = SUCCESS` 句；「契約現行」改為「已改寫」；§3.1 新增付款進行中的同折扣例外）；D3 計畫 GC14 補 `reserveDiscount` 點數路徑的已知例外、GC9 的 `cryptography` 改為 Task 7；D4 前端路由註解「產品細項頁面(假資料)」改為「結帳填寫付款資料頁」（`tests/test_api_smoke.py` 標頭「只做 GET，不寫入資料」已不精確——summary 測試以 fixture 自建訂單——改為註明該例外，併入總覽修正 commit）。
 
 **不在這一波（deferred，見附錄 B）**：訂單折扣欄位在逾時／取消後不重設（P5／P6）、回饋公式在 summary 與 settle 各算一次（兩者同為 `floor(payable × 0.1)`，保留並註記）、`NOWAIT` 固定 1.5 秒等測試穩健性（P5）、Google 登入名稱與 2–10 字元規則（P5）、會員中心的負點數顯示（待使用者決定）。
 
@@ -203,7 +203,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | # | 裁決（出處） | 理由與代價 |
 |---|---|---|
 | R1 | **建單鎖會員列由 `FOR UPDATE` 改 `FOR NO KEY UPDATE`**（Task 5 修正輪，backend `890106b`；紅燈 [task-5-red-deadlock.txt](evidence/phase-4/task-5-red-deadlock.txt)，總覽 `63218f5`） | 雙審共同 Important：`FOR UPDATE` 會與 `INSERT orders`／`point_record` 的外鍵檢查（`KEY SHARE` 鎖會員列）死結。這是主對話在 Pre-flight 自己下的裁決（要求以會員列序列化同使用者建單），計畫照做，屬主對話錯誤。`FOR NO KEY UPDATE` 與 `KEY SHARE` 相容、與自己互斥，序列化效果不變。代價：無。紅燈在舊鎖上重現（建單／preview 併發測試 8 輪，建單 500）。ledger 另記一個 minor：報告寫「第 2 輪」，evidence 是第 0 輪出現，兩者不符 |
-| R2 | **notify 第 7 步先於第 4 步金額核對；訂單非 0 時成功與失敗通知皆只記錄**（Task 8 審查輪 1、2，backend `5157494`、`56146f9`；紅燈 [task-8-fix1-red.txt](evidence/phase-4/task-8-fix1-red.txt) 5 failed、[task-8-fix2-red.txt](evidence/phase-4/task-8-fix2-red.txt) 3 failed；spec `3a3d9fa`、`77658a0`） | 雙審共同 Important：有折扣的訂單逾時／取消後保留已釋放，應付金額回到未折抵的小計，用它核對會把合法的折扣後通知誤判為「金額不符」回 400，而不是「記錄、人工退款」的 200。裁決：金額核對只在訂單為 0 時進行；其餘只寫 `result_info`（含 notify 的 `Amt`）、`result_time`，`payment_status` 維持 0（否則違反 V5 部分唯一索引會回 500）。代價：已死訂單上偽造金額的通知會被「記錄」而非拒絕——簽章仍必驗，風險低 |
+| R2 | **notify 第 7 步先於第 4 步金額核對；訂單非 0 時成功與失敗通知皆只記錄**（Task 8 審查輪 1、2，backend `5157494`、`56146f9`；紅燈 [task-8-fix1-red.txt](evidence/phase-4/task-8-fix1-red.txt) 5 failed、[task-8-fix2-red.txt](evidence/phase-4/task-8-fix2-red.txt) 3 failed；spec `3a3d9fa`、`77658a0`） | （以下「第 7 步」「第 4 步」為修訂當時的舊編號，現行編號見 §1.16／spec §5.5：舊第 7 步＝現第 4 步，舊第 4 步＝現第 5 步。）雙審共同 Important：有折扣的訂單逾時／取消後保留已釋放，應付金額回到未折抵的小計，用它核對會把合法的折扣後通知誤判為「金額不符」回 400，而不是「記錄、人工退款」的 200。裁決：金額核對只在訂單為 0 時進行；其餘只寫 `result_info`（含 notify 的 `Amt`）、`result_time`，`payment_status` 維持 0（否則違反 V5 部分唯一索引會回 500）。代價：已死訂單上偽造金額的通知會被「記錄」而非拒絕——簽章仍必驗，風險低 |
 | R3 | **標準鎖順序與鎖清單**（Task 8 修正輪 1→2，backend `5157494`、`56146f9`；紅燈 `e01fc43`；清單 ledger 的 lock-inventory） | 鎖順序缺陷第 3 次出現（Task 5 會員列、Task 8 F2 `settlePaidOrder` 與 `cart.js` 反向、F2 修正後又與 `cart.js` 的 patch／delete 反向），**主對話諮詢 advisor 後改為完整盤點**：依 `lock-inventory.md` 列出 12 條路徑，只有 `cart` patch／delete 與 add／settle 反向（I-1…I-4，皆為 cart_item → cart）。定案順序：`user(NO KEY UPDATE，僅 checkout)` → `orders(FOR UPDATE)` → `payment(FOR UPDATE)` → `orders/order_item` → `user_coupon/point_record` → `user_level` → `cart(FOR UPDATE)` → `cart_item`；任何碰 `cart_item` 的交易先鎖所屬 cart 列。範圍擴大到 `controllers/cart.js`，並以 `NOWAIT` 的決定性鎖順序測試取代難以重現的併發測試（寫進 GC14）。代價：改動到非 P4 計畫範圍的檔案；若漏盤點會冒出新的死結類別 |
 | R4 | **CORS 白名單對 notify／return 兩個確切路徑例外**（Task 12，backend `574f30c`；§1.11） | 閘道回呼本來就是跨來源；兩者皆由簽章驗證，return 不改資料。代價：兩個靠簽章保護的端點接受任何 origin |
 | R5 | **Joi 訊息改共用格式化函式**（Task 10 第 3 輪，backend `ad01f5f`；§1.12） | 逐欄位補訊息 3 輪不收斂（第 1 輪 6 項處理、仍有 1–2 項；第 2 輪 K1／K3 仍開；第 3 輪才出現 74 筆洩漏）。**advisor 建議改結構性修正**：`userMessage()` 固定備援＋容器內惡意輸入掃描＋原始碼掃描；規定第 3 輪是最後一次 resume，第 4、5 輪要換更強的 implementer。代價：通用訊息損失一些具體性 |
@@ -267,7 +267,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 2. **決定性的併發測試**：兩個退款或兩個 notify 用 `threading.Barrier` 同時發；折扣保留的併發測試由另一條連線鎖 `user_coupon` 列、輪詢 `pg_stat_activity` 確認兩個請求都在等鎖後才放行；鎖順序測試用 `NOWAIT` 取代難以重現的死結。ledger 也記了弱點：`NOWAIT` 測試用固定 1.5 秒等待，慢速 CI 有誤綠的可能（deferred）。
 3. **用資料庫時間製造逾時**：直接改 `created_at` 或 `payment.created_at`，不用真的等；`ORDER_PAYMENT_TIMEOUT_MINUTES`、`NEWEBPAY_TRADE_LIMIT_SECONDS` 由環境變數設定。
 4. **Mutation 驗證測試鑑別力**：Task 9 H1 把 `lockOrder` 換成無鎖 `SELECT`，5 次中 4 次失敗（證明測試真的在驗鎖）；Task 6 的同類驗證驗錯對象（見 §2.3），列為已知缺口。
-5. **容器內的惡意輸入矩陣**（`test_validator_sweep.py`）：對 14 個 schema 送 1477 筆輸入，斷言回應不含 ASCII 雙引號。
+5. **容器內的惡意輸入矩陣**（`test_validator_sweep.py`）：對 15 個 schema 送 1510 筆輸入（最終修正波後；原 14 個、1477 筆），斷言回應不含 ASCII 雙引號。
 6. **原始碼掃描當護欄**：`test_no_signature_bypass_switch`（正式程式碼不得有跳過簽章的開關）與 `createDecipheriv` 唯一呼叫處掃描（紅燈 evidence 中的 `assert not ['controllers/newebpay.js: createDecipheriv']`）。ledger 的 minor：Joi 的原始碼掃描 regex 可繞過（只要求每個檔案有一個 `userMessage(`）。
 7. **seed 帳號唯讀**：對 seed 訂單呼叫 summary、preview、試算／取消折扣、建單、付款都算寫入（§4.2、附錄 B）。
 
@@ -385,7 +385,7 @@ seed 的未付款訂單 #16（alice，-1）、#17（bob，0）在展示環境第
 **B.4 ledger 標「P5 以後」或 final review 待決的項目**
 - **交易與資料**：cart 沒有 `UNIQUE(user_id)`（併發首次加入可能建出兩個 cart）；PATCH 沒有比對 item（飯店可繞過空房檢查）、合併／PATCH 未重查空房、PATCH 後合併鍵可能重複；`catch` 內 `ROLLBACK` 丟例外則 `next` 不被呼叫、`release` 未帶 error（Task 1）；`userinfo.js` 的 Google 登入 `FOR UPDATE` 會員列可能與外鍵 `KEY SHARE` 同類衝突（Task 5，行號取自審查當時的 SHA，未重新核對）；`discounts.js` 的 `user_point` 未扣其他待付款訂單已保留的點數（既有）；`admin.js:273` 的 admin 解除優惠券綁定可刪掉被保留（-1）的券（→ P6）；checkout 讀 `cart_item` 未加鎖；read 路徑（summary、試算、取消折扣）持有 `orders FOR UPDATE` 至 COMMIT。
 - **金額與退款**：會員中心的點數顯示在退款後會出現原始的負 `travel_point`（`userinfo.js` 多處，Q2 的顯示範圍尚未決定，Task 9 ledger 標「final review／ask user」）；`payment.discount_price` 在 seed 列沿用舊規則，報表若用它算營收，seed 列要 fallback。
-- **驗證訊息**：`product_Validator.js` 的 hidden-share `tour_id` 等、newebpay／purchases／promotion／home 的 validator 仍含參數名；`test_product_write.py:523` 仍斷言 `「tour_id」`；`cartIDSchema` 的 `cart_id` 訊息（ledger 標 final review）；訊息措辭不一致、無共用標籤常數；`POST /user/collection/info/not-a-uuid` 回 500（`test_async_errors.py` 依賴它）；product 的 `product_Validator.js:555` admin 訊息含 ASCII `"`，在擴大 `userMessage` 之前必須先改。
+- **驗證訊息**：`product_Validator.js` 的 hidden-share `tour_id` 等、purchases／promotion／home 的 validator 仍含參數名；`test_product_write.py:523` 仍斷言 `「tour_id」`；`cartIDSchema` 的 `cart_id` 訊息（ledger 標 final review）；訊息措辭不一致、無共用標籤常數；`POST /user/collection/info/not-a-uuid` 回 500（`test_async_errors.py` 依賴它）；product 的 `product_Validator.js:555` admin 訊息含 ASCII `"`，在擴大 `userMessage` 之前必須先改。
 - **後端其他缺陷**：food 空位檢查讀 `options.start_time`，但 food schema 只允許 `start_date`，所以 `restaurant_booking` 永遠不檢查容量；購物車列表 `ORDER BY cart_id` 順序不穩；超過 50 項時列表與 summary 不符。
 - **前端**：結果頁任何錯誤都顯示「查無訂單」且不重試；已付款／已取消的訂單仍可開付款表單；重試時地址與電話沒有預填；點數 0 時仍送 `used_point: 0`；`submit` 只 await 點擊當下進行中的試算；「同意接收促銷訊息」checkbox 已移除（它沒有綁定、後端也沒有對應欄位；frontend `27f241d` 移除，之後未還原；還原延至 P5）；`blur` 與 `change` 事件可能吞掉下一次點擊；人數 2.7 靜默變 2；購物車過期項目 PATCH 400 沒有說明。
 - **測試**：`NOWAIT` 鎖順序測試用固定 1.5 秒等待、慢速 CI 可能誤綠（建議改輪詢 `pg_stat_activity`）；`test_trade_limit_seconds_is_clamped` 與 `test_trade_checkout.py:267` 寫死 `docker compose exec backend`；`MOCK_BASE` 定義在兩個測試檔而不在 conftest；`test_submit_disabled_until_loaded` 的 `assert held` 不是等待（理論上可能不穩）；載入失敗測試只涵蓋 userinfo；支付錯誤 E2E 依賴 Vite dev server 的 `/src/utils/api.js`；`e2e` 單跑時不等待 frontend 就緒；`TZ=UTC` 的固定只存在 compose，P7 與其他部署必須保持 backend `TZ=UTC`。

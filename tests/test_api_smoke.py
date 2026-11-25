@@ -1,6 +1,6 @@
 """P1b Task 7：seed 資料走得通 21 個物件中所有「讀取」API 的冒煙測試。
 
-只做 GET，不寫入資料。每個測試：HTTP 200、資料非空、契約列出的欄位名稱出現在第一筆資料裡
+只呼叫 GET 讀取 API（唯一例外：結帳 summary 的測試用 fixture 自建會員、行程與訂單，測完清除；seed 資料不被寫入）。每個測試：HTTP 200、資料非空、契約列出的欄位名稱出現在第一筆資料裡
 （`SELECT *` 原樣輸出的 API 直接對 tests/db_contract.py；controller 轉成英文 key 的 API 對 controller 的 key）。
 寫入購物車才會呼叫的 hotel_booking／restaurant_booking／restaurant_isclosed／restaurant_business_parsed
 由 test_views_b.py 的行為測試負責，這裡不涵蓋。
