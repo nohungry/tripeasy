@@ -435,4 +435,5 @@ def test_load_failure_shows_message(page: Page, make_user, make_tour):
     page.get_by_role("button", name="去結帳").click()
     page.wait_for_url(re.compile(r".*#/pay\?order=.+"))
     expect(page.get_by_text("資料載入失敗，請重新整理頁面")).to_be_visible()
+    page.get_by_role("button", name="OK").click()  # 先關掉後端錯誤框（開著時背景頁面不在 a11y 樹內）
     expect(page.get_by_role("button", name="確認並前往付款")).to_be_disabled()
