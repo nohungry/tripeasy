@@ -1,0 +1,538 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 7 items
+
+e2e/test_favorite_flow.py::test_p5_main_flow[chromium] FAILED            [ 14%]
+e2e/test_favorite_flow.py::test_tour_page_heart_toggles[chromium] FAILED [ 28%]
+e2e/test_favorite_flow.py::test_guest_heart_goes_to_login[chromium] FAILED [ 42%]
+e2e/test_favorite_flow.py::test_home_heart_does_not_open_tour[chromium] FAILED [ 57%]
+e2e/test_favorite_flow.py::test_heart_reverts_on_failure[chromium] FAILED [ 71%]
+e2e/test_favorite_flow.py::test_unlisted_favorite_is_marked_and_removable[chromium] FAILED [ 85%]
+e2e/test_favorite_flow.py::test_collect_page_empty[chromium] FAILED      [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_p5_main_flow[chromium] __________________________
+e2e/test_favorite_flow.py:69: in test_p5_main_flow
+    expect(heart).to_have_attribute("aria-pressed", "false")
+E   AssertionError: Locator expected to have attribute 'false'
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_have_attribute" get_by_test_id("tour-card").filter(has_text="p3-4bc3f5bc").get_by_test_id("favorite-heart") with timeout 5000ms
+E     - waiting for get_by_test_id("tour-card").filter(has_text="p3-4bc3f5bc").get_by_test_id("favorite-heart")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/search#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/search#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/search#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/search#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "購物專區" [level=2]
+E   - paragraph: 世界這麼大、 不必走得太遠 也能遇見 讓你心動的風景
+E   - paragraph: 跟著我們 把每一次出走 變成生活裡 最溫柔的片段
+E   - link "首頁":
+E     - /url: "#"
+E   - text: /
+E   - link "購物專區":
+E     - /url: "#"
+E   - text: 購買金額
+E   - spinbutton "最小金額"
+E   - text: –
+E   - spinbutton "最大金額"
+E   - text: 旅遊日期
+E   - textbox
+E   - text: –
+E   - textbox
+E   - text: 旅遊天數
+E   - combobox:
+E     - option "不限" [selected]
+E     - option "1日"
+E     - option "2日"
+E     - option "3日"
+E     - option "4日"
+E     - option "5日"
+E     - option "6日"
+E     - option "7日"
+E     - option "8日"
+E     - option "9日"
+E     - option "10日"
+E   - text: 關鍵字
+E   - textbox "請輸入關鍵字（標題或介紹）": p3-4bc3f5bc
+E   - button "搜尋"
+E   - combobox "每頁筆數":
+E     - option "筆數：2"
+E     - option "筆數：4"
+E     - option "筆數：6" [selected]
+E   - combobox "金額排序":
+E     - option "金額排序" [selected]
+E     - option "金額升序 ▲"
+E     - option "金額降序 ▼"
+E   - img "p3-4bc3f5bc"
+E   - text: 探索冒險 放鬆療癒 文化體驗
+E   - heading "p3-4bc3f5bc" [level=5]
+E   - paragraph: 測試描述
+E   - text: 2026.12.06 ~ 2026.12.08 NT$1,000
+E   - link "查看詳情":
+E     - /url: "#/tour/93f9d084-3123-48d0-95e9-ecd1df24e58d"
+E   - navigation "分頁":
+E     - button "上一頁" [disabled]
+E     - text: 第 1 頁
+E     - button "下一頁" [disabled]
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+____________________ test_tour_page_heart_toggles[chromium] ____________________
+e2e/test_favorite_flow.py:122: in test_tour_page_heart_toggles
+    expect(heart).to_have_attribute("aria-pressed", "false")
+E   AssertionError: Locator expected to have attribute 'false'
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_have_attribute" get_by_test_id("favorite-heart") with timeout 5000ms
+E     - waiting for get_by_test_id("favorite-heart")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/76848de9-62e4-450d-8d51-9aa42d8488c9#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/76848de9-62e4-450d-8d51-9aa42d8488c9#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！e2e-user
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/tour/76848de9-62e4-450d-8d51-9aa42d8488c9#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/tour/76848de9-62e4-450d-8d51-9aa42d8488c9#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E   - link "登出":
+E     - /url: "#"
+E   - heading "p3-476e92c3" [level=2]
+E   - heading "測試標語" [level=4]
+E   - img "p3-476e92c3"
+E   - paragraph: NT$1,000
+E   - paragraph: 出發日期：2026-12-06 ～2026-12-08
+E   - paragraph: 探索冒險 放鬆療癒 文化體驗
+E   - paragraph: 測試描述
+E   - paragraph:
+E     - text: 測試國 測試區 測試地址
+E     - link "Google Map":
+E       - /url: https://maps.example.com/x
+E   - text: 人數
+E   - spinbutton "人數": "1"
+E   - text: 出發日期
+E   - textbox "出發日期": 2026-12-06
+E   - text: 結束日期
+E   - textbox "結束日期": 2026-12-08
+E   - button "加入購物車"
+E   - img "圖1"
+E   - paragraph: 圖1
+E   - img "圖2"
+E   - paragraph: 圖2
+E   - img "圖3"
+E   - paragraph: 圖3
+E   - img "圖4"
+E   - paragraph: 圖4
+E   - img "圖5"
+E   - paragraph: 圖5
+E   - img "圖6"
+E   - paragraph: 圖6
+E   - heading "行程特色" [level=3]
+E   - paragraph: 特色1
+E   - img "特色1"
+E   - paragraph: 特色2
+E   - img "特色2"
+E   - paragraph: 特色3
+E   - img "特色3"
+E   - heading "行程規劃" [level=3]
+E   - paragraph: 測試行程規劃
+E   - heading "旅客評論" [level=3]
+E   - paragraph: 目前還沒有評論
+E   - list
+E   - paragraph: 購買過此行程的會員才能評論與分享隱藏玩法
+E   - heading "隱藏玩法" [level=3]
+E   - paragraph: 目前還沒有隱藏玩法
+E   - list
+E   - paragraph: 購買過此行程的會員才能評論與分享隱藏玩法
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+___________________ test_guest_heart_goes_to_login[chromium] ___________________
+e2e/test_favorite_flow.py:137: in test_guest_heart_goes_to_login
+    card.get_by_test_id("favorite-heart").click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_test_id("tour-card").filter(has_text="p3-527a7005").get_by_test_id("favorite-heart")
+_________________ test_home_heart_does_not_open_tour[chromium] _________________
+e2e/test_favorite_flow.py:150: in test_home_heart_does_not_open_tour
+    heart.click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_test_id("home-product-card").first.get_by_test_id("favorite-heart")
+___________________ test_heart_reverts_on_failure[chromium] ____________________
+e2e/test_favorite_flow.py:166: in test_heart_reverts_on_failure
+    heart.click()
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:11045: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/locator.py:222: in click
+    return await self._frame.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/frame.py:587: in click
+    return await self._channel.click(
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_test_id("tour-card").filter(has_text="p3-a1018bfc").get_by_test_id("favorite-heart")
+___________ test_unlisted_favorite_is_marked_and_removable[chromium] ___________
+e2e/test_favorite_flow.py:179: in test_unlisted_favorite_is_marked_and_removable
+    _open_collect(page)
+e2e/test_favorite_flow.py:47: in _open_collect
+    with page.expect_response(_is_favorites_list):
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+______________________ test_collect_page_empty[chromium] _______________________
+e2e/test_favorite_flow.py:195: in test_collect_page_empty
+    _open_collect(page)
+e2e/test_favorite_flow.py:47: in _open_collect
+    with page.expect_response(_is_favorites_list):
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+=========================== short test summary info ============================
+FAILED e2e/test_favorite_flow.py::test_p5_main_flow[chromium] - AssertionErro...
+FAILED e2e/test_favorite_flow.py::test_tour_page_heart_toggles[chromium] - As...
+FAILED e2e/test_favorite_flow.py::test_guest_heart_goes_to_login[chromium] - ...
+FAILED e2e/test_favorite_flow.py::test_home_heart_does_not_open_tour[chromium]
+FAILED e2e/test_favorite_flow.py::test_heart_reverts_on_failure[chromium] - p...
+FAILED e2e/test_favorite_flow.py::test_unlisted_favorite_is_marked_and_removable[chromium]
+FAILED e2e/test_favorite_flow.py::test_collect_page_empty[chromium] - playwri...
+======================== 7 failed in 163.29s (0:02:43) =========================
