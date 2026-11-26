@@ -1,6 +1,6 @@
 # P5 會員中心 設計（Spec）
 
-> 日期：2026-11-26 · 狀態：**草稿，待使用者核准**（已經過 builder check，2026-11-26）
+> 日期：2026-11-26 · 狀態：**已核准**（2026-11-26 使用者核准；已經 builder check）
 >
 > - **上位文件**：`docs/superpowers/specs/2026-10-15-tripeasy-rebuild-design.md`（以下稱「總 spec」）的 §4 P5 列、§4.1–4.4、「階段完成標準」。
 > - **前一階段**：`docs/reports/phase-4.md`（以下稱「P4 報告」）附錄 B；上鎖順序以 `docs/lock-order.md` 為準。
