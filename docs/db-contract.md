@@ -86,6 +86,7 @@
 | `payment` | 15 | 每張 `payment_status = 1` 的訂單 1 筆（第 9 項） |
 | `point_record` | 18 | `新增` 15、`減少` 3（第 10 項） |
 | `favorite` | 9 | 第 8 項 |
+| `auto_setting` | 3 | 一位使用者一列（P5 V6 `auto_setting_user_id_key`）：來源檔 alice 有兩列，`build_seed.py::merge_duplicate_auto_settings` 併成一列（每欄取 `updated_at` 較新者，相同時取 `auto_setting_id` 較小者；結果是來源 `1111aaaa-…` 那列的值：early 0、flexible 1、Japan、Tokyo、1200.5） |
 | `review` | 13 | 來源檔 10 則加 3 則 `web`；`type = 'web'` 共 5 則（第 11 項） |
 | `user_coupon` | 4 | 第 9 項最後一段 |
 
@@ -1718,7 +1719,7 @@
 | d1 | **frontend 欄位核對（前面延後的檢查）。** #11 列出的 view 沒有 controller 證據，要靠 frontend `phase-0` 實際讀取的 key 才能確定欄位與命名。P1a 不動 frontend，但讀取不受限。 | **A 在 P1b 寫 V3 SQL 之前，唯讀地 grep frontend `phase-0` 讀取的 key**，回填契約。後果：多一個小步驟；欄位與命名有證據，不必事後重做 view 與契約測試（spec 重構規則要求動到 view 時同步更新契約與契約測試）。<br>**B 不核對，照契約推測建**，等 P3–P6 各功能做到時再修。後果：每個推測錯誤都要改 view、契約與契約測試。 | **A**。理由：唯讀、成本小，且是 #11 的前置。 | 採用建議（A）；**2026-10-23 已完成，結果是沒有證據可回填**：frontend `phase-0`（`e3ad994`）只呼叫 `/auth/userinfo` 與 `/user/userinfo`（`frontend/src/utils/api.js:7,9`），`frontend/src/views/HomeView.vue:410` 的 `reviews` 是寫死的陣列，沒有任何程式讀取 `/user/collection`、`/user/purchases`、`/admin/members`、`/user/home/search/reviews`（以 `git -C frontend show phase-0:src/utils/api.js`、`git -C frontend show phase-0:src/views/HomeView.vue`、`git -C frontend grep phase-0 -- src` 驗證）。依 #11 的使用者決定改採 fallback（採用契約推測欄位表為定案） |
 | d2 | **seed 的優惠卷代碼不符合驗證器。** `utils/Validator/discounts_Validatior.js:9–13` 要求 `discount.coupon` 為 `^[A-Z0-9]{6}$`；來源檔 seed 的 5 個 `code` 只有 `VIP300` 符合，`WELCOME100`、`SUMMER50`、`TRAVEL10P`、`SPRING20` 會被 `POST /user/trade/discounts/:order_id` 以 400 擋下。 | **A 把 seed 代碼改成 6 碼大寫英數**（P1b）。後果：seed 全部可用；`description` 與代碼需一起檢查。<br>**B 放寬驗證器的 regex**。後果：seed 不用動，但要改 `utils/Validator`（P1a 不允許）。 | **A**。理由：不用動驗證器與 controller，並與 (a) 的 seed 重寫一起做。 | 採用建議（A） |
 | d3 | **seed 每位使用者有 2 個購物車，與 controller 衝突。** `controllers/cart.js:47–50` 的 `UPDATE public."cart" ... WHERE user_id = $1` 沒有限定 `cart_id`，會更新該使用者的所有購物車；來源檔 seed 每人 2 個（P1b 之後每人 1 個），加入購物車會同時改兩個購物車的 `total_price`（見 §2 `user_cartList` 邊界 controller 行為 2）。V1 `cart` 沒有 `user_id` unique。 | **A seed 改成每位使用者 1 個購物車**（P1b）。後果：controller 不用改就一致；`cart` 的 seed 筆數與引用它的 `cart_item` 要調整。<br>**B 保留 2 個**。後果：對 seed 使用者加入購物車會同時改兩個購物車的 `total_price`，結果依 `rows[0]` 與全部更新而不一致；日後 P4 修 controller 才會好。 | **A**。理由：controller 不用改，只動 seed。 | 採用建議（A） |
-| d4 | **是否補唯一約束。** 多題待確認的根源是 V1 缺少 unique：`notification`（一個行程多筆通知，#8）、`user_level`（一位使用者多筆，#22）、`favorite`（重複收藏，`V1:382–390` 沒有 `UNIQUE (user_id, tour_id)`，只靠 `middlewares/collection/index.js:68–70` 先查再寫）、`coupon.code`（#38）。 | **A 不補（V3 只建 view／function）**。後果：重複資料由 view 的規則處理（#8、#22），並行收藏仍可能寫入重複列。<br>**B 補唯一約束**（新增 migration）。後果：從根源消除重複，但動到 V1 的表結構，既有重複資料要先清理，範圍超出 P1a 與「V3 只建 view／function」。 | **A**。理由：controller 與現有流程都不需要約束就能運作，約束屬功能階段（P5 收藏、P6 優惠卷）的設計；P1b 不擴大範圍。 | 採用建議（A） |
+| d4 | **是否補唯一約束。** 多題待確認的根源是 V1 缺少 unique：`notification`（一個行程多筆通知，#8）、`user_level`（一位使用者多筆，#22）、`favorite`（重複收藏，`V1:382–390` 沒有 `UNIQUE (user_id, tour_id)`，只靠 `middlewares/collection/index.js:68–70` 先查再寫）、`coupon.code`（#38）。 | **A 不補（V3 只建 view／function）**。後果：重複資料由 view 的規則處理（#8、#22），並行收藏仍可能寫入重複列。<br>**B 補唯一約束**（新增 migration）。後果：從根源消除重複，但動到 V1 的表結構，既有重複資料要先清理，範圍超出 P1a 與「V3 只建 view／function」。 | **A**。理由：controller 與現有流程都不需要約束就能運作，約束屬功能階段（P5 收藏、P6 優惠卷）的設計；P1b 不擴大範圍。 | 採用建議（A）<br>**P5 已加（V6）**：`favorite (user_id, tour_id)`。原因：重複收藏要回原 id，並行收藏只留一筆，由 DB 擋住而不是靠先查再寫。其餘 d4 項目（`coupon.code` 等）未動。 |
 | e | **`tour_hotel`、`tour_restaurant` 也只回 `status = 1`，#7 沒有涵蓋這兩個。** #7 只點名 `tour_travel`、`tour_travel_popular`、`tour_travel_most_favorited`、`tour_tour_detail`；Task 4 的 SQL 讓這兩個 function 也過濾 `status = 1`（與 `tour_tour_detail` 一致）。 | **A 過濾**（現狀）：API 行為與不過濾相同，因為 `product.js:178–183` 已先以 `status = 1` 過濾。**B 不過濾**：未來呼叫端可取得下架行程資料。 | **A**。API 行為相同，與其餘詳情 function 一致。 | 採用建議（A）（2026-11-01 使用者決定） |
 | f | **`tour_hotel`、`tour_restaurant` 對 `hotel`／`restaurant` 用 INNER JOIN，且 `tour_id` 沒有 unique 約束。** 契約只定了房型、菜單、營業時間的 LEFT JOIN（#33）。`item = 'hotel'`／`'food'` 的行程若沒有對應的 `hotel`／`restaurant` 列，function 回 0 列，`product.js:209` 丟 TypeError 回 500；若同一 `tour_id` 有多列，`room[]`／`menu[]` 會重複。seed 目前兩者都沒有這種情況。**補充（Task 5 review）**：`restaurant_booking` 也有同樣的問題——同一行程有 N 家餐廳時回 N 列，而 controller 只讀 `rows[0]`；處理方式併入本列的 A／C。 | **A 維持 INNER JOIN，視為已接受的風險**（P1 不改）。**B 改 LEFT JOIN**：行程欄位仍可顯示、飯店／餐廳欄位為 NULL；**C 補 `UNIQUE (tour_id)`**（同 d4，需改 migration）。 | **A**，記錄為已接受風險；是否補 unique 併入 d4。 | 採用建議（A）（2026-11-01 使用者決定） |
 | g | **促銷期間用 `now()` 比對沒有時區的 `timestamp`。** DB session 是 `Etc/UTC`，seed 的促銷 `end_date` 是 `23:59:59` 的 naive 值，原意應是台北時間，所以促銷在台北時間隔天 07:59:59 才結束。view 與 `cart.js:22`、`checkout.js:31` 用同一個 `now() between` 運算式，彼此一致。**補充（Task 5 review）**：`user_level_point_coupon` 的 `coupon.expire_date >= now()`（#39「未過期」）有同樣的 session 時區依賴：`expire_date` 是 naive `timestamp`，與 UTC 的 `now()` 比較。 | **A 維持現狀**（view 與 controller 一致）。**B 把 DB／連線時區設成 `Asia/Taipei`**，或改用 `timestamptz` 欄位（需新增 migration 改欄位型別）。 | **A**，P1 不處理；要精確到小時再於 P4 交易階段一併決定。 | 採用建議（A）（2026-11-01 使用者決定） |
@@ -1800,3 +1801,15 @@ seed 的 `payment`（§0.1 第 9 項）與 `point_record`（§0.1 第 10 項）�
 - **定義**（P3 spec §4.2 R1）：會員「購買過」某行程，是指存在該會員本人的 `orders`，其 `order_item` 屬於該行程且 `order_item.payment_status = 1`（已付款）。未付款、已取消、已退款、逾時、別人的訂單、別的行程的訂單都不算。
 - **實作位置**：`backend/src/utils/purchase.js`（`hasPurchased`，P3 Task 6 建立），是唯一實作；評論、隱藏玩法與資格查詢 API 都呼叫它，不得另寫 SQL。
 - **對 P4 的依賴**：付款成功時，P4 必須把 `order_item.payment_status` 設成 `1`；否則會員永遠沒有評論與分享隱藏玩法的資格（現況 `newebpay.js` 的寫入失敗，見 §4.2「契約已記錄」的付款項）。
+
+## 7. P5 表格約束（V6）
+
+`backend/migrations/V6__p5_member_center.sql`（P5 spec §3）。不改欄位、不改 view，所以 `R__views_functions.sql` 與 §1–§3 的契約型別都不受影響。
+
+| # | 變更 | 理由 | 對應測試 |
+|---|---|---|---|
+| 1 | `favorite_user_tour_key UNIQUE (user_id, tour_id)`；加約束前先刪重複，同組保留 `(created_at, favorite_id)` 最小者 | 重複收藏回原 id、並行收藏只留一筆（見 §4.2 d4） | `tests/test_migrations.py::test_favorite_user_tour_unique` |
+| 2 | `cart_user_id_key UNIQUE (user_id)`；預檢有重複就 `RAISE EXCEPTION`，不自動合併 | 一位會員一個購物車；`controllers/cart.js` 改 `ON CONFLICT (user_id) DO NOTHING` 再 `FOR UPDATE` | `test_migrations.py::test_cart_user_unique`、`test_trade_cart.py::test_first_add_concurrently_creates_one_cart` |
+| 3 | `auto_setting_user_id_key UNIQUE (user_id)`；預檢有重複就 `RAISE EXCEPTION`，不自動合併 | 一位會員一組通知設定；seed 改為 3 列（§0.1 第 1 項） | `test_migrations.py::test_auto_setting_user_unique`、`test_build_seed.py::test_alice_auto_settings_merged` 等 |
+
+V6 套用狀態由 `test_migrations.py::test_flyway_applied_v1_to_v6` 檢查。V6 沒有新增或改動參照 `"user"` 的外鍵，`USER_FK_TABLES` 不變。既有 volume 若 alice 仍有兩筆 `auto_setting`，V6 預檢會失敗，要 `docker compose down -v` 重建。

@@ -135,26 +135,26 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 `controllers/cart.js`。三條寫入路徑都遵守「先鎖 `cart`，再碰 `cart_item`」，最後 `recalcCartTotal`（`:5-12`）UPDATE `cart`（已持有鎖）。
 
-**新增** `POST`（`:15-87`）
-1. `cart` `FOR UPDATE`，以 `user_id` 找（沒有 `ORDER BY`，見「已知問題」）：`:26-29`；沒有則 INSERT `cart`（`:31`）
-2. `cart_item` `FOR UPDATE`，以合併鍵（同 `tour_id`、`start_date`、`room_type`）找：`:41-47`
-3. `cart_item` UPDATE 數量（`:51`）或 INSERT（`:56`）
-4. `recalcCartTotal`：`:62`
+**新增** `POST`（`:15-83`）
+1. INSERT `cart` `ON CONFLICT (user_id) DO NOTHING`（P5 V6 之後 `cart` 有 `UNIQUE(user_id)`）：`:26-29`；再 `cart` `FOR UPDATE`，以 `user_id` 找（一個會員至多一列，不需 `ORDER BY`）：`:30-33`
+2. `cart_item` `FOR UPDATE`，以合併鍵（同 `tour_id`、`start_date`、`room_type`）找：`:37-43`
+3. `cart_item` UPDATE 數量（`:47`）或 INSERT（`:52`）
+4. `recalcCartTotal`：`:58`
 
-**修改** `PATCH`（`:140-192`）
-1. `cart` `FOR UPDATE OF c`，以 `cart_item_id` 連回所屬 cart：`:150-154`
-2. `cart_item` `FOR UPDATE`：`:156-159`
-3. `cart_item` UPDATE：`:160`
-4. `recalcCartTotal`：`:166`
+**修改** `PATCH`（`:136-188`）
+1. `cart` `FOR UPDATE OF c`，以 `cart_item_id` 連回所屬 cart：`:146-150`
+2. `cart_item` `FOR UPDATE`：`:152-155`
+3. `cart_item` UPDATE：`:156`
+4. `recalcCartTotal`：`:162`
 
-**刪除** `DELETE`（`:90-137`）
-1. `cart` `FOR UPDATE OF c`，同上：`:99-103`
-2. `cart_item` DELETE：`:105`
-3. `recalcCartTotal`：`:111`
+**刪除** `DELETE`（`:86-133`）
+1. `cart` `FOR UPDATE OF c`，同上：`:95-99`
+2. `cart_item` DELETE：`:101`
+3. `recalcCartTotal`：`:107`
 
 **列表** `GET`：不開交易、不加鎖。
 
-註：`cart` 沒有 `UNIQUE(user_id)`，併發首次加入可能建出兩個 cart；`settlePaidOrder` 因此鎖該會員所有 cart 列（`ORDER BY cart_id`）。新增購物車的 `FOR UPDATE` 沒有 `ORDER BY`，與它的鎖順序不一致，見「已知問題」。
+註：P5 V6 起 `cart` 有 `UNIQUE(user_id)`，併發首次加入由 `ON CONFLICT DO NOTHING` 收斂成同一列（後到者在唯一索引上等待先到者提交），兩個請求再鎖同一個 cart，不會建出第二個。`settlePaidOrder` 仍以 `ORDER BY cart_id` 鎖該會員的 cart 列，現在至多一列，與新增路徑同列同序，無環。
 
 ### 10. 不在交易主線上、但碰到相關表的路徑
 
@@ -166,9 +166,9 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `controllers/admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。
 - `controllers/coupon.js:209`（`post_admin_assigncoupon`）：管理員批次綁定券，INSERT `user_coupon ... ON CONFLICT DO NOTHING`，不開交易。
 
-## 已知問題（P5 處理）
+## 已知問題（已解決）
 
-**多個 cart 時，新增購物車與付款結算可能死結。** `controllers/cart.js:26-29` 的 `SELECT cart_id FROM cart WHERE user_id = $1 FOR UPDATE` 沒有 `ORDER BY`，而 `settlePaidOrder` 在 `utils/trade.js:358` 是 `ORDER BY cart_id`。若同一會員有兩個 `cart`（`cart` 沒有 `UNIQUE(user_id)`，併發首次加入可能建出），新增購物車與 notify 結算可能各鎖一個、互等。條件需要「同一會員已有兩個 cart」加上兩個請求同時進入，機率低。修正方向：新增購物車也加 `ORDER BY cart_id`，或補 `UNIQUE(user_id)`。P5 處理（`docs/reports/phase-4.md` 附錄 B 已列待辦）。
+**多個 cart 時，新增購物車與付款結算可能死結。** 已於 P5 解決：V6 補 `cart UNIQUE(user_id)`，每位會員至多一個 cart，新增購物車改 `INSERT … ON CONFLICT (user_id) DO NOTHING` 後再 `FOR UPDATE`；兩條路徑鎖的是同一列，不再有「各鎖一個、互等」的可能。
 
 ## 檢查結果
 
@@ -179,7 +179,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 除上述之外沒有鎖順序反向。其他觀察：
 - checkout 建單（第 1 節步驟 2）以不加鎖讀取碰 `cart_item`，不持任何列鎖，不能構成死結。
-- 一個實際的死結風險不在順序規範內而在多 cart 的鎖定方式，見「已知問題」。
+- 多 cart 的死結風險已由 V6 `UNIQUE(user_id)` 消除，見「已知問題（已解決）」。
 
 ## 對應的測試
 
