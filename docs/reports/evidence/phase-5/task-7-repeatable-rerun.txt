@@ -90,5 +90,9 @@ V user_user_level
 ---
 > 2
 
-## history 列 success
-|views functions|t  (x2)
+## history 列 success（psql 實際輸出）
+ version |   description   |         script         | success 
+---------+-----------------+------------------------+---------
+         | views functions | R__views_functions.sql | t
+         | views functions | R__views_functions.sql | t
+(2 rows)
