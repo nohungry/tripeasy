@@ -506,6 +506,7 @@
   | 所屬地區 | varchar | `tour.region` | `product.js:53` | WHERE（ILIKE） |
   | 偏好分類1 / 2 / 3 | smallint | `tour.preference1/2/3` | `product.js:42,126–143`、`home.js:90–96` | WHERE（ANY ARRAY）、JS 讀 `row['偏好分類1']` |
   | 收藏狀態 | boolean | `EXISTS (favorite WHERE user_id = 參數 AND tour_id = tour.tour_id)`；【定案 #28】未登入（參數 `NULL`）時為 `false` | 無直接讀取（見推測） | 推測：函式要帶入使用者編號的唯一合理理由；`tour_tour_detail` 的同名欄位 `收藏狀態` 被讀為 `is_favorited` |
+  | 收藏編號 | uuid | 【P5 Task 7】`(SELECT f.favorite_id FROM favorite f WHERE f.user_id = 參數 AND f.tour_id = tour.tour_id)`；未收藏或未登入（參數 `NULL`）為 `NULL`；加在 `收藏狀態` 之後（唯一約束 `favorite_user_tour_key`，至多一筆） | 搜尋 API（`product.js` `get_tourData`）原樣輸出；登入後首頁（`home.js`）也走 `tour_travel($1)` | response `收藏編號`（愛心取消收藏用） |
 
   其餘欄位（`旅遊描述`、`旅遊代表圖 Url`、`促銷價錢`、`促銷開始日期`、`促銷結束日期`…）：呼叫端都是 `SELECT *` 且 controller 沒有讀取具體 key，但 response 會原樣輸出，欄位集合是否與 `tour_base` 相同見待確認 2（【定案 #26】相同，只差 `收藏狀態`）。
 
@@ -658,6 +659,7 @@
   | 旅遊描述 | text | `tour.description` | `product.js:354` | response.description |
   | 偏好設定分類 1 / 2 / 3（中間有空格） | smallint | `tour.preference1/2/3` | `product.js:209–211` | 反查中文標籤 → response.tags |
   | 收藏狀態 | boolean | `EXISTS (favorite WHERE user_id = 參數 AND tour_id = tour.tour_id)`；【定案 #28】未登入時為 `false` | `product.js:356` | response.is_favorited |
+  | 收藏編號 | uuid | 【P5 Task 7】`(SELECT f.favorite_id FROM favorite f WHERE f.user_id = 參數 AND f.tour_id = tour.tour_id)`；未收藏或未登入為 `NULL`；加在 `收藏狀態` 之後 | `product.js`（詳情三處 `is_favorited` 旁） | response.favorite_id（`?? null`） |
   | 異動通知內容 | text | `notification.change_desc`（type='異動'） | `product.js:357` | response.emergency_notice |
   | 促銷價錢 | double precision | `notification.promo_price`（type='促銷'）；【定案 #10】僅促銷期間內有值，期間外為 `NULL` | `product.js:359–360` | response.promotion.is_promoted（真偽）、promo_price |
   | 通知狀態 | varchar | `notification.type`（【定案 #8、#9】促銷優先；期間外仍是 '促銷'） | `product.js:361` | response.promotion.tag |
@@ -719,7 +721,7 @@
   | 其他便利服務 | text | `hotel.other_desc`（推測，見待確認 2；【定案 #32】採用 `other_desc`，`leisure_desc` 不輸出） | `product.js:435` | response.feature.service[4].item |
   | 所屬國家、所屬地區、地址、Google Map Url、旅遊描述 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:440–445` | response.location / description |
   | 偏好設定分類 1 / 2 / 3 | smallint | `tour.preference1/2/3` | `product.js:209–211` | response.tags |
-  | 收藏狀態、異動通知內容、促銷價錢、通知狀態、促銷開始日期、促銷結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:447–454` | response.is_favorited / emergency_notice / promotion |
+  | 收藏狀態、收藏編號（【P5 Task 7】）、異動通知內容、促銷價錢、通知狀態、促銷開始日期、促銷結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:447–454` | response.is_favorited / favorite_id / emergency_notice / promotion |
 
 - **列的語意**：**每個房型一列**（`hotel_room` 一列對應一列輸出），行程與飯店層級的欄位在每一列重複。依據：`product.js:409` 用 `tourDetailsRepo.rows.map(...)` 逐列產生 `room[]`；其他欄位只讀 `rows[0]`。
 - **邊界**：
@@ -771,7 +773,7 @@
   | 營業時間 | text | `restaurant_business.business_hours` | `product.js:270` | response.feature.opening[].time |
   | 所屬國家、所屬地區、地址、Google Map Url、旅遊描述 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:274–279` | response.location / description |
   | 偏好設定分類 1 / 2 / 3 | smallint | `tour.preference1/2/3` | `product.js:209–211` | response.tags |
-  | 收藏狀態、異動通知內容、促銷價錢、通知狀態、促銷開始日期、促銷結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:281–288` | response.is_favorited / emergency_notice / promotion |
+  | 收藏狀態、收藏編號（【P5 Task 7】）、異動通知內容、促銷價錢、通知狀態、促銷開始日期、促銷結束日期 | 同 `tour_tour_detail` | 同 `tour_tour_detail` | `product.js:281–288` | response.is_favorited / favorite_id / emergency_notice / promotion |
 
 - **列的語意**：同一個 function 的一列同時要供 `menu[]` 和 `opening[]` 使用——`product.js:263` 與 `product.js:268` 都是 `tourDetailsRepo.rows.map(...)`，各自讀同一組列的不同欄位。餐廳層級欄位在每列重複。【定案 #34】採 `UNION ALL`／位置對齊：每列各帶一筆菜單或一筆營業時間，另一邊為 `NULL`（陣列內有 `name: null` 或 `week: null` 的空項），不重複。
 - **邊界**：
@@ -1467,6 +1469,7 @@
 
 - **列的語意**：每筆 `favorite` 一列，帶入被收藏行程的資料（待確認 1；【定案 #11，2026-10-23】選 A：帶入 `tour_base` 的欄位）。【定案 #41、#43】下架行程的收藏也出現；`建立時間` ＝ `favorite.created_at`。`WHERE 收藏人員編號 = $1` 取出單一使用者的收藏，controller 以 `建立時間 DESC` 排序並分頁（`LIMIT`／`OFFSET`）。
 - **邊界**：
+  - **【P5 Task 7 更新】** 以下「controller 行為 1–5」是 P4 以前的現況，已由 P5 Task 7 修正：`GET /collection/info/all` 只回應一次、不分頁（只認 `lang`），`ORDER BY 建立時間 DESC, favorite_id LIMIT 100`，回 `dbdata = { data, total }`（`total` 為實際總數，空列表為 `{ data: [], total: 0 }`）；`POST /info/:tour_id` 與 `DELETE /info/:favorite_id` 加 `authRole('User')`，路徑參數以 Joi 驗證 UUIDv4（400 `「行程編號」／「收藏編號」必須是有效的 UUID 格式`）；`POST` 行程不存在或下架 404 `查無此旅遊項目`，以 `INSERT … ON CONFLICT (user_id, tour_id) DO NOTHING RETURNING favorite_id`（約束 `favorite_user_tour_key`，V6）寫入，新增 201 `收藏成功`、已收藏 200 `已收藏過此行程`，兩者皆回 `{ favorite_id }`；`DELETE … WHERE favorite_id = $1 AND user_id = $2 RETURNING favorite_id`，0 列 404 `查無此收藏項目`。`tour_travel`／`tour_tour_detail`／`tour_hotel`／`tour_restaurant` 新增欄位 `收藏編號`（uuid）。
   - **controller 行為 1（`get_collection` 每次都送兩次回應）**：`controllers/collection.js:39–46`（有資料）或 `:49–53`（無資料）已經呼叫 `resStatus` → `res.status(200).json(...)`（`utils/resStatus.js:33`），`:57–64` 又無條件再呼叫一次。第二次 `res.json` 會丟 `ERR_HTTP_HEADERS_SENT`，被 `:65` 的 `catch` 接住並 `next(error)`，進入 `server.js:137` 的錯誤處理，那裡又呼叫 `res.status(500).json(...)` 再丟一次。**client 收到的是第一次的回應**（依序執行，第一次 `json()` 已結束回應）；伺服器 log 每次都有錯誤，錯誤處理之後 Express 對連線的處置（推測是 `finalhandler` 因 headers 已送出而關閉 socket）沒有實測。結果：每次呼叫此 API 至少會留下 `❌ 伺服器內部錯誤` 與 `❌ 系統錯誤` 兩筆錯誤 log（Express 的 `finalhandler` 對錯誤處理再丟出的錯誤可能另外輸出第三筆，推測，未實測），與 view 的內容無關。
   - **controller 行為 2（有資料時的 response 形狀）**：`collection.js:43–45` 的 `dbdata` 是 `{ data: transformedRows }`，`resStatus` 再包一層，所以 client 拿到的是 `body.data.data[]`（兩層 `data`）。
   - **controller 行為 3（寫入與重複檢查走 base table，不走 view）**：`POST /api/v1/user/collection/info/:tour_id` 寫 `INSERT INTO favorite (user_id, tour_id) VALUES ($1, $2)`（`collection.js:78`），`DELETE` 寫 `DELETE FROM favorite WHERE user_id = $1 AND favorite_id = $2`（`collection.js:100`）。V1 `favorite`（`V1:382–390`）沒有 `UNIQUE (user_id, tour_id)`，重複收藏只靠 `middlewares/collection/index.js:68–70` 的 `SELECT 1 FROM favorite WHERE user_id = $1 AND tour_id = $2` 先查再寫，並行請求可以寫入重複列；view 若直接 JOIN 就會重複顯示。

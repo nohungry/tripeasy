@@ -167,6 +167,21 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `controllers/coupon.js:209`（`post_admin_assigncoupon`）：管理員批次綁定券，INSERT `user_coupon ... ON CONFLICT DO NOTHING`，不開交易。
 - `controllers/automation.js:74-78`（`patch_early_notifiSettings`）、`:126-139`（`patch_price_notifiSettings`）：通知設定寫入 `auto_setting`，是單一 `INSERT … ON CONFLICT (user_id) DO UPDATE` 語句、不開交易（P5 Task 6；V6 `auto_setting_user_id_key`）。只鎖該會員自己的那一列，併發首次寫入由唯一索引收斂成一列（後到者等先到者提交後走 UPDATE），不碰交易表、不再取其他鎖，所以不成環。price-tracking 在寫入前另有兩個不加鎖的讀取（`auto_setting` 目前值、`tour` 上架地區），各自獨立自動提交。
 
+### 11. 收藏新增與刪除
+
+`controllers/collection.js`（P5 Task 7；V6 `favorite_user_tour_key UNIQUE (user_id, tour_id)`）。不開交易，每條語句各自自動提交。
+
+**新增** `POST /info/:tour_id`
+1. `findListedTour`（`utils/purchase.js`）：不加鎖的 `SELECT … FROM tour`，只讀：`controllers/collection.js:68`
+2. `INSERT INTO favorite … ON CONFLICT (user_id, tour_id) DO NOTHING RETURNING favorite_id`：`controllers/collection.js:75-79`。單一語句，只取該會員這一組 `(user_id, tour_id)` 的唯一索引鍵鎖。
+3. 若 DO NOTHING（沒有回傳列），不加鎖 `SELECT favorite_id … WHERE user_id = $1 AND tour_id = $2`：`controllers/collection.js:89-92`，回 200 並附原本的 `favorite_id`。
+
+**刪除** `DELETE /info/:favorite_id`：單一 `DELETE … WHERE favorite_id = $1 AND user_id = $2 RETURNING favorite_id`（`controllers/collection.js:115-118`）。
+
+**列表** `GET /info/all`：不開交易、不加鎖。
+
+無環的理由：這幾條語句各只碰 `favorite` 一張表、取得鎖後不再等其他鎖；`favorite` 不在規範順序的表裡，其他交易路徑也不會持有 `favorite` 的鎖再去等 `tour`／`user`。併發兩個請求同時新增同一行程時，後到者在唯一索引上等待先到者提交，提交後 DO NOTHING 並走第 3 步查出同一筆，不會撞約束回 500。INSERT 的外鍵檢查對 `user`／`tour` 取 KEY SHARE，只會被 `FOR UPDATE` 擋住（§10 的 Google 登入 `user` 鎖），checkout 的 `FOR NO KEY UPDATE` 不衝突；取得後不再等其他鎖，所以不成環。測試：`tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id`（8 條執行緒，各自 session，只有 1 個 201、其餘 200、同一個 `favorite_id`、DB 1 列）。
+
 ## 已知問題（已解決）
 
 **多個 cart 時，新增購物車與付款結算可能死結。** 已於 P5 解決：V6 補 `cart UNIQUE(user_id)`，每位會員至多一個 cart，新增購物車改 `INSERT … ON CONFLICT (user_id) DO NOTHING` 後再 `FOR UPDATE`；兩條路徑鎖的是同一列，不再有「各鎖一個、互等」的可能。

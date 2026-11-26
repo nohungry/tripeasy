@@ -1,0 +1,94 @@
+# Task 7 R7：在既有 volume 重跑 R__views_functions.sql（未執行 down -v）
+
+## 執行前（第 1 行：flyway_schema_history 中 R__views_functions.sql 的列數；其後 F=function、V=view）
+1
+F hotel_booking("房型" character varying, "入住日期" timestamp without time zone, "退房日期" timestamp without time zone, "旅遊編號" uuid)
+F restaurant_booking("預約時間" timestamp without time zone, "旅遊編號" uuid)
+F restaurant_isclosed("預約時間" timestamp without time zone, "旅遊編號" uuid)
+F set_updated_at()
+F tour_hotel("使用者編號" uuid)
+F tour_restaurant("使用者編號" uuid)
+F tour_tour_detail("使用者編號" uuid)
+F tour_travel("使用者編號" uuid)
+F tour_travel_most_favorited("大分類" text, "小分類" text)
+F tour_travel_popular("大分類" text, "小分類" text)
+F uuid_generate_v1()
+F uuid_generate_v1mc()
+F uuid_generate_v3(namespace uuid, name text)
+F uuid_generate_v4()
+F uuid_generate_v5(namespace uuid, name text)
+F uuid_nil()
+F uuid_ns_dns()
+F uuid_ns_oid()
+F uuid_ns_url()
+F uuid_ns_x500()
+V restaurant_business_parsed
+V tour_base
+V user_adminList
+V user_cartList
+V user_couponList
+V user_favorite
+V user_level_point_coupon
+V user_level_review_forHome
+V user_orderList
+V user_order_item
+V user_orders
+V user_user_level
+
+## flyway 輸出
+ Container tripeasy-postgres-1  Running
+A more recent version of Flyway is available. Find out more about Flyway 13.13.0 at https://rd.gt/3rXiSlV
+
+Flyway OSS Edition 10.20.1 by Redgate
+
+See release notes here: https://rd.gt/416ObMi
+Database: jdbc:postgresql://postgres:5432/tripeasy_db001 (PostgreSQL 15.19)
+Successfully validated 9 migrations (execution time 00:00.138s)
+Current version of schema "public": 6
+Migrating schema "public" with repeatable migration "views functions"
+Successfully applied 1 migration to schema "public" (execution time 00:00.080s)
+exit=0
+
+## 執行後
+2
+F hotel_booking("房型" character varying, "入住日期" timestamp without time zone, "退房日期" timestamp without time zone, "旅遊編號" uuid)
+F restaurant_booking("預約時間" timestamp without time zone, "旅遊編號" uuid)
+F restaurant_isclosed("預約時間" timestamp without time zone, "旅遊編號" uuid)
+F set_updated_at()
+F tour_hotel("使用者編號" uuid)
+F tour_restaurant("使用者編號" uuid)
+F tour_tour_detail("使用者編號" uuid)
+F tour_travel("使用者編號" uuid)
+F tour_travel_most_favorited("大分類" text, "小分類" text)
+F tour_travel_popular("大分類" text, "小分類" text)
+F uuid_generate_v1()
+F uuid_generate_v1mc()
+F uuid_generate_v3(namespace uuid, name text)
+F uuid_generate_v4()
+F uuid_generate_v5(namespace uuid, name text)
+F uuid_nil()
+F uuid_ns_dns()
+F uuid_ns_oid()
+F uuid_ns_url()
+F uuid_ns_x500()
+V restaurant_business_parsed
+V tour_base
+V user_adminList
+V user_cartList
+V user_couponList
+V user_favorite
+V user_level_point_coupon
+V user_level_review_forHome
+V user_orderList
+V user_order_item
+V user_orders
+V user_user_level
+
+## diff before after（只有 history 列數 1 -> 2，function／view 清單相同）
+1c1
+< 1
+---
+> 2
+
+## history 列 success
+|views functions|t  (x2)
