@@ -86,7 +86,7 @@
 | `payment` | 15 | 每張 `payment_status = 1` 的訂單 1 筆（第 9 項） |
 | `point_record` | 18 | `新增` 15、`減少` 3（第 10 項） |
 | `favorite` | 9 | 第 8 項 |
-| `auto_setting` | 3 | 一位使用者一列（P5 V6 `auto_setting_user_id_key`）：來源檔 alice 有兩列，`build_seed.py::merge_duplicate_auto_settings` 併成一列（每欄取 `updated_at` 較新者，相同時取 `auto_setting_id` 較小者；結果是來源 `1111aaaa-…` 那列的值：early 0、flexible 1、Japan、Tokyo、1200.5） |
+| `auto_setting` | 3 | 一位使用者一列（P5 V6 `auto_setting_user_id_key`）：來源檔 alice 有兩列，`build_seed.py::merge_duplicate_auto_settings` 併成一列（每欄取 `updated_at` 較新者，相同時取 `auto_setting_id` 較小者；結果是來源 `1111aaaa-…` 那列的值：early 0、flexible 1、Japan、Tokyo、1200.5；注意 `remap_ids` 之後該列的最終 `auto_setting_id` 是 `d47d7d56-46dd-48ff-bf22-afcb3f46d2a9`，不是 `1111aaaa-…`） |
 | `review` | 13 | 來源檔 10 則加 3 則 `web`；`type = 'web'` 共 5 則（第 11 項） |
 | `user_coupon` | 4 | 第 9 項最後一段 |
 
@@ -1259,11 +1259,11 @@
 
 - **種類**：view（無參數）
 - **使用位置**：
-  - `controllers/userProfile.js:125`（API：`GET /api/v1/user/userinfo/pointslevel`）
+  - `controllers/userProfile.js:127`（API：`GET /api/v1/user/userinfo/pointslevel`）（P5 Task 10：本節欄位表與下方以位置為主的 `controllers/userProfile.js` 行號已更新為 backend `d3280ce`；本節 `discounts.js`、middleware 的行號，以及本節以外對 `userProfile.js` 行號的引用，都沒有重新核對，沿用原基準）
     ```sql
     SELECT * FROM public."user_level_point_coupon" where 使用者編號 = $1
     ```
-    參數 `[user.id]`；整份 `result.rows` 依 `row['使用者編號']` 分組（`controllers/userProfile.js:130–161`）。
+    參數 `[user.id]`；整份 `result.rows` 依 `row['使用者編號']` 分組（`controllers/userProfile.js:134–165`）。
   - `controllers/discounts.js:44`（API：`POST /api/v1/user/trade/discounts/:order_id`，`type === 'point'`）
     ```sql
     SELECT * FROM public."user_level_point_coupon" where 使用者編號 = $1
@@ -1283,36 +1283,36 @@
 
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
-  | 使用者編號 | uuid | `user.user_id` | `controllers/userProfile.js:133,137`、`controllers/discounts.js:44`、`middlewares/discounts/index.js:77`、`middlewares/checkout/index.js:148` | WHERE；分組鍵；response.user_id |
-  | 名稱 | varchar | `user.name` | `controllers/userProfile.js:138` | JS 讀取 → response.name |
-  | 信箱 | varchar | `user.email` | `controllers/userProfile.js:139` | JS 讀取 → response.email |
-  | 角色 | varchar | `user.role` | `controllers/userProfile.js:140` | JS 讀取 → response.role |
-  | 個人照片 Url | varchar | `user.avatar_url` | `controllers/userProfile.js:141` | JS 讀取 → response.avatar_url |
-  | 個人偏好 1 | smallint | `user.preference1` | `controllers/userProfile.js:142` | JS 讀取 → response.preference1（欄位名有空格） |
-  | 個人偏好 2 | smallint | `user.preference2` | `controllers/userProfile.js:143` | 同上 |
-  | 個人偏好 3 | smallint | `user.preference3` | `controllers/userProfile.js:144` | 同上 |
-  | 旅遊等級 | varchar | `user_level.level` | `controllers/userProfile.js:145` | JS 讀取 → response.level（欄位名稱與 §1 `user_user_level` 一致） |
-  | 旅遊等級名稱 | varchar | `user_level.name` | `controllers/userProfile.js:146` | JS 讀取 → response.level_name |
-  | 旅遊徽章 Url | varchar | `user_level.badge_url` | `controllers/userProfile.js:147` | JS 讀取 → response.badge_url |
-  | 使用者旅遊積分 | integer | 見待確認 1（`user_level.travel_point` 或 `point_record` 加總）；【定案 #2】`user_level.travel_point`，預扣不反映，型別 `integer` | `controllers/userProfile.js:148`、`controllers/discounts.js:60,62`、`middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` | JS 讀取，做 `<`、`-` 運算；response.travel_point／user_point |
-  | 優惠卷編號 | uuid | `coupon.coupon_id` | `controllers/userProfile.js:154` | JS 讀取 → response.coupon[].coupon_id |
-  | 優惠卷代碼 | varchar | `coupon.code` | `controllers/userProfile.js:155` | JS 讀取 → response.coupon[].code |
-  | 優惠卷折扣 | double precision | `coupon.discount` | `controllers/userProfile.js:156` | JS 讀取 → response.coupon[].discount（語意見 `user_couponList` 待確認 1；【定案 #1】折抵金額（NT$），view 原值輸出） |
-  | 優惠卷描述 | text | `coupon.description` | `controllers/userProfile.js:157` | JS 讀取 → response.coupon[].description |
-  | 優惠卷期限 | timestamp | `coupon.expire_date` | `controllers/userProfile.js:158` | JS 讀取 → response.coupon[].expire_date |
+  | 使用者編號 | uuid | `user.user_id` | `controllers/userProfile.js:135,139`、`controllers/discounts.js:44`、`middlewares/discounts/index.js:77`、`middlewares/checkout/index.js:148` | WHERE；分組鍵；response.user_id |
+  | 名稱 | varchar | `user.name` | `controllers/userProfile.js:140` | JS 讀取 → response.name |
+  | 信箱 | varchar | `user.email` | `controllers/userProfile.js:141` | JS 讀取 → response.email |
+  | 角色 | varchar | `user.role` | `controllers/userProfile.js:142` | JS 讀取 → response.role |
+  | 個人照片 Url | varchar | `user.avatar_url` | `controllers/userProfile.js:143` | JS 讀取 → response.avatar_url |
+  | 個人偏好 1 | smallint | `user.preference1` | `controllers/userProfile.js:144` | JS 讀取 → response.preference1（欄位名有空格） |
+  | 個人偏好 2 | smallint | `user.preference2` | `controllers/userProfile.js:145` | 同上 |
+  | 個人偏好 3 | smallint | `user.preference3` | `controllers/userProfile.js:146` | 同上 |
+  | 旅遊等級 | varchar | `user_level.level` | `controllers/userProfile.js:147` | JS 讀取 → response.level（欄位名稱與 §1 `user_user_level` 一致） |
+  | 旅遊等級名稱 | varchar | `user_level.name` | `controllers/userProfile.js:148` | JS 讀取 → response.level_name |
+  | 旅遊徽章 Url | varchar | `user_level.badge_url` | `controllers/userProfile.js:149` | JS 讀取 → response.badge_url |
+  | 使用者旅遊積分 | integer | 見待確認 1（`user_level.travel_point` 或 `point_record` 加總）；【定案 #2】`user_level.travel_point`，預扣不反映，型別 `integer` | `controllers/userProfile.js:150`、`controllers/discounts.js:60,62`、`middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` | JS 讀取，做 `<`、`-` 運算；response.travel_point／user_point |
+  | 優惠卷編號 | uuid | `coupon.coupon_id` | `controllers/userProfile.js:158` | JS 讀取 → response.coupon[].coupon_id |
+  | 優惠卷代碼 | varchar | `coupon.code` | `controllers/userProfile.js:159` | JS 讀取 → response.coupon[].code |
+  | 優惠卷折扣 | double precision | `coupon.discount` | `controllers/userProfile.js:160` | JS 讀取 → response.coupon[].discount（語意見 `user_couponList` 待確認 1；【定案 #1】折抵金額（NT$），view 原值輸出） |
+  | 優惠卷描述 | text | `coupon.description` | `controllers/userProfile.js:161` | JS 讀取 → response.coupon[].description |
+  | 優惠卷期限 | timestamp | `coupon.expire_date` | `controllers/userProfile.js:162` | JS 讀取 → response.coupon[].expire_date |
 
-  `使用者旅遊積分` 在 `middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` 以 `<` 與 `used_point`／`point` 比較，在 `controllers/discounts.js:62` 做減法；若是 `bigint`／`numeric`（例如 `SUM(...)` 的結果），pg 回字串，`<` 與 `-` 會自動轉成數字不會出錯，但輸出到 response 時（`controllers/discounts.js:60`、`controllers/userProfile.js:148`）會變成 JSON 字串，與 `integer` 時的數字不同。【定案 #2、#25】`使用者旅遊積分` ＝ `user_level.travel_point`（`integer`），不經 `SUM`，response 是數字。
+  `使用者旅遊積分` 在 `middlewares/discounts/index.js:89`、`middlewares/checkout/index.js:160` 以 `<` 與 `used_point`／`point` 比較，在 `controllers/discounts.js:62` 做減法；若是 `bigint`／`numeric`（例如 `SUM(...)` 的結果），pg 回字串，`<` 與 `-` 會自動轉成數字不會出錯，但輸出到 response 時（`controllers/discounts.js:60`、`controllers/userProfile.js:148`）會變成 JSON 字串，與 `integer` 時的數字不同。（P5 Task 5 之後 `controllers/userProfile.js:150` 已包 `Math.max(Number(...), 0)`，實際回的是數字；這段 `SUM`／字串的推論是 P1 的歷史敘述，不是現況。）【定案 #2、#25】`使用者旅遊積分` ＝ `user_level.travel_point`（`integer`），不經 `SUM`，response 是數字。
 
-- **列的語意**：**每位使用者的每張優惠卷一列**（使用者與會員等級的資料在每一列重複）。依據：`controllers/userProfile.js:134–166` 以 `使用者編號` 分組，第一次出現時建立使用者物件，優惠卷編號不為 NULL 的列才 `push` 一張優惠卷（P5 Task 5 起）。【定案 #39、#40】只列 `status = 0` 且未過期的優惠卷；對優惠卷採 `LEFT JOIN`，沒有可用優惠卷的使用者仍保留 1 列、優惠卷欄位全為 `NULL`。
+- **列的語意**：**每位使用者的每張優惠卷一列**（使用者與會員等級的資料在每一列重複）。依據：`controllers/userProfile.js:134–165` 以 `使用者編號` 分組，第一次出現時建立使用者物件，優惠卷編號不為 NULL 的列才 `push` 一張優惠卷（P5 Task 5 起）。【定案 #39、#40】只列 `status = 0` 且未過期的優惠卷；對優惠卷採 `LEFT JOIN`，沒有可用優惠卷的使用者仍保留 1 列、優惠卷欄位全為 `NULL`。
 - **邊界**：
   - **沒有優惠卷的使用者（關鍵；【定案 #40】採 `LEFT JOIN`）**：
     - 若 view 對優惠卷用 `LEFT JOIN`：使用者得到 1 列，優惠卷欄位全為 `NULL`；P5 Task 5 起 `controllers/userProfile.js:156` 檢查 `優惠卷編號 !== null` 才 `push`，沒有可用優惠卷時 response 的 `coupon` 是 `[]`（原本會是全為 `null` 的物件，P5 Task 5 已實作修正）。
-    - 若用 `INNER JOIN`：沒有優惠卷的使用者在 view 內完全沒有列，`GET /pointslevel` 回 `[]`（`controllers/userProfile.js:162`），而且 `middlewares/discounts/index.js:81–89` 與 `middlewares/checkout/index.js:152–160` 的 `pointRepo.rowCount === 0` 會回 409「查無可使用的點數」，**即使使用者有積分也無法使用點數折抵**。
+    - 若用 `INNER JOIN`：沒有優惠卷的使用者在 view 內完全沒有列，`GET /pointslevel` 回 `[]`（`controllers/userProfile.js:167`），而且 `middlewares/discounts/index.js:81–89` 與 `middlewares/checkout/index.js:152–160` 的 `pointRepo.rowCount === 0` 會回 409「查無可使用的點數」，**即使使用者有積分也無法使用點數折抵**。
   - 沒有 `user_level` 列的使用者：INNER JOIN 時同樣消失（理由同 §1 `user_user_level` 待確認 1）。【定案 #22】對 `user_level` 採 `LEFT JOIN`，有多筆時取最新一筆。
   - controller 在 `controllers/discounts.js:60,62` 與兩個 middleware 都只讀 `pointRepo.rows[0].使用者旅遊積分`，所以每一列的 `使用者旅遊積分` 必須相同（同一個使用者的值不隨優惠卷變動）。【定案 #2】值取自 `user_level.travel_point`，不隨優惠卷列變動。
   - 欄位名稱必須照程式碼拼字：`個人偏好 1`（有空格，與 §1 `tour_base` 的 `偏好分類1` 不同）、`個人照片 Url`、`旅遊徽章 Url`；`優惠卷` 用「卷」不是「券」（與 `優惠券已使用` 的訊息用字不同）。
   - 是否包含已使用／已過期的優惠卷：見待確認 3（【定案 #39】不包含，只列 `status = 0` 且未過期）。
-- **信心**：欄位名稱：確定（全部由 `controllers/userProfile.js:137–158` 與其他三處的 `使用者編號`、`使用者旅遊積分` 證實）；來源對應：除 `使用者旅遊積分` 外為確定。`使用者旅遊積分` 的來源：推測（見待確認 1）。
+- **信心**：欄位名稱：確定（全部由 `controllers/userProfile.js:139–162` 與其他三處的 `使用者編號`、`使用者旅遊積分` 證實）；來源對應：除 `使用者旅遊積分` 外為確定。`使用者旅遊積分` 的來源：推測（見待確認 1）。
 - **待確認**：
   1. **（spec 3.1 已知問題 1）點數的累積和扣抵規則，以及 `point * 0.8` 的意義。** → §4.1 #2、#3（定案：#2：`使用者旅遊積分` ＝ `user_level.travel_point`，預扣不反映，型別 `integer`；#3：1 點折抵 0.8 元，累積 0.1 一併視為設計值）
 
@@ -1339,7 +1339,7 @@
      結論（皆可由 grep 證實）：
      - **沒有任何程式碼增加點數**（只有註冊時的 0）。付款成功（`controllers/newebpay.js:163–217` 只更新 `payment`、`orders.payment_status`、`order_item`）不會新增點數。
      - **沒有任何程式碼 UPDATE `user_level.travel_point`**。
-     - **沒有任何程式碼把 `'減少_確認中'` 轉成 `'減少'`**，也沒有取消／逾時時回補。
+     - **沒有任何程式碼把 `'減少_確認中'` 轉成 `'減少'`**，也沒有取消／逾時時回補。**【P4／P5 更新】** 這一條已不成立：付款成功時，`utils/trade.js` 的 `settlePaidOrder`（在 notify 的同一個交易內）把該訂單的 `減少_確認中` 轉成 `減少`、扣 `user_level.travel_point`、寫回饋 `新增`；取消、逾時由 `releaseReservations` 刪除保留列（見 `docs/lock-order.md` 第 6、7 節）。同一個「結論」清單的其餘條目（「沒有任何程式碼增加點數」「沒有任何程式碼 UPDATE `travel_point`」「取消折抵沒有任何寫入」等）也都是 P1 當時的現況，P4 之後不成立，保留作歷史，現況以 `docs/reports/phase-4.md` §1.2、§1.6、本檔 §6 的「P4 表格約束（V5）」節與 `docs/lock-order.md` 為準。（P5 Task 10 註記）
      - 唯一與「累積」有關的是 `controllers/checkout.js:225` 的 `get_point = orderRepo.rows[0].total_price * 0.1`，只放進 `GET /summary/:order_id` 的 `summary.get_point`（`controllers/checkout.js:266`）顯示「可得點數」，**沒有寫入任何表**。
      - `GET /api/v1/user/trade/discounts/:order_id`（編號 33，標題「使用者取消優惠卷、累積積分」，`controllers/discounts.js:78–115`）只回傳訂單原本的 `total_price`／`discount_price` 與 `discount: null`，**沒有任何寫入**：不會刪除 `point_record` 的 `'減少_確認中'`、不會把 `user_coupon.status` 從 -1 還原、不會重設 `orders.discount_price`。取消在資料庫層面沒有作用。
      - 兩個 `used_point` 驗證在 `middlewares/checkout/index.js:160`（`使用者旅遊積分 < used_point`）與 `middlewares/discounts/index.js:89`（`< discount.point`）；因為沒有任何地方扣 `travel_point`，在解讀 A 下同一批點數可以無限次折抵。
@@ -1436,46 +1436,46 @@
 >
 >   後果：被管理者用 `role: 'user'` 降權的帳號，下次登入後 `GET /api/v1/user/collection/info/all`、`GET /api/v1/user/purchases/info`、`GET /api/v1/user/purchases/info/:order_item_id` 都回 403（`routes/collection.js:11`、`routes/purchases.js:11,17`）。降權成 `'User'` 在 validator 層根本無法表達（不在 `supportedRoles` 內）。這是 controller／validator 的問題，契約只記錄，不處理。
 > - **安全問題（全系統性）：`PATCH /api/v1/admin/members/roles` 沒有角色檢查**。`routes/admin.js:23–29` 的 `authRole('admin')` 被註解掉（`:26`），只剩 `auth`（路由掛載在 `/api/v1/admin`，`server.js:111`）；`middlewares/admin/index.js:62–104` 只驗證 body，不比對呼叫者；`controllers/admin.js:59` 原樣 `UPDATE public."user" SET role = $1 WHERE user_id = $2`。後果：任何經註冊流程產生的已登入使用者，都可以把自己（或任何人）的 `role` 改成 `admin`，重新登入後 JWT 帶 `admin`（`controllers/userinfo.js:105`），即可通過系統內**所有** `authRole('admin')` 閘門（`routes/admin.js` 其餘路由、`/admin/product`、`/admin/promotions`、`/admin/coupons` 等），整個管理者授權層實質上對所有註冊使用者開放。範圍限制：只有 body 的 `user_ids`（目標）要通過 `admin_Validator.js:8–15` 的 `UUIDField`（v4／v5，`admin_Validator.js:61–66`），呼叫者本身不受這個檢查。所以**被提權的目標**只能是註冊流程建立的帳號（`uuid_generate_v4()`）；seed 的三個帳號版本位不是 v4／v5，作為目標會被擋成 400（見下一條）。但**呼叫者**可以是任何已登入的帳號，包括 seed 的 `User`（例如 Alice），都能把任何註冊帳號改成 `admin`。這是 route 設定問題，契約只記錄，不處理；決定項見 §4.2 (b)。（P2 已修：P2 Task 1 已取消 `routes/admin.js:26` 的註解並加上 `authRole('admin')`，`controllers/admin.js:57-58` 寫入前把 `user` 正規化成 `User`，非 admin 不能再改角色；此條原文保留作歷史紀錄。）
-> - **UUID 版本檢查補充（§2 B 組共通觀察「UUID 版本檢查」沒有涵蓋的驗證器）**：`utils/Validator/admin_Validator.js:8–15` 的 `UUIDField` 只接受 `guid({ version: ['uuidv4', 'uuidv5'] })`（第三段開頭必須是 `4` 或 `5`、第四段開頭必須是 `8`／`9`／`a`／`b`），`userDetailinfoSchema`（`:55–58`）、`userPurviewSchema`（`:61–75`，`user_ids` 每一項）、`userSearchSchema`（`:78–80`）的 `user_id` 都用它。來源檔 seed 三位使用者（alice、bob、carol）的主鍵是手寫值（版本位分別是 `7`、`9`、`a`），**三筆都不是 v4／v5**；P1b Task 2 之後已改成 v4。後果：`GET /api/v1/admin/members/:user_id`（讀 `user_adminList`）、`PATCH /api/v1/admin/members/roles`、`GET /api/v1/admin/members/list/:user_id` 對任何 seed 使用者都在驗證階段回 400（`middlewares/admin/index.js:32`、`:66`、`:112`），只有經註冊流程產生的使用者（`uuid_generate_v4()`，V1 `:6`）走得通。其他 C 組驗證器與 seed 的核對：`collection_Validator.js:60–62` 的 `favorite_id`（`UUIDField` 同樣接受 v4／v5）對來源檔 seed 的 `favorite`（7 筆）全部通過，因為它們是 v5（第三段開頭 `5`，第四段開頭 `8`／`b`／`a`／`9`）；`purchases_Validator.js:8` 的 `order_item_id`（只接受 v4）對來源檔 seed 的 `order_item`（10 筆）全部通過；`collection_Validator.js:55–57` 的 `tour_id` 只是 `nonEmptyString`，**不檢查 UUID**，所以 §2 提到的「seed 行程主鍵都不是 v4」不影響收藏 API（seed 行程可以被加入收藏）。**這一點同樣見 §4.2 (a)，由使用者決定**：改寫 seed `user` 的主鍵為 v4（連同引用它們的所有外鍵），或放寬 `admin_Validator.js` 的 `UUIDField`。使用者決定 A，且 2026-10-23 擴大範圍到 `country`（含 `region.country_id`），並補列其他 v4 專用驗證器（`product_Validator.js:156`、`other_Validator.js:5`、`promotion_Validator.js:7,9`、`coupon_Validator.js:6–20,28,57`），見 §2 B 組共通觀察「UUID 版本檢查」與 §4.2 (a)；新 id 必須是 v4，不是 v5。
-> - **各表寫入／讀取來源索引**（供改動時找全）：`favorite` 的寫入只有 `controllers/collection.js:78`（INSERT）、`:100`（DELETE）；`orders`／`order_item` 的寫入見 §2 `user_orderList` 與本節 `user_orders`；`user.role` 的寫入見上表。
+> - **UUID 版本檢查補充（§2 B 組共通觀察「UUID 版本檢查」沒有涵蓋的驗證器）**：`utils/Validator/admin_Validator.js:8–15` 的 `UUIDField` 只接受 `guid({ version: ['uuidv4', 'uuidv5'] })`（第三段開頭必須是 `4` 或 `5`、第四段開頭必須是 `8`／`9`／`a`／`b`），`userDetailinfoSchema`（`:55–58`）、`userPurviewSchema`（`:61–75`，`user_ids` 每一項）、`userSearchSchema`（`:78–80`）的 `user_id` 都用它。來源檔 seed 三位使用者（alice、bob、carol）的主鍵是手寫值（版本位分別是 `7`、`9`、`a`），**三筆都不是 v4／v5**；P1b Task 2 之後已改成 v4。後果：`GET /api/v1/admin/members/:user_id`（讀 `user_adminList`）、`PATCH /api/v1/admin/members/roles`、`GET /api/v1/admin/members/list/:user_id` 對任何 seed 使用者都在驗證階段回 400（`middlewares/admin/index.js:32`、`:66`、`:112`），只有經註冊流程產生的使用者（`uuid_generate_v4()`，V1 `:6`）走得通。其他 C 組驗證器與 seed 的核對：`collection_Validator.js:60–62` 的 `favorite_id`（`UUIDField` 同樣接受 v4／v5；P5 Task 7 已改寫，現在只收 v4，見下一段）對來源檔 seed 的 `favorite`（7 筆）全部通過，因為它們是 v5（第三段開頭 `5`，第四段開頭 `8`／`b`／`a`／`9`）；`purchases_Validator.js:8` 的 `order_item_id`（只接受 v4）對來源檔 seed 的 `order_item`（10 筆）全部通過；`collection_Validator.js:55–57` 的 `tour_id` 只是 `nonEmptyString`，**不檢查 UUID**，所以 §2 提到的「seed 行程主鍵都不是 v4」不影響收藏 API（seed 行程可以被加入收藏）。**【P5 Task 7 之後的現況，backend `d3280ce`】** `collection_Validator.js` 重寫：POST 的 `tour_id`（`tourIDSchema`，`:29-31`）與 DELETE 的 `favorite_id`（`favoriteIDSchema`，`:34-36`）共用 `uuidField`（`:17-26`），一律只收 `uuid({ version: 'uuidv4' })`，v5 不再通過；不合格回 400（`「行程編號」／「收藏編號」必須是有效的 UUID 格式`）。P1b 之後 seed 的 `favorite`、`tour` 主鍵都已是 v4（§0.1），所以上面「v5 全部通過」「seed 行程可被收藏」是 P1b 之前的歷史狀態，不影響現行 seed。**這一點同樣見 §4.2 (a)，由使用者決定**：改寫 seed `user` 的主鍵為 v4（連同引用它們的所有外鍵），或放寬 `admin_Validator.js` 的 `UUIDField`。使用者決定 A，且 2026-10-23 擴大範圍到 `country`（含 `region.country_id`），並補列其他 v4 專用驗證器（`product_Validator.js:156`、`other_Validator.js:5`、`promotion_Validator.js:7,9`、`coupon_Validator.js:6–20,28,57`），見 §2 B 組共通觀察「UUID 版本檢查」與 §4.2 (a)；新 id 必須是 v4，不是 v5。
+> - **各表寫入／讀取來源索引**（供改動時找全）：`favorite` 的寫入只有 `controllers/collection.js:75-79`（INSERT … ON CONFLICT，P5 Task 7）、`:115-118`（DELETE），行號為 backend `d3280ce`；`orders`／`order_item` 的寫入見 §2 `user_orderList` 與本節 `user_orders`；`user.role` 的寫入見上表。
 
 ### `user_favorite`
 
 - **種類**：view（無參數）
 - **使用位置**：
-  - `controllers/collection.js:12-49`（P5 Task 7 之後的現況；API：`GET /api/v1/user/collection/info/all?lang=`，不分頁，`routes/collection.js`，需登入且 `authRole('User')`；舊寫法 `?lang=&page=&limit=` 已移除，下方舊敘述保留作歷史）
+  - `controllers/collection.js:11-58`（backend `d3280ce`）（P5 Task 7 之後的現況；API：`GET /api/v1/user/collection/info/all?lang=`，不分頁，`routes/collection.js`，需登入且 `authRole('User')`；舊寫法 `?lang=&page=&limit=` 已移除，下方舊敘述保留作歷史）
     ```sql
     SELECT * FROM public."user_favorite" WHERE 收藏人員編號 = $1 ORDER BY 建立時間 DESC, favorite_id LIMIT 100
     ```
     參數 `[user_id, 100]`；另以 `SELECT COUNT(*)::int FROM favorite WHERE user_id = $1` 算 `total`（實際總數）。寫入位置：`POST` 的 `INSERT … ON CONFLICT (user_id, tour_id) DO NOTHING RETURNING favorite_id` 在 `controllers/collection.js:75-79`，`DELETE` 在 `:115-118`（backend `ab52b9a`）。（P4 以前：`LIMIT $2 OFFSET $3`，參數 `[user_id, limit, (page - 1) * limit]`，`page`／`limit` 為 query 字串。）
     （P4 以前的舊敘述：）參數 `[user_id, limit, (page - 1) * limit]`（`collection.js:16`）：`user_id` 為 `req.user.id`（JWT，不經 UUID 驗證）；`limit`、`page` 是 `req.query` 的字串（`middlewares/collection/index.js:9` 驗證了 `lang`／`page`／`limit` 必填且 `page`、`limit` ≥ 1，但 `validate()` 的結果沒有寫回 `req.query`）。`lang` 在 `collection.js:10` 被解構但沒有用在任何查詢。
   - 沒有其他使用位置。`favorite` 資料表的寫入與重複檢查不走這個 view，見邊界。
-- **輸出欄位**（`controllers/collection.js:20–36` 取 key）：
+- **輸出欄位**（`controllers/collection.js:35–46` 取 key，backend `d3280ce`；P4 以前是 `:20–36`）：
 
   | 欄位（中文） | 型別 | 來源（表.欄位 或計算式） | 讀取位置 | 依據 |
   |---|---|---|---|---|
-  | 收藏人員編號 | uuid | `favorite.user_id` | `controllers/collection.js:15` | WHERE |
-  | 建立時間 | timestamptz | `favorite.created_at`（見待確認 2；【定案 #43】收藏時間；**不是** `tour_base` 的 `建立時間`） | `controllers/collection.js:15` | ORDER BY |
-  | 偏好分類1 | smallint | `tour.preference1`（欄位名稱確定，來源見待確認 3；【定案 #42】行程的偏好） | `controllers/collection.js:23,32` | JS 讀取 `row.偏好分類1` → 轉成文字放入 response `偏好分類[0]`，原欄位設為 `undefined` |
-  | 偏好分類2 | smallint | `tour.preference2`（同上；【定案 #42】） | `controllers/collection.js:24,33` | 同上 → `偏好分類[1]` |
-  | 偏好分類3 | smallint | `tour.preference3`（同上；【定案 #42】） | `controllers/collection.js:25,34` | 同上 → `偏好分類[2]` |
+  | 收藏人員編號 | uuid | `favorite.user_id` | `controllers/collection.js:16` | WHERE |
+  | 建立時間 | timestamptz | `favorite.created_at`（見待確認 2；【定案 #43】收藏時間；**不是** `tour_base` 的 `建立時間`） | `controllers/collection.js:17` | ORDER BY |
+  | 偏好分類1 | smallint | `tour.preference1`（欄位名稱確定，來源見待確認 3；【定案 #42】行程的偏好） | `controllers/collection.js:38,44` | JS 讀取 `row.偏好分類1` → 轉成文字放入 response `偏好分類[0]`，原欄位設為 `undefined` |
+  | 偏好分類2 | smallint | `tour.preference2`（同上；【定案 #42】） | `controllers/collection.js:39,44` | 同上 → `偏好分類[1]` |
+  | 偏好分類3 | smallint | `tour.preference3`（同上；【定案 #42】） | `controllers/collection.js:40,44` | 同上 → `偏好分類[2]` |
 
-  controller 沒有讀取其他 key，`...row`（`collection.js:30`）會把其餘欄位原樣放進 response。以下為依 API 用途推測的欄位，**程式碼無法證實**，原為推測，2026-10-23 使用者採為定案（見待確認 1；【定案 #11】欄位集合選 A：`favorite` 加 `tour_base` 的欄位再加 `favorite_id`，命名照下表；frontend `phase-0` 沒有讀取此 API）：
+  controller 沒有讀取其他 key，`...rest`（`collection.js:44-45`，P4 以前是 `...row`、`:30`）會把其餘欄位原樣放進 response。以下為依 API 用途推測的欄位，**程式碼無法證實**，原為推測，2026-10-23 使用者採為定案（見待確認 1；【定案 #11】欄位集合選 A：`favorite` 加 `tour_base` 的欄位再加 `favorite_id`，命名照下表；frontend `phase-0` 沒有讀取此 API）：
 
   | 欄位（中文） | 型別 | 來源（【定案 #11】） | 依據（原推測理由） |
   |---|---|---|---|
-  | favorite_id（英文） | uuid | `favorite.favorite_id` | 取消收藏 `DELETE /api/v1/user/collection/info/:favorite_id`（`routes/collection.js:17`、`collection.js:97`）要前端帶 `favorite_id`，而列表是前端唯一可能取得它的 API；欄位名稱是否為英文，程式碼沒有證據 |
+  | favorite_id（英文） | uuid | `favorite.favorite_id` | 取消收藏 `DELETE /api/v1/user/collection/info/:favorite_id`（`routes/collection.js:23-29`、`collection.js:115-118`，backend `d3280ce`）要前端帶 `favorite_id`，而列表是前端唯一可能取得它的 API；欄位名稱是否為英文，程式碼沒有證據 |
   | 旅遊編號 | uuid | `favorite.tour_id`（= `tour.tour_id`） | 沿用 `tour_base` 的命名（§1） |
   | 旅遊名稱、旅遊代表圖 Url、價錢、大分類、小分類、所屬國家、所屬地區等（§1 `tour_base` 輸出欄位表的其餘欄位；**不含** `旅遊編號`——上一列已列，整個 view 只出現一次；**不含** `建立時間`、`更新時間`——`建立時間` 一律取自 `favorite.created_at`，不帶入 `tour_base` 的 `建立時間`／`更新時間`；`偏好分類1/2/3` 見上面第一張表） | 同 §1 `tour_base` | 同 §1 `tour_base` | 收藏清單要顯示行程；偏好分類 1/2/3 的命名與 `tour_base` 相同，表示 view 很可能由 `tour_base` 衍生 |
 
-- **列的語意**：每筆 `favorite` 一列，帶入被收藏行程的資料（待確認 1；【定案 #11，2026-10-23】選 A：帶入 `tour_base` 的欄位）。【定案 #41、#43】下架行程的收藏也出現；`建立時間` ＝ `favorite.created_at`。`WHERE 收藏人員編號 = $1` 取出單一使用者的收藏，controller 以 `建立時間 DESC` 排序並分頁（`LIMIT`／`OFFSET`）。
+- **列的語意**：每筆 `favorite` 一列，帶入被收藏行程的資料（待確認 1；【定案 #11，2026-10-23】選 A：帶入 `tour_base` 的欄位）。【定案 #41、#43】下架行程的收藏也出現；`建立時間` ＝ `favorite.created_at`。`WHERE 收藏人員編號 = $1` 取出單一使用者的收藏，controller 以 `建立時間 DESC, favorite_id` 排序、不分頁、上限 `LIMIT 100`（P5 Task 7；P4 以前是 `LIMIT`／`OFFSET` 分頁，已移除）。
 - **邊界**：
   - **【P5 Task 7 更新】** 以下「controller 行為 1–5」是 P4 以前的現況，已由 P5 Task 7 修正：`GET /collection/info/all` 只回應一次、不分頁（只認 `lang`），`ORDER BY 建立時間 DESC, favorite_id LIMIT 100`，回 `dbdata = { data, total }`（`total` 為實際總數，空列表為 `{ data: [], total: 0 }`）；`POST /info/:tour_id` 與 `DELETE /info/:favorite_id` 加 `authRole('User')`，路徑參數以 Joi 驗證 UUIDv4（400 `「行程編號」／「收藏編號」必須是有效的 UUID 格式`）；`POST` 行程不存在或下架 404 `查無此旅遊項目`，以 `INSERT … ON CONFLICT (user_id, tour_id) DO NOTHING RETURNING favorite_id`（約束 `favorite_user_tour_key`，V6）寫入，新增 201 `收藏成功`、已收藏 200 `已收藏過此行程`，兩者皆回 `{ favorite_id }`；`DELETE … WHERE favorite_id = $1 AND user_id = $2 RETURNING favorite_id`，0 列 404 `查無此收藏項目`。`tour_travel`／`tour_tour_detail`／`tour_hotel`／`tour_restaurant` 新增欄位 `收藏編號`（uuid）。
   - **controller 行為 1（`get_collection` 每次都送兩次回應）**：`controllers/collection.js:39–46`（有資料）或 `:49–53`（無資料）已經呼叫 `resStatus` → `res.status(200).json(...)`（`utils/resStatus.js:33`），`:57–64` 又無條件再呼叫一次。第二次 `res.json` 會丟 `ERR_HTTP_HEADERS_SENT`，被 `:65` 的 `catch` 接住並 `next(error)`，進入 `server.js:137` 的錯誤處理，那裡又呼叫 `res.status(500).json(...)` 再丟一次。**client 收到的是第一次的回應**（依序執行，第一次 `json()` 已結束回應）；伺服器 log 每次都有錯誤，錯誤處理之後 Express 對連線的處置（推測是 `finalhandler` 因 headers 已送出而關閉 socket）沒有實測。結果：每次呼叫此 API 至少會留下 `❌ 伺服器內部錯誤` 與 `❌ 系統錯誤` 兩筆錯誤 log（Express 的 `finalhandler` 對錯誤處理再丟出的錯誤可能另外輸出第三筆，推測，未實測），與 view 的內容無關。
   - **controller 行為 2（有資料時的 response 形狀）**：`collection.js:43–45` 的 `dbdata` 是 `{ data: transformedRows }`，`resStatus` 再包一層，所以 client 拿到的是 `body.data.data[]`（兩層 `data`）。
   - **controller 行為 3（寫入與重複檢查走 base table，不走 view）**：`POST /api/v1/user/collection/info/:tour_id` 寫 `INSERT INTO favorite (user_id, tour_id) VALUES ($1, $2)`（`collection.js:78`），`DELETE` 寫 `DELETE FROM favorite WHERE user_id = $1 AND favorite_id = $2`（`collection.js:100`）。V1 `favorite`（`V1:382–390`）沒有 `UNIQUE (user_id, tour_id)`，重複收藏只靠 `middlewares/collection/index.js:68–70` 的 `SELECT 1 FROM favorite WHERE user_id = $1 AND tour_id = $2` 先查再寫，並行請求可以寫入重複列；view 若直接 JOIN 就會重複顯示。
-  - **controller 行為 4（`POST` 的 `tour_id` 沒有 UUID 驗證）**：`collection_Validator.js:55–57` 只要求非空字串，`middlewares/collection/index.js:46` 直接把它放進 `SELECT * FROM tour WHERE tour_id = $1`；`tour_id` 不是 UUID 格式時 PostgreSQL 回 `22P02`（invalid input syntax for type uuid），經 `express-async-errors`（`server.js:3`）進入 `server.js:137` 回 500，而不是 400。`DELETE` 有 UUID 驗證（`collection_Validator.js:60–62`）。
-  - **controller 行為 5（角色檢查不一致）**：只有 `GET` 有 `authRole('User')`（`routes/collection.js:11`），`POST`／`DELETE`（`:14`、`:17`）只需登入。見共通觀察的 `role` 表。
+  - **controller 行為 4（`POST` 的 `tour_id` 沒有 UUID 驗證）**：`collection_Validator.js:55–57` 只要求非空字串，`middlewares/collection/index.js:46` 直接把它放進 `SELECT * FROM tour WHERE tour_id = $1`；`tour_id` 不是 UUID 格式時 PostgreSQL 回 `22P02`（invalid input syntax for type uuid），經 `express-async-errors`（`server.js:3`）進入 `server.js:137` 回 500，而不是 400。`DELETE` 有 UUID 驗證（`collection_Validator.js:60–62`）。**【P5 Task 7 已修正】** 現況：`tour_id` 與 `favorite_id` 都以 Joi 驗證 UUIDv4（`collection_Validator.js:17-36`），格式錯誤回 400，不再是 500；舊敘述保留作歷史。
+  - **controller 行為 5（角色檢查不一致）**：只有 `GET` 有 `authRole('User')`（`routes/collection.js:11`），`POST`／`DELETE`（`:14`、`:17`）只需登入。見共通觀察的 `role` 表。**【P5 Task 7 已修正】** 現況：`routes/collection.js` 的 GET（`:11`）、POST（`:17`）、DELETE（`:26`）都掛 `authRole('User')`；舊敘述保留作歷史。
   - **seed 對照**：來源檔 seed 有 7 筆收藏（Alice 3 筆、Bob 2 筆、Carol 2 筆；P1b 之後 9 筆），其中 Bob 的 `role` 是 `admin`，`authRole('User')` 讓他無法呼叫 `GET /collection/info/all`，所以此 API 在 seed 上只有 Alice 與 Carol 能實際操作，來源檔的 `created_at` 都是 `CURRENT_TIMESTAMP`（同一個 INSERT 敘述內的值相同；P1b 之後 9 筆各不相同，見 §0.1 第 8 項），因此 `ORDER BY 建立時間 DESC` 在同一位使用者的多筆收藏之間沒有區分度，`LIMIT`／`OFFSET` 分頁的順序不穩定（若 `建立時間` 取 `tour.created_at`，seed 行程的 `created_at` 是否相同需另查，見待確認 2）。
   - 其他讀取 `favorite` 的物件（不是本 view，列出避免漏看）：`tour_travel_most_favorited`（§1，推測依 `favorite` 筆數排名）、`tour_travel`／`tour_tour_detail` 的 `收藏狀態`（§1，推測）；`middlewares/collection/index.js:69,103` 直接查 `favorite`。
   - `favorite.tour_id` 有外鍵指向 `tour`（`V1:389`），若 view 對 `tour` 做 `INNER JOIN`，收藏列不會因為行程不存在而消失；若改為對 `tour_base` JOIN，則受 §1 `tour_base` 待確認 1 的上下架問題影響（見待確認 4）。【定案 #41、#7】`tour_base` 含全部行程，下架行程的收藏也出現。
@@ -1526,7 +1526,7 @@
   - **排序（2026-11-01 使用者決定）**：`ORDER BY` 只有 `orders.created_at DESC`，不加第二排序鍵；同一張訂單的多個項目之間沒有穩定順序，P4 若一張訂單可有多個項目再重新檢視。
   - **controller 行為 1（沒有分頁）**：`purchases.js:9` 沒有 `LIMIT`，使用者的所有項目一次回傳。
   - **controller 行為 2（回應形狀）**：有資料時 `dbdata: transformedRows`（陣列，`purchases.js:37`），client 拿到 `body.data[]`；沒有資料時 `message: '查無資料'` 且沒有 `data`（`purchases.js:41–45`，`resStatus` 對空陣列也不放 `data`）。
-  - **controller 行為 3（付款狀態實際上寫不到 1）**：能影響這個 view 的 `payment_status` 寫入點：`controllers/checkout.js:36–39`（`orders` 建立，`-1`）、`:43–56`（`order_item` 建立，`-1`）、`:133–139`（`orders` 與 `order_item` 都改成 `0`）、`controllers/newebpay.js:70–72`（`orders` 改 `0`）、`:206`（`orders` 改 `1`）。`newebpay.js:80–84`、`:211–215` 對 `order_item` 寫的是不存在的欄位 `payment`（V1 `order_item`，`V1:288–303`，只有 `payment_status`；詳見 §2 `user_orderList` 邊界 controller 行為 4），SQL 失敗後 `:127`／`:221` 的 `ROLLBACK` 會把同一個交易裡的 `payment_status` 更新（`:71`、`:206`）一起撤銷。因此：**在乾淨的 DB 上，經 API 產生的訂單，`order_item.payment_status` 只會是 `-1` 或 `0`，`orders.payment_status` 也只會是 `-1` 或 `0`；沒有任何程式碼會寫入 `1`、`2`、`3`、`4`**。這四個值只出現在 seed。
+  - **controller 行為 3（付款狀態實際上寫不到 1）**：能影響這個 view 的 `payment_status` 寫入點：`controllers/checkout.js:36–39`（`orders` 建立，`-1`）、`:43–56`（`order_item` 建立，`-1`）、`:133–139`（`orders` 與 `order_item` 都改成 `0`）、`controllers/newebpay.js:70–72`（`orders` 改 `0`）、`:206`（`orders` 改 `1`）。`newebpay.js:80–84`、`:211–215` 對 `order_item` 寫的是不存在的欄位 `payment`（V1 `order_item`，`V1:288–303`，只有 `payment_status`；詳見 §2 `user_orderList` 邊界 controller 行為 4），SQL 失敗後 `:127`／`:221` 的 `ROLLBACK` 會把同一個交易裡的 `payment_status` 更新（`:71`、`:206`）一起撤銷。因此：**在乾淨的 DB 上，經 API 產生的訂單，`order_item.payment_status` 只會是 `-1` 或 `0`，`orders.payment_status` 也只會是 `-1` 或 `0`；沒有任何程式碼會寫入 `1`、`2`、`3`、`4`**。這四個值只出現在 seed。**【P4 已修正】** 現況：付款成功時 `settlePaidOrder` 會寫 `payment_status = 1`（`orders`、`order_item`，見上方解讀 B 的更新）；逾時、取消、退款也由 P4 的程式寫 `4`、`2`、`3`。上述 `newebpay.js` 的舊行號與「寫入不存在的欄位 `payment`」是 P4 之前（`06ded19`）的狀態。（P5 Task 10 註記）
   - **controller 行為 4（每張訂單只會有一個 `order_item`）**：見 §2 `user_orderList` 邊界 controller 行為 3（`controllers/checkout.js:20–33,42–56` 只取購物車第一個項目）。
   - **seed 對照**：來源檔 seed 的 `orders`（5 筆）與 `order_item`（10 筆）（P1b 之後重建成 20 張訂單、每張 1 個項目，且訂單與項目的 `payment_status` 一致，見 §0.1 第 9 項）。`orders.payment_status`：`0` 共 4 筆（來源檔的 bob 2 張、carol 1 張、alice 1 張）、`1` 共 1 筆（carol 的一張）。`order_item.payment_status`：`1` 共 6 筆、`2` 共 1 筆、`3` 共 3 筆。**seed 內 `orders` 與 `order_item` 的付款狀態並不一致**（例如 bob 的一張訂單為 `0`，其項目為 `1`），因此「以哪個表的哪個狀態篩選」在 seed 上會得到不同結果（見待確認 2）。注意 Bob 的 `role` 是 `admin`（seed 的 `bob@example.com`），`authRole('User')` 會讓他在 `GET /purchases/info` 與 `GET /collection/info/all` 回 403，所以這兩個 API 在 seed 上只有 Alice 與 Carol 能實際操作；Bob 的數字只在 view 內可見。依擁有者分：來源檔裡 Alice 1 個項目（狀態 `3`）、Bob 5 個項目（狀態 `1`、`1`、`3`、`1`、`1`）、Carol 4 個項目（狀態 `2`、`1`、`3`、`1`）；P1b 之後見 §0.1 第 9 項。
   - **UUID**：`order_item_id` 對 seed 都是 v4，明細 API 可以通過驗證（見共通觀察）。
@@ -1539,7 +1539,7 @@
      - 解讀 B：每張訂單一列（彙總）。後果：沒有 `order_item_id`，前端無法呼叫明細 API（`routes/purchases.js:14–20` 需要 `:order_item_id`）。
   2. **要列出哪些付款狀態？**（`payment_status`：`-1` 資料剛建立、`0` 資料填寫完成未付款、`1` 已付款、`2` 已取消、`3` 已退款、`4` 付款逾時，`V1:277,292`）。下列後果中的 seed 數字依「controller 行為 3」與「seed 對照」的計算。 → §4.1 #6（定案：清單只含 `order_item.payment_status = 1`）
      - 解讀 A：不篩選（`order_item` 全部 `-1`～`4`）。後果：經 API 新建的訂單項目（只有 `-1`、`0`）也出現在「已購買」；來源檔 seed 上 Alice 1 筆、Bob 5 筆、Carol 4 筆，含已取消（`2`）與已退款（`3`）；P1b 之後 alice 7 筆、bob 6 筆、carol 7 筆（共 20，含 `-1`、`0`、`2`、`3`、`4` 各 1 筆）。
-     - 解讀 B：只含 `order_item.payment_status = 1`。後果：已取消、已退款、逾時都不顯示；因為 API 寫不到 `1`（controller 行為 3），**經 API 產生的訂單永遠不會出現**，只有 seed 資料；來源檔 seed 上 Alice 0 筆（回「查無資料」）、Bob 4 筆、Carol 2 筆；P1b 之後 alice、bob、carol 各 5 筆。
+     - 解讀 B：只含 `order_item.payment_status = 1`。後果：已取消、已退款、逾時都不顯示；因為 API 寫不到 `1`（controller 行為 3），**經 API 產生的訂單永遠不會出現**，只有 seed 資料；來源檔 seed 上 Alice 0 筆（回「查無資料」）、Bob 4 筆、Carol 2 筆；P1b 之後 alice、bob、carol 各 5 筆。**【P4／P5 更新】** 「API 寫不到 `1`」已不成立：P4 起付款成功時 `settlePaidOrder`（`utils/trade.js`）會在同一交易把 `orders` 與 `order_item` 的 `payment_status` 設為 `1`（P4 報告 §1.6），經 API 付款的訂單會出現在這個 view（`user_orders`／`user_order_item` 的篩選仍是 `order_item.payment_status = 1`，定案 #6）。P5 的「我的訂單」不經這個 view，改由 `GET /user/orders`（`controllers/orders.js`）列出全部狀態。（P5 Task 10 註記）
      - 解讀 C：含 `order_item.payment_status IN (1, 2, 3, 4)`（排除 `-1`、`0`，即尚未完成付款的）。後果：保留取消／退款／逾時的歷史；API 產生的訂單同樣不會出現；來源檔 seed 上與解讀 A 相同（沒有 `-1`、`0`、`4` 的項目）；P1b 之後 alice 6 筆、bob 5 筆、carol 7 筆（排除 `-1`、`0` 各 1 筆）。
      - 解讀 D：依 `orders.payment_status = 1`（訂單層級）篩選。後果：來源檔 seed 上只有 carol 的一張訂單符合，其下兩個項目（項目狀態 `2` 已取消與 `1`）都出現，Alice、Bob 都是「查無資料」；P1b 之後訂單與項目的狀態一致（§0.1 第 9 項），結果與解讀 B 相同：alice、bob、carol 各 5 筆；API 產生的訂單同樣不會出現。
   3. **`偏好分類 1/2/3` 是行程的還是使用者的？** 同 `user_favorite` 待確認 3。解讀 A（行程）：每個項目顯示該行程的分類標籤。解讀 B（使用者）：同一位使用者所有列相同。 → §4.1 #42（定案：`tour.preference1/2/3`（行程的偏好））

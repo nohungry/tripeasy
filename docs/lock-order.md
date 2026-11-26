@@ -1,6 +1,6 @@
 # TripEasy 交易上鎖順序
 
-核對基準：行號以 backend `d3280ce` 為準（`git -C backend rev-parse --short HEAD`；P5 Task 9 最後一次動 backend，`utils/trade.js` 與其他引用的檔案行號都已對照該 commit 逐一核對）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
+核對基準：行號以 backend `d3280ce` 為準（`git -C backend rev-parse --short HEAD`；P5 Task 10 重核時 backend HEAD 仍是 `d3280ce`，P5 Task 9 是最後一次動 backend，`utils/trade.js` 與其他引用的檔案行號都已對照該 commit 逐一核對）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
 
 ## 規範順序（P4 計畫 GC14，具約束力）
 
@@ -167,7 +167,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `controllers/product.js:626-630`（BEGIN `:630`）：交易只寫 tour 相關表，不碰交易表。
 - `controllers/admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。
 - `controllers/coupon.js:209`（`post_admin_assigncoupon`）：管理員批次綁定券，INSERT `user_coupon ... ON CONFLICT DO NOTHING`，不開交易。
-- `controllers/automation.js:74-78`（`patch_early_notifiSettings`）、`:126-139`（`patch_price_notifiSettings`）：通知設定寫入 `auto_setting`，是單一 `INSERT … ON CONFLICT (user_id) DO UPDATE` 語句、不開交易（P5 Task 6；V6 `auto_setting_user_id_key`）。只鎖該會員自己的那一列，併發首次寫入由唯一索引收斂成一列（後到者等先到者提交後走 UPDATE），不碰交易表、不再取其他鎖，所以不成環。price-tracking 在寫入前另有兩個不加鎖的讀取（`auto_setting` 目前值、`tour` 上架地區），各自獨立自動提交。
+- `controllers/automation.js:74-78`（`patch_early_notifiSettings`）、`:126-139`（`patch_price_notifiSettings`）：通知設定寫入 `auto_setting`，是單一 `INSERT … ON CONFLICT (user_id) DO UPDATE` 語句、不開交易（P5 Task 6；V6 `auto_setting_user_id_key`）。只鎖該會員自己的那一列，併發首次寫入由唯一索引收斂成一列（後到者等先到者提交後走 UPDATE），不碰交易表，除了下一句說明的 INSERT 分支外鍵檢查（對 `user` 取 KEY SHARE）之外不再取其他鎖，所以不成環。`auto_setting.user_id` 有外鍵指向 `user`（V1），INSERT 分支（首次寫入、沒有衝突）的外鍵檢查會對 `user` 列取 KEY SHARE，所以會被 Google 登入的 `user` `FOR UPDATE`（`controllers/userinfo.js:156`）擋住，只是排隊、不成環（Google 登入取得 `user` 鎖後不再取其他鎖）；衝突走 UPDATE 分支時不改 `user_id`，不做外鍵檢查（讀碼與 Postgres 行為推定，未另寫測試）；與 checkout 的 `FOR NO KEY UPDATE` 相容。price-tracking 在寫入前另有兩個不加鎖的讀取（`auto_setting` 目前值、`tour` 上架地區），各自獨立自動提交。
 
 ### 11. 收藏新增與刪除
 
@@ -216,6 +216,10 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `tests/test_trade_checkout.py::test_create_order_concurrently_leaves_one_pending`：併發建單，只留一張未付款訂單（`user` 列鎖）
 - `tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500`：建單與點數 preview 併發 8 輪，不死結
 - `tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once`：先鎖住 `user_coupon` 列，兩張訂單的 preview 都卡在鎖上，放行後只有一個保留成功
+- `tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart`（P5 Task 1）：同一會員首次加入購物車併發，只建出一個 cart（V6 `cart_user_id_key`＋`ON CONFLICT`；§9）
+- `tests/test_member_notify.py::test_patch_concurrent_first_write_one_row`（P5 Task 6）：通知設定首次寫入併發，`auto_setting` 只有一列、不 500（`ON CONFLICT (user_id) DO UPDATE`；§10）
+- `tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id`（P5 Task 7）：8 條執行緒同時收藏同一行程，只有 1 個 201、其餘 200、同一個 `favorite_id`、DB 1 列（§11）
+- `tests/test_member_favorites.py::test_favorite_waits_on_uncommitted_insert_then_returns_same_id`（P5 Task 7，決定性）：另一條連線 INSERT 同一組 `(user_id, tour_id)` 但不提交，輪詢 `pg_stat_activity` 確認 POST 卡在鎖上，提交後回 200 與同一個 `favorite_id`（§11）
 
 已知缺口：`NOWAIT` 測試原本等待固定 1.5 秒，P5 Task 9 已改為輪詢 `pg_stat_activity` 確認請求正在等鎖（`_wait_until_blocked_by`）。`user_level` 路徑（point 例外）只有上面的 8 輪併發測試間接覆蓋，沒有決定性的鎖順序測試。
 
