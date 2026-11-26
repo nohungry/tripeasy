@@ -17,7 +17,7 @@ const cart = require(b + 'cart_Validator.js'), disc = require(b + 'discounts_Val
 const co = require(b + 'checkout_Vaildator.js'), prod = require(b + 'product_Validator.js');
 const np = require(process.cwd() + '/src/middlewares/newebpay/index.js');
 const ui = require(b + 'userInfo_Validator.js'), up = require(b + 'userprofile_Validator.js');
-const au = require(b + 'automation_Validator.js');
+const au = require(b + 'automation_Validator.js'), col = require(b + 'collection_Validator.js');
 const pg = require(b + 'paging_Validator.js'), ord = require(b + 'orders_Validator.js'), pur = require(b + 'purchases_Validator.js');
 let userMessage = null;
 try { userMessage = require(b + 'joiMessage.js').userMessage; } catch (e) {}
@@ -51,6 +51,9 @@ const targets = [
  ['purchases.query', pur.querySchema, {}, queryVals, ['lang']],
  ['automation.early', au.early_schema, { notifi_settings_enabled: true }, bodyVals, ['notifi_settings_enabled']],
  ['automation.price', au.price_schema, { price_tracking_enabled: true, country: 'Japan', region: 'Tokyo', max_price: 30000 }, bodyVals, ['price_tracking_enabled', 'country', 'region', 'max_price']],
+ ['collection.list', col.listSchema, {}, queryVals, ['lang']],
+ ['collection.tourID', col.tourIDSchema, { tour_id: uuid }, queryVals, ['tour_id']],
+ ['collection.favoriteID', col.favoriteIDSchema, { favorite_id: uuid }, queryVals, ['favorite_id']],
  ['np.payment', np.paymentSchema, { order_id: uuid }, bodyVals, ['order_id']],
  ['prod.query(search)', prod.queryschema, { page: '1', limit: '10', sort_by: 'date', order: 'asc', lang: 'zh-TW' }, queryVals, ['type', 'item', 'tag', 'country', 'region', 'min_price', 'max_price', 'start_date', 'end_date', 'keyword', 'duration', 'page', 'limit', 'sort_by', 'order', 'lang']],
 ];
@@ -127,7 +130,7 @@ def _strip_comments(src: str) -> str:
     return re.sub(r"//[^\n]*", "", src)
 
 
-@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData", "userinfo.postuserSignup", "userProfile.patchuserprofileData", "orders", "purchases", "points", "automation"])
+@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData", "userinfo.postuserSignup", "userProfile.patchuserprofileData", "orders", "purchases", "points", "automation", "collection"])
 def test_middlewares_read_joi_errors_only_through_user_message(name):
     if name == "product.get_tourData":
         src = _search_handler_source()

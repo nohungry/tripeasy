@@ -58,6 +58,7 @@ _TOUR_PAGE_COLUMNS = (
         ("偏好設定分類 2", "smallint"),
         ("偏好設定分類 3", "smallint"),
         ("收藏狀態", "boolean"),
+        ("收藏編號", "uuid"),
         ("異動通知內容", "text"),
         ("促銷價錢", "double precision"),
         ("通知狀態", "varchar"),
@@ -73,7 +74,7 @@ OBJECTS: dict[str, dict] = {
     "tour_travel": {
         "kind": "function",
         "args": _USER_ARG,
-        "columns": _TOUR_LIST_COLUMNS + [("收藏狀態", "boolean")],
+        "columns": _TOUR_LIST_COLUMNS + [("收藏狀態", "boolean"), ("收藏編號", "uuid")],
     },
     "tour_travel_popular": {
         "kind": "function",

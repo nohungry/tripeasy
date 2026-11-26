@@ -1,0 +1,413 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 151 items
+
+tests/test_member_favorites.py::test_favorite_first_time_is_201 FAILED   [  0%]
+tests/test_member_favorites.py::test_favorite_duplicate_returns_original_id FAILED [  1%]
+tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id FAILED [  1%]
+tests/test_member_favorites.py::test_favorite_unlisted_tour_is_404 FAILED [  2%]
+tests/test_member_favorites.py::test_favorite_unknown_tour_is_404 FAILED [  3%]
+tests/test_member_favorites.py::test_favorite_bad_uuid_is_400 FAILED     [  3%]
+tests/test_member_favorites.py::test_collection_bad_uuid_is_400 FAILED   [  4%]
+tests/test_member_favorites.py::test_delete_other_users_favorite_is_404 FAILED [  5%]
+tests/test_member_favorites.py::test_delete_own_favorite FAILED          [  5%]
+tests/test_member_favorites.py::test_delete_bad_uuid_is_400 FAILED       [  6%]
+tests/test_member_favorites.py::test_delete_unknown_favorite_is_404 FAILED [  7%]
+tests/test_member_favorites.py::test_list_capped_at_100_newest_first FAILED [  7%]
+tests/test_member_favorites.py::test_refavorite_after_delete_gets_new_id_and_old_id_404 FAILED [  8%]
+tests/test_member_favorites.py::test_favorite_admin_is_403[post] FAILED  [  9%]
+tests/test_member_favorites.py::test_favorite_admin_is_403[delete] FAILED [  9%]
+tests/test_member_favorites.py::test_favorite_admin_is_403[get] PASSED   [ 10%]
+tests/test_member_favorites.py::test_favorite_without_token_is_401[post] PASSED [ 11%]
+tests/test_member_favorites.py::test_favorite_without_token_is_401[delete] PASSED [ 11%]
+tests/test_member_favorites.py::test_favorite_without_token_is_401[get] PASSED [ 12%]
+tests/test_member_favorites.py::test_list_single_response_and_unlisted_flag FAILED [ 13%]
+tests/test_member_favorites.py::test_list_empty FAILED                   [ 13%]
+tests/test_member_favorites.py::test_detail_returns_favorite_id FAILED   [ 14%]
+tests/test_member_favorites.py::test_search_returns_favorite_id FAILED   [ 15%]
+tests/test_async_errors.py::test_rejection_outside_try_returns_500_and_server_survives PASSED [ 15%]
+tests/test_api_smoke.py::test_home_products_guest[tourgroup-popular-tour_travel_popular] PASSED [ 16%]
+tests/test_api_smoke.py::test_home_products_guest[tourgroup-promotion-None] PASSED [ 17%]
+tests/test_api_smoke.py::test_home_products_guest[tourgroup-most_favorited-tour_travel_most_favorited] PASSED [ 17%]
+tests/test_api_smoke.py::test_home_products_guest[backpacker-hotel-tour_travel_popular] PASSED [ 18%]
+tests/test_api_smoke.py::test_home_products_guest[backpacker-food-tour_travel_popular] PASSED [ 19%]
+tests/test_api_smoke.py::test_home_products_guest[backpacker-spot-tour_travel_popular] PASSED [ 19%]
+tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-popular-tour_travel_popular] FAILED [ 20%]
+tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-promotion-None] FAILED [ 21%]
+tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-most_favorited-tour_travel_most_favorited] FAILED [ 21%]
+tests/test_api_smoke.py::test_home_products_logged_in[backpacker-hotel-tour_travel_popular] FAILED [ 22%]
+tests/test_api_smoke.py::test_home_products_logged_in[backpacker-food-tour_travel_popular] FAILED [ 23%]
+tests/test_api_smoke.py::test_home_products_logged_in[backpacker-spot-tour_travel_popular] FAILED [ 23%]
+tests/test_api_smoke.py::test_home_promotion_rows_are_promotions PASSED  [ 24%]
+tests/test_api_smoke.py::test_home_reviews PASSED                        [ 25%]
+tests/test_api_smoke.py::test_public_product_list_guest FAILED           [ 25%]
+tests/test_api_smoke.py::test_detail_travel_tour_tour_detail PASSED      [ 26%]
+tests/test_api_smoke.py::test_detail_spot_tour_tour_detail PASSED        [ 27%]
+tests/test_api_smoke.py::test_detail_hotel_tour_hotel PASSED             [ 27%]
+tests/test_api_smoke.py::test_detail_food_tour_restaurant PASSED         [ 28%]
+tests/test_api_smoke.py::test_detail_logged_in_has_favorite_flag PASSED  [ 29%]
+tests/test_api_smoke.py::test_tour_reviews_use_user_level PASSED         [ 29%]
+tests/test_api_smoke.py::test_tour_hidden_shares_use_user_level PASSED   [ 30%]
+tests/test_api_smoke.py::test_points_level_alice_has_empty_coupon_list PASSED [ 31%]
+tests/test_api_smoke.py::test_points_level_carol_has_usable_coupon PASSED [ 31%]
+tests/test_api_smoke.py::test_cart_list PASSED                           [ 32%]
+tests/test_api_smoke.py::test_admin_user_coupon_list PASSED              [ 33%]
+tests/test_api_smoke.py::test_checkout_summary_unpaid_order PASSED       [ 33%]
+tests/test_api_smoke.py::test_favorite_list FAILED                       [ 34%]
+tests/test_api_smoke.py::test_purchases_list PASSED                      [ 35%]
+tests/test_api_smoke.py::test_purchases_item_detail PASSED               [ 35%]
+tests/test_api_smoke.py::test_admin_member_detail PASSED                 [ 36%]
+tests/test_api_smoke.py::test_admin_promotions PASSED                    [ 37%]
+tests/test_api_smoke.py::test_admin_change_info PASSED                   [ 37%]
+tests/test_api_smoke.py::test_admin_product_list PASSED                  [ 38%]
+tests/test_api_smoke.py::test_admin_product_empty_result PASSED          [ 39%]
+tests/test_api_smoke.py::test_filter_region_for_seed_country PASSED      [ 39%]
+tests/test_api_smoke.py::test_seed_member_can_list_orders_readonly PASSED [ 40%]
+tests/test_db_contract.py::test_normalize_type PASSED                    [ 41%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[hotel_booking] PASSED [ 41%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_booking] PASSED [ 42%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_business_parsed] PASSED [ 43%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_isclosed] PASSED [ 43%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_base] PASSED [ 44%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_hotel] PASSED [ 45%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_restaurant] PASSED [ 45%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_tour_detail] PASSED [ 46%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel] PASSED [ 47%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_most_favorited] PASSED [ 47%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_popular] PASSED [ 48%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_adminList] PASSED [ 49%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_cartList] PASSED [ 49%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_couponList] PASSED [ 50%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_favorite] PASSED [ 50%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_point_coupon] PASSED [ 51%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome] PASSED [ 52%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orderList] PASSED [ 52%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_order_item] PASSED [ 53%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orders] PASSED [ 54%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_user_level] PASSED [ 54%]
+tests/test_db_contract.py::test_view_columns_match_contract[restaurant_business_parsed] PASSED [ 55%]
+tests/test_db_contract.py::test_view_columns_match_contract[tour_base] PASSED [ 56%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_adminList] PASSED [ 56%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_cartList] PASSED [ 57%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_couponList] PASSED [ 58%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_favorite] PASSED [ 58%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_point_coupon] PASSED [ 59%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_review_forHome] PASSED [ 60%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orderList] PASSED [ 60%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_order_item] PASSED [ 61%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orders] PASSED [ 62%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_user_level] PASSED [ 62%]
+tests/test_db_contract.py::test_function_signature_matches_contract[hotel_booking] PASSED [ 63%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_booking] PASSED [ 64%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_isclosed] PASSED [ 64%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel] FAILED [ 65%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant] FAILED [ 66%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail] FAILED [ 66%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel] FAILED [ 67%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_most_favorited] PASSED [ 68%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_popular] PASSED [ 68%]
+tests/test_db_contract.py::test_views_functions_file_is_rerunnable PASSED [ 69%]
+tests/test_db_contract.py::test_contract_lists_all_21_objects PASSED     [ 70%]
+tests/test_views_a.py::test_tour_base_includes_inactive_tours PASSED     [ 70%]
+tests/test_views_a.py::test_tour_base_without_notification_has_null_notice PASSED [ 71%]
+tests/test_views_a.py::test_tour_base_promo_price_only_in_period PASSED  [ 72%]
+tests/test_views_a.py::test_tour_base_promo_and_change_in_one_row PASSED [ 72%]
+tests/test_views_a.py::test_tour_travel_active_only_with_favorite_flag PASSED [ 73%]
+tests/test_views_a.py::test_popular_counts_paid_only_and_breaks_ties PASSED [ 74%]
+tests/test_views_a.py::test_most_favorited_ranks_and_breaks_ties PASSED  [ 74%]
+tests/test_views_a.py::test_tour_detail_one_row_active_only PASSED       [ 75%]
+tests/test_views_a.py::test_tour_hotel_one_row_per_room PASSED           [ 76%]
+tests/test_views_a.py::test_tour_restaurant_rows_are_menu_xor_opening PASSED [ 76%]
+tests/test_views_a.py::test_user_user_level_one_row_per_user PASSED      [ 77%]
+tests/test_views_a.py::test_review_for_home_only_web PASSED              [ 78%]
+tests/test_views_a.py::test_tour_base_promo_not_started_has_null_price PASSED [ 78%]
+tests/test_views_a.py::test_tour_base_promo_period_bounds_are_inclusive PASSED [ 79%]
+tests/test_views_a.py::test_tour_base_latest_notification_of_same_type_wins PASSED [ 80%]
+tests/test_views_a.py::test_tour_travel_matches_tour_base_columns PASSED [ 80%]
+tests/test_views_a.py::test_tour_detail_without_tour_detail_row_still_one_row PASSED [ 81%]
+tests/test_views_a.py::test_tour_hotel_without_rooms_one_null_row PASSED [ 82%]
+tests/test_views_a.py::test_tour_restaurant_without_menu_or_opening_one_row PASSED [ 82%]
+tests/test_views_a.py::test_tour_restaurant_menu_only_has_no_placeholder_row PASSED [ 83%]
+tests/test_views_a.py::test_tour_restaurant_opening_only_has_no_placeholder_row PASSED [ 84%]
+tests/test_views_a.py::test_user_user_level_without_level_still_one_row PASSED [ 84%]
+tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks FAILED [ 85%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart] PASSED [ 86%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts] PASSED [ 86%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout] PASSED [ 87%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 88%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] PASSED [ 88%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] PASSED [ 89%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] PASSED [ 90%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[orders] PASSED [ 90%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[purchases] PASSED [ 91%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[points] PASSED [ 92%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[automation] PASSED [ 92%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[collection] FAILED [ 93%]
+tests/test_validator_sweep.py::test_http_installment_unsafe_string PASSED [ 94%]
+tests/test_validator_sweep.py::test_http_json_1e400_cart_people PASSED   [ 94%]
+tests/test_validator_sweep.py::test_http_json_1e400_discount_point PASSED [ 95%]
+tests/test_validator_sweep.py::test_http_json_1e400_checkout_used_point PASSED [ 96%]
+tests/test_validator_sweep.py::test_http_checkout_empty_coupon_id PASSED [ 96%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-unknown] PASSED [ 97%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[user-unknown] PASSED [ 98%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown] PASSED [ 98%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array] PASSED [ 99%]
+tests/test_validator_sweep.py::test_http_search_unknown_query_key PASSED [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_favorite_first_time_is_201 ________________________
+tests/test_member_favorites.py:36: in test_favorite_first_time_is_201
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"success","message":"新增成功"}
+E   assert 200 == 201
+E    +  where 200 = <Response [200]>.status_code
+_________________ test_favorite_duplicate_returns_original_id __________________
+tests/test_member_favorites.py:46: in test_favorite_duplicate_returns_original_id
+    assert first.status_code == 201, first.text
+E   AssertionError: {"status":"success","message":"新增成功"}
+E   assert 200 == 201
+E    +  where 200 = <Response [200]>.status_code
+______________ test_concurrent_favorite_same_tour_returns_same_id ______________
+tests/test_member_favorites.py:72: in test_concurrent_favorite_same_tour_returns_same_id
+    assert set(codes) <= {200, 201}, [(r.status_code, r.text) for r in results]
+E   AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (200, '{"status":"success","message":"新增成功"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+E   assert {200, 400} <= {200, 201}
+E     
+E     Extra items in the left set:
+E     400
+______________________ test_favorite_unlisted_tour_is_404 ______________________
+tests/test_member_favorites.py:81: in test_favorite_unlisted_tour_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"success","message":"新增成功"}
+E   assert 200 == 404
+E    +  where 200 = <Response [200]>.status_code
+______________________ test_favorite_unknown_tour_is_404 _______________________
+tests/test_member_favorites.py:88: in test_favorite_unknown_tour_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"failed","message":"查無此項目"}
+E   assert 400 == 404
+E    +  where 400 = <Response [400]>.status_code
+________________________ test_favorite_bad_uuid_is_400 _________________________
+tests/test_member_favorites.py:94: in test_favorite_bad_uuid_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 400
+E    +  where 500 = <Response [500]>.status_code
+_______________________ test_collection_bad_uuid_is_400 ________________________
+tests/test_member_favorites.py:101: in test_collection_bad_uuid_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 400
+E    +  where 500 = <Response [500]>.status_code
+___________________ test_delete_other_users_favorite_is_404 ____________________
+tests/test_member_favorites.py:108: in test_delete_other_users_favorite_is_404
+    fid = favorite(api, owner, tour["tour_id"]).json()["data"]["favorite_id"]
+E   KeyError: 'data'
+___________________________ test_delete_own_favorite ___________________________
+tests/test_member_favorites.py:117: in test_delete_own_favorite
+    fid = favorite(api, user, tour["tour_id"]).json()["data"]["favorite_id"]
+E   KeyError: 'data'
+_________________________ test_delete_bad_uuid_is_400 __________________________
+tests/test_member_favorites.py:127: in test_delete_bad_uuid_is_400
+    assert r.json()["message"] == FAV_UUID_MSG
+E   AssertionError: assert '欄位未填寫正確' == '「收藏編號」必須是有效的 UUID 格式'
+E     
+E     - 「收藏編號」必須是有效的 UUID 格式
+E     + 欄位未填寫正確
+_____________________ test_delete_unknown_favorite_is_404 ______________________
+tests/test_member_favorites.py:132: in test_delete_unknown_favorite_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"failed","message":"查無此項目"}
+E   assert 400 == 404
+E    +  where 400 = <Response [400]>.status_code
+_____________________ test_list_capped_at_100_newest_first _____________________
+tests/test_member_favorites.py:145: in test_list_capped_at_100_newest_first
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"欄位未填寫正確"}
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+___________ test_refavorite_after_delete_gets_new_id_and_old_id_404 ____________
+tests/test_member_favorites.py:157: in test_refavorite_after_delete_gets_new_id_and_old_id_404
+    old = favorite(api, user, tour["tour_id"]).json()["data"]["favorite_id"]
+E   KeyError: 'data'
+_______________________ test_favorite_admin_is_403[post] _______________________
+tests/test_member_favorites.py:173: in test_favorite_admin_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"failed","message":"查無此項目"}
+E   assert 400 == 403
+E    +  where 400 = <Response [400]>.status_code
+______________________ test_favorite_admin_is_403[delete] ______________________
+tests/test_member_favorites.py:173: in test_favorite_admin_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"failed","message":"查無此項目"}
+E   assert 400 == 403
+E    +  where 400 = <Response [400]>.status_code
+_________________ test_list_single_response_and_unlisted_flag __________________
+tests/test_member_favorites.py:188: in test_list_single_response_and_unlisted_flag
+    assert favorite(api, user, tour["tour_id"]).status_code == 201
+E   AssertionError: assert 200 == 201
+E    +  where 200 = <Response [200]>.status_code
+E    +    where <Response [200]> = favorite(<conftest.Api object at 0x7f5e5ef797f0>, {'email': 'p0-a61cdf19@example.com', 'role': 'User', 'user_id': '4c746a31-94a2-448d-a79a-050107b02c1b'}, '08efcbfb-087b-4729-bb75-e9d740cc46e9')
+_______________________________ test_list_empty ________________________________
+tests/test_member_favorites.py:204: in test_list_empty
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"欄位未填寫正確"}
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+_______________________ test_detail_returns_favorite_id ________________________
+tests/test_member_favorites.py:213: in test_detail_returns_favorite_id
+    assert before["is_favorited"] is False and before["favorite_id"] is None
+E   KeyError: 'favorite_id'
+_______________________ test_search_returns_favorite_id ________________________
+tests/test_member_favorites.py:224: in test_search_returns_favorite_id
+    fid = favorite(api, user, tour["tour_id"]).json()["data"]["favorite_id"]
+E   KeyError: 'data'
+_____ test_home_products_logged_in[tourgroup-popular-tour_travel_popular] ______
+tests/test_api_smoke.py:134: in test_home_products_logged_in
+    assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['tour_id', '上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '偏好分類', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '購買排行', '通知狀態']
+E   assert not ['收藏編號']
+____________ test_home_products_logged_in[tourgroup-promotion-None] ____________
+tests/test_api_smoke.py:134: in test_home_products_logged_in
+    assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '偏好分類', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '通知狀態']
+E   assert not ['收藏編號']
+_ test_home_products_logged_in[tourgroup-most_favorited-tour_travel_most_favorited] _
+tests/test_api_smoke.py:134: in test_home_products_logged_in
+    assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['tour_id', '上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '偏好分類', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏排行', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '通知狀態']
+E   assert not ['收藏編號']
+______ test_home_products_logged_in[backpacker-hotel-tour_travel_popular] ______
+tests/test_api_smoke.py:134: in test_home_products_logged_in
+    assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['tour_id', '上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '偏好分類', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '購買排行', '通知狀態']
+E   assert not ['收藏編號']
+______ test_home_products_logged_in[backpacker-food-tour_travel_popular] _______
+tests/test_api_smoke.py:134: in test_home_products_logged_in
+    assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['tour_id', '上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '偏好分類', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '購買排行', '通知狀態']
+E   assert not ['收藏編號']
+______ test_home_products_logged_in[backpacker-spot-tour_travel_popular] _______
+tests/test_api_smoke.py:134: in test_home_products_logged_in
+    assert_has_keys(rows[0], _home_expected("tour_travel", ranking))
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['tour_id', '上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '偏好分類', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '購買排行', '通知狀態']
+E   assert not ['收藏編號']
+________________________ test_public_product_list_guest ________________________
+tests/test_api_smoke.py:168: in test_public_product_list_guest
+    assert_has_keys(rows[0], expected)
+tests/test_api_smoke.py:35: in assert_has_keys
+    assert not missing, f"缺少欄位 {missing}；實際欄位 {sorted(row)}"
+E   AssertionError: 缺少欄位 ['收藏編號']；實際欄位 ['tags', '上下架狀態', '促銷價錢', '促銷結束日期', '促銷開始日期', '價錢', '大分類', '小分類', '建立時間', '所屬國家', '所屬地區', '收藏狀態', '旅遊代表圖 Url', '旅遊名稱', '旅遊天數', '旅遊描述', '旅遊標語', '旅遊結束日期', '旅遊編號', '旅遊開始日期', '更新時間', '異動通知內容', '通知狀態']
+E   assert not ['收藏編號']
+______________________________ test_favorite_list ______________________________
+tests/test_api_smoke.py:367: in test_favorite_list
+    rows = data_rows(r)
+tests/test_api_smoke.py:40: in data_rows
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"欄位未填寫正確"}
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+_____________ test_function_signature_matches_contract[tour_hotel] _____________
+tests/test_db_contract.py:89: in test_function_signature_matches_contract
+    assert len(out) == len(expected), f"輸出欄位數 {len(out)} ≠ 契約 {len(expected)}"
+E   AssertionError: 輸出欄位數 45 ≠ 契約 46
+E   assert 45 == 46
+E    +  where 45 = len([('旅遊編號', 'uuid'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+E    +  and   46 = len([('旅遊編號', 'uuid'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+__________ test_function_signature_matches_contract[tour_restaurant] ___________
+tests/test_db_contract.py:89: in test_function_signature_matches_contract
+    assert len(out) == len(expected), f"輸出欄位數 {len(out)} ≠ 契約 {len(expected)}"
+E   AssertionError: 輸出欄位數 43 ≠ 契約 44
+E   assert 43 == 44
+E    +  where 43 = len([('旅遊編號', 'uuid'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+E    +  and   44 = len([('旅遊編號', 'uuid'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+__________ test_function_signature_matches_contract[tour_tour_detail] __________
+tests/test_db_contract.py:89: in test_function_signature_matches_contract
+    assert len(out) == len(expected), f"輸出欄位數 {len(out)} ≠ 契約 {len(expected)}"
+E   AssertionError: 輸出欄位數 42 ≠ 契約 43
+E   assert 42 == 43
+E    +  where 42 = len([('旅遊編號', 'uuid'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+E    +  and   43 = len([('旅遊編號', 'uuid'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('大分類', 'varchar'), ('小分類', 'varchar'), ('旅遊代表圖 Url', 'text'), ...])
+____________ test_function_signature_matches_contract[tour_travel] _____________
+tests/test_db_contract.py:89: in test_function_signature_matches_contract
+    assert len(out) == len(expected), f"輸出欄位數 {len(out)} ≠ 契約 {len(expected)}"
+E   AssertionError: 輸出欄位數 25 ≠ 契約 26
+E   assert 25 == 26
+E    +  where 25 = len([('旅遊編號', 'uuid'), ('上下架狀態', 'smallint'), ('通知狀態', 'varchar'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('旅遊描述', 'text'), ...])
+E    +  and   26 = len([('旅遊編號', 'uuid'), ('上下架狀態', 'smallint'), ('通知狀態', 'varchar'), ('旅遊名稱', 'varchar'), ('旅遊標語', 'varchar'), ('旅遊描述', 'text'), ...])
+_________________ test_hostile_matrix_has_no_joi_default_leaks _________________
+tests/test_validator_sweep.py:98: in test_hostile_matrix_has_no_joi_default_leaks
+    assert proc.returncode == 0, proc.stderr
+E   AssertionError: [eval]:67
+E       const r0 = schema.validate(clone(valid)); if (r0.error) leaks.push([label, 'BASE INVALID', r0.error.details[0].message]);
+E                         ^
+E     
+E     TypeError: Cannot read properties of undefined (reading 'validate')
+E         at [eval]:67:21
+E         at runScriptInThisContext (node:internal/vm:209:10)
+E         at node:internal/process/execution:449:12
+E         at [eval]-wrapper:6:24
+E         at runScriptInContext (node:internal/process/execution:447:60)
+E         at evalFunction (node:internal/process/execution:87:30)
+E         at evalScript (node:internal/process/execution:99:3)
+E         at node:internal/main/eval_string:74:3
+E     
+E     Node.js v22.14.0
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'compose', 'exec', '-T', 'backend', 'node', '-e', '\nconst b = process.cwd() + \'/src/utils/Validator/\';\nconst cart = require(b + \'cart_Validator.js\'), disc = require(b + \'discounts_Validatior.js\');\nconst co = require(b + \'checkout_Vaildator.js\'), prod = require(b + \'product_Validator.js\');\nconst np = require(process.cwd() + \'/src/middlewares/newebpay/index.js\');\nconst ui = require(b + \'userInfo_Validator.js\'), up = require(b + \'userprofile_Validator.js\');\nconst au = require(b + \'automation_Validator.js\'), col = require(b + \'collection_Validator.js\');\nconst pg = require(b + \'paging_Validator.js\'), ord = require(b + \'orders_Validator.js\'), pur = require(b + \'purchases_Validator.js\');\nlet userMessage = null;\ntry { userMessage = require(b + \'joiMessage.js\').userMessage; } catch (e) {}\nconst real = typeof userMessage === \'function\';\nif (!real) userMessage = (err) => err.details[0].message;\nconst F = { start_date: \'2099-01-01\', end_date: \'2099-01-02\' };\nconst U = { name: \'王小明\', email: \'a@b.co\', address: \'台北市\', phone_number: \'0912345678\' };\nconst uuid = \'7b0e5b2e-3c1f-4c59-9d0a-0d3f5f1f2a11\';\ncons... p + \' <missing>\'); }\n    for (const v of vals) { const o = clone(valid); set(o, p, v); run(o, p + \'=\' + String(v)); }\n  }\n  { const o = clone(valid); o.zqfoo = \'1\'; run(o, \'root zqfoo\'); }\n  for (const k of Object.keys(valid)) if (valid[k] && typeof valid[k] === \'object\') { const o = clone(valid); o[k].zqfoo = 1; run(o, k + \'.zqfoo\'); }\n  for (const v of [null, [], \'x\', 5, true, undefined]) run(v, \'ROOT=\' + String(v));\n}\nconsole.log(\'SWEEP\' + JSON.stringify({ real, cases: n, errors, leaks }));\n'], returncode=1, stdout='', stderr="[eval]:67\n  const r0 = schema.validate(clone(valid)); if (r0.error) leaks.push([label, 'BASE INVALID', r0.error.details[0].message]);\n                    ^\n\nTypeError: Cannot read properties of undefined (reading 'validate')\n    at [eval]:67:21\n    at runScriptInThisContext (node:internal/vm:209:10)\n    at node:internal/process/execution:449:12\n    at [eval]-wrapper:6:24\n    at runScriptInContext (node:internal/process/execution:447:60)\n    at evalFunction (node:internal/process/execution:87:30)\n    at evalScript (node:internal/process/execution:99:3)\n    at node:internal/main/eval_string:74:3\n\nNode.js v22.14.0\n").returncode
+____ test_middlewares_read_joi_errors_only_through_user_message[collection] ____
+tests/test_validator_sweep.py:145: in test_middlewares_read_joi_errors_only_through_user_message
+    assert "userMessage(" in src
+E   assert 'userMessage(' in "const { pool } = require('../../config/database');\nconst resStatus = require('../../utils/resStatus');\n\n\nconst isValidator = require('../../utils/Validator/collection_Validator.js');\n\n\nasync function getCollection(req, res, next) {\n  const { error } = isValidator.getSchema.validate(req.query, {\n    abortEarly: false,\n    stripUnknown: true,\n  });\n\n  if (error) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '欄位未填寫正確',\n    });\n    return;\n  }\n\n  next();\n}\n\n\nasync function postCollection(req, res, next) {\n  const { tour_id } = req.params;\n  const user_id = req.user.id;\n\n  const { error } = isValidator.postSchema.validate(req.params, {\n    abortEarly: false,\n    stripUnknown: true,\n  });\n\n  if (error) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '欄位未填寫正確',\n    });\n    return;\n  }\n\n  \n  const result = await pool.query('SELECT * FROM tour WHERE tour_id = $1', [tour_id]);\n  if (result.rows.length === 0) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '查無此項目',\n    });\n    return;\n  }\n\n  \n  const userResult = await pool.query('SELECT * FROM public.user WHERE user_id = $...user_id, tour_id]\n  );\n  if (favoriteCheck.rows.length > 0) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '已經收藏過此項目',\n    });\n    return;\n  }\n\n  next();\n}\n\n\nasync function deleteCollection(req, res, next) {\n  const { favorite_id } = req.params;\n  const user_id = req.user.id;\n\n  const { error } = isValidator.deleteSchema.validate(req.params, {\n    abortEarly: false,\n    stripUnknown: true,\n  });\n  if (error) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '欄位未填寫正確',\n    });\n    return;\n  }\n\n  const result = await pool.query(\n    'SELECT * FROM favorite WHERE user_id = $1 AND favorite_id = $2',\n    [user_id, favorite_id]\n  );\n  if (result.rows.length === 0) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '查無此項目',\n    });\n    return;\n  }\n\n  \n  const userResult = await pool.query('SELECT * FROM public.user WHERE user_id = $1', [user_id]);\n  if (userResult.rows.length === 0) {\n    resStatus({\n      res: res,\n      status: 400,\n      message: '查無此人',\n    });\n    return;\n  }\n\n  next();\n}\nmodule.exports = {\n  getCollection,\n  postCollection,\n  deleteCollection,\n};\n"
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_favorite_first_time_is_201 - Asse...
+FAILED tests/test_member_favorites.py::test_favorite_duplicate_returns_original_id
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+FAILED tests/test_member_favorites.py::test_favorite_unlisted_tour_is_404 - A...
+FAILED tests/test_member_favorites.py::test_favorite_unknown_tour_is_404 - As...
+FAILED tests/test_member_favorites.py::test_favorite_bad_uuid_is_400 - Assert...
+FAILED tests/test_member_favorites.py::test_collection_bad_uuid_is_400 - Asse...
+FAILED tests/test_member_favorites.py::test_delete_other_users_favorite_is_404
+FAILED tests/test_member_favorites.py::test_delete_own_favorite - KeyError: '...
+FAILED tests/test_member_favorites.py::test_delete_bad_uuid_is_400 - Assertio...
+FAILED tests/test_member_favorites.py::test_delete_unknown_favorite_is_404 - ...
+FAILED tests/test_member_favorites.py::test_list_capped_at_100_newest_first
+FAILED tests/test_member_favorites.py::test_refavorite_after_delete_gets_new_id_and_old_id_404
+FAILED tests/test_member_favorites.py::test_favorite_admin_is_403[post] - Ass...
+FAILED tests/test_member_favorites.py::test_favorite_admin_is_403[delete] - A...
+FAILED tests/test_member_favorites.py::test_list_single_response_and_unlisted_flag
+FAILED tests/test_member_favorites.py::test_list_empty - AssertionError: {"st...
+FAILED tests/test_member_favorites.py::test_detail_returns_favorite_id - KeyE...
+FAILED tests/test_member_favorites.py::test_search_returns_favorite_id - KeyE...
+FAILED tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-popular-tour_travel_popular]
+FAILED tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-promotion-None]
+FAILED tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-most_favorited-tour_travel_most_favorited]
+FAILED tests/test_api_smoke.py::test_home_products_logged_in[backpacker-hotel-tour_travel_popular]
+FAILED tests/test_api_smoke.py::test_home_products_logged_in[backpacker-food-tour_travel_popular]
+FAILED tests/test_api_smoke.py::test_home_products_logged_in[backpacker-spot-tour_travel_popular]
+FAILED tests/test_api_smoke.py::test_public_product_list_guest - AssertionErr...
+FAILED tests/test_api_smoke.py::test_favorite_list - AssertionError: {"status...
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail]
+FAILED tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel]
+FAILED tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[collection]
+======================== 33 failed, 118 passed in 6.73s ========================

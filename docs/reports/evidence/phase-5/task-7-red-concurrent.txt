@@ -1,0 +1,50 @@
+== run 1
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status...經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.13s
+== run 2
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status...:"已經收藏過此項目"}'), (200, '{"status":"success","message":"新增成功"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.13s
+== run 3
+tests/test_member_favorites.py:72: AssertionError: [(500, '{"status":"error","message":"伺服器錯誤"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (500, '{"status":"error...age":"伺服器錯誤"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.11s
+== run 4
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (400, '{"status":"f...經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.12s
+== run 5
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (500, '{"status...essage":"伺服器錯誤"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (200, '{"status":"success","message":"新增成功"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.12s
+== run 6
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status...經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.12s
+== run 7
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (500, '{"status..."message":"新增成功"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.11s
+== run 8
+tests/test_member_favorites.py:72: AssertionError: [(200, '{"status":"success","message":"新增成功"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"...經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.11s
+== run 9
+tests/test_member_favorites.py:72: AssertionError: [(500, '{"status":"error","message":"伺服器錯誤"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (400, '{"status":"faile...sage":"已經收藏過此項目"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.14s
+== run 10
+tests/test_member_favorites.py:72: AssertionError: [(400, '{"status":"failed","message":"已經收藏過此項目"}'), (500, '{"status":"error","message":"伺服器錯誤"}'), (500, '{"status":"e...經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), (400, '{"status":"failed","message":"已經收藏過此項目"}'), ...]
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+1 failed in 0.12s
