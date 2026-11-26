@@ -82,3 +82,46 @@ def test_remap_asserts_on_unknown_user_with_message():
     ]
     with pytest.raises(AssertionError, match="ghost"):
         build_seed.remap_ids(inserts)
+
+
+# ---- auto_setting 一人一列（P5 R1、F10） ----
+
+def _auto_rows(text):
+    [ins] = [i for i in build_seed.parse_inserts(text) if build_seed.bare(i.table) == "auto_setting"]
+    return [dict(zip(ins.columns, (build_seed.unquote(v) for v in row))) for row in ins.rows]
+
+
+def test_alice_auto_settings_merged():
+    text = build_seed.build(
+        build_seed.SOURCE.read_text(encoding="utf-8"), build_seed.EXTRA.read_text(encoding="utf-8")
+    )
+    rows = _auto_rows(text)
+    users = [r["user_id"] for r in rows]
+    assert len(users) == len(set(users))
+    [alice] = [r for r in rows if r["auto_setting_id"] == "1111aaaa-2222-bbbb-3333-cccc4444dddd"]
+    assert (alice["early_notify"], alice["flexible_notify"]) == ("0", "1")
+    assert (alice["country"], alice["region"], alice["price"]) == ("Japan", "Tokyo", "1200.5")
+    assert not [r for r in rows if r["auto_setting_id"] == "4444dddd-5555-eeee-6666-ffff7777aaaa"]
+
+
+def _fake_auto(rows):
+    cols = ["auto_setting_id", "user_id", "early_notify", "flexible_notify", "country", "region", "price", "created_at", "updated_at"]
+    return {"auto_setting": build_seed.Insert("auto_setting", cols, rows)}
+
+
+def _row(i, early, country, updated):
+    return [f"'{i}'", "'u1'", early, "0", f"'{country}'", "'R'", "100", "CURRENT_TIMESTAMP", updated]
+
+
+def test_merge_auto_settings_prefers_newer_updated_at():
+    by = _fake_auto([_row("a", "0", "Old", "'2025-01-01 00:00:00'"), _row("b", "1", "New", "'2025-02-01 00:00:00'")])
+    build_seed.merge_duplicate_auto_settings(by)
+    [row] = by["auto_setting"].rows
+    assert row[0] == "'b'" and row[2] == "1" and row[4] == "'New'"
+
+
+def test_merge_auto_settings_tie_takes_smaller_id():
+    by = _fake_auto([_row("b", "1", "Big", "CURRENT_TIMESTAMP"), _row("a", "0", "Small", "CURRENT_TIMESTAMP")])
+    build_seed.merge_duplicate_auto_settings(by)
+    [row] = by["auto_setting"].rows
+    assert row[0] == "'a'" and row[2] == "0" and row[4] == "'Small'"

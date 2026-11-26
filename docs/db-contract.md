@@ -1757,7 +1757,7 @@
 | 1 | `"user".password` 改為可為 NULL（`ALTER COLUMN password DROP NOT NULL`） | §2.1：Google 新註冊不再共用預設密碼；NULL 讓寫漏時 `bcrypt.compare` 失敗而非放行，且 DB 層看得見「沒有密碼」。 | `tests/test_migrations.py::test_user_password_is_nullable` |
 | 2 | 唯一索引 `user_email_lower_key ON "user" (lower(email))` | §2.2：email 不分大小寫唯一，擋掉大小寫不同的重複帳號與併發註冊；撞到時（`23505`）回 409。 | `test_migrations.py::test_user_email_lower_unique_index`、`test_email_case_duplicate_rejected`；`test_member_auth.py::test_signup_normalizes_email`、`test_signup_duplicate_differs_by_case_is_409`、`test_signup_concurrent_same_email_only_one_succeeds`、`test_login_email_is_case_insensitive`、`test_login_lowercase_matches_mixed_case_stored_email`、`test_forgetpw_matches_mixed_case_stored_email`、`test_signup_lowercase_conflicts_with_mixed_case_stored_email`、`test_checkout_preview_email_lookup_is_case_insensitive`（結帳預覽，backend `middlewares/checkout/index.js`） |
 
-V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applied_v1_to_v5` 檢查。V3 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變（`test_user_fk_tables_list_is_complete` 把關）。
+V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applied_v1_to_v6` 檢查。V3 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變（`test_user_fk_tables_list_is_complete` 把關）。
 
 ## 6. P3 表格約束（V4）
 
@@ -1768,9 +1768,9 @@ V3 套用狀態由 `test_migrations.py::test_v3_applied` 與 `test_flyway_applie
 | 1 | 部分唯一索引 `review_user_tour_key ON review (user_id, tour_id) WHERE tour_id IS NOT NULL` | §3.3、§4.1：每位會員對每個行程只能有一則評論，併發下由 DB 擋住（撞到時 `23505` 回 409，P3 Task 6 實作）；`tour_id` 為 NULL 的 `web` 評論不受限。 | `tests/test_migrations.py::test_review_user_tour_unique_index`、`test_review_duplicate_user_tour_rejected`、`test_web_reviews_not_limited_by_unique_index`（對照組） |
 | 2 | CHECK `review_rating_range CHECK (rating BETWEEN 1 AND 5)` | §4.1：評分只能是 1–5（V1 只有 `DEFAULT 1`，沒有範圍限制）。 | `test_migrations.py::test_review_rating_check`（0、6 被拒；1、5 通過） |
 
-V4 套用狀態由 `test_migrations.py::test_v4_applied` 與 `test_flyway_applied_v1_to_v5` 檢查。V4 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變。
+V4 套用狀態由 `test_migrations.py::test_v4_applied` 與 `test_flyway_applied_v1_to_v6` 檢查。V4 沒有新增或改動參照 `"user"` 的外鍵，`tests/conftest.py` 的 `USER_FK_TABLES` 不變。
 
-V5 套用狀態由 `test_migrations.py::test_flyway_applied_v1_to_v5` 檢查。
+V5 套用狀態由 `test_migrations.py::test_flyway_applied_v1_to_v6` 檢查。
 
 ### P4 表格約束（V5）
 

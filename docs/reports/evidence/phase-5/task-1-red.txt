@@ -1,0 +1,187 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 122 items
+
+tests/test_migrations.py::test_flyway_applied_v1_to_v6 FAILED            [  0%]
+tests/test_migrations.py::test_all_v1_tables_exist PASSED                [  1%]
+tests/test_migrations.py::test_flyway_applied_views_functions PASSED     [  2%]
+tests/test_migrations.py::test_v3_applied PASSED                         [  3%]
+tests/test_migrations.py::test_user_password_is_nullable PASSED          [  4%]
+tests/test_migrations.py::test_user_email_lower_unique_index PASSED      [  4%]
+tests/test_migrations.py::test_email_case_duplicate_rejected PASSED      [  5%]
+tests/test_migrations.py::test_v4_applied PASSED                         [  6%]
+tests/test_migrations.py::test_review_user_tour_unique_index PASSED      [  7%]
+tests/test_migrations.py::test_review_duplicate_user_tour_rejected PASSED [  8%]
+tests/test_migrations.py::test_web_reviews_not_limited_by_unique_index PASSED [  9%]
+tests/test_migrations.py::test_review_rating_check[0-False] PASSED       [  9%]
+tests/test_migrations.py::test_review_rating_check[6-False] PASSED       [ 10%]
+tests/test_migrations.py::test_review_rating_check[1-True] PASSED        [ 11%]
+tests/test_migrations.py::test_review_rating_check[5-True] PASSED        [ 12%]
+tests/test_migrations.py::test_payment_merchant_order_no_column PASSED   [ 13%]
+tests/test_migrations.py::test_payment_merchant_order_no_unique PASSED   [ 13%]
+tests/test_migrations.py::test_payment_one_paid_per_order PASSED         [ 14%]
+tests/test_migrations.py::test_seed_payments_have_null_merchant_order_no PASSED [ 15%]
+tests/test_migrations.py::test_favorite_user_tour_unique FAILED          [ 16%]
+tests/test_migrations.py::test_cart_user_unique FAILED                   [ 17%]
+tests/test_migrations.py::test_auto_setting_user_unique FAILED           [ 18%]
+tests/test_build_seed.py::test_seed_id_is_deterministic_v4 PASSED        [ 18%]
+tests/test_build_seed.py::test_parse_inserts_round_trip PASSED           [ 19%]
+tests/test_build_seed.py::test_remap_follows_column_owner PASSED         [ 20%]
+tests/test_build_seed.py::test_emit_round_trip PASSED                    [ 21%]
+tests/test_build_seed.py::test_remap_asserts_when_foreign_key_has_no_mapping PASSED [ 22%]
+tests/test_build_seed.py::test_remap_keeps_null_foreign_keys PASSED      [ 22%]
+tests/test_build_seed.py::test_remap_asserts_on_unknown_user_with_message PASSED [ 23%]
+tests/test_build_seed.py::test_alice_auto_settings_merged FAILED         [ 24%]
+tests/test_build_seed.py::test_merge_auto_settings_prefers_newer_updated_at FAILED [ 25%]
+tests/test_build_seed.py::test_merge_auto_settings_tie_takes_smaller_id FAILED [ 26%]
+tests/test_seed.py::test_flyway_applied_seed PASSED                      [ 27%]
+tests/test_seed.py::test_seed_loaded_every_table FAILED                  [ 27%]
+tests/test_seed.py::test_seed_is_rerunnable PASSED                       [ 28%]
+tests/test_seed.py::test_seed_file_is_generated_from_source PASSED       [ 29%]
+tests/test_seed.py::test_seed_user_can_login PASSED                      [ 30%]
+tests/test_seed.py::test_seed_roles_match_authorize_roles PASSED         [ 31%]
+tests/test_seed.py::test_seed_admin_passes_authorize_roles PASSED        [ 31%]
+tests/test_seed.py::test_seed_dates_are_relative_to_load_day PASSED      [ 32%]
+tests/test_seed.py::test_seed_uses_local_placeholder_images PASSED       [ 33%]
+tests/test_seed.py::test_seed_primary_keys_are_v4 PASSED                 [ 34%]
+tests/test_seed.py::test_seed_natural_keys_are_not_duplicated PASSED     [ 35%]
+tests/test_seed.py::test_seed_coupon_codes_match_validator PASSED        [ 36%]
+tests/test_seed.py::test_seed_one_cart_per_user PASSED                   [ 36%]
+tests/test_seed.py::test_seed_foreign_keys_follow_column_owner PASSED    [ 37%]
+tests/test_seed.py::test_seed_source_ids_are_all_remapped PASSED         [ 38%]
+tests/test_seed.py::test_seed_home_sections_have_two_pages PASSED        [ 39%]
+tests/test_seed.py::test_seed_search_list_has_two_pages PASSED           [ 40%]
+tests/test_seed.py::test_seed_rankings_are_distinct PASSED               [ 40%]
+tests/test_seed.py::test_seed_promotions_cover_in_and_out_of_period PASSED [ 41%]
+tests/test_seed.py::test_seed_travel_tours_have_distinct_start_dates PASSED [ 42%]
+tests/test_seed.py::test_seed_cart_items_start_in_future PASSED          [ 43%]
+tests/test_seed.py::test_seed_favorite_times_are_distinct PASSED         [ 44%]
+tests/test_seed.py::test_seed_orders_match_contract PASSED               [ 45%]
+tests/test_seed.py::test_seed_promo_orders_fall_inside_promo_window PASSED [ 45%]
+tests/test_seed.py::test_seed_alice_paid_orders_newest_first PASSED      [ 46%]
+tests/test_seed.py::test_seed_payment_status_coverage PASSED             [ 47%]
+tests/test_seed.py::test_seed_points_follow_rules PASSED                 [ 48%]
+tests/test_seed.py::test_seed_reward_points_by_paid_amount PASSED        [ 49%]
+tests/test_seed.py::test_seed_payment_amount_matches_paid PASSED         [ 50%]
+tests/test_seed.py::test_seed_user_coupons_point_to_rebuilt_orders PASSED [ 50%]
+tests/test_seed.py::test_seed_web_reviews_for_home PASSED                [ 51%]
+tests/test_trade_cart.py::test_cart_add_does_not_leak_connections PASSED [ 52%]
+tests/test_trade_cart.py::test_cart_patch_and_delete_do_not_leak_connections PASSED [ 53%]
+tests/test_trade_cart.py::test_create_order_does_not_leak_connections PASSED [ 54%]
+tests/test_trade_cart.py::test_cart_list_returns_cart_item_id PASSED     [ 54%]
+tests/test_trade_cart.py::test_cart_summary_counts_all_pages PASSED      [ 55%]
+tests/test_trade_cart.py::test_cart_add_same_item_merges_quantity PASSED [ 56%]
+tests/test_trade_cart.py::test_cart_add_unlisted_tour_is_404 PASSED      [ 57%]
+tests/test_trade_cart.py::test_cart_add_past_date_is_400 PASSED          [ 58%]
+tests/test_trade_cart.py::test_cart_add_impossible_date_is_400 PASSED    [ 59%]
+tests/test_trade_cart.py::test_cart_add_offset_datetime_is_400 PASSED    [ 59%]
+tests/test_trade_cart.py::test_cart_patch_other_users_item_is_404 PASSED [ 60%]
+tests/test_trade_cart.py::test_cart_delete_other_users_item_is_404 PASSED [ 61%]
+tests/test_trade_cart.py::test_cart_list_uses_live_promo_price PASSED    [ 62%]
+tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart FAILED [ 63%]
+tests/test_db_contract.py::test_normalize_type PASSED                    [ 63%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[hotel_booking] PASSED [ 64%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_booking] PASSED [ 65%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_business_parsed] PASSED [ 66%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[restaurant_isclosed] PASSED [ 67%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_base] PASSED [ 68%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_hotel] PASSED [ 68%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_restaurant] PASSED [ 69%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_tour_detail] PASSED [ 70%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel] PASSED [ 71%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_most_favorited] PASSED [ 72%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_popular] PASSED [ 72%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_adminList] PASSED [ 73%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_cartList] PASSED [ 74%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_couponList] PASSED [ 75%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_favorite] PASSED [ 76%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_point_coupon] PASSED [ 77%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome] PASSED [ 77%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orderList] PASSED [ 78%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_order_item] PASSED [ 79%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orders] PASSED [ 80%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_user_level] PASSED [ 81%]
+tests/test_db_contract.py::test_view_columns_match_contract[restaurant_business_parsed] PASSED [ 81%]
+tests/test_db_contract.py::test_view_columns_match_contract[tour_base] PASSED [ 82%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_adminList] PASSED [ 83%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_cartList] PASSED [ 84%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_couponList] PASSED [ 85%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_favorite] PASSED [ 86%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_point_coupon] PASSED [ 86%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_level_review_forHome] PASSED [ 87%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orderList] PASSED [ 88%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_order_item] PASSED [ 89%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_orders] PASSED [ 90%]
+tests/test_db_contract.py::test_view_columns_match_contract[user_user_level] PASSED [ 90%]
+tests/test_db_contract.py::test_function_signature_matches_contract[hotel_booking] PASSED [ 91%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_booking] PASSED [ 92%]
+tests/test_db_contract.py::test_function_signature_matches_contract[restaurant_isclosed] PASSED [ 93%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_hotel] PASSED [ 94%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_restaurant] PASSED [ 95%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_tour_detail] PASSED [ 95%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel] PASSED [ 96%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_most_favorited] PASSED [ 97%]
+tests/test_db_contract.py::test_function_signature_matches_contract[tour_travel_popular] PASSED [ 98%]
+tests/test_db_contract.py::test_views_functions_file_is_rerunnable PASSED [ 99%]
+tests/test_db_contract.py::test_contract_lists_all_21_objects PASSED     [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_flyway_applied_v1_to_v6 _________________________
+tests/test_migrations.py:21: in test_flyway_applied_v1_to_v6
+    assert {r[0] for r in rows} >= {"1", "2", "3", "4", "5", "6"}
+E   AssertionError: assert {'1', '2', '3', '4', '5'} >= {'1', '2', '3', '4', '5', '6'}
+E     
+E     Extra items in the right set:
+E     '6'
+________________________ test_favorite_user_tour_unique ________________________
+tests/test_migrations.py:181: in test_favorite_user_tour_unique
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+E   Failed: DID NOT RAISE <class 'psycopg.errors.UniqueViolation'>
+____________________________ test_cart_user_unique _____________________________
+tests/test_migrations.py:191: in test_cart_user_unique
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+E   Failed: DID NOT RAISE <class 'psycopg.errors.UniqueViolation'>
+________________________ test_auto_setting_user_unique _________________________
+tests/test_migrations.py:201: in test_auto_setting_user_unique
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+E   Failed: DID NOT RAISE <class 'psycopg.errors.UniqueViolation'>
+_______________________ test_alice_auto_settings_merged ________________________
+tests/test_build_seed.py:98: in test_alice_auto_settings_merged
+    rows = _auto_rows(text)
+tests/test_build_seed.py:90: in _auto_rows
+    [ins] = [i for i in build_seed.parse_inserts(text) if build_seed.bare(i.table) == "auto_setting"]
+db/seed-build/build_seed.py:195: in parse_inserts
+    assert sql[i] == ";", f"{m.group(1)}：預期 , 或 ;"
+E   AssertionError: "user"：預期 , 或 ;
+______________ test_merge_auto_settings_prefers_newer_updated_at _______________
+tests/test_build_seed.py:118: in test_merge_auto_settings_prefers_newer_updated_at
+    build_seed.merge_duplicate_auto_settings(by)
+E   AttributeError: module 'build_seed' has no attribute 'merge_duplicate_auto_settings'
+________________ test_merge_auto_settings_tie_takes_smaller_id _________________
+tests/test_build_seed.py:125: in test_merge_auto_settings_tie_takes_smaller_id
+    build_seed.merge_duplicate_auto_settings(by)
+E   AttributeError: module 'build_seed' has no attribute 'merge_duplicate_auto_settings'
+_________________________ test_seed_loaded_every_table _________________________
+tests/test_seed.py:44: in test_seed_loaded_every_table
+    assert not wrong, f"（實際, 預期）：{wrong}"
+E   AssertionError: （實際, 預期）：{'auto_setting': (4, 3)}
+E   assert not {'auto_setting': (4, 3)}
+_________________ test_first_add_concurrently_creates_one_cart _________________
+tests/test_trade_cart.py:205: in test_first_add_concurrently_creates_one_cart
+    assert db.execute("SELECT count(*) FROM cart WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == 1
+E   assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_migrations.py::test_flyway_applied_v1_to_v6 - AssertionErro...
+FAILED tests/test_migrations.py::test_favorite_user_tour_unique - Failed: DID...
+FAILED tests/test_migrations.py::test_cart_user_unique - Failed: DID NOT RAIS...
+FAILED tests/test_migrations.py::test_auto_setting_user_unique - Failed: DID ...
+FAILED tests/test_build_seed.py::test_alice_auto_settings_merged - AssertionE...
+FAILED tests/test_build_seed.py::test_merge_auto_settings_prefers_newer_updated_at
+FAILED tests/test_build_seed.py::test_merge_auto_settings_tie_takes_smaller_id
+FAILED tests/test_seed.py::test_seed_loaded_every_table - AssertionError: （...
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+======================== 9 failed, 113 passed in 5.16s =========================
