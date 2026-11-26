@@ -1,4 +1,5 @@
 """P2 Google 登入：信箱驗證、大小寫、首次綁定清密碼、不再使用共用密碼。"""
+import json
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
@@ -319,3 +320,82 @@ def test_google_first_bind_fills_null_avatar(api, db, google, make_user):
     claims = new_claims(email=user["email"])
     assert login(claims).status_code == 200
     assert _avatar_of(db, user["email"]) == claims["picture"]
+
+
+# ---- P5 Task 2：Google 名字處理（先移除控制字元、2 到 20 字、後備為 email 前段） ----
+def _google_name(db, email: str) -> str:
+    return db.execute('SELECT name FROM "user" WHERE lower(email) = lower(%s)', (email,)).fetchone()[0]
+
+
+def test_google_long_name_truncated(api, db, google):
+    new_claims, login = google
+    claims = new_claims(name="A" * 25)
+    assert login(claims).status_code == 200
+    assert _google_name(db, claims["email"]) == "A" * 20
+
+
+def test_google_short_name_uses_email(api, db, google):
+    new_claims, login = google
+    claims = new_claims(name="王")
+    assert login(claims).status_code == 200
+    assert _google_name(db, claims["email"]) == claims["email"].split("@")[0][:20]
+
+
+def test_google_missing_name_uses_email(api, db, google):
+    new_claims, login = google
+    claims = new_claims()
+    del claims["name"]
+    assert login(claims).status_code == 200
+    assert _google_name(db, claims["email"]) == claims["email"].split("@")[0][:20]
+
+
+def test_google_name_control_chars_removed(api, db, google):
+    new_claims, login = google
+    claims = new_claims(name="王\u0000小\u001f明")
+    assert login(claims).status_code == 200
+    assert _google_name(db, claims["email"]) == "王小明"
+
+
+def test_google_name_blank_after_truncation_uses_email(api, db, google):
+    """前 20 字只有第 1 個字不是空白：截斷後再去空白只剩 1 字，改用 email 前段。"""
+    new_claims, login = google
+    claims = new_claims(name="A" + " " * 19 + "XYZ")
+    assert login(claims).status_code == 200
+    assert _google_name(db, claims["email"]) == claims["email"].split("@")[0][:20]
+
+
+def test_google_display_name_one_char_local_part():
+    import subprocess
+
+    from conftest import ROOT
+
+    js = (
+        "const { googleDisplayName: g } = require(process.cwd() + '/src/utils/nameRule.js');"
+        "console.log(JSON.stringify([g(undefined, 'x@a.co'), g('  ', 'ab@a.co')]));"
+    )
+    proc = subprocess.run(
+        ["docker", "compose", "exec", "-T", "backend", "node", "-e", js],
+        cwd=ROOT, capture_output=True, text=True, timeout=60,
+    )  # fmt: skip
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout.strip().splitlines()[-1]) == ["旅客x", "ab"]
+
+
+def test_google_emoji_name_truncated_by_code_point(api, db, google, make_tour):
+    """Review Focus 1：以 code point 截斷，不留半個 surrogate，且結帳能直接送出。"""
+    from conftest import add_to_cart, auth_header, checkout, preview
+
+    new_claims, login = google
+    claims = new_claims(name="😀" * 25)
+    r = login(claims)
+    assert r.status_code == 200, r.text
+    name = _google_name(db, claims["email"])
+    assert name == "😀" * 20 and len(name) == 20
+    user = {"user_id": r.json()["data"]["user"]["id"], "email": claims["email"], "role": "User"}
+    order_id = checkout(api, user, [make_tour()])
+    body = {
+        "user": {"name": name, "email": claims["email"], "address": "台北市", "phone_number": "0912345678"},
+        "payment_method": "credit_card",
+    }
+    r = api.patch(f"/api/v1/user/checkout/preview/{order_id}", json=body, headers=auth_header(user), timeout=10)
+    assert r.status_code == 200, r.text

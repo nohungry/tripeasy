@@ -244,8 +244,8 @@ def _with_user(**over):
 CHECKOUT_BODY_CASES = [
     (_preview_body(discount={"type": "point", "used_point": 1e30}), "旅遊積分數值超出範圍"),
     (_preview_body(user=None), "使用者資料必須是物件"),
-    (_preview_body(user={}), "使用者名稱為必填欄位"),
-    (_with_user(name=None), "使用者名稱必須是文字"),
+    (_preview_body(user={}), "「姓名」為必填欄位"),
+    (_with_user(name=None), "「姓名」必須是文字"),
     (_with_user(email=None), "Email 必須是文字"),
     (_with_user(email=""), "Email 為必填欄位"),
     (_with_user(address=""), "地址為必填欄位"),

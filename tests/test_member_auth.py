@@ -178,7 +178,7 @@ def test_signup_lowercase_conflicts_with_mixed_case_stored_email(api, make_user)
     [
         ({"email": "not-an-email"}, "Email不符合規則"),
         ({"password": "short"}, "密碼不符合規則"),
-        ({"name": "六個字的名字喔"}, "使用者名稱不符合規則"),
+        ({"name": "王" * 21}, "「姓名」需為 2 到 20 個字"),
         ({"preference": PREFS[:2]}, "個人偏好需選擇 3 項內容"),
         ({"password": None}, "「密碼」為必填欄位"),
     ],
@@ -341,14 +341,18 @@ def test_patch_profile_info_ok_and_validation(api, db, make_user):
 
     r = api.patch(PROFILE_INFO, headers=h, json={})
     assert r.status_code == 400 and "請至少填寫" in r.json()["message"], r.text
-    r = api.patch(PROFILE_INFO, headers=h, json={"name": "a!b", "preference": prefs})
-    assert r.status_code == 400 and "特殊字元" in r.json()["message"], r.text
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "名\u0007", "preference": prefs})
+    assert r.status_code == 400 and r.json()["message"] == "「姓名」不得包含控制字元", r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": prefs[:2]})
     assert r.status_code == 400 and "需包含 3 個項目" in r.json()["message"], r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": ["探索冒險", "放鬆療癒", "不存在"]})
     assert r.status_code == 409 and "包含無效的偏好名稱" in r.json()["message"], r.text
     # 被拒絕的請求不得改到資料
     assert _stored() == ("新名字", 4, 5, 6)
+    # R4：符號是允許的
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "a!b", "preference": prefs})
+    assert r.status_code == 200, r.text
+    assert _stored()[0] == "a!b"
 
 
 def test_avatar_upload_validation(api, make_user):
