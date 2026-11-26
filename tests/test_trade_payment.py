@@ -4,7 +4,7 @@ import os
 import re
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from concurrent.futures import ThreadPoolExecutor
 
 import psycopg
 import pytest
@@ -562,7 +562,22 @@ def _cart_item_id_of(db, user, tour):
     )
 
 
-def _assert_waits_on_cart_not_cart_item(user, cart_item_id, fire):
+def _wait_until_blocked_by(db, holder_pid: int, timeout: float = 10.0) -> None:
+    """有期限地輪詢，直到有連線正在等 holder_pid 持有的鎖。"""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        row = db.execute(
+            "SELECT count(*) FROM pg_stat_activity "
+            "WHERE wait_event_type = 'Lock' AND %s = ANY(pg_blocking_pids(pid))",
+            (holder_pid,),
+        ).fetchone()
+        if row[0] > 0:
+            return
+        time.sleep(0.05)
+    pytest.fail("請求沒有在期限內被 holder 的 cart 鎖擋住")
+
+
+def _assert_waits_on_cart_not_cart_item(db, user, cart_item_id, fire):
     """鎖順序（cart 先於 cart_item）的決定性檢查。
 
     測試自己的連線先鎖住該會員的 cart 列；請求在背景執行，必須卡在 cart 上、
@@ -574,8 +589,8 @@ def _assert_waits_on_cart_not_cart_item(user, cart_item_id, fire):
     try:
         holder.execute("SELECT cart_id FROM cart WHERE user_id = %s FOR UPDATE", (user["user_id"],))
         future = pool.submit(fire)
-        with pytest.raises(FutureTimeout):
-            future.result(timeout=1.5)  # 請求還沒完成：正在等 cart 的鎖
+        _wait_until_blocked_by(db, holder.info.backend_pid)  # 請求確實正在等 cart 的鎖
+        assert not future.done()
         probe.execute("SELECT 1 FROM cart_item WHERE cart_item_id = %s FOR UPDATE NOWAIT", (cart_item_id,))
         probe.rollback()  # 立刻放掉
         holder.rollback()
@@ -603,6 +618,7 @@ def test_cart_patch_locks_cart_before_cart_item(api, db, make_user, make_tour):
         },
     }
     r = _assert_waits_on_cart_not_cart_item(
+        db,
         user,
         item_id,
         lambda: requests.patch(
@@ -619,6 +635,7 @@ def test_cart_delete_locks_cart_before_cart_item(api, db, make_user, make_tour):
     assert add_to_cart(api, user, tour).status_code == 201
     item_id = _cart_item_id_of(db, user, tour)
     r = _assert_waits_on_cart_not_cart_item(
+        db,
         user,
         item_id,
         lambda: requests.delete(
@@ -636,6 +653,7 @@ def test_settlement_locks_cart_before_cart_item(api, db, make_user, make_tour):
     item_id = _cart_item_id_of(db, user, tour)
     fields = success_notify(mon, amt)
     r = _assert_waits_on_cart_not_cart_item(
+        db,
         user, item_id, lambda: requests.post(f"{API_BASE}{NOTIFY_API}", data=fields, timeout=15)
     )
     assert r.status_code == 200, r.text
