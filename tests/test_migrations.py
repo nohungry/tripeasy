@@ -1,4 +1,4 @@
-"""確認 Flyway 已套用 V1–V5 與 R__views_functions，並且 V1 的 25 張表都存在；V3、V4、V5 的表格約束。"""
+"""確認 Flyway 已套用 V1–V6 與 R__views_functions，並且 V1 的 25 張表都存在；V3、V4、V5、V6 的表格約束。"""
 import psycopg
 import pytest
 
@@ -13,12 +13,12 @@ EXPECTED_TABLES = {
 }
 
 
-def test_flyway_applied_v1_to_v5(db):
+def test_flyway_applied_v1_to_v6(db):
     rows = db.execute(
         "SELECT version FROM flyway_schema_history "
         "WHERE version IS NOT NULL AND success"
     ).fetchall()
-    assert {r[0] for r in rows} >= {"1", "2", "3", "4", "5"}
+    assert {r[0] for r in rows} >= {"1", "2", "3", "4", "5", "6"}
 
 
 def test_all_v1_tables_exist(db):
@@ -163,3 +163,43 @@ def test_seed_payments_have_null_merchant_order_no(db):
     ).fetchone()
     assert total == 15
     assert non_null == 0
+
+
+# ---- V6（P5 spec §3）：收藏、購物車、通知設定各一個唯一約束 ----
+
+def _constraint_exists(db, table, name):
+    return db.execute(
+        "SELECT 1 FROM pg_constraint WHERE conname = %s AND contype = 'u' AND conrelid = %s::regclass",
+        (name, f'public."{table}"'),
+    ).fetchone() is not None
+
+
+def test_favorite_user_tour_unique(tx):
+    user = insert(tx, "user")
+    tour = insert(tx, "tour")
+    insert(tx, "favorite", user_id=user["user_id"], tour_id=tour["tour_id"])
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+        insert(tx, "favorite", user_id=user["user_id"], tour_id=tour["tour_id"])
+    assert exc.value.diag.constraint_name == "favorite_user_tour_key"
+    tx.rollback()
+    assert _constraint_exists(tx, "favorite", "favorite_user_tour_key")
+
+
+def test_cart_user_unique(tx):
+    user = insert(tx, "user")
+    insert(tx, "cart", user_id=user["user_id"])
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+        insert(tx, "cart", user_id=user["user_id"])
+    assert exc.value.diag.constraint_name == "cart_user_id_key"
+    tx.rollback()
+    assert _constraint_exists(tx, "cart", "cart_user_id_key")
+
+
+def test_auto_setting_user_unique(tx):
+    user = insert(tx, "user")
+    insert(tx, "auto_setting", user_id=user["user_id"])
+    with pytest.raises(psycopg.errors.UniqueViolation) as exc:
+        insert(tx, "auto_setting", user_id=user["user_id"])
+    assert exc.value.diag.constraint_name == "auto_setting_user_id_key"
+    tx.rollback()
+    assert _constraint_exists(tx, "auto_setting", "auto_setting_user_id_key")

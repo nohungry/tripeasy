@@ -450,6 +450,7 @@ def make_order(db):
 
     def _delete(pair):
         order_id, item_id = pair
+        db.execute("DELETE FROM point_record WHERE order_id = %s", (order_id,))
         db.execute("DELETE FROM order_item WHERE order_item_id = %s", (item_id,))
         db.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
 
@@ -505,3 +506,33 @@ def summary(api, user, order_id):
     r = api.get(f"{SUMMARY_API}/{order_id}", headers=auth_header(user), timeout=10)
     assert r.status_code == 200, r.text
     return r.json()["data"]["summary"]
+
+
+def refund_url(order_id):
+    return f"/api/v1/admin/orders/{order_id}/refund"
+
+
+def refund(api, admin, order_id):
+    return api.post(refund_url(order_id), headers=auth_header(admin), timeout=10)
+
+
+def negative_points_via_refund(api, db, make_user, make_tour) -> dict:
+    """F24：不直接改 DB，用退款流程造出負點數（-8）。
+
+    付清 A 單（1000，回饋 100）→ 用 100 點付 B 單（應付 920，回饋 92）→ admin 退款 A（收回 100）。
+    餘額 100 - 100 + 92 - 100 = -8。回傳該會員。
+    """
+    admin = make_user(role="admin")
+    user, order_a = ready_order(api, db, make_user, make_tour, price=1000)
+    mon, amt, _ = start_payment(api, user, order_a)
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    assert travel_point(db, user) == 100
+    user, order_b = ready_order(api, db, make_user, make_tour, {"type": "point", "used_point": 100}, user=user, price=1000)
+    mon, amt, _ = start_payment(api, user, order_b)
+    assert amt == 920
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    assert travel_point(db, user) == 92
+    r = refund(api, admin, order_a)
+    assert r.status_code == 200, r.text
+    assert travel_point(db, user) == -8
+    return user

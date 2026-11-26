@@ -1,0 +1,7 @@
+# P5 Task 10 修正波：通知設定併發測試的 mutation 驗證（F23）
+# mutation：automation.js 兩個 upsert 改回先 SELECT 再 INSERT／UPDATE（未 commit，已還原）
+tests/test_member_notify.py:101: AssertionError: (Counter({200: 5, 500: 3}), ['{"status":"error","message":"伺服器錯誤"}', '{"status":"error","message":"伺服器錯誤"}', '{"status":"error","message":"伺服器錯誤"}'])
+test_patch_concurrent_first_write_one_row: 9/10 紅
+tests/test_member_notify.py:101: AssertionError: (Counter({200: 6, 500: 2}), ['{"status":"error","message":"伺服器錯誤"}', '{"status":"error","message":"伺服器錯誤"}'])
+test_price_tracking_concurrent_first_write_one_row: 8/10 紅
+還原後 git -C backend status --short：乾淨（空輸出）

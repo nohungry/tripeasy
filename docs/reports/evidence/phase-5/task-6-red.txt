@@ -1,0 +1,304 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 92 items
+
+tests/test_member_notify.py::test_get_defaults_when_no_row FAILED        [  1%]
+tests/test_member_notify.py::test_get_returns_booleans FAILED            [  2%]
+tests/test_member_notify.py::test_patch_early_upsert_idempotent PASSED   [  3%]
+tests/test_member_notify.py::test_patch_price_upsert_keeps_early PASSED  [  4%]
+tests/test_member_notify.py::test_patch_concurrent_first_write_one_row PASSED [  5%]
+tests/test_member_notify.py::test_alice_like_row_resave_unchanged_is_200 FAILED [  6%]
+tests/test_member_notify.py::test_price_tracking_non_integer_new_price_is_400 FAILED [  7%]
+tests/test_member_notify.py::test_price_tracking_negative_price_is_400 FAILED [  8%]
+tests/test_member_notify.py::test_regions_lists_listed_tour_pairs FAILED [  9%]
+tests/test_member_notify.py::test_regions_admin_is_403 FAILED            [ 10%]
+tests/test_member_notify.py::test_regions_without_token_is_401 FAILED    [ 11%]
+tests/test_member_notify.py::test_price_tracking_invalid_region_is_400[mismatch] FAILED [ 13%]
+tests/test_member_notify.py::test_price_tracking_invalid_region_is_400[chinese] FAILED [ 14%]
+tests/test_member_notify.py::test_price_tracking_accepts_listed_pair PASSED [ 15%]
+tests/test_member_notify.py::test_delisted_saved_region_kept_and_resavable FAILED [ 16%]
+tests/test_member_notify.py::test_price_tracking_requires_fields[country-\u570b\u5bb6] FAILED [ 17%]
+tests/test_member_notify.py::test_price_tracking_requires_fields[region-\u5730\u5340] FAILED [ 18%]
+tests/test_member_notify.py::test_price_tracking_requires_fields[max_price-\u9810\u7b97\u4e0a\u9650] FAILED [ 19%]
+tests/test_member_notify.py::test_early_not_boolean_is_400 FAILED        [ 20%]
+tests/test_member_notify.py::test_disable_price_tracking_clears_fields PASSED [ 21%]
+tests/test_member_notify.py::test_notify_without_token_is_401[all] PASSED [ 22%]
+tests/test_member_notify.py::test_notify_without_token_is_401[early] PASSED [ 23%]
+tests/test_member_notify.py::test_notify_without_token_is_401[price] PASSED [ 25%]
+tests/test_member_notify.py::test_notify_admin_is_403[all] PASSED        [ 26%]
+tests/test_member_notify.py::test_notify_admin_is_403[early] PASSED      [ 27%]
+tests/test_member_notify.py::test_notify_admin_is_403[price] PASSED      [ 28%]
+tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks FAILED [ 29%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart] PASSED [ 30%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts] PASSED [ 31%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout] PASSED [ 32%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 33%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] PASSED [ 34%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] PASSED [ 35%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] PASSED [ 36%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[orders] PASSED [ 38%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[purchases] PASSED [ 39%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[points] PASSED [ 40%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[automation] FAILED [ 41%]
+tests/test_validator_sweep.py::test_http_installment_unsafe_string PASSED [ 42%]
+tests/test_validator_sweep.py::test_http_json_1e400_cart_people PASSED   [ 43%]
+tests/test_validator_sweep.py::test_http_json_1e400_discount_point PASSED [ 44%]
+tests/test_validator_sweep.py::test_http_json_1e400_checkout_used_point PASSED [ 45%]
+tests/test_validator_sweep.py::test_http_checkout_empty_coupon_id PASSED [ 46%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-unknown] PASSED [ 47%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[user-unknown] PASSED [ 48%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown] PASSED [ 50%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array] PASSED [ 51%]
+tests/test_validator_sweep.py::test_http_search_unknown_query_key PASSED [ 52%]
+e2e/test_member_center.py::test_header_links_open_tabs[chromium] PASSED  [ 53%]
+e2e/test_member_center.py::test_orders_tab_lists_paid_order_with_detail[chromium] PASSED [ 54%]
+e2e/test_member_center.py::test_order_detail_shows_coupon_discount[chromium] PASSED [ 55%]
+e2e/test_member_center.py::test_orders_paging_uses_limit_10[chromium] PASSED [ 56%]
+e2e/test_member_center.py::test_continue_payment_goes_to_pay_page[chromium] PASSED [ 57%]
+e2e/test_member_center.py::test_overdue_pending_order_has_no_continue_button[chromium] PASSED [ 58%]
+e2e/test_member_center.py::test_orders_tab_empty[chromium] PASSED        [ 59%]
+e2e/test_member_center.py::test_admin_automatic_redirects_to_preference_tab[chromium] PASSED [ 60%]
+e2e/test_member_center.py::test_profile_tab_from_query[chromium] PASSED  [ 61%]
+e2e/test_member_center.py::test_level_tab_shows_points_and_records[chromium] PASSED [ 63%]
+e2e/test_member_center.py::test_level_tab_negative_points_shows_zero[chromium] PASSED [ 64%]
+e2e/test_member_center.py::test_notify_settings_persist_after_reload[chromium] FAILED [ 65%]
+e2e/test_member_center.py::test_delisted_saved_region_shown_with_note[chromium] FAILED [ 66%]
+e2e/test_member_flow.py::test_signup_login_profile_main_flow[chromium] PASSED [ 67%]
+e2e/test_member_flow.py::test_profile_requires_login[chromium] PASSED    [ 68%]
+e2e/test_member_flow.py::test_unknown_route_shows_404[chromium] PASSED   [ 69%]
+e2e/test_member_flow.py::test_logout_stays_in_spa[chromium] PASSED       [ 70%]
+e2e/test_member_flow.py::test_facebook_login_not_offered[chromium] PASSED [ 71%]
+e2e/test_member_flow.py::test_login_lockout_message[chromium] PASSED     [ 72%]
+e2e/test_member_flow.py::test_search_page_single_header[chromium] PASSED [ 73%]
+e2e/test_member_flow.py::test_invalid_token_redirects_and_clears_state[chromium] PASSED [ 75%]
+e2e/test_member_flow.py::test_forgot_password_via_mailpit[chromium] PASSED [ 76%]
+e2e/test_member_flow.py::test_profile_edit_name_and_preferences[chromium] PASSED [ 77%]
+e2e/test_member_flow.py::test_avatar_upload[chromium] PASSED             [ 78%]
+e2e/test_member_flow.py::test_change_password_redirects_to_login[chromium] PASSED [ 79%]
+e2e/test_member_flow.py::test_null_password_user_sees_set_password_hint[chromium] PASSED [ 80%]
+e2e/test_member_flow.py::test_expired_token_redirects_to_login[chromium] PASSED [ 81%]
+e2e/test_member_flow.py::test_profile_save_network_error_shows_message[chromium] PASSED [ 82%]
+e2e/test_member_flow.py::test_resetpw_page_opens_with_expired_token[chromium] PASSED [ 83%]
+e2e/test_member_flow.py::test_register_and_forgotpw_pages_open_with_expired_token[chromium-register-\u6703\u54e1\u8a3b\u518a] PASSED [ 84%]
+e2e/test_member_flow.py::test_register_and_forgotpw_pages_open_with_expired_token[chromium-forgotpw-\u5fd8\u8a18\u5bc6\u78bc] PASSED [ 85%]
+e2e/test_member_flow.py::test_no_coming_soon_tabs[chromium] FAILED       [ 86%]
+e2e/test_member_flow.py::test_require_auth_network_error_keeps_token[chromium] PASSED [ 88%]
+e2e/test_member_flow.py::test_logged_in_user_can_open_forgotpw_and_resetpw[chromium] PASSED [ 89%]
+e2e/test_member_flow.py::test_google_login_via_mock[chromium] PASSED     [ 90%]
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] PASSED [ 91%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] PASSED [ 92%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save] PASSED [ 93%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar] PASSED [ 94%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] PASSED [ 95%]
+e2e/test_member_flow.py::test_register_name_too_long_shows_message[chromium] PASSED [ 96%]
+e2e/test_member_flow.py::test_profile_name_too_long_shows_message[chromium] PASSED [ 97%]
+e2e/test_member_flow.py::test_pay_name_too_long_blocked[chromium] PASSED [ 98%]
+e2e/test_member_flow.py::test_google_long_name_can_checkout[chromium] PASSED [100%]
+
+=================================== FAILURES ===================================
+________________________ test_get_defaults_when_no_row _________________________
+tests/test_member_notify.py:43: in test_get_defaults_when_no_row
+    assert r.json()["message"] == "查詢成功"
+E   AssertionError: assert '查無資料' == '查詢成功'
+E     
+E     - 查詢成功
+E     + 查無資料
+__________________________ test_get_returns_booleans ___________________________
+tests/test_member_notify.py:54: in test_get_returns_booleans
+    assert data["notifi_settings_enabled"] is True
+E   assert 1 is True
+_________________ test_alice_like_row_resave_unchanged_is_200 __________________
+tests/test_member_notify.py:102: in test_alice_like_row_resave_unchanged_is_200
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"failed","message":"「max_price」必須是整數"}
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+_______________ test_price_tracking_non_integer_new_price_is_400 _______________
+tests/test_member_notify.py:112: in test_price_tracking_non_integer_new_price_is_400
+    assert r.json()["message"] == PRICE_MSG
+E   AssertionError: assert '「max_price」必須是整數' == '「預算上限」必須是 0 以上的整數'
+E     
+E     - 「預算上限」必須是 0 以上的整數
+E     + 「max_price」必須是整數
+__________________ test_price_tracking_negative_price_is_400 ___________________
+tests/test_member_notify.py:119: in test_price_tracking_negative_price_is_400
+    assert r.json()["message"] == PRICE_MSG
+E   AssertionError: assert '「max_price」不可小於 0' == '「預算上限」必須是 0 以上的整數'
+E     
+E     - 「預算上限」必須是 0 以上的整數
+E     + 「max_price」不可小於 0
+_____________________ test_regions_lists_listed_tour_pairs _____________________
+tests/test_member_notify.py:126: in test_regions_lists_listed_tour_pairs
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+__________________________ test_regions_admin_is_403 ___________________________
+tests/test_member_notify.py:140: in test_regions_admin_is_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+______________________ test_regions_without_token_is_401 _______________________
+tests/test_member_notify.py:146: in test_regions_without_token_is_401
+    assert r.status_code == 401, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+_____________ test_price_tracking_invalid_region_is_400[mismatch] ______________
+tests/test_member_notify.py:154: in test_price_tracking_invalid_region_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"彈性價格提醒狀態已更新"}
+E   assert 200 == 400
+E    +  where 200 = <Response [200]>.status_code
+______________ test_price_tracking_invalid_region_is_400[chinese] ______________
+tests/test_member_notify.py:154: in test_price_tracking_invalid_region_is_400
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"彈性價格提醒狀態已更新"}
+E   assert 200 == 400
+E    +  where 200 = <Response [200]>.status_code
+________________ test_delisted_saved_region_kept_and_resavable _________________
+tests/test_member_notify.py:176: in test_delisted_saved_region_kept_and_resavable
+    assert r.status_code == 400, r.text
+E   AssertionError: {"status":"success","message":"彈性價格提醒狀態已更新"}
+E   assert 200 == 400
+E    +  where 200 = <Response [200]>.status_code
+__________ test_price_tracking_requires_fields[country-\u570b\u5bb6] ___________
+tests/test_member_notify.py:190: in test_price_tracking_requires_fields
+    assert r.json()["message"] == f"開啟價格追蹤時「{label}」為必填欄位"
+E   AssertionError: assert '「country」為必填...bled 為 true 時' == '開啟價格追蹤時「國家」為必填欄位'
+E     
+E     - 開啟價格追蹤時「國家」為必填欄位
+E     + 「country」為必填欄位，當 price_tracking_enabled 為 true 時
+___________ test_price_tracking_requires_fields[region-\u5730\u5340] ___________
+tests/test_member_notify.py:190: in test_price_tracking_requires_fields
+    assert r.json()["message"] == f"開啟價格追蹤時「{label}」為必填欄位"
+E   AssertionError: assert '「region」為必填欄...bled 為 true 時' == '開啟價格追蹤時「地區」為必填欄位'
+E     
+E     - 開啟價格追蹤時「地區」為必填欄位
+E     + 「region」為必填欄位，當 price_tracking_enabled 為 true 時
+___ test_price_tracking_requires_fields[max_price-\u9810\u7b97\u4e0a\u9650] ____
+tests/test_member_notify.py:190: in test_price_tracking_requires_fields
+    assert r.json()["message"] == f"開啟價格追蹤時「{label}」為必填欄位"
+E   AssertionError: assert '「max_price」為...bled 為 true 時' == '開啟價格追蹤時「預算上限」為必填欄位'
+E     
+E     - 開啟價格追蹤時「預算上限」為必填欄位
+E     + 「max_price」為必填欄位，當 price_tracking_enabled 為 true 時
+________________________ test_early_not_boolean_is_400 _________________________
+tests/test_member_notify.py:196: in test_early_not_boolean_is_400
+    assert r.json()["message"] == "「旅遊提醒」必須是 true 或 false"
+E   AssertionError: assert '「notifi_sett... true 或 false' == '「旅遊提醒」必須是 true 或 false'
+E     
+E     - 「旅遊提醒」必須是 true 或 false
+E     + 「notifi_settings_enabled」 必須是布林值 true 或 false
+_________________ test_hostile_matrix_has_no_joi_default_leaks _________________
+tests/test_validator_sweep.py:100: in test_hostile_matrix_has_no_joi_default_leaks
+    assert result["leaks"] == [], (result["real"], len(result["leaks"]), result["leaks"][:10])
+E   AssertionError: (True, 100, [['automation.early', 'notifi_settings_enabled <missing>', '「notifi_settings_enabled」 為必填欄位'], ['automation.early', 'notifi_settings_enabled=null', '「notifi_settings_enabled」 必須是布林值 true 或 false'], ['automation.early', 'notifi_settings_enabled=', '「notifi_settings_enabled」 必須是布林值 true 或 false'], ['automation.early', 'notifi_settings_enabled=[object Object]', '「notifi_settings_enabled」 必須是布林值 true 或 false'], ['automation.early', 'notifi_settings_enabled=', '「notifi_settings_enabled」 必須是布林值 true 或 false'], ['automation.early', 'notifi_settings_enabled=1e+30', '「notifi_settings_enabled」 必須是布林值 true 或 false'], ...])
+E   assert [['automation... false'], ...] == []
+E     
+E     Left contains 100 more items, first extra item: ['automation.early', 'notifi_settings_enabled <missing>', '「notifi_settings_enabled」 為必填欄位']
+E     
+E     Full diff:
+E     - []
+E     + [
+E     +     [...
+E     
+E     ...Full output truncated (500 lines hidden), use '-vv' to show
+____ test_middlewares_read_joi_errors_only_through_user_message[automation] ____
+tests/test_validator_sweep.py:141: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(312, 319), match='details'>
+E    +  where <re.Match object; span=(312, 319), match='details'> = <function search at 0x74c3ab394860>('\\bdetails\\b|\\.message\\b', "const resStatus = require('../../utils/resStatus');\n\nconst automation_Validator = require('../../utils/Validator/automation_Validator.js');\n\n\n\n\n\nasync function patchearlyNoti(req, res, next) {\n  const { error } = automation_Validator.early_schema.validate(req.body);\n\n  \n  if (error) {\n    const message = error.details[0]?.message || '欄位驗證錯誤';\n    resStatus({\n      res: res,\n      status: 400,\n      message: message,\n    });\n    return;\n  }\n\n  next();\n}\n\n\nasync function patchpriceNoti(req, res, next) {\n  const { error, value } = automation_Validator.price_schema.validate(req.body);\n\n  \n  if (error) {\n    const message = error.details[0]?.message || '欄位驗證錯誤';\n    resStatus({\n      res: res,\n      status: 400,\n      message: message,\n    });\n    return;\n  }\n\n  req.body = value;\n  next();\n}\n\nmodule.exports = {\n  patchearlyNoti,\n  patchpriceNoti,\n};\n")
+E    +    where <function search at 0x74c3ab394860> = re.search
+_____________ test_notify_settings_persist_after_reload[chromium] ______________
+e2e/test_member_center.py:242: in test_notify_settings_persist_after_reload
+    _open_preference_tab(page)
+e2e/test_member_center.py:232: in _open_preference_tab
+    page.expect_response(re.compile(r"/user/automation/regions$")) as regions,
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+E   =========================== logs ===========================
+E   waiting for response //user/automation/regions$/
+E   ============================================================
+_____________ test_delisted_saved_region_shown_with_note[chromium] _____________
+e2e/test_member_center.py:282: in test_delisted_saved_region_shown_with_note
+    _open_preference_tab(page)
+e2e/test_member_center.py:232: in _open_preference_tab
+    page.expect_response(re.compile(r"/user/automation/regions$")) as regions,
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:89: in __exit__
+    self._event.value
+.venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py:54: in value
+    raise exception
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:387: in finish
+    raise e from None
+.venv/lib/python3.13/site-packages/playwright/_impl/channel_owner.py:352: in finish
+    result = await zone.run_async(lambda: awaitable)
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/zones.py:58: in run_async
+    return await func()
+.venv/lib/python3.13/site-packages/playwright/_impl/page.py:817: in result
+    result = await wait
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:201: in wait_for_promise
+    raise rewrite_error_message(
+.venv/lib/python3.13/site-packages/playwright/_impl/waiter.py:184: in wait_for_promise
+    result = await race([promise, *self._failures])
+.venv/lib/python3.13/site-packages/playwright/_impl/utils/tasks.py:131: in race
+    return winner.result()
+E   playwright._impl._errors.TimeoutError: Page.expect_response: Timeout 30000ms exceeded while waiting for event "response"
+E   =========================== logs ===========================
+E   waiting for response //user/automation/regions$/
+E   ============================================================
+______________________ test_no_coming_soon_tabs[chromium] ______________________
+e2e/test_member_flow.py:375: in test_no_coming_soon_tabs
+    expect(page.get_by_text("即將開放", exact=True)).to_have_count(0)
+E   AssertionError: Locator expected to have count '0'
+E   Actual value: 1 
+E   Call log:
+E     - Expect "to_have_count" get_by_text("即將開放", exact=True) with timeout 5000ms
+E     - waiting for get_by_text("即將開放", exact=True)
+E       14 × locator resolved to 1 element
+E          - unexpected value "1"
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_get_defaults_when_no_row - Assertion...
+FAILED tests/test_member_notify.py::test_get_returns_booleans - assert 1 is True
+FAILED tests/test_member_notify.py::test_alice_like_row_resave_unchanged_is_200
+FAILED tests/test_member_notify.py::test_price_tracking_non_integer_new_price_is_400
+FAILED tests/test_member_notify.py::test_price_tracking_negative_price_is_400
+FAILED tests/test_member_notify.py::test_regions_lists_listed_tour_pairs - As...
+FAILED tests/test_member_notify.py::test_regions_admin_is_403 - AssertionErro...
+FAILED tests/test_member_notify.py::test_regions_without_token_is_401 - Asser...
+FAILED tests/test_member_notify.py::test_price_tracking_invalid_region_is_400[mismatch]
+FAILED tests/test_member_notify.py::test_price_tracking_invalid_region_is_400[chinese]
+FAILED tests/test_member_notify.py::test_delisted_saved_region_kept_and_resavable
+FAILED tests/test_member_notify.py::test_price_tracking_requires_fields[country-\u570b\u5bb6]
+FAILED tests/test_member_notify.py::test_price_tracking_requires_fields[region-\u5730\u5340]
+FAILED tests/test_member_notify.py::test_price_tracking_requires_fields[max_price-\u9810\u7b97\u4e0a\u9650]
+FAILED tests/test_member_notify.py::test_early_not_boolean_is_400 - Assertion...
+FAILED tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[automation]
+FAILED e2e/test_member_center.py::test_notify_settings_persist_after_reload[chromium]
+FAILED e2e/test_member_center.py::test_delisted_saved_region_shown_with_note[chromium]
+FAILED e2e/test_member_flow.py::test_no_coming_soon_tabs[chromium] - Assertio...
+================== 20 failed, 72 passed in 161.54s (0:02:41) ===================

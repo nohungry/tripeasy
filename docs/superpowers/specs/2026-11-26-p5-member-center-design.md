@@ -251,4 +251,6 @@
 14. **收藏列表不分頁**（F4／F5；補充 §4.5、§5）：伺服器端上限 100 筆、新到舊，回 `{ data, total }`；前端不做分頁 UI，超過 100 筆時提示只顯示最新 100 筆。若錯的代價：收藏超過 100 筆的會員看不到較舊的收藏。
 15. **地區清單 API 不套用 `{ data, total }`**（F6）：`GET /user/automation/regions` 是查找清單，直接回陣列。
 16. **§7.1 的理由已改變，決定維持**（F9）：計畫 D7 讓訂單列表的折扣類型與金額改由 `computePayable` 計算，不再讀 `orders.discount_type`／`discount_price`，所以 §7.1「列表會直接顯示這兩個欄位」的理由不再成立；逾時或取消時清空這兩欄的決定照做，理由改為資料一致。
-17. **回饋比例的來源**（F10；補充 §4.3「會員等級」）：起草時讀碼，`pointslevel` 與登入回應都沒有回饋比例；實作開工時再查證一次（計畫 Task 0）。若仍沒有，前端寫死 `10%`（與結算的 `floor(應付金額 × 0.1)` 一致）。這是偏離 spec「顯示 seed 的回饋比例」：seed 與資料庫沒有比例欄位。
+17. **（已併入第 18 點）**：回饋比例的來源與查證結果見第 18 點。
+18. **回饋比例前端寫死 10%（偏離 spec；F10 查證結果，Task 0 Step 9 (h)、Task 5）**：Task 0 查證，`GET /pointslevel`、登入回應與其他 API 都沒有輸出回饋比例；`user_level.benefits`（V1 `TEXT NULL`）雖存在、seed 也有值（自由文字，例如 `Free airport lounge access; 10% discount on tours`，不是比例欄位），但 backend 與 frontend 的 `src` 都沒有任何程式引用它，不是可讀取的比例欄位。所以會員等級分頁的「購物回饋比例」由前端寫死 `10%`（`frontend/src/views/admin/userprofilePage.vue` 的 `REWARD_RATE_TEXT`，附註解指向 F10），與結算的 `floor(應付金額 × 0.1)`（`utils/trade.js` `settlePaidOrder`）一致。這偏離 §4.3「顯示 seed 的回饋比例」。若錯的代價：之後調整回饋公式或各等級比例不同時，前端文字不會跟著變，要同時改 API 與前端（P6 若實作等級升級規則，應一併讓 API 輸出比例）。
+19. **summary 在本次呼叫轉為逾時時，折扣欄位回 null（P5 Task 9 對 P4 行為的改變；T9-fold）**：`GET /checkout/order/:order_id`（summary）在這次呼叫內把訂單轉成逾時（`expireIfOverdue`，P5 起同時清空 `orders.discount_type`／`discount_price`）時，回應的 `discount.type` 與 `summary.discount_price` 為 `null`，與 DB 一致；P4 的行為是回應仍帶轉換前的折扣。已付款訂單過期不清折扣欄位（有回歸測試）。若錯的代價：呼叫端若依賴逾時當下的折扣類型，會看到 null（目前前端不依賴）。

@@ -1,0 +1,51 @@
+# F25：併發測試 10 次
+-- run 1
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.14s
+-- run 2
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.15s
+-- run 3
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.16s
+-- run 4
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.13s
+-- run 5
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.13s
+-- run 6
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.14s
+-- run 7
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.15s
+-- run 8
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.14s
+-- run 9
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.13s
+-- run 10
+tests/test_trade_cart.py:205: assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_trade_cart.py::test_first_add_concurrently_creates_one_cart
+1 failed in 0.16s

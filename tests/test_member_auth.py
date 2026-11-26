@@ -20,6 +20,7 @@ from conftest import (
     current_pwv,
     delete_user,
     login_token,
+    negative_points_via_refund,
     reset_token,
 )
 from dbfactory import insert
@@ -178,7 +179,7 @@ def test_signup_lowercase_conflicts_with_mixed_case_stored_email(api, make_user)
     [
         ({"email": "not-an-email"}, "Email不符合規則"),
         ({"password": "short"}, "密碼不符合規則"),
-        ({"name": "六個字的名字喔"}, "使用者名稱不符合規則"),
+        ({"name": "王" * 21}, "「姓名」需為 2 到 20 個字"),
         ({"preference": PREFS[:2]}, "個人偏好需選擇 3 項內容"),
         ({"password": None}, "「密碼」為必填欄位"),
     ],
@@ -341,14 +342,18 @@ def test_patch_profile_info_ok_and_validation(api, db, make_user):
 
     r = api.patch(PROFILE_INFO, headers=h, json={})
     assert r.status_code == 400 and "請至少填寫" in r.json()["message"], r.text
-    r = api.patch(PROFILE_INFO, headers=h, json={"name": "a!b", "preference": prefs})
-    assert r.status_code == 400 and "特殊字元" in r.json()["message"], r.text
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "名\u0007", "preference": prefs})
+    assert r.status_code == 400 and r.json()["message"] == "「姓名」不得包含控制字元", r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": prefs[:2]})
     assert r.status_code == 400 and "需包含 3 個項目" in r.json()["message"], r.text
     r = api.patch(PROFILE_INFO, headers=h, json={"name": "新名字", "preference": ["探索冒險", "放鬆療癒", "不存在"]})
     assert r.status_code == 409 and "包含無效的偏好名稱" in r.json()["message"], r.text
     # 被拒絕的請求不得改到資料
     assert _stored() == ("新名字", 4, 5, 6)
+    # R4：符號是允許的
+    r = api.patch(PROFILE_INFO, headers=h, json={"name": "a!b", "preference": prefs})
+    assert r.status_code == 200, r.text
+    assert _stored()[0] == "a!b"
 
 
 def test_avatar_upload_validation(api, make_user):
@@ -809,3 +814,40 @@ def test_non_string_captcha_input_is_400(api, make_user, bad_input):
     user = make_user()
     r = _resetpw_with_cookie(api, user, captcha_cookie("abcde"), bad_input)
     assert r.status_code == 400, r.text
+
+
+POINT_RECORDS = "/api/v1/user/points/records"
+
+
+def test_point_records_hide_signup_zero_row(api, db, cleanup_email):
+    """Review Focus 4：註冊寫的 `新增 0` 在 DB 有，但點數紀錄 API 不顯示。"""
+    email = f"val.{uuid.uuid4().hex[:10]}@example.com"
+    cleanup_email(email)
+    r = api.post(SIGNUP, json=_signup_body(email))
+    assert r.status_code == 201, r.text
+    user_id = db.execute('SELECT user_id FROM "user" WHERE lower(email) = lower(%s)', (email,)).fetchone()[0]
+    assert db.execute(
+        "SELECT type, point FROM point_record WHERE user_id = %s", (user_id,)
+    ).fetchall() == [("新增", 0)]
+    r = api.post(LOGIN, json={"email": email, "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    token = r.json()["data"]["token"]
+    r = api.get(POINT_RECORDS, headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"] == {"data": [], "total": 0}
+
+
+def test_login_email_negative_points_returns_zero(api, db, make_user, make_tour):
+    user = negative_points_via_refund(api, db, make_user, make_tour)
+    r = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["level"]["points"] == 0
+    assert db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == -8
+
+
+def test_login_status_negative_points_returns_zero(api, db, make_user, make_tour):
+    user = negative_points_via_refund(api, db, make_user, make_tour)
+    r = api.get(LOGIN_STATUS, headers=auth_header(user))
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["level"]["points"] == 0
+    assert db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == -8

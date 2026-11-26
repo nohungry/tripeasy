@@ -416,6 +416,33 @@ def keep_one_cart_per_user(by_table: dict[str, Insert]) -> None:
     assert (len(cart.rows), len(item.rows)) == (3, 6), (len(cart.rows), len(item.rows))
 
 
+def merge_duplicate_auto_settings(by_table: dict[str, Insert]) -> None:
+    """同一 user_id 多列時併成一列（P5 R1、F10）：每個欄位取 updated_at 較新那列的值；
+    updated_at 相同、或有一邊不是可比較的字面值（例如 CURRENT_TIMESTAMP）時，取 auto_setting_id 較小那列。"""
+    ins = by_table["auto_setting"]
+    idx, uid, upd = _col(ins, "auto_setting_id"), _col(ins, "user_id"), _col(ins, "updated_at")
+    groups: dict[str, list[list[str]]] = {}
+    for row in ins.rows:
+        groups.setdefault(unquote(row[uid]), []).append(row)
+
+    def pick(rows: list[list[str]]) -> list[str]:
+        def newer_key(row):  # 較新者排前面：不可比較的字面值視為同一時間
+            return row[upd] if row[upd].startswith("'") else ""
+        stamps = {newer_key(r) for r in rows}
+        pool = rows
+        if len(stamps) > 1 and "" not in stamps:
+            latest = max(stamps)
+            pool = [r for r in rows if newer_key(r) == latest]
+        return min(pool, key=lambda r: unquote(r[idx]))
+
+    merged = []
+    for rows in groups.values():
+        merged.append(list(pick(rows)) if len(rows) > 1 else rows[0])
+    ins.rows = merged
+    users = [unquote(r[uid]) for r in ins.rows]
+    assert len(users) == len(set(users)), "auto_setting 合併後仍有同一 user_id 多列"
+
+
 def fix_roles(by_table: dict[str, Insert]) -> None:
     # 程式用 authRole('User') / authRole('admin')，fakedata 寫的是 'user'。只改 user 表的 role 欄
     ins = by_table["user"]
@@ -602,6 +629,7 @@ def build(text: str, extra_text: str) -> str:
     rewrite_coupons(by_table)
     keep_one_cart_per_user(by_table)
     fix_roles(by_table)
+    merge_duplicate_auto_settings(by_table)
     rewrite_promotions(by_table)
     rewrite_cart_item_dates(by_table)
     rewrite_favorite_times(by_table)

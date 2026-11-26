@@ -1,0 +1,502 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 228 items
+
+tests/test_name_rule.py::test_signup_accepts_20_chars_and_spaces FAILED  [  0%]
+tests/test_name_rule.py::test_signup_rejects_21_chars FAILED             [  0%]
+tests/test_name_rule.py::test_signup_trims_name FAILED                   [  1%]
+tests/test_name_rule.py::test_signup_blank_name FAILED                   [  1%]
+tests/test_name_rule.py::test_signup_counts_code_points FAILED           [  2%]
+tests/test_name_rule.py::test_signup_allows_symbols_and_spaces FAILED    [  2%]
+tests/test_name_rule.py::test_signup_rejects_control_chars[bell] FAILED  [  3%]
+tests/test_name_rule.py::test_signup_rejects_control_chars[newline] FAILED [  3%]
+tests/test_name_rule.py::test_profile_rejects_control_chars[bell] FAILED [  3%]
+tests/test_name_rule.py::test_profile_rejects_control_chars[newline] FAILED [  4%]
+tests/test_name_rule.py::test_checkout_rejects_control_chars[bell] FAILED [  4%]
+tests/test_name_rule.py::test_checkout_rejects_control_chars[newline] FAILED [  5%]
+tests/test_name_rule.py::test_profile_name_rules FAILED                  [  5%]
+tests/test_name_rule.py::test_profile_blank_name FAILED                  [  6%]
+tests/test_name_rule.py::test_profile_saves_trimmed_name PASSED          [  6%]
+tests/test_name_rule.py::test_control_char_check_is_stateless FAILED     [  7%]
+tests/test_name_rule.py::test_checkout_name_rules FAILED                 [  7%]
+tests/test_google_login.py::test_google_new_user_has_null_password PASSED [  7%]
+tests/test_google_login.py::test_google_unverified_email_rejected[false] PASSED [  8%]
+tests/test_google_login.py::test_google_unverified_email_rejected[missing] PASSED [  8%]
+tests/test_google_login.py::test_google_unverified_email_rejected[string-true] PASSED [  9%]
+tests/test_google_login.py::test_google_unverified_email_rejected[int-1] PASSED [  9%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[false] PASSED [ 10%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[missing] PASSED [ 10%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[string-true] PASSED [ 10%]
+tests/test_google_login.py::test_google_unverified_email_cannot_bind_existing[int-1] PASSED [ 11%]
+tests/test_google_login.py::test_google_email_case_matches_existing PASSED [ 11%]
+tests/test_google_login.py::test_google_binds_existing_mixed_case_stored_email PASSED [ 12%]
+tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens PASSED [ 12%]
+tests/test_google_login.py::test_google_member_cannot_login_with_default_password PASSED [ 13%]
+tests/test_google_login.py::test_google_rebind_keeps_password PASSED     [ 13%]
+tests/test_google_login.py::test_google_login_response_token_works PASSED [ 14%]
+tests/test_google_login.py::test_google_login_missing_code_is_400 PASSED [ 14%]
+tests/test_google_login.py::test_google_login_bogus_code_rejected PASSED [ 14%]
+tests/test_google_login.py::test_google_new_user_email_stored_lowercase PASSED [ 15%]
+tests/test_google_login.py::test_google_rebind_different_sub_same_email_current_behavior PASSED [ 15%]
+tests/test_google_login.py::test_google_new_user_concurrent_same_email_not_500 PASSED [ 16%]
+tests/test_google_login.py::test_google_login_keeps_uploaded_avatar PASSED [ 16%]
+tests/test_google_login.py::test_google_first_bind_keeps_existing_avatar PASSED [ 17%]
+tests/test_google_login.py::test_google_first_bind_fills_null_avatar PASSED [ 17%]
+tests/test_google_login.py::test_google_long_name_truncated FAILED       [ 17%]
+tests/test_google_login.py::test_google_short_name_uses_email FAILED     [ 18%]
+tests/test_google_login.py::test_google_missing_name_uses_email FAILED   [ 18%]
+tests/test_google_login.py::test_google_name_control_chars_removed FAILED [ 19%]
+tests/test_google_login.py::test_google_name_blank_after_truncation_uses_email FAILED [ 19%]
+tests/test_google_login.py::test_google_display_name_one_char_local_part FAILED [ 20%]
+tests/test_google_login.py::test_google_emoji_name_truncated_by_code_point FAILED [ 20%]
+tests/test_member_auth.py::test_change_role_requires_admin PASSED        [ 21%]
+tests/test_member_auth.py::test_change_role_by_admin PASSED              [ 21%]
+tests/test_member_auth.py::test_user_fk_tables_list_is_complete PASSED   [ 21%]
+tests/test_member_auth.py::test_delete_user_clears_all_fk_tables PASSED  [ 22%]
+tests/test_member_auth.py::test_signup_normalizes_email PASSED           [ 22%]
+tests/test_member_auth.py::test_signup_duplicate_differs_by_case_is_409 PASSED [ 23%]
+tests/test_member_auth.py::test_signup_concurrent_same_email_only_one_succeeds PASSED [ 23%]
+tests/test_member_auth.py::test_login_email_is_case_insensitive PASSED   [ 24%]
+tests/test_member_auth.py::test_login_lowercase_matches_mixed_case_stored_email PASSED [ 24%]
+tests/test_member_auth.py::test_forgetpw_matches_mixed_case_stored_email PASSED [ 25%]
+tests/test_member_auth.py::test_signup_lowercase_conflicts_with_mixed_case_stored_email PASSED [ 25%]
+tests/test_member_auth.py::test_signup_validation_errors[bad-email] PASSED [ 25%]
+tests/test_member_auth.py::test_signup_validation_errors[bad-password] PASSED [ 26%]
+tests/test_member_auth.py::test_signup_validation_errors[name-too-long] FAILED [ 26%]
+tests/test_member_auth.py::test_signup_validation_errors[preference-too-few] PASSED [ 27%]
+tests/test_member_auth.py::test_signup_validation_errors[missing-password] PASSED [ 27%]
+tests/test_member_auth.py::test_signup_unknown_preference_is_409 PASSED  [ 28%]
+tests/test_member_auth.py::test_login_email_validation_errors[bad-email] PASSED [ 28%]
+tests/test_member_auth.py::test_login_email_validation_errors[missing-password] PASSED [ 28%]
+tests/test_member_auth.py::test_login_unknown_email_is_404 PASSED        [ 29%]
+tests/test_member_auth.py::test_login_wrong_password_is_401 PASSED       [ 29%]
+tests/test_member_auth.py::test_forgetpw_validation_and_unknown_email PASSED [ 30%]
+tests/test_member_auth.py::test_checkout_preview_email_lookup_is_case_insensitive PASSED [ 30%]
+tests/test_member_auth.py::test_login_null_password_is_rejected_without_lock PASSED [ 31%]
+tests/test_member_auth.py::test_profile_change_password_null_password PASSED [ 31%]
+tests/test_member_auth.py::test_member_apis_require_login[GET-/api/v1/user/userinfo/info] PASSED [ 32%]
+tests/test_member_auth.py::test_member_apis_require_login[PATCH-/api/v1/user/userinfo/info] PASSED [ 32%]
+tests/test_member_auth.py::test_member_apis_require_login[PATCH-/api/v1/user/userinfo/avatar] PASSED [ 32%]
+tests/test_member_auth.py::test_member_apis_require_login[GET-/api/v1/user/userinfo/pointslevel] PASSED [ 33%]
+tests/test_member_auth.py::test_member_apis_require_login[PATCH-/api/v1/auth/userinfo/resetprofilepw] PASSED [ 33%]
+tests/test_member_auth.py::test_member_apis_require_login[GET-/api/v1/auth/userinfo/login/status] PASSED [ 34%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[GET-/api/v1/user/userinfo/info] PASSED [ 34%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[PATCH-/api/v1/user/userinfo/info] PASSED [ 35%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[PATCH-/api/v1/user/userinfo/avatar] PASSED [ 35%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[GET-/api/v1/user/userinfo/pointslevel] PASSED [ 35%]
+tests/test_member_auth.py::test_get_profile_info_ok PASSED               [ 36%]
+tests/test_member_auth.py::test_patch_profile_info_ok_and_validation FAILED [ 36%]
+tests/test_member_auth.py::test_avatar_upload_validation PASSED          [ 37%]
+tests/test_member_auth.py::test_profile_change_password_validation PASSED [ 37%]
+tests/test_member_auth.py::test_login_response_has_avatar_url PASSED     [ 38%]
+tests/test_member_auth.py::test_patch_profile_info_name_only PASSED      [ 38%]
+tests/test_member_auth.py::test_patch_profile_info_preference_only PASSED [ 39%]
+tests/test_member_auth.py::test_patch_profile_info_releases_db_connection PASSED [ 39%]
+tests/test_member_auth.py::test_reset_token_cannot_access_member_api[/api/v1/user/userinfo/info] PASSED [ 39%]
+tests/test_member_auth.py::test_reset_token_cannot_access_member_api[/api/v1/auth/userinfo/login/status] PASSED [ 40%]
+tests/test_member_auth.py::test_reset_token_cannot_access_member_api[/api/v1/user/home/search/products] PASSED [ 40%]
+tests/test_member_auth.py::test_reset_link_shape PASSED                  [ 41%]
+tests/test_member_auth.py::test_login_token_cannot_reset_password PASSED [ 41%]
+tests/test_member_auth.py::test_reset_password_old_password_rejected PASSED [ 42%]
+tests/test_member_auth.py::test_reset_token_is_single_use PASSED         [ 42%]
+tests/test_member_auth.py::test_old_login_token_invalid_after_reset PASSED [ 42%]
+tests/test_member_auth.py::test_old_login_token_invalid_after_profile_change PASSED [ 43%]
+tests/test_member_auth.py::test_expired_login_token_is_401 PASSED        [ 43%]
+tests/test_member_auth.py::test_resetpw_validation_and_invalid_token PASSED [ 44%]
+tests/test_member_auth.py::test_forged_token_without_pwv_is_401 PASSED   [ 44%]
+tests/test_member_auth.py::test_token_of_deleted_user_is_401 PASSED      [ 45%]
+tests/test_member_auth.py::test_null_password_user_can_set_password_via_reset PASSED [ 45%]
+tests/test_member_auth.py::test_auth_not_mandatory_without_header_is_not_401 PASSED [ 46%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-reset] PASSED [ 46%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-legacy] PASSED [ 46%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-wrong_pwv] PASSED [ 47%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-missing_pwv] PASSED [ 47%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-alg_none] PASSED [ 48%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-reset] PASSED [ 48%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-legacy] PASSED [ 49%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-wrong_pwv] PASSED [ 49%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-missing_pwv] PASSED [ 50%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-alg_none] PASSED [ 50%]
+tests/test_member_auth.py::test_demoted_admin_old_token_loses_admin PASSED [ 50%]
+tests/test_member_auth.py::test_change_role_to_user_keeps_member_access PASSED [ 51%]
+tests/test_member_auth.py::test_captcha_cookie_is_not_plaintext PASSED   [ 51%]
+tests/test_member_auth.py::test_forged_plaintext_captcha_cookie_rejected PASSED [ 52%]
+tests/test_member_auth.py::test_signed_captcha_cookie_accepted PASSED    [ 52%]
+tests/test_member_auth.py::test_expired_captcha_cookie_rejected PASSED   [ 53%]
+tests/test_member_auth.py::test_captcha_cookie_attributes_from_env PASSED [ 53%]
+tests/test_member_auth.py::test_reset_token_concurrent_use_only_one_succeeds[bcrypt_password] PASSED [ 53%]
+tests/test_member_auth.py::test_reset_token_concurrent_use_only_one_succeeds[null_password] PASSED [ 54%]
+tests/test_member_auth.py::test_resetpw_success_clears_captcha_cookie PASSED [ 54%]
+tests/test_member_auth.py::test_valid_signature_wrong_answer_rejected PASSED [ 55%]
+tests/test_member_auth.py::test_missing_captcha_cookie_is_expired PASSED [ 55%]
+tests/test_member_auth.py::test_tampered_expiry_captcha_cookie_rejected PASSED [ 56%]
+tests/test_member_auth.py::test_non_string_captcha_input_is_400[number] PASSED [ 56%]
+tests/test_member_auth.py::test_non_string_captcha_input_is_400[array] PASSED [ 57%]
+tests/test_validator_messages.py::test_cart_post_invalid_tour_id_message PASSED [ 57%]
+tests/test_validator_messages.py::test_cart_delete_invalid_item_id_message PASSED [ 57%]
+tests/test_validator_messages.py::test_cart_patch_invalid_item_id_message PASSED [ 58%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'page': 0}-\u300c\u9801\u6578\u300d\u81f3\u5c11\u662f 1] PASSED [ 58%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'page': 'x'}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] PASSED [ 59%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'page': 1.5}-\u300c\u9801\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578] PASSED [ 59%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'limit': 0}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u81f3\u5c11\u662f 1] PASSED [ 60%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'limit': 'x'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] PASSED [ 60%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'page': '1e30'}-\u300c\u9801\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 60%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'limit': '1e30'}-\u300c\u6bcf\u9801\u7b46\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 61%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'foo': '1'}-\u8acb\u6c42\u53c3\u6578\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 61%]
+tests/test_validator_messages.py::test_cart_list_query_messages[{'lang': 'fr-FR'}-\u300c\u8a9e\u8a00\u300d\u50c5\u652f\u63f4\uff1azh-TW, en-US] PASSED [ 62%]
+tests/test_validator_messages.py::test_cart_list_without_paging_uses_defaults PASSED [ 62%]
+tests/test_validator_messages.py::test_cart_list_empty_without_paging_is_200 PASSED [ 63%]
+tests/test_validator_messages.py::test_cart_post_combo_message PASSED    [ 63%]
+tests/test_validator_messages.py::test_cart_post_type_item_mismatch_with_tour_message PASSED [ 64%]
+tests/test_validator_messages.py::test_cart_post_options_missing_message PASSED [ 64%]
+tests/test_validator_messages.py::test_cart_post_options_null_message PASSED [ 64%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d] PASSED [ 65%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 65%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 66%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d] PASSED [ 66%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel] PASSED [ 67%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u4eba\u6578\u300d] PASSED [ 67%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1.5, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578] PASSED [ 67%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 'x', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] PASSED [ 68%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 0, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u81f3\u5c11\u70ba 1 \u4eba] PASSED [ 68%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1e+30, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 69%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': '9007199254740993', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 69%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': 'x'}-\u300c\u9078\u9805\u300d\u5fc5\u9808\u662f\u7269\u4ef6] PASSED [ 70%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'foo': 1}}-\u300c\u9078\u9805\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 70%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 71%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': ''}}-\u300c\u623f\u578b\u300d\u4e0d\u53ef\u70ba\u7a7a] PASSED [ 71%]
+tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': 5}}-\u300c\u623f\u578b\u300d\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 71%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d] PASSED [ 72%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 72%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 73%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d] PASSED [ 73%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel] PASSED [ 74%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u4eba\u6578\u300d] PASSED [ 74%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1.5, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6574\u6578] PASSED [ 75%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 'x', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u5fc5\u9808\u662f\u6578\u5b57] PASSED [ 75%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 0, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u81f3\u5c11\u70ba 1 \u4eba] PASSED [ 75%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1e+30, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 76%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': '9007199254740993', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u4eba\u6578\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 76%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': 'x'}-\u300c\u9078\u9805\u300d\u5fc5\u9808\u662f\u7269\u4ef6] PASSED [ 77%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'foo': 1}}-\u300c\u9078\u9805\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 77%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 78%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': ''}}-\u300c\u623f\u578b\u300d\u4e0d\u53ef\u70ba\u7a7a] PASSED [ 78%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': 5}}-\u300c\u623f\u578b\u300d\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 78%]
+tests/test_validator_messages.py::test_discount_body_messages[{'discount': {'coupon': 'ABC123'}}-\u8acb\u586b\u5beb\u300c\u512a\u60e0\u65b9\u5f0f\u300d] PASSED [ 79%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'zzz', 'discount': {'coupon': 'ABC123'}}-\u300c\u512a\u60e0\u65b9\u5f0f\u300d\u53ea\u80fd\u662f\u512a\u60e0\u5238\u6216\u65c5\u904a\u7a4d\u5206] PASSED [ 79%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d] PASSED [ 80%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'abc'}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u5fc5\u9808\u662f 6 \u78bc\u5927\u5beb\u82f1\u6578\u7d44\u5408] PASSED [ 80%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 'x'}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6578\u5b57] PASSED [ 81%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 1.5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6574\u6578] PASSED [ 81%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': -5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6700\u5c0f\u503c\u70ba 0] PASSED [ 82%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'point': 5}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u53ea\u80fd\u64c7\u4e00\u586b\u5beb] PASSED [ 82%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u64c7\u4e00\u586b\u5beb] PASSED [ 82%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 1e+30}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 83%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': 'x'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u5fc5\u9808\u662f\u7269\u4ef6] PASSED [ 83%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': ''}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u4e0d\u53ef\u70ba\u7a7a] PASSED [ 84%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 123456}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 84%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'foo': 1}}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 85%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 5, 'discount': {'coupon': 'ABC123'}}-\u300c\u512a\u60e0\u65b9\u5f0f\u300d\u53ea\u80fd\u662f\u512a\u60e0\u5238\u6216\u65c5\u904a\u7a4d\u5206] PASSED [ 85%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 85%]
+tests/test_validator_messages.py::test_discount_invalid_order_id_message PASSED [ 86%]
+tests/test_validator_messages.py::test_checkout_invalid_order_id_message PASSED [ 86%]
+tests/test_validator_messages.py::test_checkout_invalid_cart_id_message PASSED [ 87%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': {'type': 'point', 'used_point': 1e+30}}-\u65c5\u904a\u7a4d\u5206\u6578\u503c\u8d85\u51fa\u7bc4\u570d] PASSED [ 87%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': None, 'payment_method': 'atm'}-\u4f7f\u7528\u8005\u8cc7\u6599\u5fc5\u9808\u662f\u7269\u4ef6] PASSED [ 88%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {}, 'payment_method': 'atm'}-\u300c\u59d3\u540d\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d] FAILED [ 88%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': None, 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u300c\u59d3\u540d\u300d\u5fc5\u9808\u662f\u6587\u5b57] FAILED [ 89%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': None, 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-Email \u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 89%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': '', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-Email \u70ba\u5fc5\u586b\u6b04\u4f4d] PASSED [ 89%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u5730\u5740\u70ba\u5fc5\u586b\u6b04\u4f4d] PASSED [ 90%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': None}, 'payment_method': 'atm'}-\u96fb\u8a71\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 90%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': ''}, 'payment_method': 'atm'}-\u96fb\u8a71\u70ba\u5fc5\u586b\u6b04\u4f4d] PASSED [ 91%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': None}-\u512a\u60e0\u5167\u5bb9\u5fc5\u9808\u662f\u7269\u4ef6] PASSED [ 91%]
+tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': '\u738b\u5c0f\u660e', 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm', 'discount': {'type': 'point', 'coupon_id': []}}-\u512a\u60e0\u5238\u4ee3\u78bc\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 92%]
+tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks FAILED [ 92%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart] PASSED [ 92%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts] PASSED [ 93%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout] PASSED [ 93%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 94%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] PASSED [ 94%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] FAILED [ 95%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] FAILED [ 95%]
+tests/test_validator_sweep.py::test_http_installment_unsafe_string PASSED [ 96%]
+tests/test_validator_sweep.py::test_http_json_1e400_cart_people PASSED   [ 96%]
+tests/test_validator_sweep.py::test_http_json_1e400_discount_point PASSED [ 96%]
+tests/test_validator_sweep.py::test_http_json_1e400_checkout_used_point PASSED [ 97%]
+tests/test_validator_sweep.py::test_http_checkout_empty_coupon_id PASSED [ 97%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-unknown] PASSED [ 98%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[user-unknown] PASSED [ 98%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown] PASSED [ 99%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array] PASSED [ 99%]
+tests/test_validator_sweep.py::test_http_search_unknown_query_key PASSED [100%]
+
+=================================== FAILURES ===================================
+___________________ test_signup_accepts_20_chars_and_spaces ____________________
+tests/test_name_rule.py:30: in test_signup_accepts_20_chars_and_spaces
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"failed","message":"使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。"}
+E   assert 400 == 201
+E    +  where 400 = <Response [400]>.status_code
+_________________________ test_signup_rejects_21_chars _________________________
+tests/test_name_rule.py:36: in test_signup_rejects_21_chars
+    assert r.json()["message"] == LEN_MSG
+E   AssertionError: assert '使用者名稱不符合規則，最...，不得包含特殊字元與空白。' == '「姓名」需為 2 到 20 個字'
+E     
+E     - 「姓名」需為 2 到 20 個字
+E     + 使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。
+____________________________ test_signup_trims_name ____________________________
+tests/test_name_rule.py:42: in test_signup_trims_name
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"failed","message":"使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。"}
+E   assert 400 == 201
+E    +  where 400 = <Response [400]>.status_code
+____________________________ test_signup_blank_name ____________________________
+tests/test_name_rule.py:49: in test_signup_blank_name
+    assert r.json()["message"] == BLANK_MSG
+E   AssertionError: assert '使用者名稱不符合規則，最...，不得包含特殊字元與空白。' == '「姓名」不得為空白'
+E     
+E     - 「姓名」不得為空白
+E     + 使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。
+________________________ test_signup_counts_code_points ________________________
+tests/test_name_rule.py:54: in test_signup_counts_code_points
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"failed","message":"使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。"}
+E   assert 400 == 201
+E    +  where 400 = <Response [400]>.status_code
+____________________ test_signup_allows_symbols_and_spaces _____________________
+tests/test_name_rule.py:62: in test_signup_allows_symbols_and_spaces
+    assert r.status_code == 201, r.text
+E   AssertionError: {"status":"failed","message":"使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。"}
+E   assert 400 == 201
+E    +  where 400 = <Response [400]>.status_code
+___________________ test_signup_rejects_control_chars[bell] ____________________
+tests/test_name_rule.py:69: in test_signup_rejects_control_chars
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '使用者名稱不符合規則，最...，不得包含特殊字元與空白。' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。
+__________________ test_signup_rejects_control_chars[newline] __________________
+tests/test_name_rule.py:69: in test_signup_rejects_control_chars
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '使用者名稱不符合規則，最...，不得包含特殊字元與空白。' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。
+___________________ test_profile_rejects_control_chars[bell] ___________________
+tests/test_name_rule.py:76: in test_profile_rejects_control_chars
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元
+_________________ test_profile_rejects_control_chars[newline] __________________
+tests/test_name_rule.py:76: in test_profile_rejects_control_chars
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元
+__________________ test_checkout_rejects_control_chars[bell] ___________________
+tests/test_name_rule.py:89: in test_checkout_rejects_control_chars
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '使用者名稱需為 2~10 字元，且不得包含空白或特殊字元' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 使用者名稱需為 2~10 字元，且不得包含空白或特殊字元
+_________________ test_checkout_rejects_control_chars[newline] _________________
+tests/test_name_rule.py:89: in test_checkout_rejects_control_chars
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '使用者名稱需為 2~10 字元，且不得包含空白或特殊字元' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 使用者名稱需為 2~10 字元，且不得包含空白或特殊字元
+___________________________ test_profile_name_rules ____________________________
+tests/test_name_rule.py:98: in test_profile_name_rules
+    assert r.json()["message"] == msg
+E   AssertionError: assert '「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元' == '「姓名」需為 2 到 20 個字'
+E     
+E     - 「姓名」需為 2 到 20 個字
+E     + 「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元
+___________________________ test_profile_blank_name ____________________________
+tests/test_name_rule.py:104: in test_profile_blank_name
+    assert r.json()["message"] == BLANK_MSG
+E   AssertionError: assert '請至少填寫「姓名」或「個人偏好」其中一項' == '「姓名」不得為空白'
+E     
+E     - 「姓名」不得為空白
+E     + 請至少填寫「姓名」或「個人偏好」其中一項
+_____________________ test_control_char_check_is_stateless _____________________
+tests/test_name_rule.py:120: in test_control_char_check_is_stateless
+    assert r.json()["message"] == CTRL_MSG
+E   AssertionError: assert '「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元' == '「姓名」不得包含控制字元'
+E     
+E     - 「姓名」不得包含控制字元
+E     + 「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元
+___________________________ test_checkout_name_rules ___________________________
+tests/test_name_rule.py:134: in test_checkout_name_rules
+    assert go("Google 測試員").status_code == 200
+E   AssertionError: assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+E    +    where <Response [400]> = <function test_checkout_name_rules.<locals>.go at 0x7abf779b7e20>('Google 測試員')
+_______________________ test_google_long_name_truncated ________________________
+tests/test_google_login.py:334: in test_google_long_name_truncated
+    assert _google_name(db, claims["email"]) == "A" * 20
+E   AssertionError: assert 'AAAAAAAAAAAAAAAAAAAAAAAAA' == 'AAAAAAAAAAAAAAAAAAAA'
+E     
+E     - AAAAAAAAAAAAAAAAAAAA
+E     + AAAAAAAAAAAAAAAAAAAAAAAAA
+E     ?                     +++++
+______________________ test_google_short_name_uses_email _______________________
+tests/test_google_login.py:341: in test_google_short_name_uses_email
+    assert _google_name(db, claims["email"]) == claims["email"].split("@")[0][:20]
+E   AssertionError: assert '王' == 'g.4338c8bd'
+E     
+E     - g.4338c8bd
+E     + 王
+_____________________ test_google_missing_name_uses_email ______________________
+tests/test_google_login.py:348: in test_google_missing_name_uses_email
+    assert login(claims).status_code == 200
+E   AssertionError: assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+E    +    where <Response [500]> = <function google.<locals>.login at 0x7abf7794e840>({'email': 'g.826fd696@example.com', 'email_verified': True, 'picture': 'https://example.com/g.png', 'sub': 'g-826fd696'})
+____________________ test_google_name_control_chars_removed ____________________
+tests/test_google_login.py:355: in test_google_name_control_chars_removed
+    assert login(claims).status_code == 200
+E   AssertionError: assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+E    +    where <Response [500]> = <function google.<locals>.login at 0x7abf7794fc40>({'email': 'g.26aa27dd@example.com', 'email_verified': True, 'name': '王\x00小\x1f明', 'picture': 'https://example.com/g.png', ...})
+______________ test_google_name_blank_after_truncation_uses_email ______________
+tests/test_google_login.py:364: in test_google_name_blank_after_truncation_uses_email
+    assert _google_name(db, claims["email"]) == claims["email"].split("@")[0][:20]
+E   AssertionError: assert 'A                   XYZ' == 'g.e5d3a361'
+E     
+E     - g.e5d3a361
+E     + A                   XYZ
+_________________ test_google_display_name_one_char_local_part _________________
+tests/test_google_login.py:380: in test_google_display_name_one_char_local_part
+    assert proc.returncode == 0, proc.stderr
+E   AssertionError: node:internal/modules/cjs/loader:1228
+E       throw err;
+E       ^
+E     
+E     Error: Cannot find module '/usr/backend/src/utils/nameRule.js'
+E     Require stack:
+E     - /usr/backend/[eval]
+E         at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+E         at Function._load (node:internal/modules/cjs/loader:1055:27)
+E         at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+E         at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+E         at Module.require (node:internal/modules/cjs/loader:1311:12)
+E         at require (node:internal/modules/helpers:136:16)
+E         at [eval]:1:34
+E         at runScriptInThisContext (node:internal/vm:209:10)
+E         at node:internal/process/execution:449:12
+E         at [eval]-wrapper:6:24 {
+E       code: 'MODULE_NOT_FOUND',
+E       requireStack: [ '/usr/backend/[eval]' ]
+E     }
+E     
+E     Node.js v22.14.0
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'compose', 'exec', '-T', 'backend', 'node', '-e', "const { googleDisplayName: g } = require(process.cwd() + '/src/utils/nameRule.js');console.log(JSON.stringify([g(undefined, 'x@a.co'), g('  ', 'ab@a.co')]));"], returncode=1, stdout='', stderr="node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/usr/backend/src/utils/nameRule.js'\nRequire stack:\n- /usr/backend/[eval]\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Module.require (node:internal/modules/cjs/loader:1311:12)\n    at require (node:internal/modules/helpers:136:16)\n    at [eval]:1:34\n    at runScriptInThisContext (node:internal/vm:209:10)\n    at node:internal/process/execution:449:12\n    at [eval]-wrapper:6:24 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [ '/usr/backend/[eval]' ]\n}\n\nNode.js v22.14.0\n").returncode
+________________ test_google_emoji_name_truncated_by_code_point ________________
+tests/test_google_login.py:393: in test_google_emoji_name_truncated_by_code_point
+    assert name == "😀" * 20 and len(name) == 20
+E   AssertionError: assert ('😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀' == '😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀'
+E     
+E     - 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀
+E     + 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀
+E     ?                     +++++)
+_________________ test_signup_validation_errors[name-too-long] _________________
+tests/test_member_auth.py:192: in test_signup_validation_errors
+    assert message in r.json()["message"]
+E   AssertionError: assert '「姓名」需為 2 到 20 個字' in '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'
+__________________ test_patch_profile_info_ok_and_validation ___________________
+tests/test_member_auth.py:345: in test_patch_profile_info_ok_and_validation
+    assert r.status_code == 400 and r.json()["message"] == "「姓名」不得包含控制字元", r.text
+E   AssertionError: {"status":"failed","message":"「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元"}
+E   assert (400 == 400 and '「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元' == '「姓名」不得包含控制字元'
+E    +  where 400 = <Response [400]>.status_code
+E     
+E     - 「姓名」不得包含控制字元
+E     + 「姓名」不得包含特殊字元或空白，且需為 2 到 5 字元)
+_ test_checkout_preview_body_messages[{'user': {}, 'payment_method': 'atm'}-\u300c\u59d3\u540d\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '使用者名稱為必填欄位' == '「姓名」為必填欄位'
+E     
+E     - 「姓名」為必填欄位
+E     + 使用者名稱為必填欄位
+_ test_checkout_preview_body_messages[{'user': {'name': None, 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u300c\u59d3\u540d\u300d\u5fc5\u9808\u662f\u6587\u5b57] _
+tests/test_validator_messages.py:263: in test_checkout_preview_body_messages
+    assert r.json()["message"] == expected
+E   AssertionError: assert '使用者名稱必須是文字' == '「姓名」必須是文字'
+E     
+E     - 「姓名」必須是文字
+E     + 使用者名稱必須是文字
+_________________ test_hostile_matrix_has_no_joi_default_leaks _________________
+tests/test_validator_sweep.py:91: in test_hostile_matrix_has_no_joi_default_leaks
+    assert result["leaks"] == [], (result["real"], len(result["leaks"]), result["leaks"][:10])
+E   AssertionError: (True, 19, [['userInfo.register', 'name=x', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'], ['userInfo.register', 'name=9007199254740993', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'], ['userInfo.register', 'name=5', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'], ['userInfo.register', 'name= ', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'], ['userInfo.register', 'name=Infinity', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'], ['userInfo.register', 'name=-0', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。'], ...])
+E   assert [['userInfo.r...字元與空白。'], ...] == []
+E     
+E     Left contains 19 more items, first extra item: ['userInfo.register', 'name=x', '使用者名稱不符合規則，最少 2 個字元，最長 5 字元，不得包含特殊字元與空白。']
+E     
+E     Full diff:
+E     - []
+E     + [
+E     +     [...
+E     
+E     ...Full output truncated (95 lines hidden), use '-vv' to show
+_ test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] _
+tests/test_validator_sweep.py:132: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(228, 235), match='details'>
+E    +  where <re.Match object; span=(228, 235), match='details'> = <function search at 0x7abf7ba98860>('\\bdetails\\b|\\.message\\b', 'async function postuserSignup(req, res, next) {\n  const { error, value } = userInfo_Validator.registerSchema.validate(req.body, {\n    abortEarly: false,\n    stripUnknown: true,\n  });\n\n  \n  if (error) {\n    const message = error.details[0]?.message || \'欄位驗證錯誤\';\n    resStatus({\n      res: res,\n      status: 400,\n      message: message,\n    });\n    return;\n  }\n\n  \n  const { preference } = value;\n  const preferenceIds = preference.map((name) => preferenceNameToId[name]);\n  if (preferenceIds.includes(undefined)) {\n    return resStatus({\n      res: res,\n      status: 409,\n      message: \'包含無效的偏好名稱\',\n    });\n  }\n\n  \n  const { email } = value;\n  const emailData = await pool.query(\'SELECT * FROM public."user" where lower(email) = lower($1)\', [email]);\n  if (emailData.rows.length > 0) {\n    resStatus({\n      res: res,\n      status: 409,\n      message: \'Email已被使用\',\n    });\n    return;\n  }\n\n  req.body = value; \n  req.body.preference = preferenceIds;\n  next();\n}\n\n')
+E    +    where <function search at 0x7abf7ba98860> = re.search
+_ test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] _
+tests/test_validator_sweep.py:132: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(219, 226), match='details'>
+E    +  where <re.Match object; span=(219, 226), match='details'> = <function search at 0x7abf7ba98860>('\\bdetails\\b|\\.message\\b', "async function patchuserprofileData(req, res, next) {\n  const { error, value } = userprofile_Validator.updateProfile_schema.validate(req.body, {\n    abortEarly: false,\n  });\n\n  \n  if (error) {\n    const message = error.details[0]?.message || '欄位驗證錯誤';\n    resStatus({\n      res: res,\n      status: 400,\n      message: message,\n    });\n    return;\n  }\n\n  \n  if (value.preference) {\n    const preferenceIds = value.preference.map((name) => preferenceNameToId[name]);\n    if (preferenceIds.includes(undefined)) {\n      return resStatus({\n        res: res,\n        status: 409,\n        message: '包含無效的偏好名稱',\n      });\n    }\n    value.preference = preferenceIds;\n  }\n\n  req.body = value; \n  next();\n}\n\n")
+E    +    where <function search at 0x7abf7ba98860> = re.search
+=========================== short test summary info ============================
+FAILED tests/test_name_rule.py::test_signup_accepts_20_chars_and_spaces - Ass...
+FAILED tests/test_name_rule.py::test_signup_rejects_21_chars - AssertionError...
+FAILED tests/test_name_rule.py::test_signup_trims_name - AssertionError: {"st...
+FAILED tests/test_name_rule.py::test_signup_blank_name - AssertionError: asse...
+FAILED tests/test_name_rule.py::test_signup_counts_code_points - AssertionErr...
+FAILED tests/test_name_rule.py::test_signup_allows_symbols_and_spaces - Asser...
+FAILED tests/test_name_rule.py::test_signup_rejects_control_chars[bell] - Ass...
+FAILED tests/test_name_rule.py::test_signup_rejects_control_chars[newline] - ...
+FAILED tests/test_name_rule.py::test_profile_rejects_control_chars[bell] - As...
+FAILED tests/test_name_rule.py::test_profile_rejects_control_chars[newline]
+FAILED tests/test_name_rule.py::test_checkout_rejects_control_chars[bell] - A...
+FAILED tests/test_name_rule.py::test_checkout_rejects_control_chars[newline]
+FAILED tests/test_name_rule.py::test_profile_name_rules - AssertionError: ass...
+FAILED tests/test_name_rule.py::test_profile_blank_name - AssertionError: ass...
+FAILED tests/test_name_rule.py::test_control_char_check_is_stateless - Assert...
+FAILED tests/test_name_rule.py::test_checkout_name_rules - AssertionError: as...
+FAILED tests/test_google_login.py::test_google_long_name_truncated - Assertio...
+FAILED tests/test_google_login.py::test_google_short_name_uses_email - Assert...
+FAILED tests/test_google_login.py::test_google_missing_name_uses_email - Asse...
+FAILED tests/test_google_login.py::test_google_name_control_chars_removed - A...
+FAILED tests/test_google_login.py::test_google_name_blank_after_truncation_uses_email
+FAILED tests/test_google_login.py::test_google_display_name_one_char_local_part
+FAILED tests/test_google_login.py::test_google_emoji_name_truncated_by_code_point
+FAILED tests/test_member_auth.py::test_signup_validation_errors[name-too-long]
+FAILED tests/test_member_auth.py::test_patch_profile_info_ok_and_validation
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {}, 'payment_method': 'atm'}-\u300c\u59d3\u540d\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d]
+FAILED tests/test_validator_messages.py::test_checkout_preview_body_messages[{'user': {'name': None, 'email': 'a@b.co', 'address': '\u53f0\u5317\u5e02', 'phone_number': '0912345678'}, 'payment_method': 'atm'}-\u300c\u59d3\u540d\u300d\u5fc5\u9808\u662f\u6587\u5b57]
+FAILED tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup]
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData]
+======================= 30 failed, 198 passed in 14.59s ========================

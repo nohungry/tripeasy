@@ -181,3 +181,30 @@ def test_cart_list_uses_live_promo_price(api, db, make_user, make_tour):
     assert add_to_cart(api, user, tour, people=2).status_code == 201
     items = _cart_list(api, user)["data"]["data"]
     assert [i["total_price"] for i in items] == [1800]
+
+
+def test_first_add_concurrently_creates_one_cart(api, db, make_user, make_tour):
+    """新會員第一次加入購物車時兩個請求同時到：只建一個 cart，兩個都 201（P5 D3）。"""
+    import threading
+
+    user = make_user()
+    tours = [make_tour(), make_tour()]
+    barrier = threading.Barrier(2, timeout=10)
+    results = [None, None]
+
+    def run(i):
+        barrier.wait()
+        results[i] = add_to_cart(api, user, tours[i]).status_code
+
+    threads = [threading.Thread(target=run, args=(i,)) for i in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=30)
+    assert not any(t.is_alive() for t in threads), "執行緒逾時未結束"
+    assert results == [201, 201], results
+    assert db.execute("SELECT count(*) FROM cart WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT count(*) FROM cart_item ci JOIN cart c ON c.cart_id = ci.cart_id WHERE c.user_id = %s",
+        (user["user_id"],),
+    ).fetchone()[0] == 2

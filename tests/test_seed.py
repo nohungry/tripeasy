@@ -20,7 +20,7 @@ SEED_COUNTS = {
     "restaurant_menu": 12, "hotel": 6, "hotel_room": 12, "notification": 9,
     "country": 37, "region": 87, "cart": 3, "cart_item": 6,
     "orders": 20, "order_item": 20, "payment": 15, "review": 13, "hidden_play": 6,
-    "auto_setting": 4, "favorite": 9, "point_record": 18, "user_coupon": 4,
+    "auto_setting": 3, "favorite": 9, "point_record": 18, "user_coupon": 4,
 }
 
 

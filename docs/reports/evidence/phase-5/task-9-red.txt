@@ -1,0 +1,58 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 58 items / 54 deselected / 4 selected
+
+tests/test_trade_checkout.py::test_expire_clears_discount_columns FAILED [ 25%]
+tests/test_trade_checkout.py::test_expire_point_order_clears_discount_columns FAILED [ 50%]
+tests/test_trade_checkout.py::test_cancel_previous_order_clears_discount_columns FAILED [ 75%]
+tests/test_trade_checkout.py::test_refund_keeps_discount_columns PASSED  [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_expire_clears_discount_columns ______________________
+tests/test_trade_checkout.py:843: in test_expire_clears_discount_columns
+    assert _order_discount(db, order_id) == (None, None)
+E   AssertionError: assert ('coupon', 900.0) == (None, None)
+E     
+E     At index 0 diff: 'coupon' != None
+E     
+E     Full diff:
+E       (
+E     -     None,
+E     -     None,...
+E     
+E     ...Full output truncated (3 lines hidden), use '-vv' to show
+_______________ test_expire_point_order_clears_discount_columns ________________
+tests/test_trade_checkout.py:855: in test_expire_point_order_clears_discount_columns
+    assert _order_discount(db, order_id) == (None, None)
+E   AssertionError: assert ('point', 960.0) == (None, None)
+E     
+E     At index 0 diff: 'point' != None
+E     
+E     Full diff:
+E       (
+E     -     None,
+E     -     None,...
+E     
+E     ...Full output truncated (3 lines hidden), use '-vv' to show
+______________ test_cancel_previous_order_clears_discount_columns ______________
+tests/test_trade_checkout.py:868: in test_cancel_previous_order_clears_discount_columns
+    assert _order_discount(db, order_a) == (None, None)
+E   AssertionError: assert ('coupon', 900.0) == (None, None)
+E     
+E     At index 0 diff: 'coupon' != None
+E     
+E     Full diff:
+E       (
+E     -     None,
+E     -     None,...
+E     
+E     ...Full output truncated (3 lines hidden), use '-vv' to show
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_expire_clears_discount_columns - As...
+FAILED tests/test_trade_checkout.py::test_expire_point_order_clears_discount_columns
+FAILED tests/test_trade_checkout.py::test_cancel_previous_order_clears_discount_columns
+================== 3 failed, 1 passed, 54 deselected in 0.80s ==================

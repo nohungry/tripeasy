@@ -1,0 +1,42 @@
+== run 1
+tests/test_member_notify.py:90: AssertionError: ['{"status":"success","message":"提醒設定已更新"}', '{"status":"error","message":"伺服器錯誤"}']
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_patch_concurrent_first_write_one_row
+1 failed in 0.07s
+== run 2
+tests/test_member_notify.py:90: AssertionError: ['{"status":"success","message":"提醒設定已更新"}', '{"status":"error","message":"伺服器錯誤"}']
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_patch_concurrent_first_write_one_row
+1 failed in 0.08s
+== run 3
+.                                                                        [100%]
+1 passed in 0.09s
+== run 4
+tests/test_member_notify.py:90: AssertionError: ['{"status":"error","message":"伺服器錯誤"}', '{"status":"success","message":"提醒設定已更新"}']
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_patch_concurrent_first_write_one_row
+1 failed in 0.07s
+== run 5
+.                                                                        [100%]
+1 passed in 0.07s
+== run 6
+tests/test_member_notify.py:90: AssertionError: ['{"status":"error","message":"伺服器錯誤"}', '{"status":"success","message":"提醒設定已更新"}']
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_patch_concurrent_first_write_one_row
+1 failed in 0.07s
+== run 7
+.                                                                        [100%]
+1 passed in 0.08s
+== run 8
+tests/test_member_notify.py:90: AssertionError: ['{"status":"error","message":"伺服器錯誤"}', '{"status":"success","message":"提醒設定已更新"}']
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_patch_concurrent_first_write_one_row
+1 failed in 0.07s
+== run 9
+.                                                                        [100%]
+1 passed in 0.07s
+== run 10
+tests/test_member_notify.py:90: AssertionError: ['{"status":"success","message":"提醒設定已更新"}', '{"status":"error","message":"伺服器錯誤"}']
+=========================== short test summary info ============================
+FAILED tests/test_member_notify.py::test_patch_concurrent_first_write_one_row
+1 failed in 0.07s

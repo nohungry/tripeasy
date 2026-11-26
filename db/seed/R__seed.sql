@@ -436,8 +436,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO "auto_setting" (auto_setting_id, user_id, early_notify, flexible_notify, country, region, price, created_at, updated_at) VALUES
 ('d47d7d56-46dd-48ff-bf22-afcb3f46d2a9', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 0, 1, 'Japan', 'Tokyo', 1200.5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('deb6ca0e-0bac-44fb-afcc-6102bd05b317', 'c35f34c3-337f-410b-b57a-e439a7ba969b', 0, 0, NULL, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('f48d33c9-bcbb-41a7-b03a-577620e69e0c', '568ed618-7b23-4b88-a2fb-d519d1176a63', 1, 1, 'France', 'Paris', 1850.75, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('8eb334ed-2c98-4cd0-a7e5-c88c695ad14f', 'c3d1513b-b8f0-48de-b7c3-3a75485f8ae6', 1, 0, NULL, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+('f48d33c9-bcbb-41a7-b03a-577620e69e0c', '568ed618-7b23-4b88-a2fb-d519d1176a63', 1, 1, 'France', 'Paris', 1850.75, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT DO NOTHING;
 
 ---- 23. 使用者收藏旅遊商品 "favorite"

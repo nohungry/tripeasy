@@ -12,7 +12,12 @@ from conftest import (
     cancel_discount,
     checkout,
     live_promotion,
+    notify,
     preview,
+    ready_order,
+    refund,
+    start_payment,
+    success_notify,
     trial_discount,
 )
 from test_seed import EMAIL, _paid_by_order
@@ -822,3 +827,83 @@ def test_preview_other_discount_while_payment_in_progress_still_409(api, db, mak
     r = preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]})
     assert (r.status_code, r.json()["message"]) == (409, IN_PROGRESS)
     assert _user_coupon(db, user, coupon) == (0, None)
+
+
+# ---- P5 Task 9（spec §7）：逾時與取消清空訂單折扣欄位
+
+
+def test_expire_clears_discount_columns(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
+    assert _order_discount(db, order_id)[0] == "coupon"
+    _age_order(db, order_id)
+    data = _summary(api, user, order_id).json()["data"]
+    assert data["summary"]["payment_status"] == 4
+    assert data["discount"]["type"] is None  # 回應與 DB 一致
+    assert data["summary"]["discount_price"] is None
+    assert _order_discount(db, order_id) == (None, None)
+    assert _user_coupon(db, user, coupon) == (0, None)
+
+
+def test_expire_point_order_clears_discount_columns(api, db, make_user, make_tour):
+    user = make_user()
+    _set_points(db, user, 100)
+    order_id = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_id, {"type": "point", "used_point": 50}).status_code == 200
+    assert _order_discount(db, order_id)[0] == "point"
+    _age_order(db, order_id)
+    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 4
+    assert _order_discount(db, order_id) == (None, None)
+    assert _reserved_points(db, order_id) == []
+
+
+def test_cancel_previous_order_clears_discount_columns(api, db, make_user, make_tour, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user)
+    order_a = checkout(api, user, [make_tour(price=1000)])
+    assert preview(api, user, order_a, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
+    assert _order_discount(db, order_a)[0] == "coupon"
+    r = api.post(f"{CHECKOUT_API}/order/{_cart_id(db, user)}", headers=auth_header(user), timeout=5)
+    assert r.status_code == 200, r.text
+    assert _statuses(db, order_a) == (2, {2})
+    assert _order_discount(db, order_a) == (None, None)
+    assert _user_coupon(db, user, coupon) == (0, None)
+
+
+def test_refund_keeps_discount_columns(api, db, make_user, make_tour, make_coupon):
+    """回歸測試（一開始就綠）：退款不清折扣欄位，computePayable 的已退款分支仍讀 discount_type。"""
+    admin, user = make_user(role="admin"), make_user()
+    coupon = make_coupon(user, discount=100)
+    tour = live_promotion(db, make_tour)
+    user, order_id = ready_order(
+        api, db, make_user, make_tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]}, user=user, tour=tour, people=2
+    )  # fmt: skip
+    mon, amt, _ = start_payment(api, user, order_id)
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    before = _order_discount(db, order_id)
+    assert before[0] == "coupon"
+    assert refund(api, admin, order_id).status_code == 200
+    assert _statuses(db, order_id) == (3, {3})
+    assert _order_discount(db, order_id) == before
+
+
+def test_paid_order_keeps_discount_columns_after_deadline_and_new_order(api, db, make_user, make_tour, make_coupon):
+    """回歸測試（一開始就綠）：已付款訂單超過期限後，summary 與建立新單都不清折扣欄位。"""
+    user = make_user()
+    coupon = make_coupon(user, discount=100)
+    tour = live_promotion(db, make_tour)
+    user, order_id = ready_order(
+        api, db, make_user, make_tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]}, user=user, tour=tour, people=2
+    )  # fmt: skip
+    mon, amt, _ = start_payment(api, user, order_id)
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    before = _order_discount(db, order_id)
+    assert before[0] == "coupon" and before[1] is not None
+    _age_order(db, order_id)
+    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 1
+    assert _order_discount(db, order_id) == before
+    checkout(api, user, [make_tour(price=1000)])  # 建立新單會取消其他未付款單，不得動已付款單
+    assert _statuses(db, order_id) == (1, {1})
+    assert _order_discount(db, order_id) == before

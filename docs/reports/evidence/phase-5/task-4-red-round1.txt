@@ -1,0 +1,216 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 9 items
+
+e2e/test_member_center.py::test_header_links_open_tabs[chromium] PASSED  [ 11%]
+e2e/test_member_center.py::test_orders_tab_lists_paid_order_with_detail[chromium] FAILED [ 22%]
+e2e/test_member_center.py::test_order_detail_shows_coupon_discount[chromium] FAILED [ 33%]
+e2e/test_member_center.py::test_orders_paging_uses_limit_10[chromium] PASSED [ 44%]
+e2e/test_member_center.py::test_continue_payment_goes_to_pay_page[chromium] PASSED [ 55%]
+e2e/test_member_center.py::test_overdue_pending_order_has_no_continue_button[chromium] PASSED [ 66%]
+e2e/test_member_center.py::test_orders_tab_empty[chromium] PASSED        [ 77%]
+e2e/test_member_center.py::test_admin_automatic_redirects_to_preference_tab[chromium] PASSED [ 88%]
+e2e/test_member_center.py::test_profile_tab_from_query[chromium] FAILED  [100%]
+
+=================================== FAILURES ===================================
+____________ test_orders_tab_lists_paid_order_with_detail[chromium] ____________
+e2e/test_member_center.py:64: in test_orders_tab_lists_paid_order_with_detail
+    expect(page.get_by_test_id("order-detail")).not_to_contain_text("none")
+E   AssertionError: Locator expected not to contain text 'none'
+E   Actual value: 品項p3-1d73c75d × 1　NT$1,000收件資料地址：—電話：—折扣none　-NT$0付款紀錄尚無付款紀錄 
+E   Call log:
+E     - Expect "not_to_contain_text" get_by_test_id("order-detail") with timeout 5000ms
+E     - waiting for get_by_test_id("order-detail")
+E       14 × locator resolved to <div data-v-30cf206c="" class="order-detail" data-testid="order-detail">…</div>
+E          - unexpected value "品項p3-1d73c75d × 1　NT$1,000收件資料地址：—電話：—折扣none　-NT$0付款紀錄尚無付款紀錄"
+E   
+E   Aria snapshot:
+E   - text: 品項
+E   - list:
+E     - listitem: p3-1d73c75d × 1 NT$1,000
+E   - text: 收件資料 地址：— 電話：— 折扣 none -NT$0 付款紀錄 尚無付款紀錄
+______________ test_order_detail_shows_coupon_discount[chromium] _______________
+e2e/test_member_center.py:80: in test_order_detail_shows_coupon_discount
+    expect(detail).to_contain_text("優惠券")
+E   AssertionError: Locator expected to contain text '優惠券'
+E   Actual value: 品項p3-8546e10b × 1　NT$1,000收件資料地址：—電話：—折扣coupon　-NT$100付款紀錄尚無付款紀錄 
+E   Call log:
+E     - Expect "to_contain_text" get_by_test_id("order-detail") with timeout 5000ms
+E     - waiting for get_by_test_id("order-detail")
+E       - locator resolved to <div data-v-30cf206c="" class="order-detail" data-testid="order-detail">…</div>
+E       - unexpected value "載入中…"
+E       13 × locator resolved to <div data-v-30cf206c="" class="order-detail" data-testid="order-detail">…</div>
+E          - unexpected value "品項p3-8546e10b × 1　NT$1,000收件資料地址：—電話：—折扣coupon　-NT$100付款紀錄尚無付款紀錄"
+E   
+E   Aria snapshot:
+E   - text: 品項
+E   - list:
+E     - listitem: p3-8546e10b × 1 NT$1,000
+E   - text: 收件資料 地址：— 電話：— 折扣 coupon -NT$100 付款紀錄 尚無付款紀錄
+____________________ test_profile_tab_from_query[chromium] _____________________
+e2e/test_member_center.py:180: in test_profile_tab_from_query
+    expect(page.locator(".sidebaritem.active")).to_have_text("會員資訊")
+E   AssertionError: Locator expected to have text '會員資訊'
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_have_text" locator(".sidebaritem.active") with timeout 5000ms
+E     - waiting for locator(".sidebaritem.active")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E   - link "登出":
+E     - /url: "#"
+E   - img "頭像"
+E   - text: P0 測試  會員資訊  會員等級  個人偏好設定  個人訂單查看  會員中心
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+=========================== short test summary info ============================
+FAILED e2e/test_member_center.py::test_orders_tab_lists_paid_order_with_detail[chromium]
+FAILED e2e/test_member_center.py::test_order_detail_shows_coupon_discount[chromium]
+FAILED e2e/test_member_center.py::test_profile_tab_from_query[chromium] - Ass...
+========================= 3 failed, 6 passed in 23.73s =========================

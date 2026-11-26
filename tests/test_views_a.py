@@ -263,7 +263,7 @@ def test_tour_base_latest_notification_of_same_type_wins(tx):
 
 
 def test_tour_travel_matches_tour_base_columns(tx):
-    """tour_travel 的欄位 ＝ tour_base ＋ 收藏狀態，值也要一致（防欄位位置錯位）。"""
+    """tour_travel 的欄位 ＝ tour_base ＋ 收藏狀態、收藏編號，值也要一致（防欄位位置錯位）。"""
     # 同型別的欄位用不同的值，欄位錯位才看得出來
     tour = make_tour(tx, tour_start_date=days(10), tour_end_date=days(14),
                      created_at=days(-5), updated_at=days(-2))
@@ -271,7 +271,7 @@ def test_tour_travel_matches_tour_base_columns(tx):
            start_date=days(-1), end_date=days(1))
     (base,) = rows(tx, 'SELECT * FROM tour_base WHERE "旅遊編號" = %s', (tour["tour_id"],))
     (travel,) = rows(tx, 'SELECT * FROM tour_travel(NULL::uuid) WHERE "旅遊編號" = %s', (tour["tour_id"],))
-    assert {k: v for k, v in travel.items() if k != "收藏狀態"} == base
+    assert {k: v for k, v in travel.items() if k not in ("收藏狀態", "收藏編號")} == base
 
 
 def test_tour_detail_without_tour_detail_row_still_one_row(tx):

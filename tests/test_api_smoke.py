@@ -279,16 +279,15 @@ POINTS_KEYS = [
 COUPON_KEYS = ["coupon_id", "code", "discount", "description", "expire_date"]
 
 
-def test_points_level_alice_has_null_coupon_placeholder(api, alice_h, alice):
+def test_points_level_alice_has_empty_coupon_list(api, alice_h, alice):
     r = api.get(f"{BASE}/user/userinfo/pointslevel", headers=alice_h)
     me = data_rows(r)[0]
     assert me["user_id"] == alice["user_id"]
     assert_has_keys(me, POINTS_KEYS)
     assert me["level"] and me["travel_point"] > 0
     # alice 唯一的優惠卷 VIP300 已使用（status = 1），不符合 #39（只列 status = 0 且未過期）。
-    # 契約 #40（docs/db-contract.md:1303–1306）：LEFT JOIN → 仍有 1 列，優惠卷欄位全 NULL，
-    # controller 會 push 一個全 null 的物件。
-    assert me["coupon"] == [dict.fromkeys(COUPON_KEYS)]
+    # view 仍回 1 列（LEFT JOIN，優惠卷欄位全 NULL）；P5 起 controller 不再 push 全 null 的物件，回空陣列。
+    assert me["coupon"] == []
 
 
 def test_points_level_carol_has_usable_coupon(api, users, db):
@@ -363,15 +362,10 @@ def test_checkout_summary_unpaid_order(api, make_user, make_tour):
 
 
 def test_favorite_list(api, alice_h, alice):
-    # 這支 API 會送兩次回應（契約 §4.2 已記錄）；第一次回應是完整資料，足以驗證 view
-    # Connection: close — 雙重回應會讓 Express destroy socket，下一個請求若重用連線會間歇 ConnectionError
-    # （已知 bug，docs/reports/phase-1.md:323）；backend 修好後移除這個 header
-    r = api.get(
-        f"{BASE}/user/collection/info/all",
-        headers={**alice_h, "Connection": "close"},
-        params=PAGING,
-    )
+    # P5 Task 7：只回應一次、不分頁，回 {data, total}
+    r = api.get(f"{BASE}/user/collection/info/all", headers=alice_h)
     rows = data_rows(r)
+    assert r.json()["data"]["total"] == len(rows)
     assert_has_keys(rows[0], contract_cols("user_favorite", replace_preference=True))
     assert {row["收藏人員編號"] for row in rows} == {alice["user_id"]}
 
@@ -457,3 +451,13 @@ def test_filter_region_for_seed_country(api, db):
     assert_has_keys(rows[0], ["region_id", "name"])
     expected = db.execute("SELECT count(*) FROM region WHERE country_id = %s", (country_id,)).fetchone()[0]
     assert len(rows) == expected, name
+
+
+def test_seed_member_can_list_orders_readonly(api, alice_h, alice, db):
+    """P5 Task 3：alice 可讀自己的訂單列表（唯讀）；呼叫前後訂單的 payment_status、updated_at 不變。"""
+    sql = "SELECT order_id, payment_status, updated_at FROM orders WHERE user_id = %s ORDER BY order_id"
+    before = db.execute(sql, (alice["user_id"],)).fetchall()
+    r = api.get(f"{BASE}/user/orders", headers=alice_h, params={"limit": 50})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["total"] == len(before)
+    assert db.execute(sql, (alice["user_id"],)).fetchall() == before

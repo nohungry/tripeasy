@@ -1,5 +1,6 @@
 import json
 import re
+import uuid
 import time
 from pathlib import Path
 from urllib.parse import urlparse
@@ -365,16 +366,13 @@ def test_register_and_forgotpw_pages_open_with_expired_token(page: Page, make_us
     assert f"#/admin/{path}" in page.url
 
 
-def test_coming_soon_tabs(page: Page, make_user):
+def test_no_coming_soon_tabs(page: Page, make_user):
     user = make_user()
     _login_to_profile(page, user)
-    for tab in ["個人偏好設定", "會員等級", "個人訂單查看"]:
+    for tab in ["會員資訊", "會員等級", "個人偏好設定", "個人訂單查看"]:
         page.locator(".sidebar").get_by_text(tab, exact=True).click()
-        expect(page.get_by_text("即將開放", exact=True)).to_be_visible()
-        expect(page.get_by_label("信箱")).not_to_be_visible()
-    page.locator(".sidebar").get_by_text("會員資訊", exact=True).click()
-    expect(page.get_by_label("信箱")).to_be_visible()
-    expect(page.get_by_text("即將開放", exact=True)).to_have_count(0)
+        expect(page.locator(".sidebaritem.active")).to_have_text(tab)
+        expect(page.get_by_text("即將開放", exact=True)).to_have_count(0)
 
 
 def test_require_auth_network_error_keeps_token(page: Page, make_user):
@@ -538,3 +536,104 @@ def test_session_expired_on_member_api_shows_message(page: Page, make_user, trig
     expect(page.locator(".swal2-confirm")).to_be_hidden()
     expect(page.locator(".swal2-icon-error")).to_have_count(0)
     page.wait_for_url("**/#/admin/login", timeout=10_000)
+
+
+# ---- P5 Task 2：姓名 2 到 20 字（註冊、會員資料、結帳）----
+NAME_LEN_MSG = "「姓名」需為 2 到 20 個字"
+
+
+def test_register_name_too_long_shows_message(page: Page, new_email):
+    posts: list[str] = []
+    page.on("request", lambda r: posts.append(r.url) if r.method == "POST" and r.url.endswith("/signup") else None)
+    page.goto(f"{FRONTEND_BASE}/#/admin/register", wait_until="domcontentloaded")
+    page.get_by_placeholder("請輸入姓名").fill("王" * 21)
+    page.get_by_placeholder("請輸入 Email").fill(new_email())
+    page.get_by_placeholder("請輸入密碼").fill(TEST_PASSWORD)
+    selects = page.get_by_role("combobox")
+    for i, label in enumerate(["探索冒險", "放鬆療癒", "文化體驗"]):
+        selects.nth(i).select_option(label=label)
+    page.get_by_role("button", name="加入會員", exact=True).click()
+    expect(page.get_by_text(NAME_LEN_MSG)).to_be_visible()
+    assert posts == []
+
+
+def test_profile_name_too_long_shows_message(page: Page, make_user, db):
+    user = make_user()
+    _login_to_profile(page, user)
+    patches: list[str] = []
+    page.on("request", lambda r: patches.append(r.url) if r.method == "PATCH" and r.url.endswith("/user/userinfo/info") else None)
+    _edit_name(page, "名" * 21)
+    page.get_by_role("button", name="儲存設定").click()
+    expect(page.get_by_text(NAME_LEN_MSG)).to_be_visible()
+    assert patches == []
+    assert db.execute('SELECT name FROM "user" WHERE user_id = %s', (user["user_id"],)).fetchone()[0] == "P0 測試"
+
+
+def _tour_in_cart(make_tour, user):
+    from e2e.test_trade_flow import _api_add, _tour_dates
+
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _api_add(user, tour)
+    return tour
+
+
+def test_pay_name_too_long_blocked(page: Page, make_user, make_tour):
+    from e2e.test_trade_flow import _go_checkout_from_cart, _login, _open
+
+    user = make_user()
+    _tour_in_cart(make_tour, user)
+    _login(page, user)
+    previews: list[str] = []
+    page.on("request", lambda r: previews.append(r.url) if "/checkout/preview" in r.url else None)
+    _open(page, "#/cart")
+    _go_checkout_from_cart(page)
+    expect(page.get_by_label("email")).not_to_have_value("")
+    page.get_by_label("全名").fill("王" * 21)
+    page.get_by_label("地址").fill("台北市測試路1號")
+    page.get_by_label("連絡電話").fill("0912345678")
+    page.get_by_role("button", name="確認並前往付款").click()
+    expect(page.get_by_text(NAME_LEN_MSG)).to_be_visible()
+    assert previews == []
+
+
+def test_google_long_name_can_checkout(page: Page, db, make_tour):
+    from e2e.conftest import delete_user, mock_google_code
+    from e2e.test_trade_flow import MOCK_BASE, _go_checkout_from_cart, _open, _tour_dates
+
+    tag = uuid.uuid4().hex[:8]
+    claims = {
+        "sub": f"g-{tag}",
+        "email": f"g.{tag}@example.com",
+        "email_verified": True,
+        "name": "長" * 25,
+        "picture": "https://example.com/g.png",
+    }
+    r = requests.post(f"{API_BASE}/api/v1/auth/userinfo/login/google", json={"code": mock_google_code(claims)}, timeout=10)
+    assert r.status_code == 200, r.text
+    data = r.json()["data"]
+    user = {"user_id": data["user"]["id"], "email": claims["email"], "role": "User"}
+    try:
+        start, end = _tour_dates()
+        tour = make_tour(price=1000, start_date=start, end_date=end)
+        page.add_init_script(
+            f"localStorage.setItem('authToken', {json.dumps(data['token'])}); localStorage.setItem('userName', 'e2e-user');"
+        )
+        body = {
+            "type": tour["type"], "item": tour["item"], "people": 1,
+            "options": {"start_date": start.isoformat(), "end_date": end.isoformat()},
+        }  # fmt: skip
+        res = requests.post(
+            f"{API_BASE}/api/v1/user/trade/cart/{tour['tour_id']}",
+            json=body, headers={"Authorization": f"Bearer {data['token']}"}, timeout=5,
+        )  # fmt: skip
+        assert res.status_code in (200, 201), res.text
+        _open(page, "#/cart")
+        _go_checkout_from_cart(page)
+        expect(page.get_by_label("全名")).to_have_value("長" * 20)
+        page.get_by_label("地址").fill("台北市測試路1號")
+        page.get_by_label("連絡電話").fill("0912345678")
+        page.get_by_role("button", name="確認並前往付款").click()
+        page.wait_for_url(f"{MOCK_BASE}/**")
+    finally:
+        delete_user(db, user["user_id"])
