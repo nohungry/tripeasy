@@ -366,16 +366,13 @@ def test_register_and_forgotpw_pages_open_with_expired_token(page: Page, make_us
     assert f"#/admin/{path}" in page.url
 
 
-def test_coming_soon_tabs(page: Page, make_user):
+def test_no_coming_soon_tabs(page: Page, make_user):
     user = make_user()
     _login_to_profile(page, user)
-    for tab in ["個人偏好設定"]:
+    for tab in ["會員資訊", "會員等級", "個人偏好設定", "個人訂單查看"]:
         page.locator(".sidebar").get_by_text(tab, exact=True).click()
-        expect(page.get_by_text("即將開放", exact=True)).to_be_visible()
-        expect(page.get_by_label("信箱")).not_to_be_visible()
-    page.locator(".sidebar").get_by_text("會員資訊", exact=True).click()
-    expect(page.get_by_label("信箱")).to_be_visible()
-    expect(page.get_by_text("即將開放", exact=True)).to_have_count(0)
+        expect(page.locator(".sidebaritem.active")).to_have_text(tab)
+        expect(page.get_by_text("即將開放", exact=True)).to_have_count(0)
 
 
 def test_require_auth_network_error_keeps_token(page: Page, make_user):

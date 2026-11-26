@@ -218,3 +218,74 @@ def test_level_tab_negative_points_shows_zero(page: Page, db, make_user, make_to
     expect(page.get_by_text("目前等級")).to_be_visible()  # 等級卡片在 API 回應後才會出現
     expect(page.get_by_text("點數餘額 0 點")).to_be_visible()
     expect(page.get_by_text("-8 點")).to_have_count(0)
+
+
+# ---- P5 Task 6：個人偏好設定（通知設定）----
+AUTOMATION_API = f"{API_BASE}/api/v1/user/automation"
+DELISTED_NOTE = "（目前沒有上架行程）"
+
+
+def _open_preference_tab(page: Page) -> None:
+    """開分頁並等設定與地區清單兩支 API 都回來，才開始斷言。"""
+    with (
+        page.expect_response(re.compile(r"/user/automation/allnotifi-settings$")) as settings,
+        page.expect_response(re.compile(r"/user/automation/regions$")) as regions,
+    ):
+        _open(page, "#/admin/userprofile?tab=preference")
+    assert settings.value.status == 200
+    assert regions.value.status == 200
+
+
+def test_notify_settings_persist_after_reload(page: Page, db, make_user):
+    user = make_user()
+    _login(page, user)
+    _open_preference_tab(page)
+    expect(page.get_by_text("目前只儲存設定，尚未寄送通知")).to_be_visible()
+    expect(page.get_by_label("國家")).to_have_count(0)  # 開啟價格追蹤才顯示
+    page.get_by_label("出發前提醒").check()
+    page.get_by_label("價格追蹤").check()
+    page.get_by_label("國家").select_option("Japan")
+    page.get_by_label("地區").select_option("Tokyo")
+    page.get_by_label("預算上限").fill("30000")
+    with page.expect_response(re.compile(r"/user/automation/price-tracking$")) as resp:
+        page.get_by_role("button", name="儲存設定").click()
+    assert resp.value.status == 200
+    expect(page.get_by_role("dialog")).to_contain_text("設定已儲存")
+    assert db.execute(
+        "SELECT early_notify, flexible_notify, country, region, price FROM auto_setting WHERE user_id = %s",
+        (user["user_id"],),
+    ).fetchall() == [(1, 1, "Japan", "Tokyo", 30000.0)]
+
+    with page.expect_response(re.compile(r"/user/automation/allnotifi-settings$")):
+        page.reload()
+    expect(page.get_by_label("出發前提醒")).to_be_checked()
+    expect(page.get_by_label("價格追蹤")).to_be_checked()
+    expect(page.get_by_label("國家")).to_have_value("Japan")
+    expect(page.get_by_label("地區")).to_have_value("Tokyo")
+    expect(page.get_by_label("預算上限")).to_have_value("30000")
+
+
+def test_delisted_saved_region_shown_with_note(page: Page, db, make_user, make_tour):
+    user = make_user()
+    tour = make_tour()
+    db.execute("UPDATE tour SET country = 'p5land', region = 'p5city' WHERE tour_id = %s", (tour["tour_id"],))
+    saved = requests.patch(
+        f"{AUTOMATION_API}/price-tracking",
+        json={"price_tracking_enabled": True, "country": "p5land", "region": "p5city", "max_price": 1000},
+        headers=auth_header(user),
+        timeout=5,
+    )
+    assert saved.status_code == 200, saved.text
+    db.execute("UPDATE tour SET status = 0 WHERE tour_id = %s", (tour["tour_id"],))
+
+    _login(page, user)
+    _open_preference_tab(page)
+    expect(page.get_by_label("國家")).to_have_value("p5land")
+    expect(page.get_by_label("地區")).to_have_value("p5city")
+    expect(page.get_by_label("國家").locator("option:checked")).to_have_text(f"p5land{DELISTED_NOTE}")
+    expect(page.get_by_label("地區").locator("option:checked")).to_have_text(f"p5city{DELISTED_NOTE}")
+
+    with page.expect_response(re.compile(r"/user/automation/price-tracking$")) as resp:
+        page.get_by_role("button", name="儲存設定").click()
+    assert resp.value.status == 200
+    expect(page.get_by_role("dialog")).to_contain_text("設定已儲存")
