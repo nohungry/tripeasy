@@ -182,7 +182,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 **列表** `GET /info/all`：不開交易、不加鎖。
 
-無環的理由：這幾條語句各只碰 `favorite` 一張表、取得鎖後不再等其他鎖；`favorite` 不在規範順序的表裡，其他交易路徑也不會持有 `favorite` 的鎖再去等 `tour`／`user`。併發兩個請求同時新增同一行程時，後到者在唯一索引上等待先到者提交，提交後 DO NOTHING 並走第 3 步查出同一筆，不會撞約束回 500。INSERT 的外鍵檢查對 `user`／`tour` 取 KEY SHARE，只會被 `FOR UPDATE` 擋住（§10 的 Google 登入 `user` 鎖），checkout 的 `FOR NO KEY UPDATE` 不衝突；取得後不再等其他鎖，所以不成環。測試：`tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id`（8 條執行緒，各自 session，只有 1 個 201、其餘 200、同一個 `favorite_id`、DB 1 列）。
+無環的理由：這幾條語句各只碰 `favorite` 一張表、取得鎖後不再等其他鎖；`favorite` 不在規範順序的表裡，其他交易路徑也不會持有 `favorite` 的鎖再去等 `tour`／`user`。併發兩個請求同時新增同一行程時，後到者在唯一索引上等待先到者提交，提交後 DO NOTHING 並走第 3 步查出同一筆，不會撞約束回 500。INSERT 的外鍵檢查對 `user`／`tour` 取 KEY SHARE，只會被 `FOR UPDATE` 擋住（§10 的 Google 登入 `user` 鎖），checkout 的 `FOR NO KEY UPDATE` 不衝突；取得後不再等其他鎖，所以不成環。測試：`tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id`（8 條執行緒，各自 session，只有 1 個 201、其餘 200、同一個 `favorite_id`、DB 1 列）。另有決定性測試 `tests/test_member_favorites.py::test_favorite_waits_on_uncommitted_insert_then_returns_same_id`（另一條連線 INSERT 同一組 `(user_id, tour_id)` 不提交，輪詢 `pg_stat_activity` 確認 POST 卡在鎖上，提交後回 200 與同一個 `favorite_id`）。
 
 ## 已知問題（已解決）
 

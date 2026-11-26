@@ -1,5 +1,5 @@
-# P5 Task 10：scripts/ci.sh 實跑輸出（保留 volume 的單次執行；未執行 down -v，不是乾淨環境驗證）
-# base: 總覽 8f30fd6、backend d3280ce、frontend 9460d7a；日期 2026-11-26
+# P5 Task 10 最終修正波之後：scripts/ci.sh 實跑輸出（保留 volume 的單次執行；未執行 down -v）
+# base: 總覽 153f4ba、backend 2f19285、frontend 89b2282；日期 2026-11-26
 #0 building with "default" instance using docker driver
 
 #1 [mock-newebpay internal] load build definition from Dockerfile
@@ -7,7 +7,7 @@
 #1 DONE 0.0s
 
 #2 [mock-newebpay internal] load metadata for docker.io/library/node:22-alpine
-#2 DONE 1.1s
+#2 DONE 1.5s
 
 #3 [mock-newebpay internal] load .dockerignore
 #3 transferring context: 2B done
@@ -47,47 +47,58 @@
 #12 DONE 0.0s
 
 #13 [backend internal] load build context
-#13 transferring context: 725.38kB 0.0s done
+#13 transferring context: 725.37kB 0.0s done
 #13 DONE 0.0s
 
-#14 [backend base 3/3] COPY package.json package-lock.json ./
+#14 [backend base 2/3] WORKDIR /usr/backend
 #14 CACHED
 
-#15 [backend base 2/3] WORKDIR /usr/backend
+#15 [backend base 3/3] COPY package.json package-lock.json ./
 #15 CACHED
 
 #16 [backend dev 1/2] RUN npm ci
 #16 CACHED
 
 #17 [backend dev 2/2] COPY . .
-#17 CACHED
+#17 DONE 0.1s
 
 #18 [backend] exporting to image
-#18 exporting layers done
-#18 writing image sha256:4c602919dd423f7ef7d1c50dce9ac0c24d9d6591da5e49690f34fd0c33ce1887 done
+#18 exporting layers 0.0s done
+#18 writing image sha256:d876d3cda74a0f97f675a2a933b61cbc452854736d29fe8cc5b32bd98621b11f done
 #18 naming to docker.io/library/tripeasy-backend done
-#18 DONE 0.0s
- Container tripeasy-postgres-1  Running
+#18 DONE 0.1s
+ Container tripeasy-mock-newebpay-1  Running
  Container tripeasy-mailpit-1  Running
  Container tripeasy-mock-oauth-1  Running
+ Container tripeasy-postgres-1  Running
  Container tripeasy-flyway-1  Created
- Container tripeasy-mock-newebpay-1  Running
- Container tripeasy-backend-1  Running
- Container tripeasy-frontend-1  Running
+ Container tripeasy-backend-1  Recreate
+ Container tripeasy-backend-1  Recreated
+ Container tripeasy-frontend-1  Recreate
+ Container tripeasy-frontend-1  Recreated
  Container tripeasy-postgres-1  Waiting
  Container tripeasy-postgres-1  Healthy
  Container tripeasy-flyway-1  Starting
  Container tripeasy-flyway-1  Started
  Container tripeasy-flyway-1  Waiting
  Container tripeasy-flyway-1  Exited
+ Container tripeasy-backend-1  Starting
+ Container tripeasy-backend-1  Started
  Container tripeasy-backend-1  Waiting
  Container tripeasy-backend-1  Healthy
+ Container tripeasy-frontend-1  Starting
+ Container tripeasy-frontend-1  Started
 ✅ backend
+curl: (52) Empty reply from server
+curl: (52) Empty reply from server
+curl: (52) Empty reply from server
+curl: (52) Empty reply from server
+curl: (52) Empty reply from server
 ✅ frontend
 ✅ mailpit
 ✅ mock-oauth
 ✅ mock-newebpay
-Checked 22 packages in 0.27ms
+Checked 22 packages in 0.40ms
 ============================= test session starts ==============================
 platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
 cachedir: .pytest_cache
@@ -95,7 +106,7 @@ rootdir: .
 configfile: pyproject.toml
 testpaths: tests, e2e
 plugins: base-url-2.1.0, playwright-0.5.2
-collecting ... collected 957 items
+collecting ... collected 959 items
 
 tests/test_api_smoke.py::test_home_products_guest[tourgroup-popular-tour_travel_popular] PASSED [  0%]
 tests/test_api_smoke.py::test_home_products_guest[tourgroup-promotion-None] PASSED [  0%]
@@ -163,7 +174,7 @@ tests/test_db_contract.py::test_object_exists_with_exact_identifier[tour_travel_
 tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_adminList] PASSED [  6%]
 tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_cartList] PASSED [  6%]
 tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_couponList] PASSED [  6%]
-tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_favorite] PASSED [  7%]
+tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_favorite] PASSED [  6%]
 tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_point_coupon] PASSED [  7%]
 tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_level_review_forHome] PASSED [  7%]
 tests/test_db_contract.py::test_object_exists_with_exact_identifier[user_orderList] PASSED [  7%]
@@ -211,7 +222,7 @@ tests/test_google_login.py::test_google_email_case_matches_existing PASSED [ 11%
 tests/test_google_login.py::test_google_binds_existing_mixed_case_stored_email PASSED [ 11%]
 tests/test_google_login.py::test_google_first_bind_clears_password_and_old_tokens PASSED [ 11%]
 tests/test_google_login.py::test_google_member_cannot_login_with_default_password PASSED [ 11%]
-tests/test_google_login.py::test_google_rebind_keeps_password PASSED     [ 12%]
+tests/test_google_login.py::test_google_rebind_keeps_password PASSED     [ 11%]
 tests/test_google_login.py::test_google_login_response_token_works PASSED [ 12%]
 tests/test_google_login.py::test_google_login_missing_code_is_400 PASSED [ 12%]
 tests/test_google_login.py::test_google_login_bogus_code_rejected PASSED [ 12%]
@@ -230,7 +241,7 @@ tests/test_google_login.py::test_google_display_name_one_char_local_part PASSED 
 tests/test_google_login.py::test_google_emoji_name_truncated_by_code_point PASSED [ 13%]
 tests/test_health.py::test_health_ok PASSED                              [ 13%]
 tests/test_infra.py::test_make_tour_creates_listed_tour PASSED           [ 13%]
-tests/test_infra.py::test_make_tour_rejects_detail_for_hotel PASSED      [ 14%]
+tests/test_infra.py::test_make_tour_rejects_detail_for_hotel PASSED      [ 13%]
 tests/test_infra.py::test_make_order_writes_paid_item PASSED             [ 14%]
 tests/test_infra.py::test_purge_removes_only_test_data PASSED            [ 14%]
 tests/test_infra.py::test_purge_prefixes_cover_fixture_emails PASSED     [ 14%]
@@ -259,7 +270,7 @@ tests/test_member_auth.py::test_signup_validation_errors[name-too-long] PASSED [
 tests/test_member_auth.py::test_signup_validation_errors[preference-too-few] PASSED [ 16%]
 tests/test_member_auth.py::test_signup_validation_errors[missing-password] PASSED [ 16%]
 tests/test_member_auth.py::test_signup_unknown_preference_is_409 PASSED  [ 16%]
-tests/test_member_auth.py::test_login_email_validation_errors[bad-email] PASSED [ 17%]
+tests/test_member_auth.py::test_login_email_validation_errors[bad-email] PASSED [ 16%]
 tests/test_member_auth.py::test_login_email_validation_errors[missing-password] PASSED [ 17%]
 tests/test_member_auth.py::test_login_unknown_email_is_404 PASSED        [ 17%]
 tests/test_member_auth.py::test_login_wrong_password_is_401 PASSED       [ 17%]
@@ -278,7 +289,7 @@ tests/test_member_auth.py::test_user_only_apis_reject_admin_role[PATCH-/api/v1/u
 tests/test_member_auth.py::test_user_only_apis_reject_admin_role[PATCH-/api/v1/user/userinfo/avatar] PASSED [ 18%]
 tests/test_member_auth.py::test_user_only_apis_reject_admin_role[GET-/api/v1/user/userinfo/pointslevel] PASSED [ 18%]
 tests/test_member_auth.py::test_get_profile_info_ok PASSED               [ 18%]
-tests/test_member_auth.py::test_patch_profile_info_ok_and_validation PASSED [ 19%]
+tests/test_member_auth.py::test_patch_profile_info_ok_and_validation PASSED [ 18%]
 tests/test_member_auth.py::test_avatar_upload_validation PASSED          [ 19%]
 tests/test_member_auth.py::test_profile_change_password_validation PASSED [ 19%]
 tests/test_member_auth.py::test_login_response_has_avatar_url PASSED     [ 19%]
@@ -297,7 +308,7 @@ tests/test_member_auth.py::test_old_login_token_invalid_after_profile_change PAS
 tests/test_member_auth.py::test_expired_login_token_is_401 PASSED        [ 20%]
 tests/test_member_auth.py::test_resetpw_validation_and_invalid_token PASSED [ 20%]
 tests/test_member_auth.py::test_forged_token_without_pwv_is_401 PASSED   [ 20%]
-tests/test_member_auth.py::test_token_of_deleted_user_is_401 PASSED      [ 21%]
+tests/test_member_auth.py::test_token_of_deleted_user_is_401 PASSED      [ 20%]
 tests/test_member_auth.py::test_null_password_user_can_set_password_via_reset PASSED [ 21%]
 tests/test_member_auth.py::test_auth_not_mandatory_without_header_is_not_401 PASSED [ 21%]
 tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-reset] PASSED [ 21%]
@@ -326,7 +337,7 @@ tests/test_member_auth.py::test_tampered_expiry_captcha_cookie_rejected PASSED [
 tests/test_member_auth.py::test_non_string_captcha_input_is_400[number] PASSED [ 23%]
 tests/test_member_auth.py::test_non_string_captcha_input_is_400[array] PASSED [ 23%]
 tests/test_member_auth.py::test_point_records_hide_signup_zero_row PASSED [ 23%]
-tests/test_member_auth.py::test_login_email_negative_points_returns_zero PASSED [ 24%]
+tests/test_member_auth.py::test_login_email_negative_points_returns_zero PASSED [ 23%]
 tests/test_member_auth.py::test_login_status_negative_points_returns_zero PASSED [ 24%]
 tests/test_member_favorites.py::test_favorite_first_time_is_201 PASSED   [ 24%]
 tests/test_member_favorites.py::test_favorite_duplicate_returns_original_id PASSED [ 24%]
@@ -345,7 +356,7 @@ tests/test_member_favorites.py::test_refavorite_after_delete_gets_new_id_and_old
 tests/test_member_favorites.py::test_favorite_admin_is_403[post] PASSED  [ 25%]
 tests/test_member_favorites.py::test_favorite_admin_is_403[delete] PASSED [ 25%]
 tests/test_member_favorites.py::test_favorite_admin_is_403[get] PASSED   [ 25%]
-tests/test_member_favorites.py::test_favorite_without_token_is_401[post] PASSED [ 26%]
+tests/test_member_favorites.py::test_favorite_without_token_is_401[post] PASSED [ 25%]
 tests/test_member_favorites.py::test_favorite_without_token_is_401[delete] PASSED [ 26%]
 tests/test_member_favorites.py::test_favorite_without_token_is_401[get] PASSED [ 26%]
 tests/test_member_favorites.py::test_list_single_response_and_unlisted_flag PASSED [ 26%]
@@ -360,6 +371,7 @@ tests/test_member_notify.py::test_get_returns_booleans PASSED            [ 27%]
 tests/test_member_notify.py::test_patch_early_upsert_idempotent PASSED   [ 27%]
 tests/test_member_notify.py::test_patch_price_upsert_keeps_early PASSED  [ 27%]
 tests/test_member_notify.py::test_patch_concurrent_first_write_one_row PASSED [ 27%]
+tests/test_member_notify.py::test_price_tracking_concurrent_first_write_one_row PASSED [ 27%]
 tests/test_member_notify.py::test_alice_like_row_resave_unchanged_is_200 PASSED [ 27%]
 tests/test_member_notify.py::test_price_tracking_non_integer_new_price_is_400 PASSED [ 27%]
 tests/test_member_notify.py::test_price_tracking_negative_price_is_400 PASSED [ 27%]
@@ -383,7 +395,7 @@ tests/test_member_notify.py::test_notify_admin_is_403[early] PASSED      [ 29%]
 tests/test_member_notify.py::test_notify_admin_is_403[price] PASSED      [ 29%]
 tests/test_member_orders.py::test_orders_list_all_statuses PASSED        [ 29%]
 tests/test_member_orders.py::test_orders_list_item_fields PASSED         [ 29%]
-tests/test_member_orders.py::test_orders_list_newest_first_and_paging PASSED [ 29%]
+tests/test_member_orders.py::test_orders_list_newest_first_and_paging PASSED [ 30%]
 tests/test_member_orders.py::test_orders_list_default_limit_is_4 PASSED  [ 30%]
 tests/test_member_orders.py::test_orders_limit_over_50_is_400 PASSED     [ 30%]
 tests/test_member_orders.py::test_orders_list_empty PASSED               [ 30%]
@@ -402,7 +414,7 @@ tests/test_member_orders.py::test_purchase_item_unknown_is_404 PASSED    [ 31%]
 tests/test_member_orders.py::test_own_unpaid_purchase_item_unchanged PASSED [ 31%]
 tests/test_member_orders.py::test_orders_without_token_is_401 PASSED     [ 31%]
 tests/test_member_orders.py::test_orders_admin_is_403 PASSED             [ 31%]
-tests/test_member_orders.py::test_order_detail_without_token_is_401 PASSED [ 31%]
+tests/test_member_orders.py::test_order_detail_without_token_is_401 PASSED [ 32%]
 tests/test_member_orders.py::test_own_unknown_order_detail_is_404 PASSED [ 32%]
 tests/test_member_orders.py::test_order_detail_bad_uuid_is_400 PASSED    [ 32%]
 tests/test_member_points.py::test_point_records_reasons_and_order PASSED [ 32%]
@@ -450,7 +462,7 @@ tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_is_clamped_to_9
 tests/test_mock_newebpay.py::test_mock_trade_limit_below_minimum_times_out_after_60 PASSED [ 36%]
 tests/test_mock_newebpay.py::test_mock_trade_limit_above_maximum_not_clamped_below_900 PASSED [ 36%]
 tests/test_mock_newebpay.py::test_mock_trade_limit_zero_means_no_limit PASSED [ 36%]
-tests/test_mock_newebpay.py::test_mock_session_cannot_pay_twice PASSED   [ 36%]
+tests/test_mock_newebpay.py::test_mock_session_cannot_pay_twice PASSED   [ 37%]
 tests/test_mock_newebpay.py::test_newebpay_helper_round_trip PASSED      [ 37%]
 tests/test_name_rule.py::test_signup_accepts_20_chars_and_spaces PASSED  [ 37%]
 tests/test_name_rule.py::test_signup_rejects_21_chars PASSED             [ 37%]
@@ -517,7 +529,7 @@ tests/test_product_read.py::test_search_messages_have_no_param_names[{'order': '
 tests/test_product_routes.py::test_guest_can_reach_public_tour_detail PASSED [ 43%]
 tests/test_product_routes.py::test_guest_tour_list_is_not_blocked_by_admin_auth PASSED [ 43%]
 tests/test_product_routes.py::test_admin_status_route_is_reachable PASSED [ 43%]
-tests/test_product_routes.py::test_admin_detail_still_requires_admin PASSED [ 43%]
+tests/test_product_routes.py::test_admin_detail_still_requires_admin PASSED [ 44%]
 tests/test_product_routes.py::test_admin_routes_not_exposed_under_user_prefix PASSED [ 44%]
 tests/test_product_routes.py::test_public_routes_not_exposed_under_admin_prefix PASSED [ 44%]
 tests/test_product_routes.py::test_admin_patch_tour_is_reachable PASSED  [ 44%]
@@ -632,7 +644,7 @@ tests/test_seed.py::test_seed_alice_paid_orders_newest_first PASSED      [ 55%]
 tests/test_seed.py::test_seed_payment_status_coverage PASSED             [ 55%]
 tests/test_seed.py::test_seed_points_follow_rules PASSED                 [ 55%]
 tests/test_seed.py::test_seed_reward_points_by_paid_amount PASSED        [ 55%]
-tests/test_seed.py::test_seed_payment_amount_matches_paid PASSED         [ 56%]
+tests/test_seed.py::test_seed_payment_amount_matches_paid PASSED         [ 55%]
 tests/test_seed.py::test_seed_user_coupons_point_to_rebuilt_orders PASSED [ 56%]
 tests/test_seed.py::test_seed_web_reviews_for_home PASSED                [ 56%]
 tests/test_storage.py::test_avatar_upload_stored_locally PASSED          [ 56%]
@@ -699,7 +711,7 @@ tests/test_trade_checkout.py::test_cancel_discount_on_expired_order_is_409 PASSE
 tests/test_trade_checkout.py::test_preview_while_payment_in_progress_is_409 PASSED [ 62%]
 tests/test_trade_checkout.py::test_cancel_discount_while_payment_in_progress_is_409 PASSED [ 62%]
 tests/test_trade_checkout.py::test_create_order_rejects_taken_down_tour PASSED [ 62%]
-tests/test_trade_checkout.py::test_create_order_rejects_past_start_date PASSED [ 63%]
+tests/test_trade_checkout.py::test_create_order_rejects_past_start_date PASSED [ 62%]
 tests/test_trade_checkout.py::test_create_order_stale_item_keeps_previous_pending_order PASSED [ 63%]
 tests/test_trade_checkout.py::test_create_order_valid_cart_still_ok PASSED [ 63%]
 tests/test_trade_checkout.py::test_preview_same_coupon_while_payment_in_progress_is_ok PASSED [ 63%]
@@ -747,7 +759,7 @@ tests/test_trade_payment.py::test_success_after_expiry_with_discount_is_recorded
 tests/test_trade_payment.py::test_payment_past_order_deadline_with_attempt_in_progress_is_409 PASSED [ 67%]
 tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[600-600] PASSED [ 67%]
 tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5-60] PASSED [ 67%]
-tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5000-900] PASSED [ 68%]
+tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[5000-900] PASSED [ 67%]
 tests/test_trade_payment.py::test_trade_limit_seconds_is_clamped[0-600] PASSED [ 68%]
 tests/test_trade_payment.py::test_zero_reward_writes_no_point_record PASSED [ 68%]
 tests/test_trade_payment.py::test_failure_notify_after_cancel_with_discount_is_recorded_only PASSED [ 68%]
@@ -766,7 +778,7 @@ tests/test_trade_refund.py::test_refund_allows_negative_balance PASSED   [ 69%]
 tests/test_trade_refund.py::test_refund_twice_is_409 PASSED              [ 69%]
 tests/test_trade_refund.py::test_refund_non_paid_status_is_409[-1] PASSED [ 69%]
 tests/test_trade_refund.py::test_refund_non_paid_status_is_409[0] PASSED [ 69%]
-tests/test_trade_refund.py::test_refund_non_paid_status_is_409[2] PASSED [ 70%]
+tests/test_trade_refund.py::test_refund_non_paid_status_is_409[2] PASSED [ 69%]
 tests/test_trade_refund.py::test_refund_non_paid_status_is_409[4] PASSED [ 70%]
 tests/test_trade_refund.py::test_refund_unknown_order_is_404 PASSED      [ 70%]
 tests/test_trade_refund.py::test_refund_bad_uuid_is_400 PASSED           [ 70%]
@@ -795,7 +807,7 @@ tests/test_validator_messages.py::test_cart_list_empty_without_paging_is_200 PAS
 tests/test_validator_messages.py::test_cart_post_combo_message PASSED    [ 72%]
 tests/test_validator_messages.py::test_cart_post_type_item_mismatch_with_tour_message PASSED [ 72%]
 tests/test_validator_messages.py::test_cart_post_options_missing_message PASSED [ 72%]
-tests/test_validator_messages.py::test_cart_post_options_null_message PASSED [ 73%]
+tests/test_validator_messages.py::test_cart_post_options_null_message PASSED [ 72%]
 tests/test_validator_messages.py::test_cart_post_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d] PASSED [ 73%]
 tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 73%]
 tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 73%]
@@ -814,7 +826,7 @@ tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgro
 tests/test_validator_messages.py::test_cart_post_body_messages[{'type': 'tourgroup', 'item': 'hotel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02', 'room_type': 5}}-\u300c\u623f\u578b\u300d\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 74%]
 tests/test_validator_messages.py::test_cart_patch_body_messages[{'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5927\u5206\u985e\u300d] PASSED [ 74%]
 tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'zzz', 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 74%]
-tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 75%]
+tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 5, 'item': 'travel', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5927\u5206\u985e\u300d\u50c5\u80fd\u70ba backpacker \u6216 tourgroup] PASSED [ 74%]
 tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u5c0f\u5206\u985e\u300d] PASSED [ 75%]
 tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'zzz', 'people': 1, 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u300c\u5c0f\u5206\u985e\u300d\u50c5\u80fd\u70ba hotel\u3001food\u3001spot \u6216 travel] PASSED [ 75%]
 tests/test_validator_messages.py::test_cart_patch_body_messages[{'type': 'tourgroup', 'item': 'travel', 'options': {'start_date': '2099-01-01', 'end_date': '2099-01-02'}}-\u8acb\u586b\u5beb\u300c\u4eba\u6578\u300d] PASSED [ 75%]
@@ -833,7 +845,7 @@ tests/test_validator_messages.py::test_discount_body_messages[{'type': 'zzz', 'd
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon'}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u70ba\u5fc5\u586b\u6b04\u4f4d] PASSED [ 76%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'abc'}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u5fc5\u9808\u662f 6 \u78bc\u5927\u5beb\u82f1\u6578\u7d44\u5408] PASSED [ 76%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 'x'}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6578\u5b57] PASSED [ 76%]
-tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 1.5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6574\u6578] PASSED [ 77%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': 1.5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u662f\u6574\u6578] PASSED [ 76%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'point', 'discount': {'point': -5}}-\u300c\u65c5\u904a\u7a4d\u5206\u300d\u6700\u5c0f\u503c\u70ba 0] PASSED [ 77%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'point': 5}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u53ea\u80fd\u64c7\u4e00\u586b\u5beb] PASSED [ 77%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u8207\u300c\u65c5\u904a\u7a4d\u5206\u300d\u5fc5\u9808\u64c7\u4e00\u586b\u5beb] PASSED [ 77%]
@@ -843,7 +855,7 @@ tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon',
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 123456}}-\u300c\u512a\u60e0\u5238\u4ee3\u78bc\u300d\u5fc5\u9808\u662f\u6587\u5b57] PASSED [ 77%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123', 'foo': 1}}-\u300c\u512a\u60e0\u5167\u5bb9\u300d\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 77%]
 tests/test_validator_messages.py::test_discount_body_messages[{'type': 5, 'discount': {'coupon': 'ABC123'}}-\u300c\u512a\u60e0\u65b9\u5f0f\u300d\u53ea\u80fd\u662f\u512a\u60e0\u5238\u6216\u65c5\u904a\u7a4d\u5206] PASSED [ 77%]
-tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 78%]
+tests/test_validator_messages.py::test_discount_body_messages[{'type': 'coupon', 'discount': {'coupon': 'ABC123'}, 'foo': 1}-\u8acb\u6c42\u5167\u5bb9\u542b\u6709\u4e0d\u652f\u63f4\u7684\u6b04\u4f4d] PASSED [ 77%]
 tests/test_validator_messages.py::test_discount_invalid_order_id_message PASSED [ 78%]
 tests/test_validator_messages.py::test_checkout_invalid_order_id_message PASSED [ 78%]
 tests/test_validator_messages.py::test_checkout_invalid_cart_id_message PASSED [ 78%]
@@ -862,7 +874,7 @@ tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks PASS
 tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart] PASSED [ 79%]
 tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts] PASSED [ 79%]
 tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout] PASSED [ 79%]
-tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 80%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 79%]
 tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] PASSED [ 80%]
 tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] PASSED [ 80%]
 tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] PASSED [ 80%]
@@ -881,7 +893,7 @@ tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[us
 tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown] PASSED [ 81%]
 tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array] PASSED [ 81%]
 tests/test_validator_sweep.py::test_http_search_unknown_query_key PASSED [ 81%]
-tests/test_views_a.py::test_tour_base_includes_inactive_tours PASSED     [ 82%]
+tests/test_views_a.py::test_tour_base_includes_inactive_tours PASSED     [ 81%]
 tests/test_views_a.py::test_tour_base_without_notification_has_null_notice PASSED [ 82%]
 tests/test_views_a.py::test_tour_base_promo_price_only_in_period PASSED  [ 82%]
 tests/test_views_a.py::test_tour_base_promo_and_change_in_one_row PASSED [ 82%]
@@ -900,7 +912,7 @@ tests/test_views_a.py::test_tour_travel_matches_tour_base_columns PASSED [ 83%]
 tests/test_views_a.py::test_tour_detail_without_tour_detail_row_still_one_row PASSED [ 83%]
 tests/test_views_a.py::test_tour_hotel_without_rooms_one_null_row PASSED [ 83%]
 tests/test_views_a.py::test_tour_restaurant_without_menu_or_opening_one_row PASSED [ 83%]
-tests/test_views_a.py::test_tour_restaurant_menu_only_has_no_placeholder_row PASSED [ 84%]
+tests/test_views_a.py::test_tour_restaurant_menu_only_has_no_placeholder_row PASSED [ 83%]
 tests/test_views_a.py::test_tour_restaurant_opening_only_has_no_placeholder_row PASSED [ 84%]
 tests/test_views_a.py::test_user_user_level_without_level_still_one_row PASSED [ 84%]
 tests/test_views_b.py::test_cartlist_row_per_item_with_owner PASSED      [ 84%]
@@ -910,7 +922,7 @@ tests/test_views_b.py::test_hotel_booking_counts_only_open_payment_statuses PASS
 tests/test_views_b.py::test_hotel_booking_date_range_is_half_open PASSED [ 84%]
 tests/test_views_b.py::test_hotel_booking_room_count_sums_same_title_rooms PASSED [ 84%]
 tests/test_views_b.py::test_hotel_booking_skips_order_item_with_null_end_date PASSED [ 84%]
-tests/test_views_b.py::test_hotel_booking_room_count_from_the_right_tour PASSED [ 85%]
+tests/test_views_b.py::test_hotel_booking_room_count_from_the_right_tour PASSED [ 84%]
 tests/test_views_b.py::test_restaurant_booking_counts_by_status PASSED   [ 85%]
 tests/test_views_b.py::test_restaurant_booking_ignores_time_parameter PASSED [ 85%]
 tests/test_views_b.py::test_restaurant_booking_no_orders_and_no_restaurant PASSED [ 85%]
@@ -929,7 +941,7 @@ tests/test_views_b.py::test_orderlist_price_is_historical_not_current_tour_price
 tests/test_views_b.py::test_orderlist_zero_quantity_gives_null_prices PASSED [ 86%]
 tests/test_views_c.py::test_favorite_keeps_inactive_and_uses_favorite_time PASSED [ 86%]
 tests/test_views_c.py::test_favorite_one_row_per_favorite_even_with_many_notifications PASSED [ 86%]
-tests/test_views_c.py::test_orders_paid_only_newest_first PASSED         [ 87%]
+tests/test_views_c.py::test_orders_paid_only_newest_first PASSED         [ 86%]
 tests/test_views_c.py::test_orders_view_keeps_order_by_created_at_desc PASSED [ 87%]
 tests/test_views_c.py::test_order_item_exactly_one_row_with_owner PASSED [ 87%]
 tests/test_views_c.py::test_order_item_not_paid_has_no_row[-1] PASSED    [ 87%]
@@ -945,6 +957,7 @@ e2e/test_favorite_flow.py::test_tour_page_heart_toggles[chromium] PASSED [ 88%]
 e2e/test_favorite_flow.py::test_guest_heart_goes_to_login[chromium] PASSED [ 88%]
 e2e/test_favorite_flow.py::test_home_heart_does_not_open_tour[chromium] PASSED [ 88%]
 e2e/test_favorite_flow.py::test_heart_reverts_on_failure[chromium] PASSED [ 88%]
+e2e/test_favorite_flow.py::test_heart_delete_404_is_treated_as_removed[chromium] PASSED [ 88%]
 e2e/test_favorite_flow.py::test_unlisted_favorite_is_marked_and_removable[chromium] PASSED [ 88%]
 e2e/test_favorite_flow.py::test_collect_page_empty[chromium] PASSED      [ 88%]
 e2e/test_member_center.py::test_header_links_open_tabs[chromium] PASSED  [ 88%]
@@ -986,7 +999,7 @@ e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[
 e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] PASSED [ 92%]
 e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save] PASSED [ 92%]
 e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar] PASSED [ 92%]
-e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] PASSED [ 92%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] PASSED [ 93%]
 e2e/test_member_flow.py::test_register_name_too_long_shows_message[chromium] PASSED [ 93%]
 e2e/test_member_flow.py::test_profile_name_too_long_shows_message[chromium] PASSED [ 93%]
 e2e/test_member_flow.py::test_pay_name_too_long_blocked[chromium] PASSED [ 93%]
@@ -1055,9 +1068,5 @@ e2e/test_trade_flow.py::test_load_failure_shows_message[chromium] PASSED [ 99%]
 e2e/test_trade_flow.py::test_retry_with_reserved_coupon_amount_matches_submit[chromium] PASSED [ 99%]
 e2e/test_trade_flow.py::test_negative_points_display_as_zero[chromium] PASSED [100%]
 
-======================= 957 passed in 206.73s (0:03:26) ========================
-
-real	3m32.953s
-user	0m46.012s
-sys	0m26.726s
+======================= 959 passed in 215.04s (0:03:35) ========================
 exit=0

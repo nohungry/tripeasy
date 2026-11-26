@@ -190,7 +190,7 @@
 - **應付金額只由一個後端函式計算**，summary、`POST /payment` 的 `Amt`、notify 的金額核對都呼叫它，不從任何欄位直接讀：
   - 促銷後小計 ＝ Σ 每個 `order_item` 的（`discount_price` 不為 NULL 且不為 0 時取它，否則取 `total_price`）。這兩欄是建立訂單時的快照，語意沿用契約 :212（`order_item.discount_price` ＝ 促銷價 × 數量，沒有促銷為 NULL）。
   - 應付金額 ＝ 促銷後小計 − 折抵（優惠券的 `discount`，或點數 × 0.8）。
-- 欄位寫法沿用契約現況：有折扣時 `orders.discount_price` ＝ 應付金額；沒有折扣時 `orders.discount_price` 為 NULL、`discount_type = 'none'`（契約 :218）。`payment.discount_price` 寫應付金額（seed 的 payment 列沿用舊規則：與 orders.discount_price 同值、無折扣為 NULL，見契約）。
+- 欄位寫法沿用契約現況：有折扣時 `orders.discount_price` ＝ 應付金額；沒有折扣時 `orders.discount_price` 為 NULL、`discount_type = 'none'`（契約 :218）。**（P5 起：訂單轉逾時或被取消時，`discount_type` 與 `discount_price` 清空為 NULL，與 `'none'` 並存；金額一律來自 `computePayable`，不讀這兩欄。）**`payment.discount_price` 寫應付金額（seed 的 payment 列沿用舊規則：與 orders.discount_price 同值、無折扣為 NULL，見契約）。
 - 不論優惠券或點數，折抵後應付金額至少 1 元，否則回 400（例如 `VIP300` 套在 300 元以下的訂單）。
 - 優惠券：`user_coupon.status` -1 → 1（保留時已經設了 `order_id`）。
 - 點數：`減少_確認中` → `減少`，`user_level.travel_point` 扣掉使用的點數。

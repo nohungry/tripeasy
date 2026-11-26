@@ -1,9 +1,9 @@
 # Phase 5：會員中心（我的訂單、點數與等級、通知設定、收藏、姓名規則、越權讀取）
-> 2026-11-26（**初稿**，待使用者審閱） · backend tag `phase-5`＝待 Step 5（起點 `0e3b192`，分支最後一個 commit `d3280ce`） · frontend tag `phase-5`＝待 Step 5（起點 `bfd20f0`，分支最後一個 commit `9460d7a`） · 總覽 tag `phase-5`＝待 Step 5（起點 `025556b`＝本機 `main`／merge-base，另見下方說明（派工給的是 `ea2be00`）；分支最後一個 commit `8f30fd6`，**不含**本報告所在的 commit） · GitHub Actions：待 Step 5（尚未 push）
+> 2026-11-26（**初稿**，待使用者審閱） · backend tag `phase-5`＝待 Step 5（起點 `0e3b192`，分支最後一個 commit `2f19285`） · frontend tag `phase-5`＝待 Step 5（起點 `bfd20f0`，分支最後一個 commit `89b2282`） · 總覽 tag `phase-5`＝待 Step 5（起點 `025556b`＝與 `main` 的 merge-base；分支最後一個 commit `153f4ba`，**不含**本報告所在的 commit） · GitHub Actions：待 Step 5（尚未 push）
 >
 > 本報告依 `docs/superpowers/specs/2026-11-26-p5-member-center-design.md`（以下稱「P5 spec」）§0、§10、§12 與 `docs/reports/phase-4.md` 的格式撰寫，計畫見 `docs/superpowers/plans/2026-11-26-p5-member-center.md`（以下稱「計畫」）。引用一律以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
-> **起點的說明**：總覽起點在派工與本機 repo 之間有兩個候選 hash，如實並列，請主對話裁決。`git merge-base main HEAD` ＝ `025556b`（本機 `main` 的 HEAD，`phase-5` 從此開出；ledger 的 Task 0 BASE 也是 `025556b`）；派工文字寫 `ea2be00`（「docs: P5 計畫核准」），它是 `025556b` 之前兩個 commit（其後 `647295b`、`025556b` 把開工前衝突掃描 F1–F26 的裁決套進計畫與 spec §12）。`origin/main` 是更早的 `0244143`，兩個候選都不是它。本報告以 `025556b` 計算；以 `ea2be00` 計算的數字在附錄 A 另列。
+> **起點的說明**：總覽起點是 `025556b`（`git merge-base main HEAD`；本機 `main` 的 HEAD，`phase-5` 從此開出；ledger 的 Task 0 BASE 也是它）。派工文字曾寫成另一個 commit，是**主對話的錯誤**（Ruling T10-1），初稿因此並列兩個候選，現已更正，本報告所有數字都以 `025556b` 為起點。
 >
 > 行號基準：P5 之前就存在的問題，行號取自修正前的 backend `0e3b192`（＝tag `phase-4`）與 frontend `bfd20f0`，已用 `git show` 逐一核對；沒有核對到的標「未查證」。紅燈 evidence 都在 `docs/reports/evidence/phase-5/`（以下省略目錄），已去除絕對路徑。
 >
@@ -15,12 +15,12 @@ P5 的目標：讓會員中心可以從前端完整操作（我的訂單全狀�
 
 | 項目 | 結果 |
 |---|---|
-| 測試數量 | **798 passed、0 xfailed、0 skipped（P4 結束，`phase-4.md` §3.3）→ 957 passed、0 xfailed、0 skipped**（`scripts/ci.sh` 實跑，exit code 0，pytest 耗時 206.73s、牆鐘 3m33s；`tests/` 843＋`e2e/` 114；基準：總覽 `8f30fd6`、backend `d3280ce`、frontend `9460d7a`）。淨增 159 個測試。這次是**保留 volume 的單次執行**，計畫 Task 10 Step 3 要求的「`down -v` 之後連跑兩次」**尚未執行**（待使用者執行 `docker compose down -v`），原始輸出見 [task-10-ci.txt](evidence/phase-5/task-10-ci.txt) |
+| 測試數量 | **798 passed、0 xfailed、0 skipped（P4 結束，`phase-4.md` §3.3）→ 959 passed、0 xfailed、0 skipped**（最終修正波之後 `scripts/ci.sh` 實跑，exit code 0，pytest 耗時 215.04s（3m35s；牆鐘未另計）、牆鐘 未另計；`tests/` 844＋`e2e/` 115；基準：總覽 `153f4ba`、backend `2f19285`、frontend `89b2282`）。淨增 161 個測試（修正波前的 `3d89477`：957 passed，206.73s；fable 另在 `3d89477` 以保留 volume 重跑 957 passed、213.95s）。這次是**保留 volume 的單次執行**；計畫 Task 10 Step 3 要求的「`down -v` 之後連跑兩次」**待合併前執行**（Ruling T10-2，需使用者執行 `docker compose down -v`，數字之後由主對話補上），原始輸出見 [task-10-ci.txt](evidence/phase-5/task-10-ci.txt) |
 | xfail／skip | 皆為 0（P4 已清空，P5 沒有新增） |
 | 新增 migration | `V6__p5_member_center.sql`：`favorite_user_tour_key`、`cart_user_id_key`、`auto_setting_user_id_key` 三個唯一約束（§1.3）；`R__views_functions.sql` 的四個 function 多輸出 `收藏編號`（§1.2） |
 | 後端 | 新增 `GET /user/orders`、`GET /user/orders/:order_id`、`GET /user/points/records`、`GET /user/automation/regions` 四支唯讀 API；修正已購買明細越權（§1.1）、收藏（§1.2）、通知設定（§1.4）、負點數與空券（§1.5）、姓名規則與 Google 名字（§1.6、§1.7）、P4 留下的項目（§1.8）；新增 `utils/nameRule.js`、`utils/orderStatus.js`、`utils/Validator/paging_Validator.js` |
 | 前端 | `userprofilePage.vue` 以 `?tab=` 切換四個分頁（會員資訊、會員等級、個人偏好設定、個人訂單查看）；新增共用元件 `FavoriteHeart.vue`、收藏頁；Header 的死連結接上（§1.9、§1.10） |
-| 審查 | 11 個 Task（0–10）依 R5 全部雙審（reviewer-opus＋reviewer-fable 平行、互不看對方結果）；Task 0–9 已審，**Task 10 與 whole-branch 最終審查尚未執行（Step 6）**。6 個 Task（3、4、5、7、8、9）各開 1 個修正輪，Task 0、1、2、6 一次通過（§2.3） |
+| 審查 | 11 個 Task（0–10）依 R5 全部雙審（reviewer-opus＋reviewer-fable 平行、互不看對方結果）；Task 0–9 逐 Task 審過；**整條分支的最終雙審已完成：opus 與 fable 都判定程式可合併（沒有程式面的 Critical／Important），並已完成一輪修正（Ruling FW）**。6 個 Task（3、4、5、7、8、9）各開 1 個修正輪，Task 0、1、2、6 一次通過（§2.3）；fable 另在 `3d89477` 以保留 volume 重跑 `scripts/ci.sh`：957 passed、213.95s |
 | 已知限制 | 手動取消訂單、等級升級規則、實際寄送通知留到 P6；其餘見附錄 B |
 
 **修了幾個 bug**：§1.1–§1.7 是 P4 結束時已存在、P5 修掉的缺陷（越權讀取、收藏兩次回應與 500、重複列與多購物車、通知設定的併發與驗證、負點數與全 null 優惠券物件、三套姓名規則、Google 名字過長）；§1.8 是 P4 報告附錄 B 點名的項目。審查另外抓到由 P5 自己新寫的程式或文件引入的缺陷（折扣類型顯示 `none`、`?tab=constructor` 空白頁、負點數 E2E 在 API 回應前就通過、收藏 POST 的重試迴圈沒進鎖順序文件、鎖順序檢查結果少算一處反向，見 §2）。
@@ -86,7 +86,7 @@ P5 的目標：讓會員中心可以從前端完整操作（我的訂單全狀�
 ### 1.6 姓名規則：三處規則統一（P5 spec §6；R4）
 
 **現象**：註冊、會員資料、結帳收件人三處各有不同的姓名規則（2–5、2–5、2–10 個字，且都禁止空白與符號）。
-**根因**（backend `0e3b192`）：`utils/Validator/userInfo_Validator.js:4` `^[a-zA-Z0-9一-龥]{2,5}$`、`userprofile_Validator.js:3` `^[一-龥a-zA-Z0-9]{2,5}$`、`checkout_Vaildator.js:23` `^[一-龥a-zA-Z0-9]{2,10}$`。
+**根因**（backend `0e3b192`）：`utils/Validator/userInfo_Validator.js:4` `/^[a-zA-Z0-9\u4e00-\u9fa5]{2,5}$/`、`userprofile_Validator.js:3` `/^[\u4e00-\u9fa5a-zA-Z0-9]{2,5}$/`、`checkout_Vaildator.js:23` `/^[\u4e00-\u9fa5a-zA-Z0-9]{2,10}$/`。
 **紅燈**：[task-2-red.txt](evidence/phase-5/task-2-red.txt)（總覽 `46288ce`，30 failed、198 passed）、[task-2-red-frontend.txt](evidence/phase-5/task-2-red-frontend.txt)（`b603135`，e2e 3 failed、1 passed）。
 **修正**：backend `ba08ec7`：新增 `utils/nameRule.js`，三處共用：去頭尾空白後 2–20 個 Unicode 字元（`[...s].length`），不限字元種類，拒絕 `\p{Cc}`；訊息見共用約定。frontend `abf0e47`：註冊、會員資料、結帳表單同步。
 **綠燈**：741 passed、e2e 94 passed。`tests/test_member_auth.py:343` 的 `a!b`→400 斷言屬於被取代的舊規則，改為 `"名\u0007"`→400，並釘住 `a!b`→200（T2-a）。
@@ -119,6 +119,7 @@ P5 的目標：讓會員中心可以從前端完整操作（我的訂單全狀�
 
 **紅燈**：[task-8-red.txt](evidence/phase-5/task-8-red.txt)（總覽 `55ff39f`，7 failed）。
 **修正**：frontend `e4ea6d3`：`FavoriteHeart.vue`（`data-testid="favorite-heart"`、`aria-pressed`、`aria-label` 為 `加入收藏`／`取消收藏`）接在搜尋卡片、行程頁（放在價格旁，T8-1）、首頁；收藏頁 `collectPage.vue`。修正輪（總覽 `1326263`、frontend `9460d7a`）：主線 E2E 改走 UI 登入（初版注入 token，與 spec §0 第 1 步「登入」不符）、鎖定失敗訊息「伺服器錯誤」、訪客點愛心斷言沒有送出 POST、已收藏的行程載入即亮、搜尋頁點愛心後 URL 不變、移除未使用的 catch 參數與無效樣式。
+**最終修正波（Ruling FW）**：`delete_favorite` 對 404（查無此收藏項目）視為已取消、不顯示錯誤框（紅燈 [task-10-red-heart-404.txt](evidence/phase-5/task-10-red-heart-404.txt)，frontend `89b2282`）。
 **綠燈**：952 passed。主線 E2E 與修正輪後 `scripts/ci.sh` 的結果都是 952 passed。
 
 ### 1.11 與 spec 的差異（全部裁決 R1–R7、R2a、D1–D9、F1–F26 與處理結果；F22）
@@ -134,7 +135,7 @@ P5 的目標：讓會員中心可以從前端完整操作（我的訂單全狀�
 | R2a | 存著的地區若已無上架行程，表單仍列為選項並標註「（目前沒有上架行程）」；寫入驗證「值在上架清單，或與目前存的值完全相同」就通過 | 會員沒改任何東西卻存不了檔，會以為系統壞了 | 已沒有上架行程的地區可能被長期保留，P6 排程只是比對不到東西 | Task 6 完成 |
 | R3 | 點數紀錄 API 在 SQL 排除 `point = 0`，前端不另外過濾；測試含「新註冊會員的點數紀錄是空列表」 | 註冊時寫的 `新增 0` 不是購物回饋，顯示出來會誤導 | 真的 0 點紀錄（目前程式不會產生）也看不到 | Task 5 完成（`test_point_records_hide_signup_zero_row`） |
 | R4 | 姓名只檢查長度：去頭尾空白後 2–20 個 Unicode 字元，不限字元種類；另拒絕 `\p{Cc}`；Google 名字先移除 `\p{Cc}` 再套截斷與後備規則 | Google 名字常含空格，限制字元種類會讓截斷後仍過不了結帳；控制字元會破壞顯示與日誌 | 名字可含 emoji、符號，前端版面要能容納 | Task 2 完成（§1.6、§1.7） |
-| R5 | 全部 Task（0–10）都雙審 | `~/.claude/CLAUDE.md` 的門檻是「跨多檔，或動到 CI 設定」，Task 0 改 `refs.env`，其餘每個 Task 都跨多檔 | 審查成本加倍 | Task 0–9 已雙審；Task 10 與最終審查待 Step 6 |
+| R5 | 全部 Task（0–10）都雙審 | `~/.claude/CLAUDE.md` 的門檻是「跨多檔，或動到 CI 設定」，Task 0 改 `refs.env`，其餘每個 Task 都跨多檔 | 審查成本加倍 | Task 0–10 與整條分支的最終審查皆已雙審（Task 10 的文件由最終審查一併審；最終審查後完成一輪修正，Ruling FW） |
 | R6 | 註冊、Email 登入、Google 登入、`get_user_loginStatus` 回傳的 `points` 改 `Math.max(0, …)`，DB 不變；Email 登入與 loginStatus 寫測試 | spec 反目標「會員中心的任何地方都不顯示負點數」 | 只多 4 處 clamp | Task 5 完成：`controllers/userinfo.js` :58、:124、:250、:380 皆 `Math.max(0, Number(...))` |
 | R7 | Task 7 依賴 `R__views_functions.sql` 開頭的 `DROP FUNCTION … CASCADE` 才能改 `RETURNS TABLE`；在既有 volume（不 `down -v`）上重跑 migration，確認 Flyway 重跑 R__ 檔且被 CASCADE 刪掉的物件都重建，否則停下回報 | 未記 | 未記 | Task 7 完成：function 20 個、view 12 個，前後清單 diff 為空，`flyway_schema_history` 中該檔列數 1 → 2、皆 success |
 
@@ -198,7 +199,7 @@ P5 的目標：讓會員中心可以從前端完整操作（我的訂單全狀�
 2. summary 行寫「無偏差／皆相符」，但 Step 7 的「0 狀態」並未直接斷言（兩位審查員的同一項發現：opus 列 Important、fable 列 Minor；T0-I1 裁決接受）。
 3. evidence 內容是摘要，不是原始輸出；第 9 (a) 點寫「711-737 附近」（實際在 :715）；Step 3 的簡寫行號沒有輸出。
 
-**lock-order 行號重核（Task 10，spec §7.6）**：以 backend HEAD `d3280ce`（P5 最後一次動 backend 的 commit，目前仍是 HEAD）重核。Task 9 修正輪已逐一核對 `checkout`／`discounts`／`newebpay`／`admin`／`userinfo`／`cart`／`collection`／`automation`／`coupon` 的引用，除 `userProfile.js` 改 `:52-58`、`product.js` 改 `:626-630` 外皆正確。Task 10 對 `trade.js` 的 34 個引用行與 `newebpay.js` 8 個引用行、`collection.js:75-79`／`:89-92`、`cart.js:26-33`、`automation.js` 的 `ON CONFLICT` 行抽查，皆與文件相符；`lock-order.md` 檔頭、「已知問題（已解決）」、「已知缺口」（1.5 秒那句已刪）都已是現況，本次補了「對應的測試」四支併發測試與 §10 automation 條目的外鍵 KEY SHARE 說明。
+**lock-order 行號重核（Task 10，spec §7.6）**：以 backend HEAD `d3280ce`（Task 9 最後一次動行號的 backend commit）重核；最終修正波的 backend `2f19285` 只改 `collection.js` 一行（空列表的 `total`），行號不變。Task 9 修正輪已逐一核對 `checkout`／`discounts`／`newebpay`／`admin`／`userinfo`／`cart`／`collection`／`automation`／`coupon` 的引用，除 `userProfile.js` 改 `:52-58`、`product.js` 改 `:626-630` 外皆正確。Task 10 對 `trade.js` 的 34 個引用行與 `newebpay.js` 8 個引用行、`collection.js:75-79`／`:89-92`、`cart.js:26-33`、`automation.js` 的 `ON CONFLICT` 行抽查，皆與文件相符；`lock-order.md` 檔頭、「已知問題（已解決）」、「已知缺口」（1.5 秒那句已刪）都已是現況，本次補了「對應的測試」四支併發測試與 §10 automation 條目的外鍵 KEY SHARE 說明。
 
 ## 2. Vibe coding 工作流
 
@@ -208,7 +209,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 
 ### 2.2 Ruling 與審查對照
 
-下表為每個 Task 執行中的裁決（ledger 以 `Ruling T<N>-…` 開頭的全部 28 條，加上 `Ruling GC3`）。格式：裁決 — 理由 — 若錯的代價；ledger 沒寫的寫「未記」。
+下表為每個 Task 執行中的裁決（ledger 以 `Ruling T<N>-…` 開頭的 28 條＋`Ruling T10-1`、`T10-2`，加上 `Ruling GC3`、`Ruling FW`、`Ruling FW-2`，共 33 條）。格式：裁決 — 理由 — 若錯的代價；ledger 沒寫的寫「未記」。
 
 | # | 裁決（出處） | 理由與代價 |
 |---|---|---|
@@ -232,7 +233,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | T6-1 | 搜尋用 `ILIKE` 部分比對、地區驗證用等值比對，這個不一致接受 | 前端從地區下拉選取，使用者不會自己輸入。代價：直接呼叫 API 且傳部分名稱的客戶端會得到 400 |
 | T7-1 | 保留收藏 POST 的有限重試（≤3 輪）：`ON CONFLICT DO NOTHING` 後 SELECT 查不到時（剛好被同時刪掉）回到 INSERT；必須寫進 lock-order §11 | 重新 INSERT 是使用者的意圖，且有上限。代價：多一條程式路徑 |
 | T7-C1 | §11 寫成「最多 3 輪（首次加 2 次重試）」，與程式的 `attempt < 3` 一致；修 `collection.js:73` 註解；§11 基準 `ab52b9a` | 雙審共同 Critical（文件與程式不一致；fable 另指出重試次數與註解不符）。代價：未記 |
-| T7-I1 | 新增決定性測試（另一條連線 INSERT 不提交、輪詢 `pg_locks` 確認 POST 在等鎖、提交後 200 且同一 `favorite_id`），8 條執行緒的測試保留並加 Counter 訊息 | fable Important：原併發測試是機率性的。代價：未記 |
+| T7-I1 | 新增決定性測試（另一條連線 INSERT 不提交、輪詢 `pg_stat_activity` 確認 POST 在等鎖、提交後 200 且同一 `favorite_id`），8 條執行緒的測試保留並加 Counter 訊息 | fable Important：原併發測試是機率性的。代價：未記 |
 | T7-I2 | 詳情 `favorite_id` 測試參數化涵蓋 travel／hotel／food／spot | fable Important：原本只涵蓋 travel 分支。代價：未記 |
 | T7-fold | `db-contract.md` 的 `user_favorite` 一節改為現況（:1440、:1446–1450） | 理由與代價：未記；殘留的舊行號在 Task 10 補（見 §1.11） |
 | T8-1 | 行程頁的愛心放在價格旁，不放標題旁 | 固定 header 在捲動時遮住標題，點擊被攔截。代價：只影響版面偏好 |
@@ -241,6 +242,10 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | T8-fold | 訪客點愛心斷言沒有送出 POST；已收藏的行程載入即亮（`aria-pressed=true`）；搜尋頁點愛心後 URL 不變；eslint 未用的 catch 變數 3 處；移除未用 import；`api.js:781` 註解；無效 `:disabled` 樣式 | 理由與代價：未記 |
 | T9-I | `lock-order.md`「檢查結果」改為四處反向（補例外 A）、「已知缺口」的 NOWAIT 1.5 秒那句改寫、檔頭改成逐檔核對後的基準 | 雙審的 Important：文件寫三處、實際四處（opus、fable）；fable 另指出已知缺口過期與檔頭基準不一致。代價：未記 |
 | T9-fold | summary 在本次呼叫轉逾時時，回應的 `discount.type`／`summary.discount_price` 為 null（與 DB 一致）；新增「已付款訂單過期不清折扣欄位」的直接測試 | 一致性；代價：未記 |
+| T10-1 | 總覽的 base 是 `025556b`（merge-base），報告只用這一個 hash | 派工文字寫了另一個 commit，是**主對話的錯誤**；`git merge-base` 與 ledger 的 Task 0 BASE 都是 `025556b`。代價：初稿並列兩個候選，增加一輪更正 |
+| T10-2 | 計畫 Step 3 的「`down -v` 後連跑兩次」延到合併前執行 | 需要使用者執行 `docker compose down -v`。代價：目前的 CI 數字都是保留 volume 的單次執行，乾淨環境的結果待補 |
+| FW | 單一修正波：通知設定併發測試（8 執行緒、各自 session、Barrier 與 join 帶 timeout，新增 price-tracking 版）、`FavoriteHeart` 的 DELETE 404 視為已取消、折扣「無」的空泛斷言、`test_trade_cart` 加 timeout、smoke 收藏 `total ==`、`collection.js` 空列表 `total`；報告更正（兩方清單的聯集）、spec §12 第 17／18 點去重並補 T9-fold、P4 spec `:193` 補註、lock-order §11 測試清單、`computePayable` 讀取快照的說明 | 最終雙審：兩方都判定程式可合併；fable 要求合併前修 I-1（通知設定併發測試）與 I-2（報告事實錯誤），opus 也要求報告更正並要求 #27 修正或重裁。代價：未記 |
+| FW-2 | 其餘 27 條 deferred minor 留到 P6（列在附錄 B）；db-contract 殘留的過期引用留到 P6 | 範圍控制。代價：文件漂移多留一個階段 |
 
 **Task 9 的 mutation 紀錄（F23）**：補丁拿掉 `_assert_waits_on_cart_not_cart_item` 中 holder 的 `FOR UPDATE`（patch 存在 scratchpad `mutation.patch`）；`uv run pytest tests/test_trade_payment.py -k locks_cart_before_cart_item` → 3 failed（30.55s，10 秒輪詢逾時）；還原後 `git status --short` 只剩既有的 `?? .claude/`。
 
@@ -258,7 +263,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | 7 收藏後端 | Needs fixes（**C**：lock-order §11 缺重試、檔頭基準） | Needs fixes（C1 同＋重試次數與註解不符；**獨有 I1**：併發測試機率性；**獨有 I2**：詳情 `favorite_id` 只測 travel） | 程式本身兩方都判正確；修正輪 1（T7-C1、T7-I1、T7-I2） |
 | 8 收藏前端 | Approved（10 minor；實測 500 無 CORS 時仍顯示「伺服器錯誤」） | Needs fixes（**I-1**：主線注入 token；**I-2**：500 路徑未驗，只靠推論） | I-1 成立（T8-I1）；I-2 以 opus 的實測為準，fable 事後執行後撤回 CORS 主張（T8-I2） |
 | 9 P4 留下的項目 | Approved（1 Important：lock-order 說 3 處反向、實為 4 處） | spec 符合／Needs fixes（同一項＋**獨有**：已知缺口過期、檔頭基準不一致、cart.js 行號差 1） | fable 的「cart.js 行號差 1」經核對後撤回；其餘併入 T9-I；修正輪 1 |
-| 10 文件與報告 | 待審 | 待審 | Step 6 的 whole-branch 最終審查（三個 repo 的 `phase-5`）尚未執行 |
+| 10 文件與報告＋整條分支最終審查（三個 repo 的 `phase-5`） | 程式可合併，0 Critical／Important；報告有事實更正，且 #27（通知設定併發測試，只有 2 條執行緒）要修或重新裁決 | 合併前須修：I-1 通知設定併發測試（擋合併）、I-2 報告的事實錯誤；另在 `3d89477` 以保留 volume 重跑 `scripts/ci.sh`：957 passed、213.95s | 兩方都認為程式可合併；兩方合計 36 條 minor：1 條必修（ledger L109，即通知設定併發測試）、約 8 條已結案、其餘留 P6（Ruling FW-2）。單一修正波（Ruling FW）：通知設定併發測試改 8 執行緒並新增 price-tracking 版、愛心取消 404 視為已取消、折扣「無」斷言改精確比對、`test_trade_cart` 加 timeout、smoke `total ==`、`collection.js` 空列表 `total`，以及報告與文件更正 |
 
 **實作者自己的觀察（非 reviewer 或使用者的結論）**：兩位審查員的共同發現幾乎都是真實缺陷；單方獨有的項目中，fable 的多半成立（T5-I2、T7-I1、T7-I2、T8-I1），但也有一次主張經實測後被撤回（T8-I2，CORS）與一次行號主張被撤回（T9）。opus 在 Task 8 以實際執行的探測推翻 fable 未執行的推論。
 
@@ -271,8 +276,9 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 5. **計畫的行號與預期值過期**：計畫寫 alice 的 `auto_setting` 最終 id 是 `1111aaaa…`，實際被 `remap_ids` 換成 `d47d7d56-…`（Task 1）；計畫 Task 10 Step 2 的 `docs/db-contract.md` `:1339`、`:1537` 是起草基準的行號，後續 Task 已使文件位移，本次以內容定位。
 6. **實作者報告與事實不符，由審查或自查更正**：Task 8 初版報告沒有寫「主線 E2E 注入 token」，也誤寫「500 無 CORS 標頭時 axios 看到網路錯誤」（第 1 輪更正）；Task 7 初版報告把「10 次全紅」當成鑑別力證據（同一份報告自行更正為不是鑑別力證據）。
 7. **審查員之間的主張衝突**：Task 8 的 CORS 路徑（以實測裁決）、Task 9 的 cart.js 行號（核對後撤回）。
-8. **使用者介入點**：Task 1 的 `docker compose down -v`（使用者已執行）；Task 10 Step 3 的 `down -v` 與連跑兩次**尚未執行**；合併、tag、push 不在計畫內（Step 5）。
-9. **無法在環境內執行的檢查**：frontend 的 eslint 在 Task 5、Task 6 因本機未安裝套件而無法執行；Task 8 以 `docker compose exec -T frontend npx --no-install eslint` 對本次檔案執行，沒有新問題，並發現兩個既有錯誤（附錄 B.3）。
+8. **主對話的錯誤：總覽起點寫錯（Ruling T10-1）**：派工文字把總覽的 base 寫成另一個 commit；實際是 `025556b`，初稿因此並列兩個候選，最終審查後更正。
+9. **使用者介入點**：Task 1 的 `docker compose down -v`（使用者已執行）；Task 10 Step 3 的 `down -v` 與連跑兩次**待合併前執行**（Ruling T10-2）；合併、tag、push 不在計畫內（Step 5）。
+10. **無法在環境內執行的檢查**：frontend 的 eslint 在 Task 5、Task 6 因本機未安裝套件而無法執行；Task 8 以 `docker compose exec -T frontend npx --no-install eslint` 對本次檔案執行，沒有新問題，並發現兩個既有錯誤（附錄 B.3）。
 
 ## 3. 測試方法
 
@@ -283,9 +289,9 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | 層 | 檔案（passed 數；P5 新增檔標 ★） | 重點 |
 |---|---|---|
 | API 契約 | ★`tests/test_member_orders.py`（24）、★`tests/test_member_points.py`（11）、★`tests/test_member_notify.py`（26）、★`tests/test_member_favorites.py`（27）、★`tests/test_name_rule.py`（17）、`tests/test_member_auth.py`（86，含 R6 與 `test_point_records_hide_signup_zero_row`）、`tests/test_google_login.py`（30）、`tests/test_validator_sweep.py`（23；P4 結束時為 16）、`tests/test_validator_messages.py`（80） | 每支 API 的正常、驗證錯誤、非自己資源回 404、狀態碼；驗證訊息不洩漏參數名；姓名規則的 code point 邊界 |
-| 安全／越權 | `tests/test_member_orders.py`（非本人 404、未登入 401、admin 403）、`tests/test_member_favorites.py`（非本人刪除 404）、`tests/test_trade_payment.py`（49） | 契約 §4.2 (c) 的紅燈與回歸；擁有者條件寫在 SQL |
+| 安全／越權 | `tests/test_member_orders.py`（非本人 404、未登入 401、admin 403）、`tests/test_member_favorites.py`（非本人刪除 404）、`tests/test_member_points.py::test_point_records_other_user_not_visible`（點數紀錄看不到別人的） | 契約 §4.2 (c) 的紅燈與回歸；擁有者條件寫在 SQL |
 | DB 狀態 | `tests/test_migrations.py`（22；P4 為 19）、`tests/test_build_seed.py`（10）、`tests/test_seed.py`（31）、`tests/test_db_contract.py`（45）、`tests/test_views_a／b／c.py`（22／24／13）、`tests/test_trade_cart.py`（14；P4 為 13）、`tests/test_trade_checkout.py`（59；P4 為 54） | V6 三個約束真的擋得住重複；seed 的 `auto_setting` 一人一列；逾時／取消後折扣欄位為 NULL；`tour_*` function 的 `收藏編號` |
-| 併發與鎖 | `test_first_add_concurrently_creates_one_cart`、`test_patch_concurrent_first_write_one_row`、`test_concurrent_favorite_same_tour_returns_same_id`、`test_favorite_waits_on_uncommitted_insert_then_returns_same_id`，以及 P4 的鎖順序測試（改為輪詢） | 見 `docs/lock-order.md`「對應的測試」 |
+| 併發與鎖 | `tests/test_trade_payment.py`（49；notify 併發、鎖順序、簽章）、`test_first_add_concurrently_creates_one_cart`、`test_patch_concurrent_first_write_one_row`、`test_price_tracking_concurrent_first_write_one_row`、`test_concurrent_favorite_same_tour_returns_same_id`、`test_favorite_waits_on_uncommitted_insert_then_returns_same_id`，以及 P4 的鎖順序測試（改為輪詢） | 見 `docs/lock-order.md`「對應的測試」 |
 | E2E | ★`e2e/test_member_center.py`（13）、★`e2e/test_favorite_flow.py`（7）、`e2e/test_member_flow.py`（31）、`e2e/test_trade_flow.py`（21）、`e2e/test_product_flow.py`（42）；合計 114 | P5 主線（UI 登入 → 搜尋卡片愛心 → 收藏頁 → 付款 → 我的訂單 → 點數紀錄 → 取消收藏）、`?tab=`、繼續付款、逾時與處理中的訂單、負點數顯示 0、通知設定存檔後重新整理 |
 
 ### 3.2 值得一看的技巧
@@ -301,11 +307,12 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 
 | 次數 | passed | xfailed | skipped | pytest 耗時 | 牆鐘 | exit code |
 |---|---|---|---|---|---|---|
-| 本次實跑：`scripts/ci.sh`，**保留既有 volume**（基準：總覽 `8f30fd6`、backend `d3280ce`、frontend `9460d7a`；原始輸出 [task-10-ci.txt](evidence/phase-5/task-10-ci.txt)） | **957**（`tests/` 843＋`e2e/` 114） | 0 | 0 | 206.73s | 3m33s | 0 |
-| 計畫 Step 3：`down -v` 之後連跑兩次（第 2 次保留 volume） | **尚未執行**，待使用者執行 `docker compose down -v` | — | — | — | — | — |
+| 最終修正波之後的實跑：`scripts/ci.sh`，**保留既有 volume**（基準：總覽 `153f4ba`、backend `2f19285`、frontend `89b2282`；原始輸出 [task-10-ci.txt](evidence/phase-5/task-10-ci.txt)） | **959**（`tests/` 844＋`e2e/` 115） | 0 | 0 | 215.04s（3m35s；牆鐘未另計） | 未另計 | 0 |
+| 修正波之前（`3d89477`，同樣保留 volume；原始輸出見 [task-10-ci-before-fixwave.txt](evidence/phase-5/task-10-ci-before-fixwave.txt)） | 957（843＋114）；fable 重跑 957、213.95s | 0 | 0 | 206.73s | 3m33s | 0 |
+| 計畫 Step 3：`down -v` 之後連跑兩次（第 2 次保留 volume） | **待合併前執行**（Ruling T10-2），需使用者執行 `docker compose down -v`；數字之後由主對話補上 | — | — | — | — | — |
 | GitHub Actions `phase-5` 分支 run | 待 Step 5（尚未 push） | — | — | — | — | — |
 
-測試數量變化：**798 passed（P4 最終）→ 957 passed**，淨增 159 個。各 Task 結束時 ledger 記錄的 passed 數：Task 1：715（`tests/`，`down -v` 之後）、Task 2：741＋e2e 94、Task 3：765→768、Task 4：tests 768＋e2e 101→103、Task 5：888、Task 6：917、Task 7：834（tests）／941→945（全套）、Task 8：952、Task 9：842＋114→843＋114（957）、Task 10：957。
+測試數量變化：**798 passed（P4 最終）→ 959 passed**，淨增 161 個（修正波新增：通知設定 price-tracking 併發測試 1、愛心取消 404 的 E2E 1）。各 Task 結束時 ledger 記錄的 passed 數：Task 1：715（`tests/`，`down -v` 之後）、Task 2：741＋e2e 94、Task 3：765→768、Task 4：tests 768＋e2e 101→103、Task 5：888、Task 6：917、Task 7：834（tests）／941→945（全套）、Task 8：952、Task 9：842＋114→843＋114（957）、Task 10：957（修正波前）→ 959（修正波後）。
 
 ## 4. 操作指南
 
@@ -328,10 +335,10 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 
 > **未實測**：本節是依 e2e 測試與程式碼整理的操作說明，**這次沒有手動實跑**（P4 報告 §4.3 有手動實測；P5 初稿未做）。每個步驟列出覆蓋它的 e2e 測試，供審閱時對照。需要手動實跑時，請用自建帳號（email 以 `e2e-` 開頭、`@example.com` 結尾，下次 pytest 開頭會被 purge），不要用 seed 帳號。
 
-1. **登入後的入口**：Header 的會員選單（桌機）與手機選單，登入後才顯示「會員資訊、會員等級、個人偏好設定、個人訂單查看、收藏」與「購物車」（`e2e/test_member_center.py::test_header_links_open_tabs`）。
+1. **登入後的入口**：Header 的會員選單（桌機）與手機選單，桌機會員選單登入後才顯示「會員資訊、會員等級、個人偏好設定、個人訂單查看、收藏」（`e2e/test_member_center.py::test_header_links_open_tabs`）；手機選單的「購物車」連結未登入也看得到，登入後才多出會員連結。**手機選單的連結沒有 e2e 測試**（附錄 B.2）。
 2. **會員中心四個分頁**：網址 `#/admin/userprofile?tab=info|level|preference|orders`，對應「會員資訊／會員等級／個人偏好設定／個人訂單查看」；未知或缺少的 `tab` 回到 `info`（含 `constructor`、`__proto__`）。側欄切換用 `router.replace`，不留瀏覽紀錄（計畫明定）。覆蓋：`test_profile_tab_from_query`、`test_admin_automatic_redirects_to_preference_tab`。
-3. **會員等級分頁**：顯示等級、點數餘額（負數顯示 0）、可用優惠券、購物回饋比例（前端寫死 10%，見附錄 B）與點數紀錄（購物回饋、點數折抵、退款收回回饋、退款退回折抵；新註冊會員的 `+0` 紀錄不顯示）。覆蓋：`test_level_tab_shows_points_and_records`、`test_level_tab_negative_points_shows_zero`。
-4. **個人偏好設定分頁（通知設定）**：「旅遊提醒」開關；「價格追蹤」開啟時選國家、地區（下拉來自上架行程）與預算上限；存檔後重新整理設定仍在。覆蓋：`e2e/test_member_center.py::test_notify_settings_persist_after_reload`、`test_delisted_saved_region_shown_with_note`。
+3. **會員等級分頁**：顯示等級、點數餘額（負數顯示 0）、可用優惠券、購物回饋比例（前端寫死 10%，見附錄 B）與點數紀錄（購物回饋、點數折抵、退款收回回饋、退款退還折抵；新註冊會員的 `+0` 紀錄不顯示）。覆蓋：`test_level_tab_shows_points_and_records`、`test_level_tab_negative_points_shows_zero`。
+4. **個人偏好設定分頁（通知設定）**：「出發前提醒」開關；「價格追蹤」開啟時選國家、地區（下拉來自上架行程）與預算上限；存檔後重新整理設定仍在。覆蓋：`e2e/test_member_center.py::test_notify_settings_persist_after_reload`、`test_delisted_saved_region_shown_with_note`。
 5. **個人訂單查看**：列表（每頁 10 筆）顯示全部狀態；點開看明細；待付款且未逾時的訂單有「繼續付款」，導到 P4 的結帳頁；付款處理中的訂單顯示「付款處理中」且沒有「繼續付款」。覆蓋：`test_orders_tab_lists_paid_order_with_detail`、`test_orders_paging_uses_limit_10`、`test_continue_payment_goes_to_pay_page`、`test_overdue_pending_order_has_no_continue_button`、`test_orders_tab_empty`。
 6. **收藏**：搜尋結果卡片、行程頁（價格旁）與首頁的愛心可以收藏／取消（訪客點愛心不會送出請求）；`#/admin/collect` 的收藏頁列出收藏（最新 100 筆）、可取消、可點進行程頁，已下架的行程有標籤。覆蓋：`e2e/test_favorite_flow.py::test_p5_main_flow`（走 UI 登入）、`test_tour_page_heart_toggles`、`test_guest_heart_goes_to_login`、`test_unlisted_favorite_is_marked_and_removable`、`test_collect_page_empty`。
 7. **姓名**：註冊、會員資料、結帳收件人都是 2–20 個字（去頭尾空白後，允許空白與符號，拒絕控制字元）。覆蓋：`e2e/test_member_flow.py::test_register_name_too_long_shows_message`、`test_profile_name_too_long_shows_message`、`test_pay_name_too_long_blocked`。
@@ -340,7 +347,7 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 
 ### A. 變更檔案清單
 
-統計基準（as of 總覽 `8f30fd6`、backend `d3280ce`、frontend `9460d7a`；總覽數字以 `git diff --shortstat 025556b..8f30fd6` 計算，**不含**本報告所在的 commit 與其中的 evidence、文件修改）：總覽 `025556b..8f30fd6`（49 個檔案，+6751／−128，含 18 個 evidence 檔與文件）、backend `main..phase-5`（36 個檔案，+771／−439，9 個 commit）、frontend `dev..phase-5`（12 個檔案，+917／−65，8 個 commit）。總覽 repo 另有 28 個 commit（`025556b..8f30fd6`）。若改以派工給的 `ea2be00` 為起點：`ea2be00..8f30fd6` 為 30 個 commit、51 個檔案、+6844／−175（多出的是計畫與 P5 spec 的修訂）。以下略去 evidence 檔案（`docs/reports/evidence/phase-5/`）。
+統計基準（as of 總覽 `153f4ba`、backend `2f19285`、frontend `89b2282`；總覽數字以 `git diff --shortstat 025556b..153f4ba` 計算，**不含**本報告更正所在的 commit 之後的修改）：總覽 `025556b..153f4ba`（30 個 commit、55 個檔案，+8347／−168，含 21 個 evidence 檔、報告初稿 `3d89477` 與最終修正波的測試）、backend `main..phase-5`（36 個檔案，+771／−439，10 個 commit）、frontend `dev..phase-5`（12 個檔案，+923／−65，9 個 commit）。以下略去 evidence 檔案（`docs/reports/evidence/phase-5/`）。
 
 **backend**（`github.com/nohungry/tripeasy-backend`，`main..phase-5`）
 - 新增：`migrations/V6__p5_member_center.sql`、`src/controllers/{orders,points}.js`、`src/middlewares/{orders,points}/index.js`、`src/routes/{orders,points}.js`、`src/utils/{nameRule,orderStatus}.js`、`src/utils/Validator/{orders_Validator,paging_Validator}.js`
@@ -351,11 +358,11 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 - 刪除：`src/views/admin/manage/automaticSetting.vue`（空頁，路由改 redirect）
 - 修改：`src/components/HeaderComponent.vue`、`src/router/index.js`、`src/utils/{api,function}.js`、`src/views/HomeView.vue`、`src/views/admin/{collectPage,userprofilePage}.vue`、`src/views/front/{pay,searchPage,tourPage}.vue`
 
-**總覽 repo**（`025556b..8f30fd6`；另加本次 Task 10 的文件修改）
+**總覽 repo**（`025556b..153f4ba`；另加最終修正波之後的文件修改）
 - 測試新增：`tests/test_member_{orders,points,notify,favorites}.py`、`tests/test_name_rule.py`、`e2e/test_member_center.py`、`e2e/test_favorite_flow.py`
 - 測試修改：`tests/{conftest,db_contract,test_api_smoke,test_async_errors,test_build_seed,test_google_login,test_member_auth,test_migrations,test_seed,test_trade_cart,test_trade_checkout,test_trade_payment,test_trade_refund,test_validator_messages,test_validator_sweep,test_views_a}.py`、`e2e/{conftest,test_member_flow}.py`
 - Seed／設定：`db/seed-build/build_seed.py`（`merge_duplicate_auto_settings`）、`db/seed/R__seed.sql`、`refs.env`
-- 文件：`docs/db-contract.md`、`docs/lock-order.md`、`docs/superpowers/specs/2026-11-24-p4-trade-design.md`（刪註解編號對照）、`docs/superpowers/specs/2026-11-26-p5-member-center-design.md`（§12 補第 18 點）、`README.md`（版本對照表）、本報告（計畫檔 `docs/superpowers/plans/2026-11-26-p5-member-center.md` 與 spec §12 第 1–17 點在 `ea2be00` 之後、`025556b` 之前的兩個 commit，不在 `025556b..8f30fd6` 的範圍內）
+- 文件：`docs/db-contract.md`、`docs/lock-order.md`、`docs/superpowers/specs/2026-11-24-p4-trade-design.md`（刪註解編號對照）、`docs/superpowers/specs/2026-11-26-p5-member-center-design.md`（§12 補第 18 點）、`README.md`（版本對照表）、本報告（計畫檔 `docs/superpowers/plans/2026-11-26-p5-member-center.md` 與 spec §12 的前段在 `025556b` 之前就已在 `main`，不在 `025556b..153f4ba` 的範圍內）
 
 ### B. 已知限制與待辦
 
@@ -381,6 +388,8 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 
 **B.2 ledger 的 `minor (deferred)`，依類別整理（建議處理時機標在最後）**
 
+**已結案**：最終審查把兩方的 36 條 minor 整理成清單（編號 #8、#19、#21、#29 前半、#32 與 ledger L109 已在 Task 10 或最終修正波結案），內容包括：通知設定併發測試補強（L109，唯一必修項）、收藏 DELETE 404 視為已移除（`FavoriteHeart`／`collectPage` 共用的 `delete_favorite`）、訂單折扣「無」斷言改用 testid 精確比對、`test_trade_cart` 的 barrier／join timeout、smoke 收藏 `total ==`、`collection.js` 空列表 `total` 用查到的值、lock-order §11 測試清單補決定性測試、P4 spec `:193` 補註、spec §12 第 17／18 點去重並補 T9-fold、db-contract 被點名的行號與敘述。以下**其餘 27 條依 Ruling FW-2 全部留到 P6**（db-contract 殘留的過期引用也是；代價：文件漂移多留一個階段）。另補一條：會員端讀取（訂單列表／明細）中，`computePayable(pool, …)` 內的多條 `pool.query` 不在同一個快照裡，結果只用於顯示，不影響寫入路徑，留 P6。
+
 *交易／資料*
 - `cart.js:34` 在 INSERT 與 SELECT 之間 cart 被刪的話 `rows[0]` 為 undefined（目前沒有刪除路徑）（T1）→ P6 若加刪除路徑時處理。
 - V6 的去重與預檢 SQL 沒有被任何測試執行過（fable 手動模擬過）（T1）→ P6 或下次 migration 前補。
@@ -389,16 +398,15 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 - 列表的 `COUNT(*)` 與資料／`payments[]` 是不同語句、不同快照；`ORDER BY created_at` 沒有 tie-break；`first_item` 可能為 null（T3、T5、T7）→ P6（後台訂單管理）時一併處理。
 - 通知設定：關閉狀態下 null／`''` 欄位會 400；先讀後 upsert 的競態（無害）；`updated_at` 與 trigger 重複；儲存順序可能先送價格（T6）。
 - NULL 與 `'none'` 兩種「無折扣」表示法並存（T9）→ P6。
-- 收藏 DELETE 404 後前端留著舊 id（應視為已移除）（T8）。
 - 取消路徑的點數釋放沒有測試（T9）。
 - `userinfo.js` 的 Google 登入 `FOR UPDATE` 會員列、`admin.js:274` 解除優惠券綁定可刪掉被保留的券、checkout 讀 `cart_item` 不加鎖等 P4 B.4 項目沿用，P5 沒有處理（→ P6）。
 
 *測試穩定度與品質*
-- 通知設定的併發測試只有 2 條執行緒（鑑別力約 60%）、只涵蓋早期提醒端點、共用 Session；應改 8 條執行緒＋barrier timeout（T6）→ 建議 P6 前補強。
-- `test_trade_cart` 的併發測試沒有 join／barrier timeout，import 在函式內（T1）。
-- 收藏測試：「single response」不是決定性測試、smoke 的 `total >=` 應為 `==`、cap 測試只比對頭尾、跨使用者搜尋的 `favorite_id` null 未測、`test_async_errors` 依賴購物車的 NUL 缺口、`lang` 400 只被 sweep 涵蓋、lock-wait 測試的 `pool.shutdown(wait=False)`／`Api` 未關閉／以 `LIKE` 比對 SQL 文字／匯入私有 `_db_params`（T7）。
+- 通知設定的併發測試（T6 原本只有 2 條執行緒、鑑別力約 60%）：**已在最終修正波補強**，改為 8 條執行緒、各自 session、Barrier／join 帶 timeout，並新增 price-tracking 端點版；mutation（改回先查再寫）各跑 10 次，早期提醒 9／10 紅、price-tracking 8／10 紅（[task-10-notify-mutant.txt](evidence/phase-5/task-10-notify-mutant.txt)），還原後 10 次全綠。
+- `test_trade_cart` 的併發測試 import 在函式內（T1；barrier／join 的 timeout 已在最終修正波補上）。
+- 收藏測試：「single response」不是決定性測試、cap 測試只比對頭尾、跨使用者搜尋的 `favorite_id` null 未測、`test_async_errors` 依賴購物車的 NUL 缺口、`lang` 400 只被 sweep 涵蓋、lock-wait 測試的 `pool.shutdown(wait=False)`／`Api` 未關閉／以 `LIKE` 比對 SQL 文字／匯入私有 `_db_params`（T7）。
 - 點數紀錄：優惠券列表顯示未測、Api session 沒關（應匯出 `api` fixture）、`points.paging` sweep target 與 `paging` 重複（計畫規定）、`:key=index`、`limit=10` 沒有 E2E、`1ce1786` 訊息缺標示（T5）。
-- 訂單：付款期限文字、手機連結、`tab=info` 連結、`first_item` null 文字、orders 401 導回都未測；`to_contain_text("無")` 空泛（會匹配「尚無付款紀錄」），真正的守門是 `not_to_contain("none")`，應改用 testid 或精確比對；coupon 明細測試 teardown 沒有還原券狀態（T4）。
+- 訂單：付款期限文字、手機連結、`tab=info` 連結、`first_item` null 文字、orders 401 導回都未測；coupon 明細測試 teardown 沒有還原券狀態（T4）。
 - Task 4 的 E2E 從 `test_trade_flow.py` 匯入私有 helper，應移到 conftest；`wait_for_url` 預設等 load（與既有一致）（T4）。
 - 通知設定 E2E：reload 只等設定、沒等地區；下架地區重存沒有 DB 斷言；缺「國家上架、地區下架」案例；固定的 `p5land`／`p5city`（T6）。
 - Task 2：碼位鑑別力弱（註冊 10／21 emoji 與 Google 長名 E2E 用 BMP 字元，應改 `"😀"*20/25`）；sweep 的 collect 略過整個陣列（應遞迴進元素）且 de66d10 把測試 harness 的改動放在 `docs:` commit；回歸註解不精確；email 前段超過 20 字的截斷未測；1 字下限只在會員資料測；測試耦合（私有 helper、寫死「P0 測試」、sweep 的切片終止字串）；未使用的 import；未去頭尾空白的值在重新載入前仍顯示（T2）。
@@ -425,9 +433,9 @@ seed 帳號（密碼 `Tripeasy123`）：`alice@example.com`（`User`）、`bob@e
 1. P6（後台訂單管理）：手動取消、逾時訂單排程、NULL／`'none'` 兩種「無折扣」表示法統一、列表快照一致性、`admin.js:274` 刪除被保留的券。
 2. P6（後台會員管理）：等級升級規則與回饋比例輸出（取代前端寫死 10%）。
 3. P6（價格追蹤排程）：通知實際寄送；中英地區對照（P3 N5）；重新評估 ILIKE vs 等值。
-4. 下一個有機會動測試的階段：通知設定併發測試補強、鎖等待測試的 helper 統一（輪詢＋逾時）、E2E private helper 移進 conftest。
+4. 下一個有機會動測試的階段：鎖等待測試的 helper 統一（輪詢＋逾時）、E2E private helper 移進 conftest（通知設定併發測試已在最終修正波補強）。
 5. P7：保持 backend `TZ=UTC`（P4 R6，沿用）、真實藍新測試商店（P4 B.4a，沿用）。
-6. 任何時候都可以做的小項：eslint 兩個既有錯誤（`api.js:218`、`:657`）、前端載入失敗的重試、`first_item` 為 null 的顯示、收藏 DELETE 404 視為已移除。
+6. 任何時候都可以做的小項：eslint 兩個既有錯誤（`api.js:218`、`:657`）、前端載入失敗的重試、`first_item` 為 null 的顯示。
 
 **B.4 上鎖順序**
 各交易路徑的標準鎖順序、`file:line` 與對應測試見 `docs/lock-order.md`。P5 新增：§9 cart 的 `ON CONFLICT`、§10 通知設定 upsert、§11 收藏新增與刪除（含重試迴圈）、例外 A 的第四處（`clearOrderDiscount`）。
