@@ -1,6 +1,6 @@
 # TripEasy 交易上鎖順序
 
-核對基準：backend `0e3b192`（`git -C backend rev-parse --short HEAD`）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
+核對基準：backend `0e3b192`；`utils/trade.js` 的行號以 backend `46c3d2b` 為準（P5 Task 3 抽出 `paymentInProgressSql` 後 +16），`controllers/userinfo.js` 的行號以 `ba08ec7` 為準（P5 Task 2 +1）。其餘（`git -C backend rev-parse --short HEAD`）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
 
 ## 規範順序（P4 計畫 GC14，具約束力）
 

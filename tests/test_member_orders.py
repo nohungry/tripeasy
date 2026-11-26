@@ -53,8 +53,8 @@ def test_orders_list_all_statuses(api, db, make_user, make_tour, make_order):
         make_order(user, tour["tour_id"], payment_status=status)
     data = listed(api, user, limit=50)
     assert data["total"] == 6
-    assert {o["status_label"] for o in data["data"]} == {"待付款", "已付款", "已取消", "已退款", "已逾時"}
-    assert {o["payment_status"] for o in data["data"]} == {-1, 0, 1, 2, 3, 4}
+    labels = {o["payment_status"]: o["status_label"] for o in data["data"]}
+    assert labels == {-1: "待付款", 0: "待付款", 1: "已付款", 2: "已取消", 3: "已退款", 4: "已逾時"}
 
 
 def test_orders_list_item_fields(api, db, make_user, make_tour, make_order):
@@ -117,6 +117,26 @@ def test_orders_payable_from_compute_payable(api, db, make_user, make_tour, make
     db.execute("UPDATE orders SET discount_price = 1 WHERE order_id = %s", (order_id,))
     assert row_of(api, user, order_id)["payable"] == 1700
     assert detail(api, user, order_id).json()["data"]["money"]["payable"] == 1700
+
+
+def test_refunded_order_payable_is_amount_charged(api, db, make_user, make_tour, make_coupon):
+    """回歸測試（computePayable 的 REFUNDED 分支）：已退款訂單的 payable 取成功付款的實付額。"""
+    admin, user = make_user(role="admin"), make_user()
+    coupon = make_coupon(user, discount=100)
+    tour = live_promotion(db, make_tour)
+    user, order_id = ready_order(
+        api, db, make_user, make_tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]}, user=user, tour=tour, people=2
+    )  # fmt: skip
+    mon, amt, _ = start_payment(api, user, order_id)
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    r = api.post(f"/api/v1/admin/orders/{order_id}/refund", headers=auth_header(admin), timeout=10)
+    assert r.status_code == 200, r.text
+    charged = db.execute(
+        "SELECT discount_price FROM payment WHERE order_id = %s AND payment_status = 1", (order_id,)
+    ).fetchone()[0]
+    o = row_of(api, user, order_id)
+    assert o["status_label"] == "已退款"
+    assert o["payable"] == charged == 1700
 
 
 # ------------------------------------------------------------------ 期限與進行中
@@ -258,6 +278,18 @@ def test_orders_admin_is_403(api, make_user):
         r = api.get(url, headers=auth_header(admin))
         assert r.status_code == 403
         assert r.json()["message"] == "您沒有權限進行此操作"
+
+
+def test_order_detail_without_token_is_401(api):
+    r = api.get(f"{ORDERS}/{uuid.uuid4()}")
+    assert r.status_code == 401
+    assert r.json()["message"] == "請先登入"
+
+
+def test_own_unknown_order_detail_is_404(api, make_user):
+    r = detail(api, make_user(), str(uuid.uuid4()))
+    assert r.status_code == 404
+    assert r.json()["message"] == NOT_FOUND
 
 
 def test_order_detail_bad_uuid_is_400(api, make_user):
