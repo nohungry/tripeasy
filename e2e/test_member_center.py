@@ -60,7 +60,7 @@ def test_orders_tab_lists_paid_order_with_detail(page: Page, db, make_user, make
     rows.first.get_by_role("button", name="明細").click()
     expect(page.get_by_test_id("order-detail")).to_contain_text(tour["title"])
     # 沒有折扣：顯示「無」，不可露出 discount_type 的原始值 none
-    expect(page.get_by_test_id("order-detail")).to_contain_text("無")
+    expect(page.get_by_test_id("order-discount")).to_have_text("無")
     expect(page.get_by_test_id("order-detail")).not_to_contain_text("none")
 
 

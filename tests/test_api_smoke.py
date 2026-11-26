@@ -365,7 +365,7 @@ def test_favorite_list(api, alice_h, alice):
     # P5 Task 7：只回應一次、不分頁，回 {data, total}
     r = api.get(f"{BASE}/user/collection/info/all", headers=alice_h)
     rows = data_rows(r)
-    assert r.json()["data"]["total"] >= len(rows)
+    assert r.json()["data"]["total"] == len(rows)
     assert_has_keys(rows[0], contract_cols("user_favorite", replace_preference=True))
     assert {row["收藏人員編號"] for row in rows} == {alice["user_id"]}
 

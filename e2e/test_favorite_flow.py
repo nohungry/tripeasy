@@ -177,6 +177,27 @@ def test_heart_reverts_on_failure(page: Page, db, make_user, make_tour):
     assert _db_favorites(db, user) == 0
 
 
+def test_heart_delete_404_is_treated_as_removed(page: Page, db, make_user, make_tour):
+    """收藏在別處（另一個分頁、DB）已被刪掉：再點愛心取消，DELETE 回 404，
+    畫面視為已取消收藏，不出現錯誤框。"""
+    user = make_user()
+    start, end = _tour_dates()
+    tour = make_tour(price=1000, start_date=start, end_date=end)
+    _login(page, user)
+    _open(page, f"#/tour/{tour['tour_id']}")
+    heart = page.get_by_test_id("favorite-heart")
+    with page.expect_response(_is_collection("POST")):
+        heart.click()
+    expect(heart).to_have_attribute("aria-pressed", "true")
+    db.execute("DELETE FROM favorite WHERE user_id = %s", (user["user_id"],))
+    with page.expect_response(_is_collection("DELETE")) as resp:
+        heart.click()
+    assert resp.value.status == 404
+    expect(heart).to_have_attribute("aria-pressed", "false")
+    expect(page.locator(".swal2-popup")).to_have_count(0)
+    assert _db_favorites(db, user) == 0
+
+
 def test_unlisted_favorite_is_marked_and_removable(page: Page, db, make_user, make_tour):
     user = make_user()
     start, end = _tour_dates()

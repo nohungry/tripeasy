@@ -1,0 +1,6 @@
+E     - waiting for get_by_test_id("favorite-heart")
+E       14 × locator resolved to <button type="button" aria-label="取消收藏" data-v-2428700b="" data-v-52abf5fe="" aria-pressed="true" data-testid="favorite-heart" class="favorite-heart ms-3 align-middle">…</button>
+E          - unexpected value "true"
+=========================== short test summary info ============================
+FAILED e2e/test_favorite_flow.py::test_heart_delete_404_is_treated_as_removed[chromium]
+1 failed, 7 deselected in 6.27s

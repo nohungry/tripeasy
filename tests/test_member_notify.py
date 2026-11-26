@@ -1,9 +1,10 @@
 """P5 Task 6：通知設定（GET /allnotifi-settings、PATCH /notifi-settings、PATCH /price-tracking、GET /regions）。"""
+import collections
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from conftest import auth_header
+from conftest import API_BASE, Api, auth_header
 from dbfactory import insert
 
 BASE = "/api/v1/user/automation"
@@ -77,18 +78,36 @@ def test_patch_price_upsert_keeps_early(api, db, make_user):
     assert rows(db, user) == [(1, 1, "Japan", "Tokyo", 30000.0)]
 
 
-def test_patch_concurrent_first_write_one_row(api, db, make_user):
+def _concurrent_first_write(db, make_user, url, body, check_row):
+    """8 條執行緒、各自 session、Barrier 帶 timeout：同一會員第一次寫入同時到。
+    舊寫法（先查再 INSERT）會讓輸的請求撞 UNIQUE 回 500。"""
     user = make_user()
-    barrier = threading.Barrier(2)
+    n = 8
+    barrier = threading.Barrier(n, timeout=10)
+    headers = auth_header(user)
 
     def hit(_):
-        barrier.wait()
-        return api.patch(EARLY, headers=auth_header(user), json={"notifi_settings_enabled": True})
+        session = Api(API_BASE)
+        try:
+            barrier.wait()
+            return session.patch(url, headers=headers, json=body)
+        finally:
+            session.close()
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(hit, range(2)))
-    assert [r.status_code for r in results] == [200, 200], [r.text for r in results]
-    assert rows(db, user) == [(1, 0, None, None, None)]
+    with ThreadPoolExecutor(max_workers=n) as pool:
+        futures = [pool.submit(hit, i) for i in range(n)]
+        results = [f.result(timeout=30) for f in futures]
+    codes = [r.status_code for r in results]
+    assert set(codes) == {200}, (collections.Counter(codes), [r.text for r in results if r.status_code != 200])
+    assert rows(db, user) == [check_row]
+
+
+def test_patch_concurrent_first_write_one_row(db, make_user):
+    _concurrent_first_write(db, make_user, EARLY, {"notifi_settings_enabled": True}, (1, 0, None, None, None))
+
+
+def test_price_tracking_concurrent_first_write_one_row(db, make_user):
+    _concurrent_first_write(db, make_user, PRICE, price_body(), (0, 1, "Japan", "Tokyo", 30000.0))
 
 
 def test_alice_like_row_resave_unchanged_is_200(api, db, make_user):

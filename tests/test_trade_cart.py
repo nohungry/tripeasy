@@ -189,7 +189,7 @@ def test_first_add_concurrently_creates_one_cart(api, db, make_user, make_tour):
 
     user = make_user()
     tours = [make_tour(), make_tour()]
-    barrier = threading.Barrier(2)
+    barrier = threading.Barrier(2, timeout=10)
     results = [None, None]
 
     def run(i):
@@ -200,7 +200,8 @@ def test_first_add_concurrently_creates_one_cart(api, db, make_user, make_tour):
     for t in threads:
         t.start()
     for t in threads:
-        t.join()
+        t.join(timeout=30)
+    assert not any(t.is_alive() for t in threads), "執行緒逾時未結束"
     assert results == [201, 201], results
     assert db.execute("SELECT count(*) FROM cart WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == 1
     assert db.execute(
