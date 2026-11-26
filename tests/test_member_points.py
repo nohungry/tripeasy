@@ -31,7 +31,7 @@ def test_point_records_reasons_and_order(api, db, make_user, make_order, make_to
     add(db, user, "退款收回", -170, 3, oid)
     add(db, user, "退款退回", 100, 2, oid)
     add(db, user, "其他類型", 5, 1)
-    data = records(api, user)
+    data = records(api, user, limit=10)
     assert data["total"] == 5
     assert [(r["type"], r["point"], r["reason"]) for r in data["data"]] == [
         ("其他類型", 5, "其他類型"),
