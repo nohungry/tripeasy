@@ -1,0 +1,660 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 197 items
+
+tests/test_member_points.py::test_point_records_reasons_and_order FAILED [  0%]
+tests/test_member_points.py::test_point_records_hide_pending_deduction FAILED [  1%]
+tests/test_member_points.py::test_point_records_paging FAILED            [  1%]
+tests/test_member_points.py::test_point_records_default_limit_is_4 FAILED [  2%]
+tests/test_member_points.py::test_point_records_empty FAILED             [  2%]
+tests/test_member_points.py::test_point_records_other_user_not_visible FAILED [  3%]
+tests/test_member_points.py::test_point_records_without_token_is_401 FAILED [  3%]
+tests/test_member_points.py::test_point_records_admin_is_403 FAILED      [  4%]
+tests/test_member_points.py::test_point_records_limit_over_50_is_400 FAILED [  4%]
+tests/test_member_points.py::test_pointslevel_negative_shows_zero FAILED [  5%]
+tests/test_member_points.py::test_pointslevel_without_coupon_is_empty_list FAILED [  5%]
+tests/test_member_auth.py::test_change_role_requires_admin PASSED        [  6%]
+tests/test_member_auth.py::test_change_role_by_admin PASSED              [  6%]
+tests/test_member_auth.py::test_user_fk_tables_list_is_complete PASSED   [  7%]
+tests/test_member_auth.py::test_delete_user_clears_all_fk_tables PASSED  [  7%]
+tests/test_member_auth.py::test_signup_normalizes_email PASSED           [  8%]
+tests/test_member_auth.py::test_signup_duplicate_differs_by_case_is_409 PASSED [  8%]
+tests/test_member_auth.py::test_signup_concurrent_same_email_only_one_succeeds PASSED [  9%]
+tests/test_member_auth.py::test_login_email_is_case_insensitive PASSED   [  9%]
+tests/test_member_auth.py::test_login_lowercase_matches_mixed_case_stored_email PASSED [ 10%]
+tests/test_member_auth.py::test_forgetpw_matches_mixed_case_stored_email PASSED [ 10%]
+tests/test_member_auth.py::test_signup_lowercase_conflicts_with_mixed_case_stored_email PASSED [ 11%]
+tests/test_member_auth.py::test_signup_validation_errors[bad-email] PASSED [ 11%]
+tests/test_member_auth.py::test_signup_validation_errors[bad-password] PASSED [ 12%]
+tests/test_member_auth.py::test_signup_validation_errors[name-too-long] PASSED [ 12%]
+tests/test_member_auth.py::test_signup_validation_errors[preference-too-few] PASSED [ 13%]
+tests/test_member_auth.py::test_signup_validation_errors[missing-password] PASSED [ 13%]
+tests/test_member_auth.py::test_signup_unknown_preference_is_409 PASSED  [ 14%]
+tests/test_member_auth.py::test_login_email_validation_errors[bad-email] PASSED [ 14%]
+tests/test_member_auth.py::test_login_email_validation_errors[missing-password] PASSED [ 15%]
+tests/test_member_auth.py::test_login_unknown_email_is_404 PASSED        [ 15%]
+tests/test_member_auth.py::test_login_wrong_password_is_401 PASSED       [ 16%]
+tests/test_member_auth.py::test_forgetpw_validation_and_unknown_email PASSED [ 16%]
+tests/test_member_auth.py::test_checkout_preview_email_lookup_is_case_insensitive PASSED [ 17%]
+tests/test_member_auth.py::test_login_null_password_is_rejected_without_lock PASSED [ 17%]
+tests/test_member_auth.py::test_profile_change_password_null_password PASSED [ 18%]
+tests/test_member_auth.py::test_member_apis_require_login[GET-/api/v1/user/userinfo/info] PASSED [ 18%]
+tests/test_member_auth.py::test_member_apis_require_login[PATCH-/api/v1/user/userinfo/info] PASSED [ 19%]
+tests/test_member_auth.py::test_member_apis_require_login[PATCH-/api/v1/user/userinfo/avatar] PASSED [ 19%]
+tests/test_member_auth.py::test_member_apis_require_login[GET-/api/v1/user/userinfo/pointslevel] PASSED [ 20%]
+tests/test_member_auth.py::test_member_apis_require_login[PATCH-/api/v1/auth/userinfo/resetprofilepw] PASSED [ 20%]
+tests/test_member_auth.py::test_member_apis_require_login[GET-/api/v1/auth/userinfo/login/status] PASSED [ 21%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[GET-/api/v1/user/userinfo/info] PASSED [ 21%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[PATCH-/api/v1/user/userinfo/info] PASSED [ 22%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[PATCH-/api/v1/user/userinfo/avatar] PASSED [ 22%]
+tests/test_member_auth.py::test_user_only_apis_reject_admin_role[GET-/api/v1/user/userinfo/pointslevel] PASSED [ 23%]
+tests/test_member_auth.py::test_get_profile_info_ok PASSED               [ 23%]
+tests/test_member_auth.py::test_patch_profile_info_ok_and_validation PASSED [ 24%]
+tests/test_member_auth.py::test_avatar_upload_validation PASSED          [ 24%]
+tests/test_member_auth.py::test_profile_change_password_validation PASSED [ 25%]
+tests/test_member_auth.py::test_login_response_has_avatar_url PASSED     [ 25%]
+tests/test_member_auth.py::test_patch_profile_info_name_only PASSED      [ 26%]
+tests/test_member_auth.py::test_patch_profile_info_preference_only PASSED [ 26%]
+tests/test_member_auth.py::test_patch_profile_info_releases_db_connection PASSED [ 27%]
+tests/test_member_auth.py::test_reset_token_cannot_access_member_api[/api/v1/user/userinfo/info] PASSED [ 27%]
+tests/test_member_auth.py::test_reset_token_cannot_access_member_api[/api/v1/auth/userinfo/login/status] PASSED [ 28%]
+tests/test_member_auth.py::test_reset_token_cannot_access_member_api[/api/v1/user/home/search/products] PASSED [ 28%]
+tests/test_member_auth.py::test_reset_link_shape PASSED                  [ 29%]
+tests/test_member_auth.py::test_login_token_cannot_reset_password PASSED [ 29%]
+tests/test_member_auth.py::test_reset_password_old_password_rejected PASSED [ 30%]
+tests/test_member_auth.py::test_reset_token_is_single_use PASSED         [ 30%]
+tests/test_member_auth.py::test_old_login_token_invalid_after_reset PASSED [ 31%]
+tests/test_member_auth.py::test_old_login_token_invalid_after_profile_change PASSED [ 31%]
+tests/test_member_auth.py::test_expired_login_token_is_401 PASSED        [ 32%]
+tests/test_member_auth.py::test_resetpw_validation_and_invalid_token PASSED [ 32%]
+tests/test_member_auth.py::test_forged_token_without_pwv_is_401 PASSED   [ 33%]
+tests/test_member_auth.py::test_token_of_deleted_user_is_401 PASSED      [ 34%]
+tests/test_member_auth.py::test_null_password_user_can_set_password_via_reset PASSED [ 34%]
+tests/test_member_auth.py::test_auth_not_mandatory_without_header_is_not_401 PASSED [ 35%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-reset] PASSED [ 35%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-legacy] PASSED [ 36%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-wrong_pwv] PASSED [ 36%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-missing_pwv] PASSED [ 37%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/userinfo/info-alg_none] PASSED [ 37%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-reset] PASSED [ 38%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-legacy] PASSED [ 38%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-wrong_pwv] PASSED [ 39%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-missing_pwv] PASSED [ 39%]
+tests/test_member_auth.py::test_invalid_tokens_are_401[/api/v1/user/home/search/products-alg_none] PASSED [ 40%]
+tests/test_member_auth.py::test_demoted_admin_old_token_loses_admin PASSED [ 40%]
+tests/test_member_auth.py::test_change_role_to_user_keeps_member_access PASSED [ 41%]
+tests/test_member_auth.py::test_captcha_cookie_is_not_plaintext PASSED   [ 41%]
+tests/test_member_auth.py::test_forged_plaintext_captcha_cookie_rejected PASSED [ 42%]
+tests/test_member_auth.py::test_signed_captcha_cookie_accepted PASSED    [ 42%]
+tests/test_member_auth.py::test_expired_captcha_cookie_rejected PASSED   [ 43%]
+tests/test_member_auth.py::test_captcha_cookie_attributes_from_env PASSED [ 43%]
+tests/test_member_auth.py::test_reset_token_concurrent_use_only_one_succeeds[bcrypt_password] PASSED [ 44%]
+tests/test_member_auth.py::test_reset_token_concurrent_use_only_one_succeeds[null_password] PASSED [ 44%]
+tests/test_member_auth.py::test_resetpw_success_clears_captcha_cookie PASSED [ 45%]
+tests/test_member_auth.py::test_valid_signature_wrong_answer_rejected PASSED [ 45%]
+tests/test_member_auth.py::test_missing_captcha_cookie_is_expired PASSED [ 46%]
+tests/test_member_auth.py::test_tampered_expiry_captcha_cookie_rejected PASSED [ 46%]
+tests/test_member_auth.py::test_non_string_captcha_input_is_400[number] PASSED [ 47%]
+tests/test_member_auth.py::test_non_string_captcha_input_is_400[array] PASSED [ 47%]
+tests/test_member_auth.py::test_point_records_hide_signup_zero_row FAILED [ 48%]
+tests/test_member_auth.py::test_login_email_negative_points_returns_zero FAILED [ 48%]
+tests/test_member_auth.py::test_login_status_negative_points_returns_zero FAILED [ 49%]
+tests/test_api_smoke.py::test_home_products_guest[tourgroup-popular-tour_travel_popular] PASSED [ 49%]
+tests/test_api_smoke.py::test_home_products_guest[tourgroup-promotion-None] PASSED [ 50%]
+tests/test_api_smoke.py::test_home_products_guest[tourgroup-most_favorited-tour_travel_most_favorited] PASSED [ 50%]
+tests/test_api_smoke.py::test_home_products_guest[backpacker-hotel-tour_travel_popular] PASSED [ 51%]
+tests/test_api_smoke.py::test_home_products_guest[backpacker-food-tour_travel_popular] PASSED [ 51%]
+tests/test_api_smoke.py::test_home_products_guest[backpacker-spot-tour_travel_popular] PASSED [ 52%]
+tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-popular-tour_travel_popular] PASSED [ 52%]
+tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-promotion-None] PASSED [ 53%]
+tests/test_api_smoke.py::test_home_products_logged_in[tourgroup-most_favorited-tour_travel_most_favorited] PASSED [ 53%]
+tests/test_api_smoke.py::test_home_products_logged_in[backpacker-hotel-tour_travel_popular] PASSED [ 54%]
+tests/test_api_smoke.py::test_home_products_logged_in[backpacker-food-tour_travel_popular] PASSED [ 54%]
+tests/test_api_smoke.py::test_home_products_logged_in[backpacker-spot-tour_travel_popular] PASSED [ 55%]
+tests/test_api_smoke.py::test_home_promotion_rows_are_promotions PASSED  [ 55%]
+tests/test_api_smoke.py::test_home_reviews PASSED                        [ 56%]
+tests/test_api_smoke.py::test_public_product_list_guest PASSED           [ 56%]
+tests/test_api_smoke.py::test_detail_travel_tour_tour_detail PASSED      [ 57%]
+tests/test_api_smoke.py::test_detail_spot_tour_tour_detail PASSED        [ 57%]
+tests/test_api_smoke.py::test_detail_hotel_tour_hotel PASSED             [ 58%]
+tests/test_api_smoke.py::test_detail_food_tour_restaurant PASSED         [ 58%]
+tests/test_api_smoke.py::test_detail_logged_in_has_favorite_flag PASSED  [ 59%]
+tests/test_api_smoke.py::test_tour_reviews_use_user_level PASSED         [ 59%]
+tests/test_api_smoke.py::test_tour_hidden_shares_use_user_level PASSED   [ 60%]
+tests/test_api_smoke.py::test_points_level_alice_has_empty_coupon_list FAILED [ 60%]
+tests/test_api_smoke.py::test_points_level_carol_has_usable_coupon PASSED [ 61%]
+tests/test_api_smoke.py::test_cart_list PASSED                           [ 61%]
+tests/test_api_smoke.py::test_admin_user_coupon_list PASSED              [ 62%]
+tests/test_api_smoke.py::test_checkout_summary_unpaid_order PASSED       [ 62%]
+tests/test_api_smoke.py::test_favorite_list PASSED                       [ 63%]
+tests/test_api_smoke.py::test_purchases_list PASSED                      [ 63%]
+tests/test_api_smoke.py::test_purchases_item_detail PASSED               [ 64%]
+tests/test_api_smoke.py::test_admin_member_detail PASSED                 [ 64%]
+tests/test_api_smoke.py::test_admin_promotions PASSED                    [ 65%]
+tests/test_api_smoke.py::test_admin_change_info PASSED                   [ 65%]
+tests/test_api_smoke.py::test_admin_product_list PASSED                  [ 66%]
+tests/test_api_smoke.py::test_admin_product_empty_result PASSED          [ 67%]
+tests/test_api_smoke.py::test_filter_region_for_seed_country PASSED      [ 67%]
+tests/test_api_smoke.py::test_seed_member_can_list_orders_readonly PASSED [ 68%]
+tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks PASSED [ 68%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart] PASSED [ 69%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts] PASSED [ 69%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout] PASSED [ 70%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 70%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] PASSED [ 71%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] PASSED [ 71%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] PASSED [ 72%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[orders] PASSED [ 72%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[purchases] PASSED [ 73%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[points] FAILED [ 73%]
+tests/test_validator_sweep.py::test_http_installment_unsafe_string PASSED [ 74%]
+tests/test_validator_sweep.py::test_http_json_1e400_cart_people PASSED   [ 74%]
+tests/test_validator_sweep.py::test_http_json_1e400_discount_point PASSED [ 75%]
+tests/test_validator_sweep.py::test_http_json_1e400_checkout_used_point PASSED [ 75%]
+tests/test_validator_sweep.py::test_http_checkout_empty_coupon_id PASSED [ 76%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-unknown] PASSED [ 76%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[user-unknown] PASSED [ 77%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown] PASSED [ 77%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array] PASSED [ 78%]
+tests/test_validator_sweep.py::test_http_search_unknown_query_key PASSED [ 78%]
+e2e/test_member_center.py::test_header_links_open_tabs[chromium] PASSED  [ 79%]
+e2e/test_member_center.py::test_orders_tab_lists_paid_order_with_detail[chromium] PASSED [ 79%]
+e2e/test_member_center.py::test_order_detail_shows_coupon_discount[chromium] PASSED [ 80%]
+e2e/test_member_center.py::test_orders_paging_uses_limit_10[chromium] PASSED [ 80%]
+e2e/test_member_center.py::test_continue_payment_goes_to_pay_page[chromium] PASSED [ 81%]
+e2e/test_member_center.py::test_overdue_pending_order_has_no_continue_button[chromium] PASSED [ 81%]
+e2e/test_member_center.py::test_orders_tab_empty[chromium] PASSED        [ 82%]
+e2e/test_member_center.py::test_admin_automatic_redirects_to_preference_tab[chromium] PASSED [ 82%]
+e2e/test_member_center.py::test_profile_tab_from_query[chromium] PASSED  [ 83%]
+e2e/test_member_center.py::test_level_tab_shows_points_and_records[chromium] FAILED [ 83%]
+e2e/test_member_center.py::test_level_tab_negative_points_shows_zero[chromium] FAILED [ 84%]
+e2e/test_member_flow.py::test_signup_login_profile_main_flow[chromium] PASSED [ 84%]
+e2e/test_member_flow.py::test_profile_requires_login[chromium] PASSED    [ 85%]
+e2e/test_member_flow.py::test_unknown_route_shows_404[chromium] PASSED   [ 85%]
+e2e/test_member_flow.py::test_logout_stays_in_spa[chromium] PASSED       [ 86%]
+e2e/test_member_flow.py::test_facebook_login_not_offered[chromium] PASSED [ 86%]
+e2e/test_member_flow.py::test_login_lockout_message[chromium] PASSED     [ 87%]
+e2e/test_member_flow.py::test_search_page_single_header[chromium] PASSED [ 87%]
+e2e/test_member_flow.py::test_invalid_token_redirects_and_clears_state[chromium] PASSED [ 88%]
+e2e/test_member_flow.py::test_forgot_password_via_mailpit[chromium] PASSED [ 88%]
+e2e/test_member_flow.py::test_profile_edit_name_and_preferences[chromium] PASSED [ 89%]
+e2e/test_member_flow.py::test_avatar_upload[chromium] PASSED             [ 89%]
+e2e/test_member_flow.py::test_change_password_redirects_to_login[chromium] PASSED [ 90%]
+e2e/test_member_flow.py::test_null_password_user_sees_set_password_hint[chromium] PASSED [ 90%]
+e2e/test_member_flow.py::test_expired_token_redirects_to_login[chromium] PASSED [ 91%]
+e2e/test_member_flow.py::test_profile_save_network_error_shows_message[chromium] PASSED [ 91%]
+e2e/test_member_flow.py::test_resetpw_page_opens_with_expired_token[chromium] PASSED [ 92%]
+e2e/test_member_flow.py::test_register_and_forgotpw_pages_open_with_expired_token[chromium-register-\u6703\u54e1\u8a3b\u518a] PASSED [ 92%]
+e2e/test_member_flow.py::test_register_and_forgotpw_pages_open_with_expired_token[chromium-forgotpw-\u5fd8\u8a18\u5bc6\u78bc] PASSED [ 93%]
+e2e/test_member_flow.py::test_coming_soon_tabs[chromium] PASSED          [ 93%]
+e2e/test_member_flow.py::test_require_auth_network_error_keeps_token[chromium] PASSED [ 94%]
+e2e/test_member_flow.py::test_logged_in_user_can_open_forgotpw_and_resetpw[chromium] PASSED [ 94%]
+e2e/test_member_flow.py::test_google_login_via_mock[chromium] PASSED     [ 95%]
+e2e/test_member_flow.py::test_login_success_ok_closes_and_redirects_immediately[chromium] PASSED [ 95%]
+e2e/test_member_flow.py::test_signup_success_ok_redirects_immediately[chromium] PASSED [ 96%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-save] PASSED [ 96%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-avatar] PASSED [ 97%]
+e2e/test_member_flow.py::test_session_expired_on_member_api_shows_message[chromium-password] PASSED [ 97%]
+e2e/test_member_flow.py::test_register_name_too_long_shows_message[chromium] PASSED [ 98%]
+e2e/test_member_flow.py::test_profile_name_too_long_shows_message[chromium] PASSED [ 98%]
+e2e/test_member_flow.py::test_pay_name_too_long_blocked[chromium] PASSED [ 99%]
+e2e/test_member_flow.py::test_google_long_name_can_checkout[chromium] PASSED [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_point_records_reasons_and_order _____________________
+tests/test_member_points.py:34: in test_point_records_reasons_and_order
+    data = records(api, user)
+tests/test_member_points.py:13: in records
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+__________________ test_point_records_hide_pending_deduction ___________________
+tests/test_member_points.py:52: in test_point_records_hide_pending_deduction
+    data = records(api, user)
+tests/test_member_points.py:13: in records
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+__________________________ test_point_records_paging ___________________________
+tests/test_member_points.py:61: in test_point_records_paging
+    first = records(api, user, page=1, limit=4)
+tests/test_member_points.py:13: in records
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_point_records_default_limit_is_4 _____________________
+tests/test_member_points.py:72: in test_point_records_default_limit_is_4
+    assert len(records(api, user)["data"]) == 4
+tests/test_member_points.py:13: in records
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________________ test_point_records_empty ___________________________
+tests/test_member_points.py:76: in test_point_records_empty
+    assert records(api, make_user()) == {"data": [], "total": 0}
+tests/test_member_points.py:13: in records
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+__________________ test_point_records_other_user_not_visible ___________________
+tests/test_member_points.py:83: in test_point_records_other_user_not_visible
+    assert records(api, a) == {"data": [], "total": 0}
+tests/test_member_points.py:13: in records
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_point_records_without_token_is_401 ____________________
+tests/test_member_points.py:89: in test_point_records_without_token_is_401
+    assert r.status_code == 401
+E   assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+_______________________ test_point_records_admin_is_403 ________________________
+tests/test_member_points.py:95: in test_point_records_admin_is_403
+    assert r.status_code == 403
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_point_records_limit_over_50_is_400 ____________________
+tests/test_member_points.py:101: in test_point_records_limit_over_50_is_400
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_____________________ test_pointslevel_negative_shows_zero _____________________
+tests/test_member_points.py:109: in test_pointslevel_negative_shows_zero
+    assert r.json()["data"][0]["travel_point"] == 0
+E   assert -8 == 0
+________________ test_pointslevel_without_coupon_is_empty_list _________________
+tests/test_member_points.py:116: in test_pointslevel_without_coupon_is_empty_list
+    assert r.json()["data"][0]["coupon"] == []
+E   AssertionError: assert [{'code': Non...': None, ...}] == []
+E     
+E     Left contains one more item: {'code': None, 'coupon_id': None, 'description': None, 'discount': None, ...}
+E     
+E     Full diff:
+E     - []
+E     + [
+E     +     {...
+E     
+E     ...Full output truncated (7 lines hidden), use '-vv' to show
+___________________ test_point_records_hide_signup_zero_row ____________________
+tests/test_member_auth.py:836: in test_point_records_hide_signup_zero_row
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+________________ test_login_email_negative_points_returns_zero _________________
+tests/test_member_auth.py:844: in test_login_email_negative_points_returns_zero
+    assert r.json()["data"]["level"]["points"] == 0
+E   assert -8 == 0
+________________ test_login_status_negative_points_returns_zero ________________
+tests/test_member_auth.py:852: in test_login_status_negative_points_returns_zero
+    assert r.json()["data"]["level"]["points"] == 0
+E   assert -8 == 0
+________________ test_points_level_alice_has_empty_coupon_list _________________
+tests/test_api_smoke.py:290: in test_points_level_alice_has_empty_coupon_list
+    assert me["coupon"] == []
+E   AssertionError: assert [{'code': Non...': None, ...}] == []
+E     
+E     Left contains one more item: {'code': None, 'coupon_id': None, 'description': None, 'discount': None, ...}
+E     
+E     Full diff:
+E     - []
+E     + [
+E     +     {...
+E     
+E     ...Full output truncated (7 lines hidden), use '-vv' to show
+______ test_middlewares_read_joi_errors_only_through_user_message[points] ______
+tests/test_validator_sweep.py:136: in test_middlewares_read_joi_errors_only_through_user_message
+    src = (BACKEND / name / "index.js").read_text(encoding="utf-8")
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_local.py:537: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+E   FileNotFoundError: [Errno 2] No such file or directory: 'backend/src/middlewares/points/index.js'
+______________ test_level_tab_shows_points_and_records[chromium] _______________
+e2e/test_member_center.py:196: in test_level_tab_shows_points_and_records
+    expect(page.get_by_text("點數餘額 170 點")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("點數餘額 170 點") with timeout 5000ms
+E     - waiting for get_by_text("點數餘額 170 點")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E   - link "登出":
+E     - /url: "#"
+E   - img "頭像"
+E   - text: P0 測試  會員資訊  會員等級  個人偏好設定  個人訂單查看  會員中心 即將開放
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+_____________ test_level_tab_negative_points_shows_zero[chromium] ______________
+e2e/test_member_center.py:216: in test_level_tab_negative_points_shows_zero
+    expect(page.get_by_text("點數餘額 0 點")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("點數餘額 0 點") with timeout 5000ms
+E     - waiting for get_by_text("點數餘額 0 點")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - img "頭像"
+E   - text: 嗨！P0 測試
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - link "下拉式按鈕":
+E     - /url: "#/admin/userprofile"
+E     - img "下拉式按鈕"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/userprofile#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile?tab=info"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/userprofile?tab=level"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/userprofile?tab=preference"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/userprofile?tab=orders"
+E     - listitem:
+E       - link "收藏":
+E         - /url: "#/admin/collect"
+E   - link "登出":
+E     - /url: "#"
+E   - img "頭像"
+E   - text: P0 測試  會員資訊  會員等級  個人偏好設定  個人訂單查看  會員中心 即將開放
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+=========================== short test summary info ============================
+FAILED tests/test_member_points.py::test_point_records_reasons_and_order - As...
+FAILED tests/test_member_points.py::test_point_records_hide_pending_deduction
+FAILED tests/test_member_points.py::test_point_records_paging - AssertionErro...
+FAILED tests/test_member_points.py::test_point_records_default_limit_is_4 - A...
+FAILED tests/test_member_points.py::test_point_records_empty - AssertionError...
+FAILED tests/test_member_points.py::test_point_records_other_user_not_visible
+FAILED tests/test_member_points.py::test_point_records_without_token_is_401
+FAILED tests/test_member_points.py::test_point_records_admin_is_403 - assert ...
+FAILED tests/test_member_points.py::test_point_records_limit_over_50_is_400
+FAILED tests/test_member_points.py::test_pointslevel_negative_shows_zero - as...
+FAILED tests/test_member_points.py::test_pointslevel_without_coupon_is_empty_list
+FAILED tests/test_member_auth.py::test_point_records_hide_signup_zero_row - A...
+FAILED tests/test_member_auth.py::test_login_email_negative_points_returns_zero
+FAILED tests/test_member_auth.py::test_login_status_negative_points_returns_zero
+FAILED tests/test_api_smoke.py::test_points_level_alice_has_empty_coupon_list
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[points]
+FAILED e2e/test_member_center.py::test_level_tab_shows_points_and_records[chromium]
+FAILED e2e/test_member_center.py::test_level_tab_negative_points_shows_zero[chromium]
+================== 18 failed, 179 passed in 112.01s (0:01:52) ==================

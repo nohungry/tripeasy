@@ -44,6 +44,7 @@ const targets = [
  ['userInfo.register', ui.registerSchema, { name: '王小明', email: 'a@b.co', password: 'Abcdefg1', preference: ['a', 'b', 'c'] }, bodyVals, ['name', 'email', 'password', 'preference']],
  ['userprofile.update', up.updateProfile_schema, { name: '王小明', preference: ['a', 'b', 'c'] }, bodyVals, ['name', 'preference']],
  ['paging', pg.pagingSchema, {}, queryVals, ['page', 'limit', 'lang']],
+ ['points.paging', pg.pagingSchema, {}, queryVals, ['page', 'limit', 'lang']],
  ['orders.orderID', ord.orderIDSchema, { order_id: uuid }, queryVals, ['order_id']],
  ['purchases.param', pur.paramSchema, { order_item_id: uuid }, queryVals, ['order_item_id']],
  ['purchases.query', pur.querySchema, {}, queryVals, ['lang']],
@@ -123,7 +124,7 @@ def _strip_comments(src: str) -> str:
     return re.sub(r"//[^\n]*", "", src)
 
 
-@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData", "userinfo.postuserSignup", "userProfile.patchuserprofileData", "orders", "purchases"])
+@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData", "userinfo.postuserSignup", "userProfile.patchuserprofileData", "orders", "purchases", "points"])
 def test_middlewares_read_joi_errors_only_through_user_message(name):
     if name == "product.get_tourData":
         src = _search_handler_source()

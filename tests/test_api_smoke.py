@@ -279,16 +279,15 @@ POINTS_KEYS = [
 COUPON_KEYS = ["coupon_id", "code", "discount", "description", "expire_date"]
 
 
-def test_points_level_alice_has_null_coupon_placeholder(api, alice_h, alice):
+def test_points_level_alice_has_empty_coupon_list(api, alice_h, alice):
     r = api.get(f"{BASE}/user/userinfo/pointslevel", headers=alice_h)
     me = data_rows(r)[0]
     assert me["user_id"] == alice["user_id"]
     assert_has_keys(me, POINTS_KEYS)
     assert me["level"] and me["travel_point"] > 0
     # alice 唯一的優惠卷 VIP300 已使用（status = 1），不符合 #39（只列 status = 0 且未過期）。
-    # 契約 #40（docs/db-contract.md:1303–1306）：LEFT JOIN → 仍有 1 列，優惠卷欄位全 NULL，
-    # controller 會 push 一個全 null 的物件。
-    assert me["coupon"] == [dict.fromkeys(COUPON_KEYS)]
+    # view 仍回 1 列（LEFT JOIN，優惠卷欄位全 NULL）；P5 起 controller 不再 push 全 null 的物件，回空陣列。
+    assert me["coupon"] == []
 
 
 def test_points_level_carol_has_usable_coupon(api, users, db):

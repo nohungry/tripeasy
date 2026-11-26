@@ -20,6 +20,7 @@ from conftest import (
     current_pwv,
     delete_user,
     login_token,
+    negative_points_via_refund,
     reset_token,
 )
 from dbfactory import insert
@@ -813,3 +814,40 @@ def test_non_string_captcha_input_is_400(api, make_user, bad_input):
     user = make_user()
     r = _resetpw_with_cookie(api, user, captcha_cookie("abcde"), bad_input)
     assert r.status_code == 400, r.text
+
+
+POINT_RECORDS = "/api/v1/user/points/records"
+
+
+def test_point_records_hide_signup_zero_row(api, db, cleanup_email):
+    """Review Focus 4：註冊寫的 `新增 0` 在 DB 有，但點數紀錄 API 不顯示。"""
+    email = f"val.{uuid.uuid4().hex[:10]}@example.com"
+    cleanup_email(email)
+    r = api.post(SIGNUP, json=_signup_body(email))
+    assert r.status_code == 201, r.text
+    user_id = db.execute('SELECT user_id FROM "user" WHERE lower(email) = lower(%s)', (email,)).fetchone()[0]
+    assert db.execute(
+        "SELECT type, point FROM point_record WHERE user_id = %s", (user_id,)
+    ).fetchall() == [("新增", 0)]
+    r = api.post(LOGIN, json={"email": email, "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    token = r.json()["data"]["token"]
+    r = api.get(POINT_RECORDS, headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"] == {"data": [], "total": 0}
+
+
+def test_login_email_negative_points_returns_zero(api, db, make_user, make_tour):
+    user = negative_points_via_refund(api, db, make_user, make_tour)
+    r = api.post(LOGIN, json={"email": user["email"], "password": TEST_PASSWORD})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["level"]["points"] == 0
+    assert db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == -8
+
+
+def test_login_status_negative_points_returns_zero(api, db, make_user, make_tour):
+    user = negative_points_via_refund(api, db, make_user, make_tour)
+    r = api.get(LOGIN_STATUS, headers=auth_header(user))
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["level"]["points"] == 0
+    assert db.execute("SELECT travel_point FROM user_level WHERE user_id = %s", (user["user_id"],)).fetchone()[0] == -8

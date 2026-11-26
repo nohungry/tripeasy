@@ -16,6 +16,8 @@ from conftest import (
     notify,
     order_status,
     ready_order,
+    refund,
+    refund_url,
     start_payment,
     success_notify,
     summary,
@@ -24,14 +26,6 @@ from conftest import (
 
 ELIGIBILITY_API = "/api/v1/user/product/search/{}/eligibility"
 REFUND_MSG = "只有已付款的訂單可以退款"
-
-
-def refund_url(order_id):
-    return f"/api/v1/admin/orders/{order_id}/refund"
-
-
-def refund(api, admin, order_id):
-    return api.post(refund_url(order_id), headers=auth_header(admin), timeout=10)
 
 
 def paid_order(api, db, make_user, make_tour, discount=None, **kw):

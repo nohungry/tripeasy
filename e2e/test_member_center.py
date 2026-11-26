@@ -5,7 +5,7 @@ import re
 import requests
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import API_BASE, auth_header
+from e2e.conftest import API_BASE, Api, auth_header, negative_points_via_refund
 from e2e.test_trade_flow import MOCK_BASE, _api_add, _fill_contact, _login, _open, _tour_dates
 
 CHECKOUT_API = f"{API_BASE}/api/v1/user/checkout"
@@ -179,3 +179,39 @@ def test_profile_tab_from_query(page: Page, make_user):
         _open(page, f"#/admin/userprofile?tab={bogus}")
         expect(page.locator(".sidebaritem.active")).to_have_text("會員資訊")
         expect(page.get_by_label("信箱")).to_be_visible()
+
+
+def test_level_tab_shows_points_and_records(page: Page, db, make_user, make_tour, make_order):
+    user = make_user()
+    order = make_order(user, make_tour(price=1000)["tour_id"], payment_status=1)
+    db.execute("UPDATE user_level SET travel_point = 170 WHERE user_id = %s", (user["user_id"],))
+    for type_, point, mins in [("新增", 170, 3), ("減少", -100, 2), ("減少_確認中", -50, 1)]:
+        db.execute(
+            "INSERT INTO point_record (user_id, order_id, type, point, created_at) "
+            "VALUES (%s, %s, %s, %s, now() - make_interval(mins => %s))",
+            (user["user_id"], order["order_id"], type_, point, mins),
+        )
+    _login(page, user)
+    _open(page, "#/admin/userprofile?tab=level")
+    expect(page.get_by_text("點數餘額 170 點")).to_be_visible()
+    expect(page.get_by_text("目前等級 初心旅人")).to_be_visible()
+    expect(page.get_by_text("購物回饋比例 10%")).to_be_visible()
+    rows = page.get_by_test_id("point-record")
+    expect(rows).to_have_count(2)
+    expect(rows.nth(1)).to_contain_text("購物回饋")
+    expect(rows.nth(1)).to_contain_text("+170")
+    expect(rows.nth(1)).to_contain_text(order["order_id"][:8])
+    expect(rows.nth(0)).to_contain_text("點數折抵")
+    expect(rows.nth(0)).to_contain_text("-100")
+    expect(page.get_by_test_id("point-record").filter(has_text="-50")).to_have_count(0)
+    expect(page.get_by_text("目前沒有可用的優惠券")).to_be_visible()
+    expect(page.get_by_text("點數紀錄為明細，加總不一定等於目前餘額（初始點數沒有對應紀錄）")).to_be_visible()
+    expect(page.get_by_text("升級規則尚未開放")).to_be_visible()
+
+
+def test_level_tab_negative_points_shows_zero(page: Page, db, make_user, make_tour):
+    user = negative_points_via_refund(Api(API_BASE), db, make_user, make_tour)
+    _login(page, user)
+    _open(page, "#/admin/userprofile?tab=level")
+    expect(page.get_by_text("點數餘額 0 點")).to_be_visible()
+    expect(page.get_by_text("-8 點")).to_have_count(0)
