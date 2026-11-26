@@ -165,6 +165,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `controllers/product.js:627`：交易只寫 tour 相關表，不碰交易表。
 - `controllers/admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。
 - `controllers/coupon.js:209`（`post_admin_assigncoupon`）：管理員批次綁定券，INSERT `user_coupon ... ON CONFLICT DO NOTHING`，不開交易。
+- `controllers/automation.js:74-78`（`patch_early_notifiSettings`）、`:126-139`（`patch_price_notifiSettings`）：通知設定寫入 `auto_setting`，是單一 `INSERT … ON CONFLICT (user_id) DO UPDATE` 語句、不開交易（P5 Task 6；V6 `auto_setting_user_id_key`）。只鎖該會員自己的那一列，併發首次寫入由唯一索引收斂成一列（後到者等先到者提交後走 UPDATE），不碰交易表、不再取其他鎖，所以不成環。price-tracking 在寫入前另有兩個不加鎖的讀取（`auto_setting` 目前值、`tour` 上架地區），各自獨立自動提交。
 
 ## 已知問題（已解決）
 
