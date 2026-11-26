@@ -77,7 +77,7 @@
 
 - coupon 路徑：`user_coupon` `FOR UPDATE`（`:277`）→ 重新 `evaluateDiscount`（`:280`）→ `releaseReservations`（`:299`；`point_record` DELETE `:108`、`user_coupon` UPDATE `:111`）→ `user_coupon` UPDATE（`:302`）→ `orders` UPDATE（`:316`）
 - point 路徑（例外 B）：`user_level` `FOR UPDATE`，`ORDER BY level_id` 鎖該會員所有列（`:288`）→ 重新 `evaluateDiscount`（`:291`）→ `releaseReservations`（`:299`）→ `point_record` INSERT（`:309`）→ `orders` UPDATE（`:316`）
-- 為什麼無環：point 路徑持有 `user_level` 時，除了本訂單的子列（只有持有本訂單 `orders` 鎖的交易能動），唯一可能等的是 `point_record` INSERT（`:309`）的外鍵檢查對 `user` 取的 KEY SHARE，它可能在等 Google 登入（`controllers/userinfo.js:155`）；Google 登入之後不會再取任何交易表的鎖，所以不成環。另一張訂單的 `settlePaidOrder`／`refundOrder` 持有的是它自己訂單的子列，等的是 `user_level`，不會反過來等本訂單的子列。多列 `user_level` 鎖定一律 `ORDER BY level_id`，兩個 point 路徑之間順序一致。
+- 為什麼無環：point 路徑持有 `user_level` 時，除了本訂單的子列（只有持有本訂單 `orders` 鎖的交易能動），唯一可能等的是 `point_record` INSERT（`:309`）的外鍵檢查對 `user` 取的 KEY SHARE，它可能在等 Google 登入（`controllers/userinfo.js:156`）；Google 登入之後不會再取任何交易表的鎖，所以不成環。另一張訂單的 `settlePaidOrder`／`refundOrder` 持有的是它自己訂單的子列，等的是 `user_level`，不會反過來等本訂單的子列。多列 `user_level` 鎖定一律 `ORDER BY level_id`，兩個 point 路徑之間順序一致。
 
 ### 5. 發起付款：`POST /newebpay/payment`
 
@@ -106,7 +106,7 @@
   1. `orders`／`order_item` UPDATE（`setOrderStatus`，`utils/trade.js:329`）
   2. `user_coupon` UPDATE（`:331`）
   3. `point_record` UPDATE（`:336`）、INSERT（`:345`）
-  4. `user_level` UPDATE（`:350`；`travel_point` 在 `user_level`，不在 `user`；`point_record` INSERT 對 `user` 只取 FK 的 KEY SHARE，與 checkout 的 `NO KEY UPDATE` 相容，但會被 Google 登入的 `FOR UPDATE`（`controllers/userinfo.js:155`）擋住，見第 10 節）
+  4. `user_level` UPDATE（`:350`；`travel_point` 在 `user_level`，不在 `user`；`point_record` INSERT 對 `user` 只取 FK 的 KEY SHARE，與 checkout 的 `NO KEY UPDATE` 相容，但會被 Google 登入的 `FOR UPDATE`（`controllers/userinfo.js:156`）擋住，見第 10 節）
   5. `cart` `FOR UPDATE`，該會員所有列 `ORDER BY cart_id`（`:358`）
   6. `cart_item` DELETE（`:359-367`）
   7. `cart` UPDATE（重算總額，`:368-373`）
@@ -158,9 +158,9 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 ### 10. 不在交易主線上、但碰到相關表的路徑
 
-- `controllers/userinfo.js:155`：Google 登入 `user` `FOR UPDATE`（以 email）。不碰交易表，但會擋住交易路徑因外鍵檢查（`point_record`、`payment`、`user_coupon`、`orders` 的 INSERT）對 `user` 取的 KEY SHARE。Google 登入取得 `user` 鎖後不會再取交易相關表的鎖，所以只是排隊、不成環。
-- `controllers/userinfo.js:31`、`:37`、`:209`、`:213`：新會員建立時 INSERT `user_level`／`point_record`，是新列，不與交易競爭。
-- `controllers/userinfo.js:87`：`BEGIN` 開在 `client` 上，但後面的查詢都走 `pool.query`，各自自動提交，不碰交易表。其中 `:92-95` UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 的 `user` 鎖短暫排隊，不成環。
+- `controllers/userinfo.js:156`：Google 登入 `user` `FOR UPDATE`（以 email）。不碰交易表，但會擋住交易路徑因外鍵檢查（`point_record`、`payment`、`user_coupon`、`orders` 的 INSERT）對 `user` 取的 KEY SHARE。Google 登入取得 `user` 鎖後不會再取交易相關表的鎖，所以只是排隊、不成環。
+- `controllers/userinfo.js:32`、`:38`、`:210`、`:214`：新會員建立時 INSERT `user_level`／`point_record`，是新列，不與交易競爭。（P5 Task 2：新會員 INSERT `user` 的 name 改為 `googleDisplayName(name, email)`，只換參數值，不新增鎖或查詢；`controllers/userinfo.js` 頂端多一行 require，行號整體 +1。）
+- `controllers/userinfo.js:88`：`BEGIN` 開在 `client` 上，但後面的查詢都走 `pool.query`，各自自動提交，不碰交易表。其中 `:93-96` UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 的 `user` 鎖短暫排隊，不成環。
 - `controllers/userProfile.js:52`：UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 建單的 `user` 鎖互相排隊，但後續不取其他鎖，不成環。
 - `controllers/product.js:627`：交易只寫 tour 相關表，不碰交易表。
 - `controllers/admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。

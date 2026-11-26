@@ -54,7 +54,7 @@ function set(o, p, v, del) {
 const leaks = []; let n = 0, errors = 0;
 for (const [label, schema, valid, vals, paths] of targets) {
   const names = new Set(['zqfoo']);
-  const collect = (o) => { for (const k of Object.keys(o)) { names.add(k); if (o[k] && typeof o[k] === 'object') collect(o[k]); } };
+  const collect = (o) => { if (Array.isArray(o)) return; for (const k of Object.keys(o)) { names.add(k); if (o[k] && typeof o[k] === 'object') collect(o[k]); } };
   collect(valid); paths.forEach((p) => p.split('.').forEach((s) => names.add(s)));
   const run = (input, desc) => {
     n++;
