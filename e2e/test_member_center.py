@@ -212,6 +212,9 @@ def test_level_tab_shows_points_and_records(page: Page, db, make_user, make_tour
 def test_level_tab_negative_points_shows_zero(page: Page, db, make_user, make_tour):
     user = negative_points_via_refund(Api(API_BASE), db, make_user, make_tour)
     _login(page, user)
-    _open(page, "#/admin/userprofile?tab=level")
+    with page.expect_response(lambda r: "/userinfo/pointslevel" in r.url) as info:
+        _open(page, "#/admin/userprofile?tab=level")
+    assert info.value.status == 200
+    expect(page.get_by_text("目前等級")).to_be_visible()  # 等級卡片在 API 回應後才會出現
     expect(page.get_by_text("點數餘額 0 點")).to_be_visible()
     expect(page.get_by_text("-8 點")).to_have_count(0)
