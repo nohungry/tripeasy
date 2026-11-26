@@ -839,7 +839,10 @@ def test_expire_clears_discount_columns(api, db, make_user, make_tour, make_coup
     assert preview(api, user, order_id, {"type": "coupon", "coupon_id": coupon["coupon_id"]}).status_code == 200
     assert _order_discount(db, order_id)[0] == "coupon"
     _age_order(db, order_id)
-    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 4
+    data = _summary(api, user, order_id).json()["data"]
+    assert data["summary"]["payment_status"] == 4
+    assert data["discount"]["type"] is None  # 回應與 DB 一致
+    assert data["summary"]["discount_price"] is None
     assert _order_discount(db, order_id) == (None, None)
     assert _user_coupon(db, user, coupon) == (0, None)
 
@@ -883,4 +886,24 @@ def test_refund_keeps_discount_columns(api, db, make_user, make_tour, make_coupo
     assert before[0] == "coupon"
     assert refund(api, admin, order_id).status_code == 200
     assert _statuses(db, order_id) == (3, {3})
+    assert _order_discount(db, order_id) == before
+
+
+def test_paid_order_keeps_discount_columns_after_deadline_and_new_order(api, db, make_user, make_tour, make_coupon):
+    """回歸測試（一開始就綠）：已付款訂單超過期限後，summary 與建立新單都不清折扣欄位。"""
+    user = make_user()
+    coupon = make_coupon(user, discount=100)
+    tour = live_promotion(db, make_tour)
+    user, order_id = ready_order(
+        api, db, make_user, make_tour, {"type": "coupon", "coupon_id": coupon["coupon_id"]}, user=user, tour=tour, people=2
+    )  # fmt: skip
+    mon, amt, _ = start_payment(api, user, order_id)
+    assert notify(api, success_notify(mon, amt)).status_code == 200
+    before = _order_discount(db, order_id)
+    assert before[0] == "coupon" and before[1] is not None
+    _age_order(db, order_id)
+    assert _summary(api, user, order_id).json()["data"]["summary"]["payment_status"] == 1
+    assert _order_discount(db, order_id) == before
+    checkout(api, user, [make_tour(price=1000)])  # 建立新單會取消其他未付款單，不得動已付款單
+    assert _statuses(db, order_id) == (1, {1})
     assert _order_discount(db, order_id) == before

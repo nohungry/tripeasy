@@ -1,0 +1,9 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_____________________ test_expire_clears_discount_columns ______________________
+tests/test_trade_checkout.py:844: in test_expire_clears_discount_columns
+    assert data["discount"]["type"] is None  # 回應與 DB 一致
+E   AssertionError: assert 'coupon' is None
+=========================== short test summary info ============================
+FAILED tests/test_trade_checkout.py::test_expire_clears_discount_columns - As...
+1 failed, 1 passed, 57 deselected in 0.45s
