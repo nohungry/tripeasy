@@ -26,7 +26,7 @@
    - 會員等級分頁顯示目前等級、點數餘額和可用的優惠券。
    - 等級維持 seed 的值，不實作升級。
 3. **通知設定**【使用者定：A】：
-   - 前端表單接上現有的 3 支 API，補上驗證和唯一約束。
+   - 前端表單接上現有的 3 支 API，補上驗證和唯一約束（另加一支唯讀的地區清單 API，見 §12）。
    - 只儲存設定，不實際寄送通知。
 4. **收藏**【使用者定：A】：
    - 收藏頁可以列出、取消收藏、點進行程頁。
@@ -72,7 +72,7 @@
    - 決定：加唯一約束。去重的規則要在計畫階段查清楚，如果 seed 或既有資料裡有同一個會員擁有多個購物車，就停下來回報，不要自動合併。
    - 理由：從根源消除 P4 報告附錄 B.4b 的多購物車死結，比補上 `ORDER BY` 更徹底。
    - 若錯的代價：已經有重複購物車的環境 migration 會失敗，需要手動處理。
-3. **`auto_setting` 加上 `UNIQUE (user_id)`**：去重的方式和上面相同。
+3. **`auto_setting` 加上 `UNIQUE (user_id)`**：去重的方式和上面相同（seed 的 alice 有重複，處理方式見 §12）。
 4. 不新增資料表。
 
 **契約修改**（都在 `docs/db-contract.md`）：
@@ -80,7 +80,7 @@
 - 把上面三個約束寫進契約。
 - 契約 §4.2 註明 (c) 已經修正。
 - 契約 :1721 原本記錄 P1 決定 favorite 不加唯一約束，改成「P5 已加」並說明原因。
-- §4.5 改了 4 個 view，契約要同步更新。
+- §4.5 改了 4 個 view（實際是 SQL function，見 §12），契約要同步更新。
 - 契約裡有兩處 P4 之後已經過時的說法，一起修正：
   - :1339 寫「沒有程式把 `減少_確認中` 轉成 `減少`」，但 `trade.js:337` 會做這件事。
   - :1537 寫「API 寫不到 payment_status = 1」，但 P4 的結算流程會寫。
@@ -123,18 +123,19 @@
     - `退款收回` → 退款收回回饋
     - `退款退回` → 退款退還折抵
     - 其他沒列到的值，原樣顯示。
+    - `point = 0` 的列不列出（見 §12）。
   - **`減少_確認中` 不列出**【Claude 定】。它是付款還沒完成時的預扣紀錄，付款成功後會轉成 `減少`，逾時或取消時會釋放。若把它也列出來，會員會看到一筆之後消失的紀錄。若錯的代價：會員看不到正在保留中的點數；結帳頁本來就會顯示可用點數。
   - **餘額以 `user_level.travel_point` 為準**，負數顯示為 0。點數紀錄只是明細，不保證加總後等於餘額，因為 seed 的初始點數沒有對應的紀錄。頁面上要註明這一點。
 - **`GET /user/userinfo/pointslevel`**（修改，`controllers/userProfile.js:123-178`）：
-  - 點數餘額小於 0 時回傳 0；資料庫裡存的值不變【使用者定：負點數一律顯示 0；Claude 定：在後端處理】。
+  - 點數餘額小於 0 時回傳 0；資料庫裡存的值不變（登入相關回應也要比照，見 §12）【使用者定：負點數一律顯示 0；Claude 定：在後端處理】。
   - 沒有優惠券時，`coupon` 回傳空陣列，不再回傳欄位全是 null 的物件。
   - `tests/test_api_smoke.py:282-291` 斷言的是錯誤行為，要同步改掉。
 - **會員等級**：顯示 seed 的等級名稱與回饋比例，不實作升級。
 
 ### 4.4 通知設定
-- 現有 3 支 API（`routes/automation.js`）保留。修改項目如下：
+- 現有 3 支 API（`routes/automation.js`）保留，另加一支唯讀的地區清單 API（見 §12）。修改項目如下：
   - 只要會員沒有 `auto_setting` 的資料，讀取時就回傳預設值；寫入改成 upsert，搭配 §3 的唯一約束。
-  - 價格追蹤的 `country`／`region` 改成驗證「必須是系統裡存在的值」，來源用 P3 的地區資料。
+  - 價格追蹤的 `country`／`region` 改成驗證「必須是系統裡存在的值」，來源用 P3 的地區資料（來源與下架時的處理見 §12）。
   - 數字型態的開關（SMALLINT）在 API 輸出時轉成布林值。前端要同步配合，計畫階段要確認沒有其他呼叫者。
 - 補上 API 測試，涵蓋：正常、驗證、未登入 401、admin 被擋、upsert 的冪等性。
 
@@ -147,7 +148,7 @@
 - **刪除**：維持用 `favorite_id` 刪除。
 - **商品 API**：凡是回傳 `is_favorited` 的地方，都多回一個 `favorite_id`，沒有收藏時為 `null`。
   - 涉及的程式：`controllers/product.js:295`、`:370`、`:461`。
-  - `is_favorited` 的值來自 `backend/migrations/R__views_functions.sql` 裡 4 個 view 的 `EXISTS`（:112、:223、:326、:428）。這 4 個 view 都要一起改，屬於 P5 範圍，契約要同步更新。
+  - `is_favorited` 的值來自 `backend/migrations/R__views_functions.sql` 裡 4 個 view 的 `EXISTS`（:112、:223、:326、:428；實際是 SQL function，搜尋 API 的鍵也不同，見 §12）。這 4 個 view 都要一起改，屬於 P5 範圍，契約要同步更新。
 - **下架行程的收藏**【Claude 定】：`user_favorite` view 也會列出已下架的行程，收藏頁照樣顯示，但要做到三點：
   - 加上「已下架」標記。
   - 卡片不能點進行程頁，因為行程頁只會查上架中的行程。
@@ -170,8 +171,8 @@
 
 ## 6. 姓名規則
 
-- 新增一個共用的姓名規則：去掉頭尾空白後長度為 2 到 20 個字，不能是空字串。註冊（`userInfo_Validator.js:4`）、會員資料（`userprofile_Validator.js:3`）、結帳收件人（`checkout_Vaildator.js:23`）三處都改用它，錯誤訊息統一。
-- **Google 登入**（`controllers/userinfo.js:142`、`:202`）：去掉頭尾空白後，超過 20 字就截斷到 20 字；名字短於 2 字或沒有名字時，改用 email 的 `@` 前段，再截斷到 20 字【Claude 定】—— 理由：名字不合規則時，結帳頁會擋住 —— 若錯的代價：Google 會員看到的名字和 Google 帳號上的不一樣。
+- 新增一個共用的姓名規則：去掉頭尾空白後長度為 2 到 20 個字，不能是空字串（字元種類與控制字元見 §12）。註冊（`userInfo_Validator.js:4`）、會員資料（`userprofile_Validator.js:3`）、結帳收件人（`checkout_Vaildator.js:23`）三處都改用它，錯誤訊息統一。
+- **Google 登入**（`controllers/userinfo.js:142`、`:202`）：（先移除控制字元，見 §12）去掉頭尾空白後，超過 20 字就截斷到 20 字；名字短於 2 字或沒有名字時，改用 email 的 `@` 前段，再截斷到 20 字【Claude 定】—— 理由：名字不合規則時，結帳頁會擋住 —— 若錯的代價：Google 會員看到的名字和 Google 帳號上的不一樣。
 - 字數以 Unicode 字元計算（JavaScript 的 `[...s].length`），不是以 bytes 計算。
 - 前端的註冊、會員資料、結帳表單也要改成相同的上下限。
 
@@ -183,7 +184,7 @@
    - 理由：P5 的訂單列表會直接顯示這兩個欄位。
    - 若錯的代價：之後就看不到逾時訂單原本選了什麼折扣。
    - 測試：逾時和取消之後，兩個欄位都是 NULL，保留的優惠券和點數照舊釋放。
-2. **多購物車死結**：§3 的 `cart UNIQUE(user_id)`，再加上建立購物車改成 `INSERT ... ON CONFLICT (user_id) DO NOTHING` 後再查詢（`controllers/cart.js:26-29`）。更新 `docs/lock-order.md` 的「已知問題」，改為已解決，並補一個「同時第一次加入購物車只會產生一台購物車」的併發測試。
+2. **多購物車死結**（提前到地基一起做，見 §12）：§3 的 `cart UNIQUE(user_id)`，再加上建立購物車改成 `INSERT ... ON CONFLICT (user_id) DO NOTHING` 後再查詢（`controllers/cart.js:26-29`）。更新 `docs/lock-order.md` 的「已知問題」，改為已解決，並補一個「同時第一次加入購物車只會產生一台購物車」的併發測試。
 3. **newebpay.js 註解編號**：把 `controllers/newebpay.js:159`、`:174`、`:187`、`:193` 的註解改成 P4 spec §5.5 的新編號，並刪除規格裡的新舊對照註記。
 4. **NOWAIT 測試固定等 1.5 秒**：`tests/test_trade_payment.py:578` 改成有上限的輪詢，查詢 `pg_stat_activity` 或 `pg_locks`，確認請求正在等鎖之後才往下走。
 5. **P4 報告的矛盾**：P4 報告 :191 寫負點數「待使用者決定」，但 :387、:397 寫已裁決。P5 報告引用時以已裁決為準，P4 報告不改。
@@ -229,3 +230,18 @@
 - 新 API 的回應欄位名稱（駝峰或底線）沿用同一個檔案既有的風格。
 - 訂單狀態的中文名稱和顏色。
 - 點數紀錄與訂單列表的分頁 UI 樣式，沿用現有的分頁元件。
+
+## 12. 計畫階段修訂（2026-11-26）
+
+寫實作計畫（`docs/superpowers/plans/2026-11-26-p5-member-center.md`）時讀碼與主對話裁決的結果，取代上文對應處：
+
+1. **seed 的 `auto_setting` 有重複，合併成一筆**（計畫 R1；取代 §3 第 3 點「去重的方式和上面相同」對 seed 的適用）：alice 有兩列（`db/seed-build/tripeasy_fakedata.sql` 的 `1111aaaa…`、`4444dddd…`）。Flyway 先跑 V6 再跑 `R__seed`，不改 seed 來源，乾淨環境就無法建立。在 `build_seed.py` 合併：每個開關欄位取 `updated_at` 較新那筆的值，相同或沒有時取 id 較小那筆（seed 結果為保留 `1111aaaa…` 的原值）；`tests/test_seed.py` 的筆數與契約同步改。V6 本身對 cart／auto_setting 只預檢、有重複就中止，不自動合併。V6 完成後由使用者自己執行 `docker compose down -v`。
+2. **價格追蹤的地區來源是上架行程**（計畫 R2；取代 §4.4「來源用 P3 的地區資料」）：P3 搜尋頁已移除國家／地區下拉，搜尋 API 的 `country`／`region` 比對 `tour` 的英文值；seed 的 `auto_setting` 也是英文且都存在於上架行程。所以只接受 `tour.status = 1` 的 distinct `(country, region)`，`country`／`region` 中文表本階段不使用。
+3. **新增唯讀 API `GET /api/v1/user/automation/regions`**（`auth`、`authRole('User')`）：回傳上架行程的國家與地區清單，供通知設定的下拉使用，與寫入驗證用同一段 SQL。
+4. **存著的地區已無上架行程**：讀取時照常回傳；前端仍把它列為選項並維持選取，後面標註「（目前沒有上架行程）」。寫入時，值在上架清單中，**或**與該會員目前存的值完全相同，就通過。理由：會員沒改任何東西卻存不了檔，會以為系統壞了。若錯的代價：已沒有上架行程的地區可能被長期保留，P6 的排程只是比對不到東西。
+5. **點數紀錄不列 `point = 0`**（計畫 R3）：註冊與 Google 新會員會寫一筆 `新增 0`（`controllers/userinfo.js:37`、`:213`），在 API 的 SQL 就排除，前端不過濾。
+6. **姓名只檢查長度，另外拒絕控制字元**（計畫 R4；補充 §6）：去頭尾空白後 2 到 20 個 Unicode 字元，不限字元種類（允許空格、英文、符號）；含控制字元（`\p{Cc}`）回 400 `「姓名」不得包含控制字元`。Google 名字先移除控制字元，再套 §6 的截斷與後備規則（email 前段仍短於 2 字時，用 `旅客` ＋ 前段）。
+7. **4 個「view」實際是 SQL function**（計畫 D2；修正 §3、§4.5 的用詞）：`tour_travel(uuid)`、`tour_tour_detail(uuid)`、`tour_hotel(uuid)`、`tour_restaurant(uuid)`。新增欄位 `收藏編號`（uuid），靠 `R__views_functions.sql` 開頭的 `DROP FUNCTION IF EXISTS … CASCADE` 才能改 `RETURNS TABLE`。詳情 API 輸出 `favorite_id`；搜尋與首頁 API 原樣輸出 function 欄位，鍵是 `收藏狀態`／`收藏編號`，不是 `is_favorited`／`favorite_id`。
+8. **§7.2 的建購物車 `ON CONFLICT` 提前到地基（V6）一起做**（計畫 D3；調整 §2 的順序）：V6 一加 `cart UNIQUE(user_id)`，舊的「查不到就 INSERT」在同時第一次加入時會撞約束回 500。
+9. **收藏端點現況與 §4.5 的落差**（計畫 D4，記錄、不改決定）：現行 `POST` 找不到行程回 400、重複收藏回 400，`DELETE` 非本人回 400；P5 依 §4.5 改成 404、重複回 200 與原 `favorite_id`、非本人 404。
+10. **登入相關回應的點數也不顯示負數**（擴大範圍；補充 §4.3）：`controllers/userinfo.js` 註冊（`:57`）、Email 登入（`:123`）、Google 登入（`:249`）、`get_user_loginStatus`（`:379`）回傳的 `points` 改成 `Math.max(0, …)`，資料庫的值不變。理由：§1 反目標「會員中心的任何地方都不顯示負點數」；這些回應也帶會員點數（目前前端沒有顯示，起草時 `grep` 確認），一併在後端處理，避免日後顯示出負數。註冊與 Google 登入只會回新會員（點數不可能是負數），讀碼確認即可；Email 登入與 loginStatus 要有測試。

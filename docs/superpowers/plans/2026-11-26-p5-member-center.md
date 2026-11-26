@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> 狀態：**草稿**（2026-11-26，待使用者審閱；R1–R4 已由主對話裁決，見「Ruling」）
+> 狀態：**草稿，待使用者核准**（2026-11-26；R1–R4 與後續 R5–R7 已由主對話裁決，見「Ruling」；計畫階段的修訂已寫入 spec §12）
 
 **Goal:** 會員中心從前端完整操作：我的訂單（全狀態、明細、繼續付款）、點數紀錄與等級、通知設定、收藏（愛心、收藏頁）；修掉越權讀取（契約 §4.2 (c)）、V6 補三個唯一約束、姓名規則統一、P4 留下的項目；最後寫 P5 報告。
 
@@ -18,7 +18,7 @@
 
 | # | 差異 | 證據 | 影響與預設 |
 |---|---|---|---|
-| R1 | **seed 的 `auto_setting` 有重複**：alice 兩列（`1111aaaa…` early 0／flexible 1／Japan／Tokyo／1200.5；`4444dddd…` early 1／flexible 0），`created_at` 相同。spec §3 對 cart／auto_setting 規定「有重複就停下回報、不自動合併」。 | `db/seed-build/tripeasy_fakedata.sql:842-889`；起草時 DB 查詢 `auto_dup = 1`、favorite／cart 無重複 | Flyway 順序是 V1–V5 → `R__seed` → `R__views`（`flyway_schema_history` rank 6、7），乾淨 volume 上 V6 先建約束、`R__seed` 再插入就會失敗，**seed 來源一定要改**。（預設：`build_seed.py` 新增改寫，保留 `1111aaaa…` 並設 `early_notify = 1`、刪 `4444dddd…`；`test_seed.py:23` 4 → 3；使用者 `down -v`。V6 對 cart／auto_setting 只做預檢、有重複就 `RAISE EXCEPTION`，不自動合併。） |
+| R1 | **seed 的 `auto_setting` 有重複**（spec §12 第 1 點）：alice 兩列（`1111aaaa…` early 0／flexible 1／Japan／Tokyo／1200.5；`4444dddd…` early 1／flexible 0），`created_at` 相同。spec §3 對 cart／auto_setting 規定「有重複就停下回報、不自動合併」。 | `db/seed-build/tripeasy_fakedata.sql:842-889`；起草時 DB 查詢 `auto_dup = 1`、favorite／cart 無重複 | Flyway 順序是 V1–V5 → `R__seed` → `R__views`（`flyway_schema_history` rank 6、7），乾淨 volume 上 V6 先建約束、`R__seed` 再插入就會失敗，**seed 來源一定要改**。（預設：`build_seed.py` 新增改寫，保留 `1111aaaa…` 並設 `early_notify = 1`、刪 `4444dddd…`；`test_seed.py:23` 4 → 3；使用者 `down -v`。V6 對 cart／auto_setting 只做預檢、有重複就 `RAISE EXCEPTION`，不自動合併。） |
 | R2 | **「P3 的地區資料」有兩個來源**：`country`／`region` 表是中文（日本／東京），`tour.country`／`region` 與 seed 的 `auto_setting` 是英文（Japan／Tokyo）。P3 N5 因此移除了搜尋的國家下拉。 | DB 查詢；`docs/reports/phase-3.md:388` | （預設 **B**：以 `country`／`region` 表為準，前端用既有的 `GET /web/filter/countries`、`/:country_id/region`，不新增 API；seed 的英文舊值仍可讀出，但重新存檔時必須改選清單中的值；`region` 表中芬蘭、義大利、德國等國沒有地區，這些國家無法開啟價格追蹤。中英對照留給 P6 的 N5。另一選項 A：以 `tour` 的 distinct (country, region) 為準，要新增一支唯讀 API 供下拉。） |
 | R3 | **註冊與 Google 新會員都寫一筆 `新增`、`point = 0`、`order_id` NULL**，照 spec §4.3 的對應會顯示「購物回饋 +0」。 | `controllers/userinfo.js:37`、`:213` | （預設：點數紀錄 API 排除 `point = 0` 的列。） |
 | R4 | **姓名規則的字元集**：spec §6 只規定長度；現行三處都另外禁止空白與符號（註冊、會員資料 2–5 字，結帳 2–10 字），Google 名字常含空白（測試用的 `Google 測試員` 也是）。 | `userInfo_Validator.js:4`、`userprofile_Validator.js:3`、`checkout_Vaildator.js:23`、`frontend/src/utils/function.js:29-41` | （預設：**只檢查長度**，去頭尾空白後 2–20 個 Unicode 字元，中間空白與符號都允許；否則 Google 名字截斷後仍過不了結帳。） |
@@ -26,9 +26,13 @@
 **Ruling（2026-11-26 主對話裁決，具約束力）**
 
 - **R1** Ruling: alice 的兩筆 `auto_setting` 在 seed 來源合併成一筆；每個開關欄位取 `updated_at` 較新那筆的值，`updated_at` 相同或沒有時取 `auto_setting_id` 較小那筆（seed 兩筆的時間相同，所以結果是 `1111aaaa…` 的值：early 0、flexible 1、Japan、Tokyo、1200.5，刪 `4444dddd…`）；同步改 `tests/test_seed.py:23`（4 → 3）與契約 — 理由：V6 的唯一約束與 Flyway 順序（V6 先於 `R__seed`）讓重複列無法存在，規則固定、可重現 — 若錯的代價：alice 的 `early_notify` 從 1 變 0，展示時「出發前提醒」顯示未勾選。Task 1 完成後**必須提醒使用者自己執行 `docker compose down -v`**，主對話不會代為執行。（Task 1）
-- **R2** Ruling: 價格追蹤的 `country`／`region` 只接受前端選單實際會送出的值。起草時查證：P3 的搜尋篩選器已移除國家／地區下拉（frontend `84e36a9`；舊下拉是寫死的「台灣／台北市…」），搜尋 API 的 `country`／`region` 參數比對的是 `tour` 的 `所屬國家`／`所屬地區`（英文，`controllers/product.js:48-55`）；`automaticSetting.vue` 是空頁，不送任何值；seed 的 `auto_setting` 存英文（Japan／Tokyo、France／Paris，兩組都存在於上架行程）。兩邊是同一套 → **以上架行程（`tour.status = 1`）的 distinct `(country, region)` 為準**；新增唯讀 `GET /api/v1/user/automation/regions` 供下拉，驗證用同一段 SQL — 理由：選單與驗證同源、與 seed 及搜尋參數一致，P6 價格追蹤比對 `tour` 時不需中英對照 — 若錯的代價：多一支唯讀 API；`country`／`region` 中文表在本階段不使用。Task 0 Step 8 再查證一次，不符就停下回報。（Task 0、Task 6）
+- **R2** Ruling: 價格追蹤的 `country`／`region` 只接受前端選單實際會送出的值。起草時查證：P3 的搜尋篩選器已移除國家／地區下拉（frontend `84e36a9`；舊下拉是寫死的「台灣／台北市…」），搜尋 API 的 `country`／`region` 參數比對的是 `tour` 的 `所屬國家`／`所屬地區`（英文，`controllers/product.js:48-55`）；`automaticSetting.vue` 是空頁，不送任何值；seed 的 `auto_setting` 存英文（Japan／Tokyo、France／Paris，兩組都存在於上架行程）。兩邊是同一套 → **以上架行程（`tour.status = 1`）的 distinct `(country, region)` 為準**；新增唯讀 `GET /api/v1/user/automation/regions` 供下拉，驗證用同一段 SQL — 理由：選單與驗證同源、與 seed 及搜尋參數一致，P6 價格追蹤比對 `tour` 時不需中英對照 — 若錯的代價：多一支唯讀 API；`country`／`region` 中文表在本階段不使用。Task 0 Step 8 再查證一次，不符就停下回報。（Task 0、Task 6；spec §12 第 2、3 點）
+- **R2a（地區下架）** Ruling: 讀取設定時，存著的國家或地區若已不在選單（沒有上架行程），表單仍把該值列為選項並維持選取，後面標註 `（目前沒有上架行程）`；寫入驗證改成「值在上架清單中，**或**與該會員目前存的值完全相同」就通過 — 理由：會員什麼都沒改，存檔卻被擋下，會讓人以為系統壞了 — 若錯的代價：已沒有上架行程的地區可能被長期保留，P6 的排程只是比對不到任何東西。（Task 6；spec §12 第 4 點）
 - **R3** Ruling: 點數紀錄 API 在 SQL 就排除 `point = 0`，前端不另外過濾；測試含「新註冊會員的點數紀錄是空列表」 — 理由：註冊時寫的 `新增 0` 不是購物回饋，顯示出來會誤導 — 若錯的代價：真的 0 點紀錄（目前程式不會產生）也看不到。（Task 5）
-- **R4** Ruling: 姓名只檢查長度：去頭尾空白後 2–20 個 Unicode 字元，不限字元種類（允許空格、英文、符號）；另外拒絕控制字元 `\p{Cc}`，訊息 `「姓名」不得包含控制字元`。Google 名字先移除 `\p{Cc}`，再套 spec §6 的截斷與後備規則 — 理由：Google 名字常含空格，限制字元種類會讓截斷後的名字仍過不了結帳；控制字元會破壞顯示與日誌 — 若錯的代價：名字可含 emoji、符號，前端版面要能容納。（Task 2）
+- **R4** Ruling: 姓名只檢查長度：去頭尾空白後 2–20 個 Unicode 字元，不限字元種類（允許空格、英文、符號）；另外拒絕控制字元 `\p{Cc}`，訊息 `「姓名」不得包含控制字元`。Google 名字先移除 `\p{Cc}`，再套 spec §6 的截斷與後備規則 — 理由：Google 名字常含空格，限制字元種類會讓截斷後的名字仍過不了結帳；控制字元會破壞顯示與日誌 — 若錯的代價：名字可含 emoji、符號，前端版面要能容納。（Task 2；spec §12 第 6 點）
+- **R5（審查）** Ruling: 全部 Task 都雙審（reviewer-opus＋reviewer-fable 平行）— 理由：使用者 `~/.claude/CLAUDE.md` 的門檻是「跨多檔，或動到 CI 設定」，Task 0 改 `refs.env`（CI 設定），其餘每個 Task 都跨多檔 — 若錯的代價：審查成本加倍。（GC19）
+- **R6（負點數擴大範圍）** Ruling: `controllers/userinfo.js` 註冊 `:57`、Email 登入 `:123`、Google 登入 `:249`、`get_user_loginStatus` `:379` 回傳的 `points`（值為 `travel_point`）改成 `Math.max(0, …)`，DB 不變；Email 登入與 loginStatus 寫測試，註冊與 Google 登入只回新會員（不可能為負）讀碼確認 — 理由：spec 反目標「會員中心的任何地方都不顯示負點數」 — 若錯的代價：只多 4 處 clamp。（Task 5；spec §12 第 10 點）
+- **R7（R__ 檔改 function 簽章）** Ruling: Task 7 依賴 `R__views_functions.sql:24-29` 的 `DROP FUNCTION IF EXISTS … CASCADE` 才能增加 `RETURNS TABLE` 的欄位；加一步在既有 volume（不 `down -v`）上跑 migration，確認 Flyway 重跑 R__ 檔且成功，被 CASCADE 一起刪掉的物件若沒有重建就停下回報。（Task 7；spec §12 第 7 點）
 
 **已確認、計畫直接處理（不需裁決）**
 
@@ -64,7 +68,7 @@
 16. **擁有者條件寫在 SQL**（`WHERE … AND user_id = $me`）；查無一律 404，不先查出再比對。
 17. backend `TZ=UTC`（compose 設定，P4 R6）不動；期限與時間比較一律在 DB 用 `now()`。
 18. **測試數以實際執行為準**：報告與 ledger 的 passed 數只抄 `pytest`／`scripts/ci.sh` 的輸出，不估算。
-19. 審查（`~/.claude/CLAUDE.md`）：每個 Task 派 reviewer-opus；標「雙審」的 Task 另派 reviewer-fable 平行審，由主對話比對。同一 Task 連續修兩次仍紅，先諮詢 advisor。
+19. 審查（`~/.claude/CLAUDE.md`，R5）：**每個 Task（0–10）都雙審**：reviewer-opus 與 reviewer-fable 平行審、互不看對方結果，由主對話比對（依據：跨多檔，或動到 CI 設定 `refs.env`）。同一 Task 連續修兩次仍紅，先諮詢 advisor。
 20. E2E 一律 `wait_until="domcontentloaded"`，不用 `wait_for_timeout`；等 API 用 `page.expect_response`。
 21. **行號基準**：本計畫的 `file:line` 以起草基準（backend `0e3b192`、frontend `bfd20f0`、總覽 `6716d6c`）為準；前面的 Task 改過同一檔案後，以函式名或引用的文字為錨點。
 
@@ -125,7 +129,7 @@
 
 ---
 
-### Task 0: 開分支、refs.env、查證讀碼推定
+### Task 0: 開分支、refs.env、查證讀碼推定（雙審）
 
 **Files:**
 - Modify: `refs.env`
@@ -230,7 +234,7 @@
 - [ ] **Step 3: 實作**：依 Interfaces。
 - [ ] **Step 4: 綠燈**：`uv run pytest tests -q`（含 `test_api_smoke.py::test_purchases_item_detail`、`test_trade_*`）。commit backend `feat: 我的訂單 API（全狀態、應付金額單一來源、期限）；fix: 已購買明細的擁有者檢查 🟢`；總覽 `docs: 契約 §4.2 (c) 已修正`。
 
-### Task 4: 會員中心分頁切換、Header、訂單分頁
+### Task 4: 會員中心分頁切換、Header、訂單分頁（雙審）
 
 **Files:**
 - Modify: `frontend/src/utils/api.js`（`apiUrl_orders`、`isMemberApi`）、`views/admin/userprofilePage.vue`（`:46` 即將開放、`:191` tabs、`:291` `console.log`）、`components/HeaderComponent.vue:67-70,99-101,116-119`、`router/index.js`（`automatic` 改 redirect）
@@ -256,16 +260,17 @@
 - [ ] **Step 3: 實作**：依 Interfaces；刪除 `userprofilePage.vue:291` 的 `console.log(this.password.current)`。
 - [ ] **Step 4: 綠燈**：`uv run pytest e2e -q`。commit frontend `feat: 會員中心以 ?tab= 切換、訂單分頁（明細、繼續付款）、Header 連結接上 🟢`。
 
-### Task 5: 點數紀錄與會員等級
+### Task 5: 點數紀錄與會員等級（雙審）
 
 **Files:**
 - Create: `backend/src/routes/points.js`、`controllers/points.js`、`middlewares/points/index.js`、`tests/test_member_points.py`
-- Modify: `backend/src/server.js`、`controllers/userProfile.js:123-178`、`tests/test_api_smoke.py:282-291`、`tests/test_validator_sweep.py`
+- Modify: `backend/src/server.js`、`controllers/userProfile.js:123-178`、`controllers/userinfo.js:57,123,249,379`（R6）、`tests/test_api_smoke.py:282-291`、`tests/test_validator_sweep.py`
 - Modify: `frontend/src/utils/api.js`、`views/admin/userprofilePage.vue`、`e2e/test_member_center.py`、`e2e/test_member_flow.py`
 
 **Interfaces:**
 - Consumes：Task 3 `pagingSchema`。
 - Produces（API）：`GET /user/points/records`（`auth`, `authRole('User')`, `mw.getRecords`）：`WHERE user_id = $1 AND type <> '減少_確認中' AND point <> 0`（R3：在 SQL 排除，前端不過濾），`ORDER BY created_at DESC, point_id`（主鍵名 `point_id`）；每筆 `{ created_at, point, type, reason, order_id }`，`reason` 依共用約定（`controllers/points.js` 內 `POINT_REASON` 物件）；`dbdata = { data, total }`。
+- Produces（`controllers/userinfo.js`，R6）：註冊 `:57`、Email 登入 `:123`、Google 登入 `:249`、`get_user_loginStatus` `:379` 的 `points` 改 `Math.max(0, Number(值))`，DB 不變。
 - Produces（`get_user_PointCoupon`）：`travel_point = Math.max(Number(值), 0)`；只在 `優惠卷編號 !== null` 時 push，無券時 `coupon: []`。
 - Produces（`api.js`）：`get_point_records({ page = 1, limit = 10 } = {})`、`get_member_level() -> Promise<{ level, level_name, badge_url, travel_point, coupons }>`（打 `pointslevel`）。
 - Produces（「會員等級」分頁）：`目前等級 <level_name>`、`購物回饋比例 10%`（與 `settlePaidOrder` 的 `floor(payable × 0.1)` 一致；`user_level` 沒有比例欄位，前端常數 `REWARD_RATE_TEXT`）、`點數餘額 <N> 點`、優惠券清單（代碼、說明、期限；無券 `目前沒有可用的優惠券`）、文字 `點數紀錄為明細，加總不一定等於目前餘額（初始點數沒有對應紀錄）`、`升級規則尚未開放`；紀錄每列 `data-testid="point-record"`：時間、原因、`+170`／`-100`、訂單編號前 8 碼。
@@ -276,14 +281,15 @@
   - **Review Focus 4** `test_point_records_hide_signup_zero_row`（放在 `tests/test_member_auth.py`，沿用 `_signup_body`、`cleanup_email`）：以 `/signup` 註冊新會員（`val.` 前綴）→ DB 有 `新增 0` 一列，但點數紀錄 API `data == []`。
   - `test_point_records_paging`、`test_point_records_other_user_not_visible`（B 的紀錄不出現在 A）、`test_point_records_without_token_is_401`、`test_point_records_admin_is_403`、`test_point_records_limit_over_50_is_400`。
   - `test_pointslevel_negative_shows_zero`（`travel_point = -50` → 回 `0`；DB 仍 -50）；`test_pointslevel_without_coupon_is_empty_list`（新會員 → `coupon == []`）。
+  - R6（放在 `tests/test_member_auth.py`）：`test_login_email_negative_points_returns_zero`（`make_user` 後以 DB 設 `travel_point = -50` → `POST /auth/userinfo/login/email` 回應的 `level.points == 0`；DB 仍 -50）；`test_login_status_negative_points_returns_zero`（同上，`GET /login/status` 回應的點數為 0）。註冊與 Google 登入不寫測試，Step 3 完成後以 `grep -n "points:" backend/src/controllers/userinfo.js` 確認 4 處都已 clamp，結果寫 ledger。
   - 改 `test_api_smoke.py:282` 為 `test_points_level_alice_has_empty_coupon_list`：`me["coupon"] == []`，其餘斷言不變。
   - `test_validator_sweep.py` parametrize 加 `points`。
   - E2E（`e2e/test_member_center.py`）：`test_level_tab_shows_points_and_records`（`travel_point = 170`、紀錄 `新增 170`、`減少 -100`、`減少_確認中 -50` → `點數餘額 170 點`、2 個 `point-record`、含 `購物回饋`、`+170`、`點數折抵`、`-100`，不含 `-50`；說明文字可見）；`test_level_tab_negative_points_shows_zero`（`-50` → `點數餘額 0 點`）。`test_coming_soon_tabs` 改為只檢查 `個人偏好設定`。
-- [ ] **Step 2: 跑紅燈**：`uv run pytest tests/test_member_points.py tests/test_api_smoke.py e2e/test_member_center.py -k "point or level" -v --tb=short`。（另加 `tests/test_member_auth.py -k zero_row`）存 `task-5-red.txt`，commit 總覽 `test: 點數紀錄、等級頁負點數顯示 0、無券回空陣列 🔴`。
+- [ ] **Step 2: 跑紅燈**：`uv run pytest tests/test_member_points.py tests/test_api_smoke.py e2e/test_member_center.py -k "point or level" -v --tb=short`。（另加 `tests/test_member_auth.py -k "zero_row or negative_points"`）存 `task-5-red.txt`，commit 總覽 `test: 點數紀錄、等級頁負點數顯示 0、無券回空陣列 🔴`。
 - [ ] **Step 3: 實作後端與前端**：依 Interfaces。
-- [ ] **Step 4: 綠燈**：`uv run pytest tests e2e -q`。commit backend `feat: 點數紀錄 API；pointslevel 負點數回 0、無券回空陣列 🟢`；frontend `feat: 會員等級分頁（等級、點數、優惠券、點數紀錄） 🟢`。
+- [ ] **Step 4: 綠燈**：`uv run pytest tests e2e -q`。commit backend `feat: 點數紀錄 API；pointslevel 與登入回應的負點數回 0、無券回空陣列 🟢`；frontend `feat: 會員等級分頁（等級、點數、優惠券、點數紀錄） 🟢`。
 
-### Task 6: 通知設定
+### Task 6: 通知設定（雙審）
 
 **Files:**
 - Modify: `backend/src/controllers/automation.js`、`middlewares/automation/index.js`、`utils/Validator/automation_Validator.js`
@@ -295,19 +301,20 @@
 - Produces（API，路由不變、仍 `authRole('User')`）：
   - `GET /allnotifi-settings`：沒有資料時回預設 `{ notifi_settings_enabled: false, price_tracking: { price_tracking_enabled: false, country: null, region: null, max_price: null } }`，訊息 `查詢成功`；有資料時兩個開關輸出布林。
   - `PATCH /notifi-settings`：`INSERT … ON CONFLICT (user_id) DO UPDATE SET early_notify = EXCLUDED.early_notify, updated_at = now()`，200 `提醒設定已更新`。
-  - `PATCH /price-tracking`：同樣 upsert（只更新 `flexible_notify, country, region, price`）；開啟時 `country`／`region` 必須是上架行程的組合（R2：`EXISTS (SELECT 1 FROM tour WHERE status = 1 AND country = $1 AND region = $2)`，與 regions API 共用 `controllers/automation.js` 內的 SQL 常數 `LISTED_REGION_SQL`），否則 400 `「國家」與「地區」不是系統提供的選項`；關閉時三欄寫 NULL。200 `彈性價格提醒狀態已更新`。
+  - `PATCH /price-tracking`：同樣 upsert（只更新 `flexible_notify, country, region, price`）；開啟時 `country`／`region` 必須是上架行程的組合，**或**與該會員目前存的 `(country, region)` 完全相同（R2a）（R2：`EXISTS (SELECT 1 FROM tour WHERE status = 1 AND country = $1 AND region = $2)`，與 regions API 共用 `controllers/automation.js` 內的 SQL 常數 `LISTED_REGION_SQL`），否則 400 `「國家」與「地區」不是系統提供的選項`；關閉時三欄寫 NULL。200 `彈性價格提醒狀態已更新`。
   - `GET /regions`（新，`auth`, `authRole('User')`）：`SELECT DISTINCT country, region FROM tour WHERE status = 1 AND country IS NOT NULL AND region IS NOT NULL`，依國家分組回 `dbdata = { data: [{ country, regions: [string] }] }`（國家、地區皆字母序）。
   - 驗證訊息全部換成共用約定的中文標籤，經 `userMessage`。
 - Produces（`api.js`）：`get_notify_settings()`、`patch_early_notify(enabled: boolean)`、`patch_price_tracking({ enabled, country, region, maxPrice })`、`get_tracking_regions() -> Promise<Array<{ country, regions }>>`（打 `/user/automation/regions`；不使用 `/web/filter` 的中文表）。
-- Produces（「個人偏好設定」分頁）：勾選框 `出發前提醒`、`價格追蹤`；開啟價格追蹤才顯示下拉 `國家`、`地區` 與數字輸入 `預算上限`；按鈕 `儲存設定` 依序呼叫兩支 PATCH，成功 Swal `設定已儲存`；文字 `目前只儲存設定，尚未寄送通知`。
+- Produces（「個人偏好設定」分頁）：已存的國家或地區不在 `get_tracking_regions()` 清單時，仍加入選項並維持選取，選項文字為 `<值>（目前沒有上架行程）`（R2a）；勾選框 `出發前提醒`、`價格追蹤`；開啟價格追蹤才顯示下拉 `國家`、`地區` 與數字輸入 `預算上限`；按鈕 `儲存設定` 依序呼叫兩支 PATCH，成功 Swal `設定已儲存`；文字 `目前只儲存設定，尚未寄送通知`。
 
 - [ ] **Step 1: 寫紅燈測試**（`tests/test_member_notify.py`）
   - `test_get_defaults_when_no_row`（新會員 → 預設值，兩個開關 `is False`）；`test_get_returns_booleans`（DB 插 `early_notify = 1` → `True`）。
   - `test_patch_early_upsert_idempotent`（PATCH 兩次 → DB 該會員 1 列、`early_notify = 1`）；`test_patch_price_upsert_keeps_early`（先 early true，再 price-tracking 開啟 `Japan`／`Tokyo`／30000 → 1 列，兩項都在）；`test_patch_concurrent_first_write_one_row`（兩執行緒同時第一次 PATCH → 都 200、1 列）。
-  - `test_regions_lists_listed_tour_pairs`（`make_tour` 建上架行程並以 DB 設 `country = 'p5land'`、`region = 'p5city'` → 回應含該組；下架行程的組合不出現）；`test_regions_admin_is_403`。
-  - `test_price_tracking_invalid_region_is_400`（`Japan`／`Paris`、`日本`／`東京` → 400 `「國家」與「地區」不是系統提供的選項`）；`test_price_tracking_accepts_listed_pair`（`France`／`Paris` → 200）；`test_price_tracking_requires_fields`（開啟但缺 `region` → 400 `開啟價格追蹤時「地區」為必填欄位`）；`test_price_tracking_negative_price_is_400`；`test_early_not_boolean_is_400`（`"abc"` → `「旅遊提醒」必須是 true 或 false`）；`test_disable_price_tracking_clears_fields`。
+  - `test_regions_lists_listed_tour_pairs`（`make_tour` 建上架行程並以 DB 設 `country = 'p5land'`、`region = 'p5city'` → 回應含該組；下架行程的組合不出現）；`test_regions_admin_is_403`、`test_regions_without_token_is_401`。
+  - `test_price_tracking_invalid_region_is_400`（`Japan`／`Paris`、`日本`／`東京` → 400 `「國家」與「地區」不是系統提供的選項`）；`test_price_tracking_accepts_listed_pair`（`France`／`Paris` → 200）；**R2a** `test_delisted_saved_region_kept_and_resavable`（`make_tour` 建上架行程並設 `country = 'p5land'`、`region = 'p5city'`，會員存這組 → 以 DB 把該行程下架 → `GET` 仍回 `p5land`／`p5city`；原值不變再 PATCH 一次 → 200；改成 `p5land`／`p5other` → 400 `「國家」與「地區」不是系統提供的選項`）；`test_price_tracking_requires_fields`（開啟但缺 `region` → 400 `開啟價格追蹤時「地區」為必填欄位`）；`test_price_tracking_negative_price_is_400`；`test_early_not_boolean_is_400`（`"abc"` → `「旅遊提醒」必須是 true 或 false`）；`test_disable_price_tracking_clears_fields`。
   - `test_notify_without_token_is_401`、`test_notify_admin_is_403`（三支各一次，參數化）。
   - `test_validator_sweep.py`：`SWEEP_JS` 加 `automation.early`、`automation.price`；parametrize 加 `automation`。
+  - E2E **R2a** `test_delisted_saved_region_shown_with_note`：同上建立並存好後下架 → 個人偏好設定分頁的國家、地區下拉仍選取原值，文字含 `（目前沒有上架行程）`；直接 `儲存設定` → `設定已儲存`。
   - E2E：`test_notify_settings_persist_after_reload`（勾 `出發前提醒`、`價格追蹤`，選 `Japan`／`Tokyo`、預算 30000 → `儲存設定` → `page.reload()` → 值都在；DB 1 列）；`test_admin_automatic_redirects_to_preference_tab`（`#/admin/manage/automatic` → URL 含 `tab=preference`）。刪除 `test_coming_soon_tabs`，改 `test_no_coming_soon_tabs`（四個分頁都沒有 `即將開放`）。
 - [ ] **Step 2: 跑紅燈**：`uv run pytest tests/test_member_notify.py tests/test_validator_sweep.py e2e/test_member_center.py e2e/test_member_flow.py -k "notify or automatic or coming_soon or sweep or middlewares" -v --tb=short`。存 `task-6-red.txt`，commit 總覽 `test: 通知設定預設值、upsert、地區驗證、布林輸出 🔴`。
 - [ ] **Step 3: 實作**：依 Interfaces。
@@ -342,10 +349,11 @@
   - `test_detail_returns_favorite_id`（收藏後 `GET /user/product/search/:tour_id` → `is_favorited is True`、`favorite_id` 等於 POST 回傳值；未收藏 `favorite_id is None`）；`test_search_returns_favorite_id`（搜尋結果該行程 `收藏編號` 等於 POST 回傳值）。
   - 既有測試：`test_api_smoke.py:365` 移除 `Connection: close` 與註解；`test_async_errors.py` 改用另一個仍在 try 外 reject 的路由（找不到 ⛔ 停下回報，不得刪測試），原路由另寫 `test_collection_bad_uuid_is_400`；`tests/db_contract.py` 4 個 function 的欄位加 `("收藏編號", "uuid")`；`test_views_a.py:274` 的比較同時排除 `收藏編號`；`test_validator_sweep.py` 加 `collection` 的 schema 與 parametrize。
 - [ ] **Step 2: 跑紅燈**：`uv run pytest tests/test_member_favorites.py tests/test_async_errors.py tests/test_api_smoke.py tests/test_db_contract.py tests/test_views_a.py tests/test_validator_sweep.py -v --tb=short`。存 `task-7-red.txt`，commit 總覽 `test: 收藏唯一、重複回原 id、404、商品回傳 favorite_id 🔴`。
-- [ ] **Step 3: 實作**：依 Interfaces；改完 `R__views_functions.sql` 跑 `docker compose run --rm flyway`。
+- [ ] **Step 3: 實作**：依 Interfaces。`RETURNS TABLE` 能多一欄，是靠 `R__views_functions.sql:24-29` 開頭的 `DROP FUNCTION IF EXISTS … CASCADE`（簽章只看參數型別，不變），不要改動這段（R7）。
+- [ ] **Step 3b: 在既有 volume 上驗證 R__ 重跑（R7）**：**不跑 `down -v`**。先記下 `SELECT count(*) FROM flyway_schema_history WHERE script = 'R__views_functions.sql'` 與 `SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace` ＋ `SELECT viewname FROM pg_views WHERE schemaname = 'public'` 的清單；`docker compose run --rm flyway` 輸出含 `Migrating schema "public" with repeatable migration views functions`、結束碼 0；之後 history 多一列且 `success = t`，function／view 清單與執行前相同（檔頭註解的 21 個物件都在）。少了任何物件 ⛔ 停下回報。輸出存 `docs/reports/evidence/phase-5/task-7-repeatable-rerun.txt`。
 - [ ] **Step 4: 綠燈**：`uv run pytest tests -q`。commit backend `fix: 收藏列表只回應一次、新增驗證 UUID 與 404、重複收藏回原 id、擁有者以 SQL 限定；feat: 商品回傳 favorite_id 🟢`；總覽 `docs: 契約與上鎖順序記錄收藏約束與收藏編號`。
 
-### Task 8: 收藏前端、愛心元件、P5 主線 E2E
+### Task 8: 收藏前端、愛心元件、P5 主線 E2E（雙審）
 
 **Files:**
 - Create: `frontend/src/components/FavoriteHeart.vue`、`e2e/test_favorite_flow.py`
