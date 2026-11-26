@@ -169,12 +169,12 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 ### 11. 收藏新增與刪除
 
-`controllers/collection.js`（P5 Task 7；V6 `favorite_user_tour_key UNIQUE (user_id, tour_id)`）。不開交易，每條語句各自自動提交。
+`controllers/collection.js`（以下 `collection.js` 的行號以 backend `ab52b9a` 為準；P5 Task 7；V6 `favorite_user_tour_key UNIQUE (user_id, tour_id)`）。不開交易，每條語句各自自動提交。
 
 **新增** `POST /info/:tour_id`
 1. `findListedTour`（`utils/purchase.js`）：不加鎖的 `SELECT … FROM tour`，只讀：`controllers/collection.js:68`
 2. `INSERT INTO favorite … ON CONFLICT (user_id, tour_id) DO NOTHING RETURNING favorite_id`：`controllers/collection.js:75-79`。單一語句，只取該會員這一組 `(user_id, tour_id)` 的唯一索引鍵鎖。
-3. 若 DO NOTHING（沒有回傳列），不加鎖 `SELECT favorite_id … WHERE user_id = $1 AND tour_id = $2`：`controllers/collection.js:89-92`，回 200 並附原本的 `favorite_id`。
+3. 若 DO NOTHING（沒有回傳列），不加鎖 `SELECT favorite_id … WHERE user_id = $1 AND tour_id = $2`：`controllers/collection.js:89-92`，回 200 並附原本的 `favorite_id`。SELECT 也查不到（代表那筆剛好被同時刪掉）時回到第 2 步，**最多 3 輪（首次加 2 次重試）**（`:74` 的 `attempt < 3` 迴圈），3 輪都查不到就丟錯，回 500。每一輪的 INSERT、SELECT 都是獨立、自動提交的語句，不會跨輪持有鎖，所以重試不會成環。
 
 **刪除** `DELETE /info/:favorite_id`：單一 `DELETE … WHERE favorite_id = $1 AND user_id = $2 RETURNING favorite_id`（`controllers/collection.js:115-118`）。
 

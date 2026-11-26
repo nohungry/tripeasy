@@ -1443,11 +1443,12 @@
 
 - **種類**：view（無參數）
 - **使用位置**：
-  - `controllers/collection.js:14–17`（API：`GET /api/v1/user/collection/info/all?lang=&page=&limit=`，`routes/collection.js:11`，需登入且 `authRole('User')`）
+  - `controllers/collection.js:12-49`（P5 Task 7 之後的現況；API：`GET /api/v1/user/collection/info/all?lang=`，不分頁，`routes/collection.js`，需登入且 `authRole('User')`；舊寫法 `?lang=&page=&limit=` 已移除，下方舊敘述保留作歷史）
     ```sql
-    SELECT * FROM public."user_favorite" WHERE 收藏人員編號 = $1 ORDER BY 建立時間 DESC LIMIT $2 OFFSET $3
+    SELECT * FROM public."user_favorite" WHERE 收藏人員編號 = $1 ORDER BY 建立時間 DESC, favorite_id LIMIT 100
     ```
-    參數 `[user_id, limit, (page - 1) * limit]`（`collection.js:16`）：`user_id` 為 `req.user.id`（JWT，不經 UUID 驗證）；`limit`、`page` 是 `req.query` 的字串（`middlewares/collection/index.js:9` 驗證了 `lang`／`page`／`limit` 必填且 `page`、`limit` ≥ 1，但 `validate()` 的結果沒有寫回 `req.query`）。`lang` 在 `collection.js:10` 被解構但沒有用在任何查詢。
+    參數 `[user_id, 100]`；另以 `SELECT COUNT(*)::int FROM favorite WHERE user_id = $1` 算 `total`（實際總數）。寫入位置：`POST` 的 `INSERT … ON CONFLICT (user_id, tour_id) DO NOTHING RETURNING favorite_id` 在 `controllers/collection.js:75-79`，`DELETE` 在 `:115-118`（backend `ab52b9a`）。（P4 以前：`LIMIT $2 OFFSET $3`，參數 `[user_id, limit, (page - 1) * limit]`，`page`／`limit` 為 query 字串。）
+    （P4 以前的舊敘述：）參數 `[user_id, limit, (page - 1) * limit]`（`collection.js:16`）：`user_id` 為 `req.user.id`（JWT，不經 UUID 驗證）；`limit`、`page` 是 `req.query` 的字串（`middlewares/collection/index.js:9` 驗證了 `lang`／`page`／`limit` 必填且 `page`、`limit` ≥ 1，但 `validate()` 的結果沒有寫回 `req.query`）。`lang` 在 `collection.js:10` 被解構但沒有用在任何查詢。
   - 沒有其他使用位置。`favorite` 資料表的寫入與重複檢查不走這個 view，見邊界。
 - **輸出欄位**（`controllers/collection.js:20–36` 取 key）：
 
@@ -1743,7 +1744,7 @@
 - 付款：`newebpay.js:82,213` 對 `order_item` 寫不存在的 `payment` 欄位，交易 ROLLBACK，`payment_status` 到不了 1（§2 `user_orderList`、§3 `user_orders`）。
 - 優惠卷與點數：沒有任何程式把 `user_coupon.status` 設成 1（只有 `checkout.js:149` 寫 -1）；`GET /user/trade/discounts/:order_id`（`discounts.js:78–115`）取消折抵沒有任何寫入；`discounts.js:34` 讀 `expired_date`；沒有任何程式增加點數、UPDATE `travel_point` 或把 `減少_確認中` 轉成 `減少`；`used_point` 驗證器沒有 `.integer()`（`checkout_Vaildator.js:78`）（§2 `user_couponList`、`user_level_point_coupon`）。
 - 角色大小寫：管理者 PATCH 只接受 `admin`／`user`（`admin_Validator.js:4,67–74`），降權成 `user` 後通不過 `authRole('User')`（`routes/collection.js:11`、`routes/purchases.js:11,17`）；seed 的 Bob 是 `admin`，無法呼叫收藏與已購買的 GET（§3 C 組共通觀察）。
-- 收藏：`GET /collection/info/all` 每次送兩次回應（`collection.js:39–64`）；`POST` 的 `tour_id` 不驗 UUID，格式錯誤時 500（`middlewares/collection/index.js:46`）（§3 `user_favorite`）。
+- 收藏：`GET /collection/info/all` 每次送兩次回應（`collection.js:39–64`）；`POST` 的 `tour_id` 不驗 UUID，格式錯誤時 500（`middlewares/collection/index.js:46`）（§3 `user_favorite`）。（**已於 P5 Task 7 修正**：只回應一次、POST 驗證 UUID 回 400、重複收藏 200）
 - 已購買：`middlewares/purchases/index.js:34` 的 404 永遠不會觸發（§3 `user_order_item`）。
 - 優惠卷代碼格式前後台不一致：後台新增與修改（`coupon_Validator.js:34` 的 `coupon` 只是 `Joi.string()`；`controllers/coupon.js:10` 新增、`:107` 修改）不限格式，消費者使用時（`discounts_Validatior.js:9–13`）只接受 `^[A-Z0-9]{6}$`，所以後台建立的非 6 碼代碼消費者永遠用不了。修法是兩邊用同一條規則，統一成哪一條由 P6（後台優惠卷 CRUD）決定，不是本表的決定項。seed 依 (d2) 改成 6 碼，不受影響。
 - 優惠卷 `discount` 的運算（§4.1 #1 定案 B ＝ 折抵金額）：`controllers/discounts.js:38`、`controllers/checkout.js:155` 做 `total_price * discount`，在金額語意下會算出數百倍金額（例：`total_price` 3576.74 × `discount` 100.0 → 357,674）；要改成 `total_price - discount`（`orders.discount_price` 為折後應付金額，與點數路徑 `checkout.js:165` 同語意），屬 P4 結帳。P4 修好之前優惠卷結帳金額是錯的。V3 view 照金額語意輸出原值，不為了配合乘法而轉換數值。`coupon_Validator.js:45` 的 `> 0` 無上限與金額語意相容；是否加上限（例如不得超過訂單金額）只是 P4／P6 的觀察，不是決定。

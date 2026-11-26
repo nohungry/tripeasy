@@ -1,9 +1,13 @@
 """P5 Task 7：收藏後端（POST／DELETE／GET /user/collection/info）與商品 API 回傳 favorite_id。"""
+import collections
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from conftest import API_BASE, Api, auth_header
+import psycopg
+from conftest import API_BASE, Api, _db_params, auth_header
+from dbfactory import insert
 
 FAV = "/api/v1/user/collection/info"
 LIST = f"{FAV}/all"
@@ -69,10 +73,52 @@ def test_concurrent_favorite_same_tour_returns_same_id(db, make_user, make_tour)
     with ThreadPoolExecutor(max_workers=n) as pool:
         results = list(pool.map(hit, range(n)))
     codes = [r.status_code for r in results]
-    assert set(codes) <= {200, 201}, [(r.status_code, r.text) for r in results]
-    assert codes.count(201) == 1, codes
+    counter = collections.Counter(codes)
+    assert set(codes) <= {200, 201}, (counter, [(r.status_code, r.text) for r in results])
+    assert counter[201] == 1, counter
     assert len({r.json()["data"]["favorite_id"] for r in results}) == 1
     assert len(fav_rows(db, user, tour["tour_id"])) == 1
+
+
+def test_favorite_waits_on_uncommitted_insert_then_returns_same_id(db, make_user, make_tour):
+    """結果確定的併發：另一條連線已 INSERT 同一組 (user_id, tour_id) 但未 commit，
+    POST 必須卡在唯一索引的鎖上，commit 後回 200 與該筆 favorite_id。
+    upsert 會回 200；「先查再寫」會撞 23505 回 500。"""
+    user, tour = make_user(), make_tour()
+    holder = psycopg.connect(**_db_params())
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
+        fid = str(
+            holder.execute(
+                "INSERT INTO favorite (user_id, tour_id) VALUES (%s, %s) RETURNING favorite_id",
+                (user["user_id"], tour["tour_id"]),
+            ).fetchone()[0]
+        )
+        future = pool.submit(
+            lambda: Api(API_BASE).post(f"{FAV}/{tour['tour_id']}", headers=auth_header(user), json={}, timeout=15)
+        )
+        deadline = time.monotonic() + 10
+        while True:
+            waiting = db.execute(
+                "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' "
+                "AND datname = current_database() AND query LIKE %s",
+                ("%INSERT INTO public.\"favorite\"%",),
+            ).fetchone()[0]
+            if waiting:
+                break
+            assert not future.done(), f"POST 在 commit 前就完成了：{future.result().status_code} {future.result().text}"
+            assert time.monotonic() < deadline, "POST 沒有卡在鎖上"
+            time.sleep(0.05)
+        holder.commit()
+        r = future.result(timeout=15)
+        assert r.status_code == 200, r.text
+        assert r.json()["message"] == "已收藏過此行程"
+        assert r.json()["data"]["favorite_id"] == fid
+        assert len(fav_rows(db, user, tour["tour_id"])) == 1
+    finally:
+        holder.rollback()
+        holder.close()
+        pool.shutdown(wait=False)
 
 
 def test_favorite_unlisted_tour_is_404(api, db, make_user, make_tour):
@@ -206,17 +252,27 @@ def test_list_empty(api, make_user):
     assert r.json()["data"] == {"data": [], "total": 0}
 
 
-def test_detail_returns_favorite_id(api, make_user, make_tour):
-    user, tour = make_user(), make_tour()
+@pytest.mark.parametrize("item", ["travel", "hotel", "food", "spot"])
+def test_detail_returns_favorite_id(api, db, make_user, make_tour, item):
+    user = make_user()
+    tour = make_tour(item=item, with_detail=item in ("travel", "spot"))
+    if item == "hotel":  # tour_hotel 要有 hotel 與房型；delete_tour 會清掉
+        hotel = insert(db, "hotel", tour_id=tour["tour_id"])
+        insert(db, "hotel_room", hotel_id=hotel["hotel_id"])
+    elif item == "food":  # tour_restaurant 要有 restaurant、菜單與營業時間
+        restaurant = insert(db, "restaurant", tour_id=tour["tour_id"])
+        insert(db, "restaurant_menu", restaurant_id=restaurant["restaurant_id"])
+        insert(db, "restaurant_business", restaurant_id=restaurant["restaurant_id"])
     url = f"{PRODUCT}/{tour['tour_id']}"
-    before = api.get(url, headers=auth_header(user), params={"lang": "zh-TW"}).json()["data"]
-    assert before["is_favorited"] is False and before["favorite_id"] is None
+    before = api.get(url, headers=auth_header(user), params={"lang": "zh-TW"})
+    assert before.status_code == 200, before.text
+    assert before.json()["data"]["is_favorited"] is False and before.json()["data"]["favorite_id"] is None
     fid = favorite(api, user, tour["tour_id"]).json()["data"]["favorite_id"]
     after = api.get(url, headers=auth_header(user), params={"lang": "zh-TW"}).json()["data"]
     assert after["is_favorited"] is True
     assert after["favorite_id"] == fid
     guest = api.get(url, params={"lang": "zh-TW"}).json()["data"]
-    assert guest["favorite_id"] is None
+    assert guest["is_favorited"] is False and guest["favorite_id"] is None
 
 
 def test_search_returns_favorite_id(api, make_user, make_tour):

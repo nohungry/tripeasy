@@ -1,0 +1,41 @@
+# F23：暫時把 POST 改回「先查再寫」，新測試必須紅（此修改未 commit，已還原）
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_favorite_waits_on_uncommitted_insert_then_returns_same_id ________
+tests/test_member_favorites.py:114: in test_favorite_waits_on_uncommitted_insert_then_returns_same_id
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"error","message":"伺服器錯誤"}
+E   assert 500 == 200
+E    +  where 500 = <Response [500]>.status_code
+______________ test_concurrent_favorite_same_tour_returns_same_id ______________
+tests/test_member_favorites.py:77: in test_concurrent_favorite_same_tour_returns_same_id
+    assert set(codes) <= {200, 201}, (counter, [(r.status_code, r.text) for r in results])
+E   AssertionError: (Counter({500: 6, 201: 1, 200: 1}), [(201, '{"status":"success","message":"收藏成功","data":{"favorite_id":"b18501cc-f8bf-... (200, '{"status":"success","message":"已收藏過此行程","data":{"favorite_id":"b18501cc-f8bf-420b-bba7-688204e9df67"}}'), ...])
+E   assert {200, 201, 500} <= {200, 201}
+E     
+E     Extra items in the left set:
+E     500
+=========================== short test summary info ============================
+FAILED tests/test_member_favorites.py::test_favorite_waits_on_uncommitted_insert_then_returns_same_id
+FAILED tests/test_member_favorites.py::test_concurrent_favorite_same_tour_returns_same_id
+2 failed in 0.25s
+
+## 併發測試（8 條）對先查再寫版跑 10 次
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 6, 201: 1, 500: 1}), [(200, '{"status":"success","message":"已收藏過此行程","data":{"favorite_i
+1 failed in 0.12s
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 5, 500: 2, 201: 1}), [(201, '{"status":"success","message":"收藏成功","data":{"favorite_id":"c0cd9
+1 failed in 0.11s
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 4, 500: 3, 201: 1}), [(500, '{"status":"error","message":"伺服器錯誤"}'), (200, '{"status":"succe
+1 failed in 0.12s
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 6, 201: 1, 500: 1}), [(200, '{"status":"success","message":"已收藏過此行程","data":{"favorite_i
+1 failed in 0.11s
+1 passed in 0.10s
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 5, 500: 2, 201: 1}), [(200, '{"status":"success","message":"已收藏過此行程","data":{"favorite_i
+1 failed in 0.11s
+tests/test_member_favorites.py:77: AssertionError: (Counter({500: 4, 200: 3, 201: 1}), [(200, '{"status":"success","message":"已收藏過此行程","data":{"favorite_i
+1 failed in 0.13s
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 4, 500: 3, 201: 1}), [(200, '{"status":"success","message":"已收藏過此行程","data":{"favorite_i
+1 failed in 0.12s
+1 passed in 0.10s
+tests/test_member_favorites.py:77: AssertionError: (Counter({200: 6, 201: 1, 500: 1}), [(201, '{"status":"success","message":"收藏成功","data":{"favorite_id":"f7899
+1 failed in 0.09s
