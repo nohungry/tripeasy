@@ -1,0 +1,201 @@
+FFF.                                                                     [100%]
+=================================== FAILURES ===================================
+_____________ test_register_name_too_long_shows_message[chromium] ______________
+e2e/test_member_flow.py:559: in test_register_name_too_long_shows_message
+    expect(page.get_by_text(NAME_LEN_MSG)).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: None
+E   Error: element(s) not found 
+E   Call log:
+E     - Expect "to_be_visible" get_by_text("「姓名」需為 2 到 20 個字") with timeout 5000ms
+E     - waiting for get_by_text("「姓名」需為 2 到 20 個字")
+E   
+E   Aria snapshot:
+E   - heading "TripEasy" [level=1]:
+E     - link "TripEasy":
+E       - /url: "#/"
+E       - img "TripEasy"
+E   - textbox "今天要去哪裡呢？"
+E   - button "Submit"
+E   - text: 中 英
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/cart"
+E   - img "頭像"
+E   - text: 嗨！阿蘇
+E   - img "下拉式按鈕"
+E   - img "等級圖示"
+E   - text: 初心旅人
+E   - list:
+E     - listitem:
+E       - link "會員資訊":
+E         - /url: "#/admin/userprofile"
+E     - listitem:
+E       - link "會員等級":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "個人偏好設定":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "個人訂單查看":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "登出":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "購物專區":
+E         - /url: "#/search"
+E     - listitem:
+E       - link "旅遊神器":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "行事曆":
+E         - /url: "#/admin/register#"
+E     - listitem:
+E       - link "購物車":
+E         - /url: "#/admin/register#"
+E   - link "註冊/登入":
+E     - /url: "#/admin/login"
+E   - paragraph: 走吧!
+E   - paragraph: 讓每段旅程都有溫度
+E   - img "register_img"
+E   - heading "會員註冊" [level=2]
+E   - text: 
+E   - textbox "請輸入姓名": 王王王王王王王王王王王王王王王王王王王王王
+E   - text: 
+E   - textbox "請輸入 Email": e2e-57bf9442@example.com
+E   - text: 
+E   - textbox "請輸入密碼": Tripeasy123
+E   - text: 
+E   - combobox:
+E     - option "探索冒險" [selected]
+E     - option "放鬆療癒" [disabled]
+E     - option "文化體驗" [disabled]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: ▼
+E   - combobox:
+E     - option "探索冒險" [disabled]
+E     - option "放鬆療癒" [selected]
+E     - option "文化體驗" [disabled]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: ▼
+E   - combobox:
+E     - option "探索冒險" [disabled]
+E     - option "放鬆療癒" [disabled]
+E     - option "文化體驗" [selected]
+E     - option "美食探索"
+E     - option "都市感官"
+E     - option "自然療癒"
+E     - option "親子家庭"
+E     - option "拍照打卡"
+E     - option "懶人輕鬆"
+E     - option "特殊主題"
+E   - text: ▼
+E   - paragraph: 「姓名」必須是 2 到 5 個字（中英文混合）
+E   - button "加入會員"
+E   - link "TripEasy":
+E     - /url: "#/"
+E     - img "TripEasy"
+E   - list:
+E     - listitem: 公司地址：台北市中山區忠孝東路二段211號
+E     - listitem: 電話：02-1234-5678
+E     - listitem: 公司統編：12345678
+E   - paragraph: © Copyright 2025 TripEasy
+E   - list:
+E     - listitem:
+E       - heading "公司資訊" [level=4]
+E     - listitem:
+E       - link "關於我們":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "客戶服務" [level=4]
+E     - listitem:
+E       - link "常見問題":
+E         - /url: "#/admin/manage/service"
+E     - listitem:
+E       - link "旅遊回饋":
+E         - /url: "#"
+E     - listitem:
+E       - link "退款政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "合作與業務" [level=4]
+E     - listitem:
+E       - link "商務合作洽談":
+E         - /url: "#"
+E     - listitem:
+E       - link "成為供應商":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - heading "法律與條款" [level=4]
+E     - listitem:
+E       - link "隱私權政策":
+E         - /url: "#"
+E     - listitem:
+E       - link "使用者條款":
+E         - /url: "#"
+E     - listitem:
+E       - link "Cookie 政策":
+E         - /url: "#"
+E   - list:
+E     - listitem:
+E       - link "facebook":
+E         - /url: "#"
+E         - img "facebook"
+E     - listitem:
+E       - link "instagram":
+E         - /url: "#"
+E         - img "instagram"
+E     - listitem:
+E       - link "twitter":
+E         - /url: "#"
+E         - img "twitter"
+E   - text: Hi! 需要幫忙嗎？
+E   - img "客服按鈕"
+E   - img
+E   - img
+______________ test_profile_name_too_long_shows_message[chromium] ______________
+e2e/test_member_flow.py:571: in test_profile_name_too_long_shows_message
+    assert patches == []
+E   AssertionError: assert ['http://loca...serinfo/info'] == []
+E     
+E     Left contains one more item: 'http://localhost:3000/api/v1/user/userinfo/info'
+E     Use -v to get more diff
+___________________ test_pay_name_too_long_blocked[chromium] ___________________
+e2e/test_member_flow.py:600: in test_pay_name_too_long_blocked
+    assert previews == []
+E   AssertionError: assert ['http://loca...e7582aa077a0'] == []
+E     
+E     Left contains one more item: 'http://localhost:3000/api/v1/user/checkout/preview/ffa03ae2-847c-4204-998e-e7582aa077a0'
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED e2e/test_member_flow.py::test_register_name_too_long_shows_message[chromium]
+FAILED e2e/test_member_flow.py::test_profile_name_too_long_shows_message[chromium]
+FAILED e2e/test_member_flow.py::test_pay_name_too_long_blocked[chromium] - As...
+3 failed, 1 passed, 27 deselected in 13.63s
