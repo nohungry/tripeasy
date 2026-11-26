@@ -1,6 +1,6 @@
 # TripEasy 交易上鎖順序
 
-核對基準：backend `0e3b192`；`utils/trade.js` 的行號以 backend `94c9326` 為準（P5 Task 3 抽出 `paymentInProgressSql` 後 +16；P5 Task 9 新增 `clearOrderDiscount` 後再 +8～+10），`controllers/userinfo.js` 的行號以 `ba08ec7` 為準（P5 Task 2 +1）。其餘（`git -C backend rev-parse --short HEAD`）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
+核對基準：行號以 backend `d3280ce` 為準（`git -C backend rev-parse --short HEAD`；P5 Task 9 最後一次動 backend，`utils/trade.js` 與其他引用的檔案行號都已對照該 commit 逐一核對）。下列 `file:line` 皆為該 commit 的行號，路徑相對於 `backend/src/`。
 
 ## 規範順序（P4 計畫 GC14，具約束力）
 
@@ -163,15 +163,15 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `controllers/userinfo.js:156`：Google 登入 `user` `FOR UPDATE`（以 email）。不碰交易表，但會擋住交易路徑因外鍵檢查（`point_record`、`payment`、`user_coupon`、`orders` 的 INSERT）對 `user` 取的 KEY SHARE。Google 登入取得 `user` 鎖後不會再取交易相關表的鎖，所以只是排隊、不成環。
 - `controllers/userinfo.js:32`、`:38`、`:210`、`:214`：新會員建立時 INSERT `user_level`／`point_record`，是新列，不與交易競爭。（P5 Task 2：新會員 INSERT `user` 的 name 改為 `googleDisplayName(name, email)`，只換參數值，不新增鎖或查詢；`controllers/userinfo.js` 頂端多一行 require，行號整體 +1。）
 - `controllers/userinfo.js:88`：`BEGIN` 開在 `client` 上，但後面的查詢都走 `pool.query`，各自自動提交，不碰交易表。其中 `:93-96` UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 的 `user` 鎖短暫排隊，不成環。
-- `controllers/userProfile.js:52`：UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 建單的 `user` 鎖互相排隊，但後續不取其他鎖，不成環。
-- `controllers/product.js:627`：交易只寫 tour 相關表，不碰交易表。
+- `controllers/userProfile.js:52-58`（BEGIN `:52`，UPDATE `:54-57`）：UPDATE `user`，取 `NO KEY UPDATE`，會與 checkout 建單的 `user` 鎖互相排隊，但後續不取其他鎖，不成環。
+- `controllers/product.js:626-630`（BEGIN `:630`）：交易只寫 tour 相關表，不碰交易表。
 - `controllers/admin.js:274`：解除優惠券綁定，單一 `DELETE user_coupon`、不開交易、不鎖 `orders`，可刪掉被保留（-1）的券（已知限制）。
 - `controllers/coupon.js:209`（`post_admin_assigncoupon`）：管理員批次綁定券，INSERT `user_coupon ... ON CONFLICT DO NOTHING`，不開交易。
 - `controllers/automation.js:74-78`（`patch_early_notifiSettings`）、`:126-139`（`patch_price_notifiSettings`）：通知設定寫入 `auto_setting`，是單一 `INSERT … ON CONFLICT (user_id) DO UPDATE` 語句、不開交易（P5 Task 6；V6 `auto_setting_user_id_key`）。只鎖該會員自己的那一列，併發首次寫入由唯一索引收斂成一列（後到者等先到者提交後走 UPDATE），不碰交易表、不再取其他鎖，所以不成環。price-tracking 在寫入前另有兩個不加鎖的讀取（`auto_setting` 目前值、`tour` 上架地區），各自獨立自動提交。
 
 ### 11. 收藏新增與刪除
 
-`controllers/collection.js`（以下 `collection.js` 的行號以 backend `ab52b9a` 為準；P5 Task 7；V6 `favorite_user_tour_key UNIQUE (user_id, tour_id)`）。不開交易，每條語句各自自動提交。
+`controllers/collection.js`（P5 Task 7；V6 `favorite_user_tour_key UNIQUE (user_id, tour_id)`）。不開交易，每條語句各自自動提交。
 
 **新增** `POST /info/:tour_id`
 1. `findListedTour`（`utils/purchase.js`）：不加鎖的 `SELECT … FROM tour`，只讀：`controllers/collection.js:68`
@@ -190,10 +190,11 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 
 ## 檢查結果
 
-以字面順序檢查，有三處「後取較前順位的鎖」，分屬上方「已知例外」A 或 B，無環：
+以字面順序檢查，有四處「後取較前順位的鎖」，分屬上方「已知例外」A 或 B，無環：
 1. `reserveDiscount` coupon 路徑（`utils/trade.js:303` → `:342`）與 point 路徑（`:314` → `:342`、`controllers/checkout.js:199`、`:203`）：先鎖 `user_coupon`／`user_level`，之後寫本訂單的 `orders`／`order_item`。（例外 A）
 2. 取消折扣（`controllers/discounts.js:126` → `:127`）：先動 `point_record`／`user_coupon`，再 UPDATE `orders`。（例外 A）
 3. point 路徑先鎖 `user_level` 再碰本訂單的 `point_record`／`user_coupon`。（例外 B）
+4. `expireIfOverdue`（`utils/trade.js:218` → `:219`）與 `cancelPendingOrders`（`:234` → `:235`）：先動 `point_record`／`user_coupon`（`releaseReservations`），再 UPDATE `orders`（`clearOrderDiscount`）。（例外 A：該 `orders` 列已被本交易 `FOR UPDATE`）
 
 除上述之外沒有鎖順序反向。其他觀察：
 - checkout 建單（第 1 節步驟 2）以不加鎖讀取碰 `cart_item`，不持任何列鎖，不能構成死結。
@@ -216,7 +217,7 @@ HTTP 入口 `controllers/admin.js:299-323`（BEGIN `:304`、COMMIT `:306`）；�
 - `tests/test_trade_checkout.py::test_create_order_and_preview_points_concurrently_no_500`：建單與點數 preview 併發 8 輪，不死結
 - `tests/test_trade_checkout.py::test_preview_same_coupon_concurrently_reserves_once`：先鎖住 `user_coupon` 列，兩張訂單的 preview 都卡在鎖上，放行後只有一個保留成功
 
-已知缺口：`NOWAIT` 測試等待固定 1.5 秒，慢速 CI 可能誤綠（見 `docs/reports/phase-4.md` 附錄 B）。`user_level` 路徑（point 例外）只有上面的 8 輪併發測試間接覆蓋，沒有決定性的鎖順序測試。
+已知缺口：`NOWAIT` 測試原本等待固定 1.5 秒，P5 Task 9 已改為輪詢 `pg_stat_activity` 確認請求正在等鎖（`_wait_until_blocked_by`）。`user_level` 路徑（point 例外）只有上面的 8 輪併發測試間接覆蓋，沒有決定性的鎖順序測試。
 
 ## 維護方式
 
