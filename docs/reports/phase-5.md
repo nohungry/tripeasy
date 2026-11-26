@@ -243,7 +243,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | T9-I | `lock-order.md`「檢查結果」改為四處反向（補例外 A）、「已知缺口」的 NOWAIT 1.5 秒那句改寫、檔頭改成逐檔核對後的基準 | 雙審的 Important：文件寫三處、實際四處（opus、fable）；fable 另指出已知缺口過期與檔頭基準不一致。代價：未記 |
 | T9-fold | summary 在本次呼叫轉逾時時，回應的 `discount.type`／`summary.discount_price` 為 null（與 DB 一致）；新增「已付款訂單過期不清折扣欄位」的直接測試 | 一致性；代價：未記 |
 | T10-1 | 總覽的 base 是 `025556b`（merge-base），報告只用這一個 hash | 派工文字寫了另一個 commit，是**主對話的錯誤**；`git merge-base` 與 ledger 的 Task 0 BASE 都是 `025556b`。代價：初稿並列兩個候選，增加一輪更正 |
-| T10-2 | 計畫 Step 3 的「`down -v` 後連跑兩次」延到合併前執行 | 需要使用者執行 `docker compose down -v`。代價：目前的 CI 數字都是保留 volume 的單次執行，乾淨環境的結果待補 |
+| T10-2 | 計畫 Step 3 的「`down -v` 後連跑兩次」延到合併前執行 | 需要使用者執行 `docker compose down -v`。結果：使用者執行 `down -v` 後，重建並連跑兩次 `scripts/ci.sh`，兩次都是 959 passed、exit 0，pytest 分別 227.80s 與 224.75s（[clean-run-1.txt](evidence/phase-5/clean-run-1.txt)、[clean-run-2.txt](evidence/phase-5/clean-run-2.txt)）。代價：合併前多一輪等待 |
 | FW | 單一修正波：通知設定併發測試（8 執行緒、各自 session、Barrier 與 join 帶 timeout，新增 price-tracking 版）、`frontend/src/utils/api.js` 的 `delete_favorite` 把 DELETE 404 視為已取消（`FavoriteHeart.vue` 未改）、折扣「無」的空泛斷言、`test_trade_cart` 加 timeout、smoke 收藏 `total ==`、`collection.js` 空列表 `total`；報告更正（兩方清單的聯集）、spec §12 第 17／18 點去重並補 T9-fold、P4 spec `:193` 補註、lock-order §11 測試清單、`computePayable` 讀取快照的說明 | 最終雙審：兩方都判定程式可合併；fable 要求合併前修 I-1（通知設定併發測試）與 I-2（報告事實錯誤），opus 也要求報告更正並要求 #27 修正或重裁。代價：未記 |
 | FW-2 | 其餘 27 條 deferred minor 留到 P6（列在附錄 B）；db-contract 殘留的過期引用留到 P6 | 範圍控制。代價：文件漂移多留一個階段 |
 
@@ -307,7 +307,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 
 | 次數 | passed | xfailed | skipped | pytest 耗時 | 牆鐘 | exit code |
 |---|---|---|---|---|---|---|
-| 乾淨環境第 1 次：使用者 `docker compose down -v` 之後，`scripts/ci.sh`（含映像建置與 migration V1–V6；截至程式碼 HEAD：總覽 `31863c7`、backend `2f19285`、frontend `89b2282`；[clean-run-1.txt](evidence/phase-5/clean-run-1.txt)） | **959**（844＋115） | 0 | 0 | 227.80s | 235s | 0 |
+| 乾淨環境第 1 次：使用者執行 `down -v` 刪除 volume 後，`docker compose up -d --build` 重建（映像為快取），Flyway 在新的 pgdata 上套用 V1–V6，接著執行 `scripts/ci.sh`（截至程式碼 HEAD：總覽 `31863c7`、backend `2f19285`、frontend `89b2282`；[clean-run-1.txt](evidence/phase-5/clean-run-1.txt)） | **959**（844＋115） | 0 | 0 | 227.80s | 235s | 0 |
 | 乾淨環境第 2 次（保留 volume；[clean-run-2.txt](evidence/phase-5/clean-run-2.txt)） | **959**（844＋115） | 0 | 0 | 224.75s | 231s | 0 |
 | 修正波後、`down -v` 前（保留 volume，[task-10-ci.txt](evidence/phase-5/task-10-ci.txt)） | 959（844＋115） | 0 | 0 | 215.04s | 未計 | 0 |
 | 修正波前（`3d89477`，保留 volume，[task-10-ci-before-fixwave.txt](evidence/phase-5/task-10-ci-before-fixwave.txt)；fable 重跑 957、213.95s） | 957（843＋114） | 0 | 0 | 206.73s | 3m33s | 0 |

@@ -1,4 +1,5 @@
-# P5 Task 10：down -v 之後的乾淨環境 scripts/ci.sh 第 1 次（第 2 次保留 volume）；base 總覽 31863c7、backend 2f19285、frontend 89b2282
+# P5 Task 10：乾淨環境 scripts/ci.sh 第 1 次；base 總覽 31863c7、backend 2f19285、frontend 89b2282
+# 流程：使用者執行 down -v 刪除 volume 後，docker compose up -d --build 重建（映像為快取），Flyway 在新的 pgdata 上套用 V1–V6，接著執行 scripts/ci.sh 第 1 次
 #0 building with "default" instance using docker driver
 
 #1 [mock-newebpay internal] load build definition from Dockerfile

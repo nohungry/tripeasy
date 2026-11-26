@@ -1,4 +1,5 @@
-# P5 Task 10：down -v 之後的乾淨環境 scripts/ci.sh 第 2 次（第 2 次保留 volume）；base 總覽 31863c7、backend 2f19285、frontend 89b2282
+# P5 Task 10：乾淨環境 scripts/ci.sh 第 2 次；base 總覽 31863c7、backend 2f19285、frontend 89b2282
+# 流程：緊接第 1 次，保留 volume 再執行 scripts/ci.sh 第 2 次
 #0 building with "default" instance using docker driver
 
 #1 [mock-newebpay internal] load build definition from Dockerfile
