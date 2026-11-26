@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> 狀態：**草稿，待使用者核准**（2026-11-26；R1–R4 與後續 R5–R7 已由主對話裁決，見「Ruling」；計畫階段的修訂已寫入 spec §12）
+> 狀態：**已核准（2026-11-26 使用者核准）**（2026-11-26；R1–R4 與後續 R5–R7 已由主對話裁決，見「Ruling」；計畫階段的修訂已寫入 spec §12）
 
 **Goal:** 會員中心從前端完整操作：我的訂單（全狀態、明細、繼續付款）、點數紀錄與等級、通知設定、收藏（愛心、收藏頁）；修掉越權讀取（契約 §4.2 (c)）、V6 補三個唯一約束、姓名規則統一、P4 留下的項目；最後寫 P5 報告。
 
