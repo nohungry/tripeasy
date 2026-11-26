@@ -59,6 +59,47 @@ def test_orders_tab_lists_paid_order_with_detail(page: Page, db, make_user, make
     expect(rows.first.get_by_role("button", name="繼續付款")).to_have_count(0)
     rows.first.get_by_role("button", name="明細").click()
     expect(page.get_by_test_id("order-detail")).to_contain_text(tour["title"])
+    # 沒有折扣：顯示「無」，不可露出 discount_type 的原始值 none
+    expect(page.get_by_test_id("order-detail")).to_contain_text("無")
+    expect(page.get_by_test_id("order-detail")).not_to_contain_text("none")
+
+
+def test_order_detail_shows_coupon_discount(page: Page, db, make_user, make_tour, make_order, make_coupon):
+    user = make_user()
+    coupon = make_coupon(user, discount=100)
+    order = make_order(user, make_tour(price=1000)["tour_id"], payment_status=1)
+    db.execute(
+        "UPDATE user_coupon SET status = 1, order_id = %s WHERE coupon_id = %s", (order["order_id"], coupon["coupon_id"])
+    )
+    try:
+        _login(page, user)
+        _open(page, "#/admin/userprofile?tab=orders")
+        row = _row(page, order["order_id"])
+        row.get_by_role("button", name="明細").click()
+        detail = page.get_by_test_id("order-detail")
+        expect(detail).to_contain_text("優惠券")
+        expect(detail).to_contain_text("-NT$100")
+        expect(detail).not_to_contain_text("coupon")
+    finally:
+        db.execute("UPDATE user_coupon SET order_id = NULL WHERE coupon_id = %s", (coupon["coupon_id"],))
+
+
+def test_orders_paging_uses_limit_10(page: Page, db, make_user, make_tour, make_order):
+    user = make_user()
+    tour = make_tour(price=1000)
+    orders = [make_order(user, tour["tour_id"], payment_status=1) for _ in range(11)]
+    for i, order in enumerate(orders):  # orders[10] 最舊，落在第 2 頁
+        db.execute(
+            "UPDATE orders SET created_at = now() - make_interval(mins => %s) WHERE order_id = %s",
+            (i + 1, order["order_id"]),
+        )
+    _login(page, user)
+    _open(page, "#/admin/userprofile?tab=orders")
+    expect(page.get_by_test_id("order-row")).to_have_count(10)
+    expect(_row(page, orders[10]["order_id"])).to_have_count(0)
+    page.get_by_role("button", name="下一頁").click()
+    expect(page.get_by_test_id("order-row")).to_have_count(1)
+    expect(_row(page, orders[10]["order_id"])).to_have_count(1)
 
 
 def test_continue_payment_goes_to_pay_page(page: Page, db, make_user, make_tour):
@@ -134,3 +175,7 @@ def test_profile_tab_from_query(page: Page, make_user):
     _open(page, "#/admin/userprofile?tab=xxx")
     expect(page.locator(".sidebaritem.active")).to_have_text("會員資訊")
     expect(page.get_by_label("信箱")).to_be_visible()
+    for bogus in ("constructor", "toString", "__proto__"):
+        _open(page, f"#/admin/userprofile?tab={bogus}")
+        expect(page.locator(".sidebaritem.active")).to_have_text("會員資訊")
+        expect(page.get_by_label("信箱")).to_be_visible()
