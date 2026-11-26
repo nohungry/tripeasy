@@ -1,0 +1,274 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-8.3.3, pluggy-1.7.0 -- .venv/bin/python
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.5.2
+collecting ... collected 42 items
+
+tests/test_member_orders.py::test_orders_list_all_statuses FAILED        [  2%]
+tests/test_member_orders.py::test_orders_list_item_fields FAILED         [  4%]
+tests/test_member_orders.py::test_orders_list_newest_first_and_paging FAILED [  7%]
+tests/test_member_orders.py::test_orders_list_default_limit_is_4 FAILED  [  9%]
+tests/test_member_orders.py::test_orders_limit_over_50_is_400 FAILED     [ 11%]
+tests/test_member_orders.py::test_orders_list_empty FAILED               [ 14%]
+tests/test_member_orders.py::test_orders_payable_from_compute_payable FAILED [ 16%]
+tests/test_member_orders.py::test_order_deadline_is_created_at_plus_timeout FAILED [ 19%]
+tests/test_member_orders.py::test_order_list_in_progress_label FAILED    [ 21%]
+tests/test_member_orders.py::test_order_can_continue_payment_flags FAILED [ 23%]
+tests/test_member_orders.py::test_order_list_in_progress_wins_over_deadline FAILED [ 26%]
+tests/test_member_orders.py::test_order_list_does_not_expire_overdue FAILED [ 28%]
+tests/test_member_orders.py::test_order_detail_fields FAILED             [ 30%]
+tests/test_member_orders.py::test_order_detail_failed_payment_result FAILED [ 33%]
+tests/test_member_orders.py::test_other_users_order_detail_is_404 FAILED [ 35%]
+tests/test_member_orders.py::test_other_users_purchase_item_is_404 FAILED [ 38%]
+tests/test_member_orders.py::test_purchase_item_unknown_is_404 FAILED    [ 40%]
+tests/test_member_orders.py::test_own_unpaid_purchase_item_unchanged PASSED [ 42%]
+tests/test_member_orders.py::test_orders_without_token_is_401 FAILED     [ 45%]
+tests/test_member_orders.py::test_orders_admin_is_403 FAILED             [ 47%]
+tests/test_member_orders.py::test_order_detail_bad_uuid_is_400 FAILED    [ 50%]
+tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks FAILED [ 52%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[cart] PASSED [ 54%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[discounts] PASSED [ 57%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[checkout] PASSED [ 59%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[newebpay] PASSED [ 61%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[product.get_tourData] PASSED [ 64%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userinfo.postuserSignup] PASSED [ 66%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[userProfile.patchuserprofileData] PASSED [ 69%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[orders] FAILED [ 71%]
+tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[purchases] FAILED [ 73%]
+tests/test_validator_sweep.py::test_http_installment_unsafe_string PASSED [ 76%]
+tests/test_validator_sweep.py::test_http_json_1e400_cart_people PASSED   [ 78%]
+tests/test_validator_sweep.py::test_http_json_1e400_discount_point PASSED [ 80%]
+tests/test_validator_sweep.py::test_http_json_1e400_checkout_used_point PASSED [ 83%]
+tests/test_validator_sweep.py::test_http_checkout_empty_coupon_id PASSED [ 85%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-unknown] PASSED [ 88%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[user-unknown] PASSED [ 90%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[discount-unknown] PASSED [ 92%]
+tests/test_validator_sweep.py::test_http_checkout_unknown_keys_and_array_root[root-array] PASSED [ 95%]
+tests/test_validator_sweep.py::test_http_search_unknown_query_key PASSED [ 97%]
+tests/test_api_smoke.py::test_seed_member_can_list_orders_readonly FAILED [100%]
+
+=================================== FAILURES ===================================
+________________________ test_orders_list_all_statuses _________________________
+tests/test_member_orders.py:54: in test_orders_list_all_statuses
+    data = listed(api, user, limit=50)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+_________________________ test_orders_list_item_fields _________________________
+tests/test_member_orders.py:63: in test_orders_list_item_fields
+    o = listed(api, user)["data"][0]
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_orders_list_newest_first_and_paging ___________________
+tests/test_member_orders.py:77: in test_orders_list_newest_first_and_paging
+    first = listed(api, user, limit=2, page=1)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+_____________________ test_orders_list_default_limit_is_4 ______________________
+tests/test_member_orders.py:89: in test_orders_list_default_limit_is_4
+    data = listed(api, user)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+_______________________ test_orders_limit_over_50_is_400 _______________________
+tests/test_member_orders.py:95: in test_orders_limit_over_50_is_400
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+____________________________ test_orders_list_empty ____________________________
+tests/test_member_orders.py:101: in test_orders_list_empty
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_orders_payable_from_compute_payable ___________________
+tests/test_member_orders.py:115: in test_orders_payable_from_compute_payable
+    o = row_of(api, user, order_id)
+tests/test_member_orders.py:44: in row_of
+    return next(o for o in listed(api, user, limit=50)["data"] if o["order_id"] == order_id)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+________________ test_order_deadline_is_created_at_plus_timeout ________________
+tests/test_member_orders.py:128: in test_order_deadline_is_created_at_plus_timeout
+    o = listed(api, user)["data"][0]
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+______________________ test_order_list_in_progress_label _______________________
+tests/test_member_orders.py:135: in test_order_list_in_progress_label
+    o = row_of(api, user, order_id)
+tests/test_member_orders.py:44: in row_of
+    return next(o for o in listed(api, user, limit=50)["data"] if o["order_id"] == order_id)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+____________________ test_order_can_continue_payment_flags _____________________
+tests/test_member_orders.py:147: in test_order_can_continue_payment_flags
+    o = row_of(api, user, order_id)
+tests/test_member_orders.py:44: in row_of
+    return next(o for o in listed(api, user, limit=50)["data"] if o["order_id"] == order_id)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+________________ test_order_list_in_progress_wins_over_deadline ________________
+tests/test_member_orders.py:158: in test_order_list_in_progress_wins_over_deadline
+    o = row_of(api, user, order_id)
+tests/test_member_orders.py:44: in row_of
+    return next(o for o in listed(api, user, limit=50)["data"] if o["order_id"] == order_id)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_order_list_does_not_expire_overdue ____________________
+tests/test_member_orders.py:170: in test_order_list_does_not_expire_overdue
+    o = row_of(api, user, order_id)
+tests/test_member_orders.py:44: in row_of
+    return next(o for o in listed(api, user, limit=50)["data"] if o["order_id"] == order_id)
+tests/test_member_orders.py:27: in listed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________________ test_order_detail_fields ___________________________
+tests/test_member_orders.py:185: in test_order_detail_fields
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+___________________ test_order_detail_failed_payment_result ____________________
+tests/test_member_orders.py:209: in test_order_detail_failed_payment_result
+    d = detail(api, user, order_id).json()["data"]
+E   KeyError: 'data'
+_____________________ test_other_users_order_detail_is_404 _____________________
+tests/test_member_orders.py:221: in test_other_users_order_detail_is_404
+    assert r.json()["message"] == NOT_FOUND
+E   AssertionError: assert '找不到此網站' == '查無此訂單項目'
+E     
+E     - 查無此訂單項目
+E     + 找不到此網站
+____________________ test_other_users_purchase_item_is_404 _____________________
+tests/test_member_orders.py:230: in test_other_users_purchase_item_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"success","message":"查詢成功","data":[{"order_item_id":"58b2bb0f-1667-4bac-bb47-97243e37ca8c","使用者編號":"e89a46ef-c0c4-4174-9e4c-e9b54792edba","order_id":"504ec6a5-ffe9-401f-ab40-a29de7f15c3b","tour_id":"bc4e9d4d-6770-4973-a89a-074a09c7e585","payment_status":1,"total_price":1000,"discount_price":null,"quantity":1,"start_date":"2026-11-26T12:22:55.491Z","end_date":null,"room_type":null,"type":"tourgroup","item":"travel","status":1,"title":"p3-d0e79e75","slogan":"測試標語","tour_start_date":null,"tour_end_date":null,"days":3,"price":1000,"country":"測試國","region":"測試區","address":"測試地址","google_map_url":"https://maps.example.com/x","calendar_url":"https://calendar.example.com/x","notice":null,"description":"測試描述","cover_image":"https://img.example.com/cover.jpg","img1":"https://img.example.com/1.jpg","img1_desc":"圖1","img2":"https://img.example.com/2.jpg","img2_desc":"圖2","img3":"https://img.example.com/3.jpg","img3_desc":"圖3","img4":"https://img.example.com/4.jpg","img4_desc":"圖4","img5":"https://img.example.com/5.jpg","img5_desc":"圖5","img6":"https://img.example.com/6.jpg","img6_desc":"圖6","created_at":"2026-11-26T04:22:55.491Z","updated_at":"2026-11-26T04:22:55.491Z","preference":["探索冒險","放鬆療癒","文化體驗"]}]}
+E   assert 200 == 404
+E    +  where 200 = <Response [200]>.status_code
+______________________ test_purchase_item_unknown_is_404 _______________________
+tests/test_member_orders.py:236: in test_purchase_item_unknown_is_404
+    assert r.status_code == 404, r.text
+E   AssertionError: {"status":"success","message":"查無資料"}
+E   assert 200 == 404
+E    +  where 200 = <Response [200]>.status_code
+_______________________ test_orders_without_token_is_401 _______________________
+tests/test_member_orders.py:251: in test_orders_without_token_is_401
+    assert r.status_code == 401
+E   assert 404 == 401
+E    +  where 404 = <Response [404]>.status_code
+___________________________ test_orders_admin_is_403 ___________________________
+tests/test_member_orders.py:259: in test_orders_admin_is_403
+    assert r.status_code == 403
+E   assert 404 == 403
+E    +  where 404 = <Response [404]>.status_code
+______________________ test_order_detail_bad_uuid_is_400 _______________________
+tests/test_member_orders.py:265: in test_order_detail_bad_uuid_is_400
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+_________________ test_hostile_matrix_has_no_joi_default_leaks _________________
+tests/test_validator_sweep.py:91: in test_hostile_matrix_has_no_joi_default_leaks
+    assert proc.returncode == 0, proc.stderr
+E   AssertionError: node:internal/modules/cjs/loader:1228
+E       throw err;
+E       ^
+E     
+E     Error: Cannot find module '/usr/backend/src/utils/Validator/paging_Validator.js'
+E     Require stack:
+E     - /usr/backend/[eval]
+E         at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+E         at Function._load (node:internal/modules/cjs/loader:1055:27)
+E         at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+E         at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+E         at Module.require (node:internal/modules/cjs/loader:1311:12)
+E         at require (node:internal/modules/helpers:136:16)
+E         at [eval]:7:12
+E         at runScriptInThisContext (node:internal/vm:209:10)
+E         at node:internal/process/execution:449:12
+E         at [eval]-wrapper:6:24 {
+E       code: 'MODULE_NOT_FOUND',
+E       requireStack: [ '/usr/backend/[eval]' ]
+E     }
+E     
+E     Node.js v22.14.0
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'compose', 'exec', '-T', 'backend', 'node', '-e', '\nconst b = process.cwd() + \'/src/utils/Validator/\';\nconst cart = require(b + \'cart_Validator.js\'), disc = require(b + \'discounts_Validatior.js\');\nconst co = require(b + \'checkout_Vaildator.js\'), prod = require(b + \'product_Validator.js\');\nconst np = require(process.cwd() + \'/src/middlewares/newebpay/index.js\');\nconst ui = require(b + \'userInfo_Validator.js\'), up = require(b + \'userprofile_Validator.js\');\nconst pg = require(b + \'paging_Validator.js\'), ord = require(b + \'orders_Validator.js\'), pur = require(b + \'purchases_Validator.js\');\nlet userMessage = null;\ntry { userMessage = require(b + \'joiMessage.js\').userMessage; } catch (e) {}\nconst real = typeof userMessage === \'function\';\nif (!real) userMessage = (err) => err.details[0].message;\nconst F = { start_date: \'2099-01-01\', end_date: \'2099-01-02\' };\nconst U = { name: \'王小明\', email: \'a@b.co\', address: \'台北市\', phone_number: \'0912345678\' };\nconst uuid = \'7b0e5b2e-3c1f-4c59-9d0a-0d3f5f1f2a11\';\nconst bodyVals = [null, [], {}, true, \'\', 1e30, -1e30, \'1e30\', \'x\', 1.5, 0, -1, \'9007199254740993\'...oo\'); }\n  for (const k of Object.keys(valid)) if (valid[k] && typeof valid[k] === \'object\') { const o = clone(valid); o[k].zqfoo = 1; run(o, k + \'.zqfoo\'); }\n  for (const v of [null, [], \'x\', 5, true, undefined]) run(v, \'ROOT=\' + String(v));\n}\nconsole.log(\'SWEEP\' + JSON.stringify({ real, cases: n, errors, leaks }));\n'], returncode=1, stdout='', stderr="node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/usr/backend/src/utils/Validator/paging_Validator.js'\nRequire stack:\n- /usr/backend/[eval]\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Module.require (node:internal/modules/cjs/loader:1311:12)\n    at require (node:internal/modules/helpers:136:16)\n    at [eval]:7:12\n    at runScriptInThisContext (node:internal/vm:209:10)\n    at node:internal/process/execution:449:12\n    at [eval]-wrapper:6:24 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [ '/usr/backend/[eval]' ]\n}\n\nNode.js v22.14.0\n").returncode
+______ test_middlewares_read_joi_errors_only_through_user_message[orders] ______
+tests/test_validator_sweep.py:135: in test_middlewares_read_joi_errors_only_through_user_message
+    src = (BACKEND / name / "index.js").read_text(encoding="utf-8")
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+../../.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/python3.13/pathlib/_local.py:537: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+E   FileNotFoundError: [Errno 2] No such file or directory: 'backend/src/middlewares/orders/index.js'
+____ test_middlewares_read_joi_errors_only_through_user_message[purchases] _____
+tests/test_validator_sweep.py:137: in test_middlewares_read_joi_errors_only_through_user_message
+    assert not re.search(r"\bdetails\b|\.message\b", src), "不得直接讀取 Joi error 的 details／message"
+E   AssertionError: 不得直接讀取 Joi error 的 details／message
+E   assert not <re.Match object; span=(554, 561), match='details'>
+E    +  where <re.Match object; span=(554, 561), match='details'> = <function search at 0x78619e698860>('\\bdetails\\b|\\.message\\b', 'const resStatus = require(\'../../utils/resStatus.js\');\nconst { pool } = require(\'../../config/database\');\n\n\nconst purchases_Validator = require(\'../../utils/Validator/purchases_Validator.js\');\n\n\n\n\n\nasync function getpurchasesOrder(req, res, next) {\n  const { error: paramsError, value: paramsValue } = purchases_Validator.paramSchema.validate(\n    req.params\n  );\n  const { error: queryError, value: queryValue } = purchases_Validator.querySchema.validate(\n    req.query\n  );\n\n  \n  if (paramsError || queryError) {\n    const message =\n      paramsError?.details[0]?.message || queryError?.details[0]?.message || \'欄位驗證錯誤\';\n    return resStatus({\n      res: res,\n      status: 400,\n      message: message,\n    });\n  }\n\n  \n  const dataRepo = await pool.query(\'SELECT * FROM public."order_item" where order_item_id = $1\', [\n    req.params.order_item_id,\n  ]);\n  if (!dataRepo) {\n    return resStatus({\n      res: res,\n      status: 404,\n      message: \'無此訂單細項編號\',\n    });\n  }\n\n  \n  req.validatedParams = paramsValue;\n  req.validatedQuery = queryValue;\n  next();\n}\n\nmodule.exports = {\n  getpurchasesOrder,\n};\n')
+E    +    where <function search at 0x78619e698860> = re.search
+__________________ test_seed_member_can_list_orders_readonly ___________________
+tests/test_api_smoke.py:467: in test_seed_member_can_list_orders_readonly
+    assert r.status_code == 200, r.text
+E   AssertionError: {"status":"false","message":"找不到此網站"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+=========================== short test summary info ============================
+FAILED tests/test_member_orders.py::test_orders_list_all_statuses - Assertion...
+FAILED tests/test_member_orders.py::test_orders_list_item_fields - AssertionE...
+FAILED tests/test_member_orders.py::test_orders_list_newest_first_and_paging
+FAILED tests/test_member_orders.py::test_orders_list_default_limit_is_4 - Ass...
+FAILED tests/test_member_orders.py::test_orders_limit_over_50_is_400 - assert...
+FAILED tests/test_member_orders.py::test_orders_list_empty - AssertionError: ...
+FAILED tests/test_member_orders.py::test_orders_payable_from_compute_payable
+FAILED tests/test_member_orders.py::test_order_deadline_is_created_at_plus_timeout
+FAILED tests/test_member_orders.py::test_order_list_in_progress_label - Asser...
+FAILED tests/test_member_orders.py::test_order_can_continue_payment_flags - A...
+FAILED tests/test_member_orders.py::test_order_list_in_progress_wins_over_deadline
+FAILED tests/test_member_orders.py::test_order_list_does_not_expire_overdue
+FAILED tests/test_member_orders.py::test_order_detail_fields - AssertionError...
+FAILED tests/test_member_orders.py::test_order_detail_failed_payment_result
+FAILED tests/test_member_orders.py::test_other_users_order_detail_is_404 - As...
+FAILED tests/test_member_orders.py::test_other_users_purchase_item_is_404 - A...
+FAILED tests/test_member_orders.py::test_purchase_item_unknown_is_404 - Asser...
+FAILED tests/test_member_orders.py::test_orders_without_token_is_401 - assert...
+FAILED tests/test_member_orders.py::test_orders_admin_is_403 - assert 404 == 403
+FAILED tests/test_member_orders.py::test_order_detail_bad_uuid_is_400 - asser...
+FAILED tests/test_validator_sweep.py::test_hostile_matrix_has_no_joi_default_leaks
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[orders]
+FAILED tests/test_validator_sweep.py::test_middlewares_read_joi_errors_only_through_user_message[purchases]
+FAILED tests/test_api_smoke.py::test_seed_member_can_list_orders_readonly - A...
+======================== 24 failed, 18 passed in 2.67s =========================

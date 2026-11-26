@@ -457,3 +457,13 @@ def test_filter_region_for_seed_country(api, db):
     assert_has_keys(rows[0], ["region_id", "name"])
     expected = db.execute("SELECT count(*) FROM region WHERE country_id = %s", (country_id,)).fetchone()[0]
     assert len(rows) == expected, name
+
+
+def test_seed_member_can_list_orders_readonly(api, alice_h, alice, db):
+    """P5 Task 3：alice 可讀自己的訂單列表（唯讀）；呼叫前後訂單的 payment_status、updated_at 不變。"""
+    sql = "SELECT order_id, payment_status, updated_at FROM orders WHERE user_id = %s ORDER BY order_id"
+    before = db.execute(sql, (alice["user_id"],)).fetchall()
+    r = api.get(f"{BASE}/user/orders", headers=alice_h, params={"limit": 50})
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["total"] == len(before)
+    assert db.execute(sql, (alice["user_id"],)).fetchall() == before

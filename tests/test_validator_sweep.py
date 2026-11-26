@@ -17,6 +17,7 @@ const cart = require(b + 'cart_Validator.js'), disc = require(b + 'discounts_Val
 const co = require(b + 'checkout_Vaildator.js'), prod = require(b + 'product_Validator.js');
 const np = require(process.cwd() + '/src/middlewares/newebpay/index.js');
 const ui = require(b + 'userInfo_Validator.js'), up = require(b + 'userprofile_Validator.js');
+const pg = require(b + 'paging_Validator.js'), ord = require(b + 'orders_Validator.js'), pur = require(b + 'purchases_Validator.js');
 let userMessage = null;
 try { userMessage = require(b + 'joiMessage.js').userMessage; } catch (e) {}
 const real = typeof userMessage === 'function';
@@ -42,6 +43,10 @@ const targets = [
  ['co.post cc+coupon', co.postSchema, { user: { ...U }, payment_method: 'credit_card', installment: 3, discount: { type: 'coupon', coupon_id: uuid } }, bodyVals, ['installment', 'discount.coupon_id', 'discount.used_point', 'discount.type', 'payment_method']],
  ['userInfo.register', ui.registerSchema, { name: '王小明', email: 'a@b.co', password: 'Abcdefg1', preference: ['a', 'b', 'c'] }, bodyVals, ['name', 'email', 'password', 'preference']],
  ['userprofile.update', up.updateProfile_schema, { name: '王小明', preference: ['a', 'b', 'c'] }, bodyVals, ['name', 'preference']],
+ ['paging', pg.pagingSchema, {}, queryVals, ['page', 'limit', 'lang']],
+ ['orders.orderID', ord.orderIDSchema, { order_id: uuid }, queryVals, ['order_id']],
+ ['purchases.param', pur.paramSchema, { order_item_id: uuid }, queryVals, ['order_item_id']],
+ ['purchases.query', pur.querySchema, {}, queryVals, ['lang']],
  ['np.payment', np.paymentSchema, { order_id: uuid }, bodyVals, ['order_id']],
  ['prod.query(search)', prod.queryschema, { page: '1', limit: '10', sort_by: 'date', order: 'asc', lang: 'zh-TW' }, queryVals, ['type', 'item', 'tag', 'country', 'region', 'min_price', 'max_price', 'start_date', 'end_date', 'keyword', 'duration', 'page', 'limit', 'sort_by', 'order', 'lang']],
 ];
@@ -118,7 +123,7 @@ def _strip_comments(src: str) -> str:
     return re.sub(r"//[^\n]*", "", src)
 
 
-@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData", "userinfo.postuserSignup", "userProfile.patchuserprofileData"])
+@pytest.mark.parametrize("name", ["cart", "discounts", "checkout", "newebpay", "product.get_tourData", "userinfo.postuserSignup", "userProfile.patchuserprofileData", "orders", "purchases"])
 def test_middlewares_read_joi_errors_only_through_user_message(name):
     if name == "product.get_tourData":
         src = _search_handler_source()
