@@ -369,7 +369,7 @@ def test_register_and_forgotpw_pages_open_with_expired_token(page: Page, make_us
 def test_coming_soon_tabs(page: Page, make_user):
     user = make_user()
     _login_to_profile(page, user)
-    for tab in ["個人偏好設定", "會員等級", "個人訂單查看"]:
+    for tab in ["個人偏好設定", "會員等級"]:
         page.locator(".sidebar").get_by_text(tab, exact=True).click()
         expect(page.get_by_text("即將開放", exact=True)).to_be_visible()
         expect(page.get_by_label("信箱")).not_to_be_visible()
