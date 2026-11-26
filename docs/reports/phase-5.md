@@ -1,5 +1,5 @@
 # Phase 5：會員中心（我的訂單、點數與等級、通知設定、收藏、姓名規則、越權讀取）
-> 2026-11-26（**初稿**，待使用者審閱） · backend tag `phase-5`＝待 Step 5（起點 `0e3b192`，程式碼 HEAD `2f19285`） · frontend tag `phase-5`＝待 Step 5（起點 `bfd20f0`，程式碼 HEAD `89b2282`） · 總覽 tag `phase-5`＝待 Step 5（起點 `025556b`＝與 `main` 的 merge-base；程式碼 HEAD `31863c7`） · GitHub Actions：待 Step 5（尚未 push）
+> 2026-11-26（**定稿**，使用者 2026-11-27 同意合併） · backend tag `phase-5`＝merge `2271138` 到 main（起點 `0e3b192`，程式碼 HEAD `2f19285`） · frontend tag `phase-5`＝merge `56c3a54` 到 dev（起點 `bfd20f0`，程式碼 HEAD `89b2282`） · 總覽 tag `phase-5`＝merge 到 main（見 `git log main`）（起點 `025556b`＝與 `main` 的 merge-base；程式碼 HEAD `31863c7`） · GitHub Actions：`phase-5` 分支 run 45778412244 success（959 passed）
 >
 > 本報告依 `docs/superpowers/specs/2026-11-26-p5-member-center-design.md`（以下稱「P5 spec」）§0、§10、§12 與 `docs/reports/phase-4.md` 的格式撰寫，計畫見 `docs/superpowers/plans/2026-11-26-p5-member-center.md`（以下稱「計畫」）。引用一律以 commit hash、`檔案:行號`、evidence 檔名為出處；查不到的寫「未查證」。
 >
@@ -311,7 +311,7 @@ SDD（subagent-driven development）流程：主對話只做方向、裁決與�
 | 乾淨環境第 2 次（保留 volume；[clean-run-2.txt](evidence/phase-5/clean-run-2.txt)） | **959**（844＋115） | 0 | 0 | 224.75s | 231s | 0 |
 | 修正波後、`down -v` 前（保留 volume，[task-10-ci.txt](evidence/phase-5/task-10-ci.txt)） | 959（844＋115） | 0 | 0 | 215.04s | 未計 | 0 |
 | 修正波前（`3d89477`，保留 volume，[task-10-ci-before-fixwave.txt](evidence/phase-5/task-10-ci-before-fixwave.txt)；fable 重跑 957、213.95s） | 957（843＋114） | 0 | 0 | 206.73s | 3m33s | 0 |
-| GitHub Actions `phase-5` 分支 run | 待 Step 5（尚未 push） | — | — | — | — | — |
+| GitHub Actions `phase-5` 分支 run 45778412244（推送後首次 CI） | **959** | 0 | 0 | 175.46s | — | 0 |
 
 測試數量變化：**798 passed（P4 最終）→ 959 passed**（乾淨環境兩次皆 959），淨增 161 個（修正波新增：通知設定 price-tracking 併發測試 1、愛心取消 404 的 E2E 1）。各 Task 結束時 ledger 記錄的 passed 數：Task 1：715（`tests/`，`down -v` 之後）、Task 2：741＋e2e 94、Task 3：765→768、Task 4：tests 768＋e2e 101→103、Task 5：888、Task 6：917、Task 7：834（tests）／941→945（全套）、Task 8：952、Task 9：842＋114→843＋114（957）、Task 10：957（修正波前）→ 959（修正波後）。
 
