@@ -9,8 +9,9 @@ import urllib.parse
 import requests
 from playwright.sync_api import Page, expect
 
-from e2e.conftest import API_BASE, FRONTEND_BASE, auth_header
-from e2e.test_product_flow import HOME_API, _home_response, _search_response
+from e2e.conftest import API_BASE, FRONTEND_BASE, TEST_PASSWORD, auth_header
+from e2e.test_member_flow import _login_via_ui
+from e2e.test_product_flow import HOME_API, _search_response
 from e2e.test_trade_flow import (
     _fill_contact,
     _go_checkout_from_cart,
@@ -62,7 +63,9 @@ def test_p5_main_flow(page: Page, db, make_user, make_tour):
     user = make_user()
     start, end = _tour_dates()
     tour = make_tour(price=1000, start_date=start, end_date=end)
-    _login(page, user)
+    _open(page, "#/admin/login")
+    _login_via_ui(page, user["email"], TEST_PASSWORD)
+    page.wait_for_url("**/#/admin/userprofile")
 
     card = _open_search_for(page, tour["title"])
     heart = card.get_by_test_id("favorite-heart")
@@ -70,6 +73,7 @@ def test_p5_main_flow(page: Page, db, make_user, make_tour):
     with page.expect_response(_is_collection("POST")):
         heart.click()
     expect(heart).to_have_attribute("aria-pressed", "true")
+    expect(page).to_have_url(re.compile(r"#/search"))
     assert _db_favorites(db, user) == 1
 
     _open_collect(page)
@@ -77,6 +81,7 @@ def test_p5_main_flow(page: Page, db, make_user, make_tour):
     expect(fav).to_have_count(1)
     fav.click()
     page.wait_for_url(f"**/#/tour/{tour['tour_id']}")
+    expect(page.get_by_test_id("favorite-heart")).to_have_attribute("aria-pressed", "true")
 
     page.get_by_label("人數").fill("1")
     page.get_by_role("button", name="加入購物車").click()
@@ -133,9 +138,12 @@ def test_tour_page_heart_toggles(page: Page, db, make_user, make_tour):
 def test_guest_heart_goes_to_login(page: Page, make_tour):
     start, end = _tour_dates()
     tour = make_tour(price=1000, start_date=start, end_date=end)
+    posts = []
+    page.on("request", lambda r: posts.append(r.url) if r.method == "POST" and "/user/collection/info/" in r.url else None)
     card = _open_search_for(page, tour["title"])
     card.get_by_test_id("favorite-heart").click()
     page.wait_for_url("**/#/admin/login")
+    assert posts == []
 
 
 def test_home_heart_does_not_open_tour(page: Page, make_user):
@@ -164,7 +172,7 @@ def test_heart_reverts_on_failure(page: Page, db, make_user, make_tour):
     )
     heart = card.get_by_test_id("favorite-heart")
     heart.click()
-    expect(page.locator(".swal2-popup")).to_be_visible()
+    expect(page.locator(".swal2-popup")).to_contain_text("伺服器錯誤")
     expect(heart).to_have_attribute("aria-pressed", "false")
     assert _db_favorites(db, user) == 0
 
