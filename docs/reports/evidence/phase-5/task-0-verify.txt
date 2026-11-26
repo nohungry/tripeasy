@@ -1,0 +1,169 @@
+P5 Task 0 查證結果（2026-11-26）
+基準：backend 0e3b192、frontend bfd20f0；DB = compose 內 postgres（既有 volume，未 down -v）
+psql 指令前綴：docker compose exec -T postgres psql -U tripeasy_admin001 -d tripeasy_db001
+
+== Step 1 分支 ==
+指令：git switch -c phase-5 main（總覽）；git -C backend switch -c phase-5 main；git -C frontend switch -c phase-5 dev；refs.env 改 phase-5
+輸出：三個 repo 皆 "Switched to a new branch 'phase-5'"；refs.env = BACKEND_REF=phase-5 / FRONTEND_REF=phase-5
+預期相符：是
+
+== Step 2 V6 版本號 ==
+指令：ls backend/migrations；SELECT installed_rank, version, script, success FROM flyway_schema_history ORDER BY installed_rank
+輸出：
+  migrations 目錄：R__views_functions.sql V1__tripeasy_sql.sql V2__tripeasy_trigger.sql V3__p2_user_auth.sql V4__p3_review_constraints.sql V5__p4_trade.sql
+  rank1..5 = V1..V5（success t）；rank6 = R__seed.sql；rank7 = R__views_functions.sql（version 欄為空，success t）
+預期相符：是（最大 versioned = 5，V6 可用；repeatable 在 versioned 之後）。
+備註：repeatable 的實際檔名是 R__views_functions.sql，brief 寫 R__views 為簡稱。
+
+== Step 3 lock-order 行號 ==
+指令：git -C backend rev-parse --short HEAD；以腳本抽出 docs/lock-order.md 內所有 file:line（含沿用前一個檔名的 `:N` 簡寫）並印出 backend/src 對應行，另對簡寫行號逐一人工比對
+輸出：HEAD = 0e3b192（相符）。共 86 條自動抽出 + 第 5/6/7/8/9 節簡寫行號（trade.js 108、111、277-415；newebpay.js 36-201；cart.js 5-192）逐條核對，內容與文件描述一致（例：trade.js:204 ORDER BY created_at FOR UPDATE；:288 user_level ... ORDER BY level_id FOR UPDATE；:358 cart ... ORDER BY cart_id FOR UPDATE；checkout.js:29 user FOR NO KEY UPDATE；userinfo.js:155 user ... FOR UPDATE；cart.js:26-29 cart ... FOR UPDATE 無 ORDER BY）。
+  自動抽出時有幾條簡寫被腳本誤判為 trade.js（doc:51 的 :175/:179/:189），人工確認為 checkout.js:175 paymentInProgress、:179 reservationMatches、:189 evaluateDiscount，相符。
+預期相符：是（無偏差）。完整抽出清單見本檔末尾附錄。
+
+== Step 4 seed 重複 ==
+指令：GROUP BY ... HAVING count(*) > 1（favorite(user_id,tour_id)、cart(user_id)、auto_setting(user_id)）
+輸出：favorite 0；cart 0；auto_setting 1（user = Alice Wang，auto_setting_id d47d7d56-... 與 8eb334ed-...）
+預期相符：是
+
+== Step 5 point_record ==
+指令：SELECT type, count(*), min(point), max(point), count(*) FILTER (WHERE order_id IS NULL) FROM point_record GROUP BY type；grep -rn point_record backend/src
+輸出：新增 15 筆（min 820、max 8470、order_id NULL 0 筆）；減少 3 筆（min -500、max -250、order_id NULL 0 筆）。
+  程式寫入的 type：trade.js:309 '減少_確認中'；:337 UPDATE 為 '減少'；:346 '新增'；:404 '退款退回'；:410 '退款收回'；userinfo.js:37、:213 '新增' point 0。
+預期相符：是
+
+== Step 6 Header 死連結 ==
+指令：grep -n 'to="#"\|href="#"' frontend/src/components/HeaderComponent.vue
+輸出：45 旅遊神器、46 行事曆、68 會員等級、69 個人偏好設定、70 個人訂單查看、71 登出(href="#" @click.prevent="logout")、117 旅遊神器、118 行事曆、119 購物車、125 登出(href="#" @click.prevent="logout")
+預期相符：是
+
+== Step 7 -1 訂單進入 pay.vue ==
+指令：uv run pytest e2e/test_trade_flow.py::test_checkout_button_creates_order e2e/test_trade_flow.py::test_trade_main_flow -v
+輸出：2 passed in 6.21s
+DB 狀態斷言實況：test_checkout_button_creates_order 在 e2e/test_trade_flow.py:118-119 斷言建出的訂單 payment_status == -1；test_trade_main_flow 在 :243-244 斷言最終 == 1，並在 pay 頁填聯絡資料（_fill_contact）後送出。中間的 0 沒有被該測試直接斷言；程式面是 controllers/checkout.js:203 在填寫收件資料後 setOrderStatus(..., ORDER_STATUS.PENDING)（0）。
+預期相符：2 passed 相符。偏差（輕微）：brief 說「-1 → 0 → 1 測試內已斷言」，實際只直接斷言 -1 與 1，0 靠讀碼確認（見報告疑慮）。
+
+== Step 8 價格追蹤的地區值（R2）==
+(a) 指令：grep -n "country\|region" frontend/src/views/front/searchPage.vue frontend/src/views/admin/manage/automaticSetting.vue
+    輸出：無任何比對（exit 1）。預期：兩頁都沒有國家／地區選單。相符。
+(b) controllers/product.js:48-55：country → `"所屬國家" ILIKE $n`（參數 %country%）、region → `"所屬地區" ILIKE $n`；R__views_functions.sql:47 `t.country AS "所屬國家"`，即 tour.country 的英文值。相符。（補充：比對是 ILIKE 部分比對。）
+(c) 指令：SELECT a.country, a.region, EXISTS(... tour t WHERE t.status=1 AND t.country=a.country AND t.region=a.region) FROM auto_setting a WHERE a.country IS NOT NULL
+    輸出：Japan/Tokyo t；France/Paris t。相符。
+
+== Step 9 衝突掃描查證 ==
+(a) 指令：\d+ user_order_item；grep R__views_functions.sql
+    輸出：欄位含 order_item_id、使用者編號（o.user_id AS "使用者編號"）、order_id、tour_id、payment_status ...；定義 FROM order_item oi JOIN orders o JOIN tour t WHERE oi.payment_status = 1（R__views_functions.sql:711-737 附近）。唯一使用處 backend/src/controllers/purchases.js:59。預期相符：是
+(b) 指令：\d+ user_favorite
+    輸出：含 收藏人員編號、建立時間、favorite_id、旅遊編號、上下架狀態、旅遊名稱、旅遊代表圖 Url（另有 通知狀態、旅遊標語 等）。預期相符：是
+(c) 指令：\d point_record
+    輸出：point_id uuid not null；PRIMARY KEY "point_record_pkey" btree (point_id)。預期相符：是
+(d) 指令：讀 backend/src/controllers/home.js get_home_Product 全部分支
+    輸出：每個分支（tourgroup popular／promotion／most_favorited、backpacker）預設先查 tour_base；`if (user)` 時改查 tour_travel($1)（home.js:24、42、60、79），登入無任何分支不走 tour_*。HomeView.vue:159-161 目前是靜態 <span class="favorite">。預期相符：是（登入 → tour_travel；未登入 → tour_base）。
+    補充：type/item 不在已知值時 tourData 保持 ''（既有行為，與本項無關）。
+(e) 指令：grep -n "name: 'pay'" frontend/src/router/index.js
+    輸出：50: name: 'pay',  預期相符：是
+(f) 指令：sed -n 28,45p frontend/src/utils/api.js
+    輸出：isMemberApi 以 url.startsWith(apiUrl_userprofile / `${apiUrl}/resetprofilepw` / apiUrl_cart / apiUrl_discounts / apiUrl_checkout / apiUrl_newebpay) 前綴比對；apiUrl_product 還要求 method === 'post'。預期（前綴比對）相符：是
+(g) 指令：grep -n "^#" docs/lock-order.md；讀 §1、§10
+    輸出：§1 表第 1 列 `user` `FOR NO KEY UPDATE` controllers/checkout.js:29；§10（line 161）Google 登入 `user` `FOR UPDATE`（userinfo.js:155）與外鍵 KEY SHARE；line 162 新會員 INSERT user_level／point_record（userinfo.js:31、37、209、213）。預期相符：是（Task 2 的 Google 新會員 INSERT 已被 §10 涵蓋）
+(h) 指令：讀 userProfile.js get_user_PointCoupon（/pointslevel）、userinfo.js 登入／loginStatus；\d user_level_point_coupon；\d user_level
+    輸出：pointslevel 回傳 user_id、name、email、role、avatar_url、preference1-3、level、level_name、badge_url、travel_point、coupon[]；登入、loginStatus 的 level 物件只有 level、name、points、badge_url。均無回饋比例。user_level 表有 benefits 自由文字欄（例："Free airport lounge access; 10% discount on tours"），沒有任何 API 輸出它，也不是回饋比例。預期相符：是（沒有 → 依 F10 前端寫死 10%）
+(i) 指令：grep -n "points" backend/src/controllers/userinfo.js
+    輸出：post_user_SignUp :57、post_user_LoginEmail :123、post_user_LoginGoogle :249、get_user_loginStatus :379，皆為 level 物件內的 `points: ...travel_point`。預期（level.points）相符：是
+(j) 指令：grep -n "def ..." tests/conftest.py；tests/test_trade_refund.py
+    輸出：conftest.py:466 ready_order(api, db, make_user, make_tour, discount=None, *, price=1000, people=1, user=None, tour=None)；:477 start_payment(api, user, order_id, noise=None)；:486 notify(api, fields)；:490 success_notify(mon, amt, **kw)；test_trade_refund.py:33 refund(api, admin, order_id)。預期相符：是
+(k) 指令：tests/dbfactory.py 的 tour 預設
+    輸出：dbfactory.py:43-52 "tour": {... "country": "測試國", "region": "測試區" ...}。預期相符：是
+(l) 指令：sed -n 230,236p frontend/src/views/front/searchPage.vue
+    輸出：<nav aria-label="分頁"> 上一頁 / 第 N 頁 / 下一頁（searchPage.vue:232-234 為三個元素；按鈕呼叫 fetchPage(currentPage ± 1)，hasNext 以「筆數等於每頁筆數」判斷）。預期相符：是
+
+== 結論 ==
+全部項目與計畫預期相符；僅 Step 7 的括號說明（0 狀態直接斷言）與實況有輕微出入，已如實記錄。
+
+== 附錄：Step 3 自動抽出的 file:line 清單（doc 行號 | backend/src 對應行內容）==
+doc:13 utils/trade.js:200-206 | const pending = await client.query( ... | );
+doc:16 controllers/checkout.js:199 | await client.query(
+doc:16 controllers/checkout.js:203 | await setOrderStatus(client, order_id, ORDER_STATUS.PENDING);
+doc:17 utils/trade.js:316 | await client.query(
+doc:17 utils/trade.js:277 | 'SELECT user_coupon_id FROM public."user_coupon" WHERE user_id = $1 AND coupon_id = $2 FOR
+doc:17 utils/trade.js:288 | 'SELECT level_id FROM public."user_level" WHERE user_id = $1 ORDER BY level_id FOR UPDATE'
+doc:18 controllers/discounts.js:127 | await client.query(
+doc:18 controllers/discounts.js:126 | await releaseReservations(client, order_id);
+doc:24 utils/trade.js:21-30 | async function lockOrder(client, orderId, userId = null) { ... | }
+doc:25 utils/trade.js:277 | 'SELECT user_coupon_id FROM public."user_coupon" WHERE user_id = $1 AND coupon_id = $2 FOR
+doc:25 utils/trade.js:240-242 | if (coupon.status === -1 && !coupon.same_order) { ... | }
+doc:26 controllers/admin.js:274 | `delete from public."user_coupon" where user_id = $1 and coupon_id = $2`,
+doc:32 controllers/checkout.js:19-106 | async function post_user_Order(req, res, next) { ... | }
+doc:36 controllers/checkout.js:29 | await client.query('SELECT 1 FROM public."user" WHERE user_id = $1 FOR NO KEY UPDATE', [id
+doc:37 controllers/checkout.js:31 | const cartRepo = await client.query(
+doc:37 controllers/checkout.js:37-48 | const lines = await client.query( ... | );
+doc:38 utils/trade.js:204 | ORDER BY created_at FOR UPDATE`,
+doc:38 controllers/checkout.js:55 | await cancelPendingOrders(client, id);
+doc:39 utils/trade.js:208 | await setOrderStatus(client, row.order_id, ORDER_STATUS.CANCELLED);
+doc:39 utils/trade.js:118-127 | async function setOrderStatus(client, orderId, status) { ... | }
+doc:40 utils/trade.js:209 | await releaseReservations(client, row.order_id);
+doc:40 utils/trade.js:106-116 | async function releaseReservations(client, orderId) { ... | }
+doc:41 controllers/checkout.js:58 | const orderRepo = await client.query(
+doc:41 controllers/checkout.js:66 | await client.query(
+doc:47 controllers/checkout.js:151-231 | async function patch_user_CheckoutUserInfo(req, res, next) { ... | }
+doc:49 controllers/checkout.js:164 | const locked = await lockOrder(client, order_id, id);
+doc:49 utils/trade.js:21-30 | async function lockOrder(client, orderId, userId = null) { ... | }
+doc:50 controllers/checkout.js:166 | if (await expireIfOverdue(client, locked)) {
+doc:51 utils/trade.js:147-158 | async function paymentInProgress(client, orderId) { ... | }
+doc:51 utils/trade.js:179 | const wanted = Number(usedPoint ?? 0);
+doc:51 utils/trade.js:162-183 | async function reservationMatches(client, orderId, { type, couponId, usedPoint } = {}) { ... | }
+doc:51 utils/trade.js:189 | }
+doc:51 utils/trade.js:216-267 | async function evaluateDiscount(client, { userId, orderId, type, couponId, couponCode, use ... | }
+doc:52 controllers/checkout.js:196 | await reserveDiscount(client, order_id, id, evaluated);
+doc:53 controllers/checkout.js:199 | await client.query(
+doc:53 controllers/checkout.js:203 | await setOrderStatus(client, order_id, ORDER_STATUS.PENDING);
+doc:59 controllers/discounts.js:25-101 | async function post_user_discounts(req, res, next) { ... | }
+doc:60 controllers/discounts.js:36 | const locked = await lockOrder(client, order_id, userId);
+doc:64 controllers/discounts.js:104-154 | async function get_user_discounts(req, res, next) { ... | }
+doc:65 controllers/discounts.js:113 | const locked = await lockOrder(client, order_id, userId);
+doc:70 controllers/checkout.js:234-326 | async function get_user_CheckoutOrder(req, res, next) { ... | }
+doc:71 controllers/checkout.js:244 | const locked = await lockOrder(client, order_id, id);
+doc:71 controllers/checkout.js:266 | await client.query('COMMIT');
+doc:76 utils/trade.js:271-320 | async function reserveDiscount(client, orderId, userId, evaluated) { ... | }
+doc:80 controllers/userinfo.js:155 | 'SELECT * FROM public."user" WHERE lower(email) = lower($1) FOR UPDATE',
+doc:84 controllers/newebpay.js:25-110 | async function post_newebpay_payment(req, res, next) { ... | }
+doc:86 controllers/newebpay.js:34 | const locked = await lockOrder(client, order_id, id);
+doc:93 controllers/newebpay.js:113-213 | async function post_newebpay_notify(req, res, next) { ... | }
+doc:93 controllers/newebpay.js:117-128 | if (!verifyTradeSha(TradeInfo, TradeSha)) return res.status(400).send('Bad Request'); ... | }
+doc:96 controllers/newebpay.js:136 | const found = await client.query(
+doc:105 utils/trade.js:324-376 | async function settlePaidOrder(client, orderId) { ... | }
+doc:106 utils/trade.js:329 | await setOrderStatus(client, orderId, ORDER_STATUS.PAID);
+doc:109 controllers/userinfo.js:155 | 'SELECT * FROM public."user" WHERE lower(email) = lower($1) FOR UPDATE',
+doc:116 utils/trade.js:186-196 | async function expireIfOverdue(client, order) { ... | }
+doc:118 controllers/checkout.js:166 | if (await expireIfOverdue(client, locked)) {
+doc:118 controllers/checkout.js:246 | const expired = await expireIfOverdue(client, locked);
+doc:118 controllers/discounts.js:38 | if (await expireIfOverdue(client, locked)) {
+doc:118 controllers/discounts.js:115 | if (await expireIfOverdue(client, locked)) {
+doc:118 controllers/newebpay.js:36 | if (await expireIfOverdue(client, locked)) {
+doc:124 controllers/admin.js:299-323 | async function post_refundOrder(req, res, next) { ... | }
+doc:124 controllers/admin.js:304 | await client.query('BEGIN');
+doc:124 controllers/admin.js:306 | await client.query('COMMIT');
+doc:124 utils/trade.js:380-422 | async function refundOrder(client, orderId) { ... | }
+doc:126 utils/trade.js:381 | const order = await lockOrder(client, orderId);
+doc:136 controllers/cart.js:5-12 | async function recalcCartTotal(client, cart_id) { ... | }
+doc:161 controllers/userinfo.js:155 | 'SELECT * FROM public."user" WHERE lower(email) = lower($1) FOR UPDATE',
+doc:162 controllers/userinfo.js:31 | 'INSERT INTO public."user_level" (user_id,level,name,badge_url,travel_point) VALUES ($1, $
+doc:162 controllers/userinfo.js:37 | 'INSERT INTO public."point_record" (user_id,type,point) VALUES ($1, $2, $3) RETURNING *',
+doc:162 controllers/userinfo.js:209 | 'INSERT INTO public."user_level" (user_id,level,name,badge_url,travel_point) VALUES ($1, $
+doc:162 controllers/userinfo.js:213 | 'INSERT INTO public."point_record" (user_id,type,point) VALUES ($1, $2, $3)',
+doc:163 controllers/userinfo.js:87 | await client.query('BEGIN');
+doc:163 controllers/userinfo.js:92-95 | await pool.query( ... | );
+doc:164 controllers/userProfile.js:52 | await client.query('BEGIN');
+doc:165 controllers/product.js:627 | await client.query('BEGIN');
+doc:166 controllers/admin.js:274 | `delete from public."user_coupon" where user_id = $1 and coupon_id = $2`,
+doc:167 controllers/coupon.js:209 | INSERT INTO public.user_coupon (user_id, coupon_id, status)
+doc:171 controllers/cart.js:26-29 | const user_cartRepo = await client.query( ... | );
+doc:171 utils/trade.js:358 | await client.query('SELECT cart_id FROM public."cart" WHERE user_id = $1 ORDER BY cart_id 
+doc:176 utils/trade.js:277 | 'SELECT user_coupon_id FROM public."user_coupon" WHERE user_id = $1 AND coupon_id = $2 FOR
+doc:176 utils/trade.js:316 | await client.query(
+doc:176 utils/trade.js:288 | 'SELECT level_id FROM public."user_level" WHERE user_id = $1 ORDER BY level_id FOR UPDATE'
+doc:176 utils/trade.js:316 | await client.query(
+doc:176 controllers/checkout.js:199 | await client.query(
+doc:176 controllers/checkout.js:203 | await setOrderStatus(client, order_id, ORDER_STATUS.PENDING);
+doc:177 controllers/discounts.js:126 | await releaseReservations(client, order_id);
+doc:177 controllers/discounts.js:127 | await client.query(
